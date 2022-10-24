@@ -1,5 +1,5 @@
 {
-    "app_id": "com.moodle.moodlemobile",
+    "app_id": "com.moodle.cyberquote",
     "appname": "Moodle Mobile",
     "versioncode": 41000,
     "versionname": "4.1.0-dev",
@@ -99,7 +99,7 @@
     "forceLoginLogo": false,
     "ioswebviewscheme": "moodleappfs",
     "appstores": {
-        "android": "com.moodle.moodlemobile",
+        "android": "com.moodle.cyberquote",
         "ios": "id633359593"
     },
     "wsrequestqueuelimit": 10,

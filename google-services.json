@@ -1,42 +1,36 @@
 {
   "project_info": {
-    "project_number": "",
-    "firebase_url": "",
-    "project_id": "",
-    "storage_bucket": ""
+    "project_number": "587896526108",
+    "project_id": "cq-academy-staging",
+    "storage_bucket": "cq-academy-staging.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:111111111111:android:1111111111111111",
+        "mobilesdk_app_id": "1:587896526108:android:8bf1d9944a30936a49d6d9",
         "android_client_info": {
           "package_name": "com.moodle.cyberquote"
         }
       },
       "oauth_client": [
         {
-          "client_id": "",
+          "client_id": "587896526108-aogguiqqpnmr5a0hqqil2umtbcm45dar.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": ""
-        },
-        {
-          "current_key": ""
+          "current_key": "AIzaSyAb1XjM8MqRF8XVIqsvy_gZbRE-4KzsjLw"
         }
       ],
       "services": {
-        "analytics_service": {
-          "status": 1
-        },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
-        },
-        "ads_service": {
-          "status": 2
+          "other_platform_oauth_client": [
+            {
+              "client_id": "587896526108-aogguiqqpnmr5a0hqqil2umtbcm45dar.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

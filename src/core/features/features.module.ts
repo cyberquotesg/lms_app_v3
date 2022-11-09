@@ -43,6 +43,8 @@ import { CoreViewerModule } from './viewer/viewer.module';
 import { CoreXAPIModule } from './xapi/xapi.module';
 import { CoreNativeModule } from '@features/native/native.module';
 
+import { CqDashboardModule } from './cq_dashboard/cq_dashboard.module';
+
 @NgModule({
     imports: [
         CoreBlockModule,
@@ -72,6 +74,7 @@ import { CoreNativeModule } from '@features/native/native.module';
         CoreUserModule,
         CoreViewerModule,
         CoreXAPIModule,
+        CqDashboardModule,
 
         // Import last to allow overrides.
         CoreEmulatorModule,

@@ -1,0 +1,84 @@
+<ion-header>
+    <ion-navbar hideBackButton>
+        <cq-title [title]="" [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq-title>
+    </ion-navbar>
+</ion-header>
+
+<div class="round-wrapper">
+    <div class="round-background"></div>
+</div>
+
+<ion-content class="cq-dashboard-page">
+    <ion-refresher [enabled]="pageStatus" (ionRefresh)="pageRefresh($event)">
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+    </ion-refresher>
+    <core-loading [hideUntil]="pageStatus">
+
+        <ion-card>
+            <ion-card-header>
+                <ion-card-title class="text-center">{{ 'core.cqTotalTrainingHours' | translate }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+                <div class="dashboard-box" style="display: flex;justify-content: center;align-items: center;">
+                    <div class="text-center mr-25">
+                        <div class="hm-value second-font">{{ pageData.dashHours }}</div>
+                        <div class="hm-label second-font">{{ 'core.cqLongHoursSymbol' | translate }}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="hm-value second-font">{{ pageData.dashMinutes }}</div>
+                        <div class="hm-label second-font">{{ 'core.cqLongMinutesSymbol' | translate }}</div>
+                    </div>
+                </div>
+            </ion-card-content>
+        </ion-card>
+        
+        <ion-card>
+            <ion-card-header>
+                <ion-card-title class="text-center">{{ 'core.cqUpcomingRegisteredCourses' | translate }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+                <div *ngIf="isAvailable(pageData.courses)" class="dashboard-content">
+                    <div class="item" *ngFor="let course of pageData.courses">
+
+                        <div class="item-link" (click)="openCourse(course)">
+                            <div *ngIf="course.media == 'online'">
+                                <div class="text-center mb-12">
+                                    <span class="cq-tag dark-grey">E-Learning</span>
+                                    <span *ngIf="pageData.courseTypes.object[course.course_type]" class="cq-tag">{{ pageData.courseTypes.object[course.course_type].name }}</span>
+                                </div>
+
+                                <h3 class="item-title text-center">{{course.fullname}}</h3>
+                            </div>
+
+                            <div *ngIf="course.media == 'offline'">
+                                <div class="text-center mb-12">
+                                    <span class="cq-tag dark-grey">Classroom Training</span>
+                                    <span *ngIf="pageData.courseTypes.object[course.type]" class="cq-tag">{{ pageData.courseTypes.object[course.type].name }}</span>
+                                </div>
+
+                                <h3 class="item-title text-center">{{course.name}}<br />Batch - {{course.start_date_text}}</h3>
+                            </div>
+
+                            <cq-will-start-in *ngIf="course.will_start_in > 0" [unixtimestamp]="course.will_start_in"></cq-will-start-in>
+                            <div *ngIf="course.will_start_in == 0" class="will-start-in-information time-urgency-1 second-font pt-8">
+                                <span class="start-number">Starting</span>
+                            </div>
+                            <div *ngIf="course.will_start_in < 0" class="will-start-in-information second-font pt-8">
+                                <span class="start-number">Ongoing</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div *ngIf="!isAvailable(pageData.courses)" class="cq-empty">{{ 'core.cqNoData' | translate }}</div>
+            </ion-card-content>
+        </ion-card>
+
+        <div *ngIf="pageData.additionalContent">
+            <!-- <hr class="additional-content-hr" /> -->
+            <br />
+            <div [innerHtml]="pageData.additionalContent"></div>
+        </div>
+
+    </core-loading>
+</ion-content>

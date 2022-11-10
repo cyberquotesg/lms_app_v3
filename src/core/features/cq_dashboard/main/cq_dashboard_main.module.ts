@@ -1,21 +1,19 @@
-// (C) Copyright 2015 Moodle Pty Ltd.
+// done v3
 
 import { NgModule } from '@angular/core';
-import { IonicPageModule } from 'ionic-angular';
 import { TranslateModule } from '@ngx-translate/core';
-import { CqDashboardPage } from './cq-dashboard-page';
+import { CqDashboardMain } from './cq_dashboard_main';
 import { CoreComponentsModule } from '@components/components.module';
 import { CoreDirectivesModule } from '@directives/directives.module';
 
 @NgModule({
     declarations: [
-        CqDashboardPage
+        CqDashboardMain
     ],
     imports: [
         CoreComponentsModule,
         CoreDirectivesModule,
-        IonicPageModule.forChild(CqDashboardPage),
         TranslateModule.forChild()
     ],
 })
-export class CqDashboardPageModule {}
+export class CqDashboardMainModule {}

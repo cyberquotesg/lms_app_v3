@@ -1,21 +1,15 @@
-// (C) Copyright 2015 Moodle Pty Ltd.
+// done v3
 
-    // import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-    // import { IonicPage, NavController, NavParams } from 'ionic-angular';
-    // import { CqHelper } from '@services/cq-helper';
-    // import { CqLib } from '@services/cq-lib';
-    // import { CqPage } from '@classes/cq-page';
-    // import { CoreCoursesProvider } from '@core/courses/providers/courses';
-    // import { CoreCourseHelperProvider } from '@core/course/providers/helper';
-import { CoreConstants } from '@/core/constants';
+import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { CqHelper } from '@services/cq_helper';
+import { CqPage } from '@classes/cq_page';
 
-@IonicPage({ segment: 'cq-dashboard-main' })
 @Component({
     selector: 'cq_dashboard_main',
     templateUrl: './cq_dashboard_main.html',
     styles: ['cq_dashboard_main.scss'],
 })
-export class CqDashboardPage extends CqPage implements OnInit
+export class CqDashboardMain extends CqPage implements OnInit
 {
     pageParams = {
     };
@@ -40,17 +34,9 @@ export class CqDashboardPage extends CqPage implements OnInit
         myCoursesList: 0,
     };
 
-    constructor(
-        renderer: Renderer2,
-        nav: NavController,
-        CH: CqHelper,
-        CL: CqLib,
-        navParams: NavParams,
-        private coursesProvider: CoreCoursesProvider,
-        private courseHelper: CoreCourseHelperProvider
-    ) {
-        super(renderer, nav, CH, CL);
-        for (let paramName in this.pageParams) this.pageParams[paramName] = navParams.get(paramName);
+    constructor(renderer: Renderer2, CH: CqHelper)
+    {
+        super(renderer, CH);
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }

@@ -45,7 +45,7 @@ export class CqPage extends CqGeneral
 
     usuallyOnInit(): void
     {
-        const isLoggedIn = this.CH.getSites().isLoggedIn();
+        const isLoggedIn = this.CH.isLoggedIn();
         const data = this.CH.getCountryOrganizationData();
 
         if (isLoggedIn && data.result)
@@ -54,10 +54,16 @@ export class CqPage extends CqGeneral
             this.cqOrganization = data.cqOrganization;
             this.renderer.addClass(this.CH.getBody(), 'logged-in');
             this.renderer.setProperty(this.CH.getBody(), 'style', data.cssVars.join(';'));
+
+            // catch parameters automatically
+        	for (let paramName in this.pageParams)
+        	{
+        		this.pageParams[paramName] = CoreNavigator.getRouteNumberParam(paramName);
+        	}
         }
         else
         {
-            this.CH.getSites().logout().then(() => {
+            this.CH.logout().then(() => {
                 let pageName = '';
                 const url = typeof this.CH.config().siteurl == 'string' ?
                     this.CH.config().siteurl : this.CH.config().siteurl[0].url;
@@ -358,7 +364,7 @@ export class CqPage extends CqGeneral
     {
         if (media == 'online')
         {
-            const frontpageCourseId = this.CH.getSites().getCurrentSite().getSiteHomeId();
+            const frontpageCourseId = this.CH.getSiteHomeId();
             this.CH.getCourses().getCoursesByField('user_id', this.CH.getUserId()).then((courses) => {
                 let coursesData = courses.filter((course) => {
                     return course.id != frontpageCourseId && course.id == courseId;

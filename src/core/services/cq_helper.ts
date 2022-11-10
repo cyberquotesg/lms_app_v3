@@ -71,7 +71,7 @@ export class CqHelper
     */
     async alert(title: string, message: string, firstButton?: any, secondButton?: any): Promise<any>
     {
-    	let buttons = [];
+    	let buttons: any[] = [];
     	if (!firstButton) buttons.push("Ok");
     	else
     	{
@@ -324,7 +324,7 @@ export class CqHelper
 	}
 	getPageJobNumbers(pageJobs: any[]): number[]
 	{
-		var numbers = [];
+		var numbers: any[] = [];
 		for (let job in pageJobs)
 		{
 			if (typeof pageJobs[job] == 'object')
@@ -409,7 +409,7 @@ export class CqHelper
         let filteredData: any[] = [];
         filter = filter.toLowerCase();
 
-        let fieldsToCheckArray = [];
+        let fieldsToCheckArray: any[] = [];
         if (fieldsToCheck) fieldsToCheckArray = this.toArray(fieldsToCheck);
 
         if (showLog) this.log('getFiltered start getFiltered');
@@ -496,7 +496,7 @@ export class CqHelper
     	if (Array.isArray(data)) return data;
     	if (typeof data == 'string') return data.replace(/ /g, '').split(',');
 
-    	let dataArray = [];
+    	let dataArray: any[] = [];
         for (let id in data)
         {
         	dataArray.push(data[id]);
@@ -611,7 +611,7 @@ export class CqHelper
     	if (typeof params == 'undefined' || params === null) params = {};
     	params.user_id = this.getUserId();
     	
-    	let paramsArray = [], key;
+    	let paramsArray: any[] = [], key;
     	for (key in params) paramsArray.push(key + '=' + params[key]);
 
     	let data: any = {
@@ -787,23 +787,33 @@ export class CqHelper
     {
         return CoreSites.getCurrentSite();
     }
-    getSites(): any
+    isLoggedIn(): boolean
+    {
+    	return CoreSites.isLoggedIn();
+    }
+    logout(): Promise<void>
+    {
+    	return CoreSites.logout();
+    }
+    // warning! deprecated
+    getSites(): Promise<CoreSiteBasicInfo[]>
     {
         return CoreSites.getSites();
     }
+
     getSiteId(): string
     {
-        return CoreSites.getCurrentSiteId();
+        return this.getSite().getId();
     }
-    isLoggedIn() : boolean
+    getSiteHomeId(): number
     {
-    	return CoreSites.isLoggedIn();
+    	return this.getSite().getSiteHomeId();
     }
     getUserId(): number
     {
     	return this.getSite().getUserId();
     }
-    getWsToken(): any
+    getWsToken(): string
     {
     	return this.getSite().getToken();
     }
@@ -829,7 +839,7 @@ export class CqHelper
     {
         const tempC = localStorage.getItem('cqCountry');
         const tempO = localStorage.getItem('cqOrganization');
-        const cssVars = [];
+        const cssVars: string[] = [];
 
         if (tempC == null || tempO == null)
         {
@@ -1037,7 +1047,7 @@ export class CqHelper
         {
             if (this.isEmpty(perCourseType[courseType].monthly)) continue;
 
-            let monthData = [],
+            let monthData: any[] = [],
                 incrementY = 0;
 
             for (let x = 1; x <= 12; x++)

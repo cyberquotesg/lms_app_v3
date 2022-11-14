@@ -57,7 +57,7 @@ export class CqDashboardMain extends CqPage implements OnInit
     {
         this.pageJobExecuter(jobName, 'CqLib', 'get_course_types', [this.CH.getUserId()], (data) => {
             data = this.CH.toJson(data);
-            let courseTypesArray = [];
+            let courseTypesArray: any[] = [];
             for (let id in data) courseTypesArray.push(data[id]);
             this.pageData.courseTypes = {
                 object: data,
@@ -67,7 +67,6 @@ export class CqDashboardMain extends CqPage implements OnInit
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
     }
-
     myCoursesList(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         this.pageJobExecuter(jobName, 'CqLib', 'get_my_courses_list', [
@@ -86,11 +85,10 @@ export class CqDashboardMain extends CqPage implements OnInit
             else if (modeData.mode == 'refreshing') this.pageData.courses = result;
         }, moreloader, refresher, finalCallback);
     }
-
     myHours(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         this.pageJobExecuter(jobName, 'custom', 'local_classroom_training_my_hours', null, (data) => {
-            let brokenDownData = this.CL.breakDownHoursData(this.pageData.courseTypes.array, data);
+            let brokenDownData = this.CH.breakDownHoursData(this.pageData.courseTypes.array, data);
 
             this.pageData.dashMinutes = brokenDownData.totalCPDInMinutesBeautiful;
             this.pageData.dashHours = brokenDownData.totalCPDInHoursBeautiful;

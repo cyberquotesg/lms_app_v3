@@ -20,9 +20,10 @@ $header_height: 50px;
 $footer_height: 50px;
 $tab_height: 40px;
 
-$neumorphism_shadow: 6px 6px 12px #cccccc, -3px -3px 12px #ffffff;
-$base_background: #f0f0f0 url("#{$img-path}/pattern/geometry.png");
-$component_background: #fefefe;
+$neumorphism_shadow: 6px 6px 12px #cecece, -4px -4px 12px #ffffff;
+// $base_background: #f2f2f2 url("#{$img-path}/pattern/geometry.png");
+$base_background: #f2f2f2;
+$component_background: #f2f2f2;
 $gradient_background: linear-gradient(270deg, #7d2a81 20%, #4f2a81 80%);
 $bar_background: $cq_purple_dark;
 

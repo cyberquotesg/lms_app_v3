@@ -5,7 +5,7 @@ import { CoreMainMenuHandler, CoreMainMenuHandlerData } from '@features/mainmenu
 @Injectable({ providedIn: 'root' })
 export class CqDashboardMenuHandlerService implements CoreMainMenuHandler
 {
-    static readonly PAGE_NAME = 'dashboard';
+    static readonly PAGE_NAME = 'CqDashboard';
 
     name = 'CqDashboardMenuHandler';
     priority = 2000;

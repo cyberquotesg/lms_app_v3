@@ -1,19 +1,37 @@
 // done v3
 
 import { NgModule } from '@angular/core';
-import { TranslateModule } from '@ngx-translate/core';
+import { RouterModule, Routes } from '@angular/router';
+
+import { CoreSharedModule } from '@/core/shared.module';
 import { CqDashboardMain } from './cq_dashboard_main';
-import { CoreComponentsModule } from '@components/components.module';
-import { CoreDirectivesModule } from '@directives/directives.module';
+import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
+import { conditionalRoutes } from '@/app/app-routing.module';
+import { CoreScreen } from '@services/screen';
+
+const routes: Routes = [
+    {
+        path: '',
+        component: CqDashboardMain,
+        // children: conditionalRoutes([
+        //     {
+        //         path: ':id',
+        //         loadChildren: () => import('../../pages/notification/notification.module')
+        //             .then(m => m.AddonNotificationsNotificationPageModule),
+        //     },
+        // ], () => CoreScreen.isTablet),
+    },
+];
 
 @NgModule({
-    declarations: [
-        CqDashboardMain
-    ],
     imports: [
-        CoreComponentsModule,
-        CoreDirectivesModule,
-        TranslateModule.forChild()
+        RouterModule.forChild(routes),
+        CoreSharedModule,
+        CoreMainMenuComponentsModule,
     ],
+    declarations: [
+        CqDashboardMain,
+    ],
+    exports: [RouterModule],
 })
 export class CqDashboardMainModule {}

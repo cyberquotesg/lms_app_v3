@@ -357,5 +357,16 @@
     "youreoffline": "Your device is offline",
     "youreonline": "Your device is back online",
     "zoomin": "Zoom In",
-    "zoomout": "Zoom Out"
+    "zoomout": "Zoom Out",
+
+    "cqSelectCountry": "Select Country",
+    "cqSelectOrganization": "Select Organization",
+    
+    "cqNoData": "No Data",
+    "cqShortHoursSymbol": "h",
+    "cqShortMinutesSymbol": "m",
+    "cqLongHoursSymbol": "Hours",
+    "cqLongMinutesSymbol": "Minutes",
+    "cqTotalTrainingHours": "TOTAL TRAINING HOURS",
+    "cqUpcomingRegisteredCourses": "Upcoming Courses"
 }

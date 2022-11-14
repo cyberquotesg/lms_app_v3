@@ -1,9 +1,10 @@
 // warning! not ready yet, especially on opening course
+// warning! CoreNavigator.navigate is still having wrong param
 
-import { CqGeneral } from '@/classes/cq_general';
 import { Renderer2 } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
-import { CoreApp } from '@services/app';
+import { CoreCourseHelper } from '@features/course/services/course-helper';
+import { CqGeneral } from '@classes/cq_general';
 import { CqHelper } from '@services/cq_helper';
 
 export class CqPage extends CqGeneral
@@ -60,29 +61,15 @@ export class CqPage extends CqGeneral
         	{
         		this.pageParams[paramName] = CoreNavigator.getRouteNumberParam(paramName);
         	}
+
+            this.pageLoad();
         }
         else
         {
             this.CH.logout().then(() => {
-                let pageName = '';
-                const url = typeof this.CH.config().siteurl == 'string' ?
-                    this.CH.config().siteurl : this.CH.config().siteurl[0].url;
-
-                // only logged out, country and organization are set, go to login page
-                if (!isLoggedIn && data.result) pageName = 'CoreLoginCredentialsPage';
-
-                // has country, but no organization, go to organization selector page
-                else if (data.cqCountry && !data.cqOrganization) pageName = 'CqPreLoginOrganization';
-
-                // anything else, go to country selector page
-                else pageName = 'CqPreLoginCountry';
-                
-                // using root nav controller
-                CoreApp.instance.getRootNavController().setRoot(pageName, { siteUrl: url }, { animate: false });
+                CoreNavigator.navigateToLoginCredentials();
             });
         }
-
-        this.pageLoad();
     }
     usuallyOnViewWillEnter(): void
     {
@@ -270,7 +257,7 @@ export class CqPage extends CqGeneral
         if (!loadingmore && !refreshing) return 'firstload';
         else if (loadingmore) return 'loadingmore';
         else if (refreshing) return 'refreshing';
-        else 'unknown';
+        else return 'unknown';
     }
     handlePageByMode(mode: string): any
     {
@@ -332,14 +319,14 @@ export class CqPage extends CqGeneral
             //     this.CH.alert('Ups!', error.message);
             // });
 
-            CoreNavigator.navigate('CoreCoursesCoursePreviewPage', {course: course});
+            // CoreNavigator.navigate('CoreCoursesCoursePreviewPage', {course: course});
         }
         else if (course.media == 'offline')
         {
-            CoreNavigator.navigate('CqClassroomTrainingPage', {
-                courseId: course.id,
-                courseName: course.name
-            });
+            // CoreNavigator.navigate('CqClassroomTrainingPage', {
+            //     courseId: course.id,
+            //     courseName: course.name
+            // });
         }
         else
         {
@@ -364,31 +351,14 @@ export class CqPage extends CqGeneral
     {
         if (media == 'online')
         {
-            const frontpageCourseId = this.CH.getSiteHomeId();
-            this.CH.getCourses().getCoursesByField('user_id', this.CH.getUserId()).then((courses) => {
-                let coursesData = courses.filter((course) => {
-                    return course.id != frontpageCourseId && course.id == courseId;
-                }).map((course) => {
-                    course.media = 'online';
-                    return course;
-                });
-
-                if (!this.CH.isEmpty(coursesData))
-                {
-                    if (coursesData[0].isEnrolled) this.CH.getCourseHelper().openCourse(coursesData[0]);
-                    else CoreNavigator.navigate('CoreCoursesCoursePreviewPage', {course: coursesData[0]});
-                }                
-                else this.CH.alert('Oops!', 'It seems like you are not permitted to open the course');
-            }).catch((error) => {
-                this.CH.alert('Ups!', 'Cannot open the course');
-            });
+            CoreCourseHelper.openCourse({id: courseId});
         }
         else if (media == 'offline')
         {
-            CoreNavigator.navigate('CqClassroomTrainingPage', {
-                courseId: courseId,
-                courseName: ''
-            });
+            // CoreNavigator.navigate('CqClassroomTrainingPage', {
+            //     courseId: courseId,
+            //     courseName: ''
+            // });
         }
     }
     openOfflineCourseById(courseId: number): void

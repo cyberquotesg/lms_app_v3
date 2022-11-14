@@ -1,21 +1,23 @@
-// done v3
+// not done v3
 
 import { Injectable, Inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DomSanitizer } from '@angular/platform-browser';
-import { LoadingController, ToastController, AlertController, ActionSheetController, ModalController, Events } from '@ionic/angular';
+import { LoadingController, ToastController, AlertController, ActionSheetController, ActionSheetButton, ModalController } from '@ionic/angular';
 import { CoreUserProvider } from '@features/user/services/user';
 import { CoreCoursesProvider } from '@features/courses/services/courses';
 import { CoreCourseHelperProvider } from '@features/course/services/course-helper';
 import { CoreDomUtilsProvider } from '@services/utils/dom';
 import { CoreUtilsProvider } from '@services/utils/utils';
-import { CoreSites } from '@services/sites';
+import { CoreSiteBasicInfo, CoreSites } from '@services/sites';
 import { CoreConstants } from '@/core/constants';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class CqHelper
 {
+    notificationCount: number = 0;
+
 	constructor(
 	    @Inject(DOCUMENT) public document: Document,
 		protected http: HttpClient,
@@ -25,7 +27,6 @@ export class CqHelper
 	    public alertController: AlertController,
 	    public actionSheetController: ActionSheetController,
 	    public modalController: ModalController,
-		private events: Events,
 	    private userProvider: CoreUserProvider,
 	    private coursesProvider: CoreCoursesProvider,
 	    private courseHelperProvider: CoreCourseHelperProvider,
@@ -47,9 +48,9 @@ export class CqHelper
     	else console.log('cq - ' + data1, data2);
     }
 
-    async loading(content: string, callback?: (any) => void): Promise<any>
+    async loading(message: string, callback?: (any) => void): Promise<any>
     {
-        const loading = await this.loadingController.create({content});
+        const loading = await this.loadingController.create({message});
         return await loading.present().then(() => {
         	if (callback) callback(loading);
         });
@@ -69,7 +70,7 @@ export class CqHelper
 	 *      }
 	 *	}
     */
-    async alert(title: string, message: string, firstButton?: any, secondButton?: any): Promise<any>
+    async alert(header: string, message: string, firstButton?: any, secondButton?: any): Promise<any>
     {
     	let buttons: any[] = [];
     	if (!firstButton) buttons.push("Ok");
@@ -79,7 +80,7 @@ export class CqHelper
     		if (secondButton) buttons.push(secondButton);
     	}
 
-        const alert = await this.alertController.create({title, message, buttons});
+        const alert = await this.alertController.create({header, message, buttons});
         return await alert.present();
     }
     /*
@@ -101,17 +102,24 @@ export class CqHelper
 	 *      }
 	 *	}]
     */
-    async choose(title: string, buttons?: any[]): Promise<any>
+    async choose(header: string, buttons?: any[]): Promise<any>
     {
-    	const choose = await this.actionSheetController.create({title, buttons});
+    	let actionButtons: ActionSheetButton[] = [];
+    	if (buttons) buttons.forEach((b) => {
+    		let temp: ActionSheetButton = b;
+    		actionButtons.push(temp);
+    	});
+
+    	const choose = await this.actionSheetController.create({header, buttons: actionButtons});
     	return await choose.present();
     }
-    async modal(component: any, componentProps?: any, callback?: any): Promise<any>
+    async modal(component: any, componentProps?: any, callback?: (any) => void): Promise<any>
 	{
 		if (typeof componentProps == 'undefined') componentProps = {};
-		let modal = await this.modalController.create(component, componentProps);
-		modal.onDidDismiss(data => {
-			if (typeof callback == 'function') callback(data);
+		componentProps["component"] = component;
+		let modal = await this.modalController.create(componentProps);
+		modal.onDidDismiss().then((data) => {
+			if (callback) callback(data);
 		});
 		return await modal.present();
     }
@@ -771,7 +779,7 @@ export class CqHelper
         let extention = name.split('.').pop();
 
         if (mimeTypes[extention]) return mimeTypes[extention];
-        else return null;
+        else return "";
     }
 
     setNotificationCount(value: number): void
@@ -1096,9 +1104,11 @@ export class CqHelper
     }
 
     toggleDrawer(): void {
-        this.events.publish('toggleDrawer');
+    	// warning! events is removed from ionic 5
+        // this.events.publish('toggleDrawer');
     }
     goToNotificationsList(): void {
-        this.events.publish('goToNotificationsList');
+    	// warning! events is removed from ionic 5
+        // this.events.publish('goToNotificationsList');
     }
 }

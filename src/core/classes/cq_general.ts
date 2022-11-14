@@ -1,6 +1,6 @@
 // done v3
 
-import { CqHelper } from '@/services/cq_helper';
+import { CqHelper } from '@services/cq_helper';
 
 export class CqGeneral
 {

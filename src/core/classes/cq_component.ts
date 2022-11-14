@@ -1,9 +1,10 @@
 // done v3
 
-import { CqGeneral } from '@/classes/cq_general';
-import { CqHelper } from '@/services/cq_helper';
+import { CqGeneral } from '@classes/cq_general';
+import { CqHelper } from '@services/cq_helper';
 
-export class CqComponent extends CqGeneral {
+export class CqComponent extends CqGeneral
+{
     constructor(CH: CqHelper)
     {
         super(CH);

@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { CoreSharedModule } from '@/core/shared.module';
-import { CqDashboardMain } from './cq_dashboard_main';
+import { CqDashboard } from './cq_dashboard';
 import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
 import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
@@ -12,7 +12,7 @@ import { CoreScreen } from '@services/screen';
 const routes: Routes = [
     {
         path: '',
-        component: CqDashboardMain,
+        component: CqDashboard,
         // children: conditionalRoutes([
         //     {
         //         path: ':id',
@@ -30,8 +30,8 @@ const routes: Routes = [
         CoreMainMenuComponentsModule,
     ],
     declarations: [
-        CqDashboardMain,
+        CqDashboard,
     ],
     exports: [RouterModule],
 })
-export class CqDashboardMainModule {}
+export class CqDashboardModule {}

@@ -7,7 +7,7 @@ import { CoreNavigator } from '@services/navigator';
 import { makeSingleton } from '@singletons';
 
 @Injectable({ providedIn: 'root' })
-export class CqDashboardViewHandlerService extends CoreContentLinksHandlerBase
+export class CqDashboardViewService extends CoreContentLinksHandlerBase
 {
     name = 'CqDashboardViewHandler';
     pattern = /\/cq-dashboard\/view\.php/;
@@ -34,4 +34,4 @@ export class CqDashboardViewHandlerService extends CoreContentLinksHandlerBase
     }
 }
 
-export const CqDashboardViewHandler = makeSingleton(CqDashboardViewHandlerService);
+export const CqDashboardViewHandler = makeSingleton(CqDashboardViewService);

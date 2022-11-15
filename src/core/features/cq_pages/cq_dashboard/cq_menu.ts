@@ -3,7 +3,7 @@ import { makeSingleton } from '@singletons';
 import { CoreMainMenuHandler, CoreMainMenuHandlerData } from '@features/mainmenu/services/mainmenu-delegate';
 
 @Injectable({ providedIn: 'root' })
-export class CqDashboardMenuHandlerService implements CoreMainMenuHandler
+export class CqDashboardMenuService implements CoreMainMenuHandler
 {
     static readonly PAGE_NAME = 'CqDashboard';
 
@@ -26,4 +26,4 @@ export class CqDashboardMenuHandlerService implements CoreMainMenuHandler
     }
 }
 
-export const CqDashboardMenuHandler = makeSingleton(CqDashboardMenuHandlerService);
+export const CqDashboardMenuHandler = makeSingleton(CqDashboardMenuService);

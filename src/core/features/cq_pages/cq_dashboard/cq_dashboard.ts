@@ -1,15 +1,15 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { CqHelper } from '@services/cq_helper';
-import { CqPage } from '@classes/cq_page';
+import { CqHelper } from '../services/cq_helper';
+import { CqPage } from '../classes/cq_page';
 
 @Component({
-    selector: 'cq_dashboard_main',
-    templateUrl: './cq_dashboard_main.html',
-    styles: ['cq_dashboard_main.scss'],
+    selector: 'cq_dashboard',
+    templateUrl: './cq_dashboard.html',
+    styles: ['cq_dashboard.scss'],
 })
-export class CqDashboardMain extends CqPage implements OnInit
+export class CqDashboard extends CqPage implements OnInit
 {
     pageParams = {
     };

@@ -1,7 +1,7 @@
 // done v3
 
-import { CqGeneral } from '@classes/cq_general';
-import { CqHelper } from '@services/cq_helper';
+import { CqGeneral } from './cq_general';
+import { CqHelper } from '../services/cq_helper';
 
 export class CqComponent extends CqGeneral
 {

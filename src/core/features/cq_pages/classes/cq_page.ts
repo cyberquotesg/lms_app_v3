@@ -4,8 +4,8 @@
 import { Renderer2 } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
-import { CqGeneral } from '@classes/cq_general';
-import { CqHelper } from '@services/cq_helper';
+import { CqGeneral } from './cq_general';
+import { CqHelper } from '../services/cq_helper';
 
 export class CqPage extends CqGeneral
 {

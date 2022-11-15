@@ -19,7 +19,7 @@ import { RouterModule, ROUTES, Routes } from '@angular/router';
 import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CoreScreen } from '@services/screen';
 
-import { CqDashboardMenuService } from './cq_dashboard/cq_menu';
+import { CqDashboardMenuService } from './cq_dashboard.menu';
 
 function buildRoutes(injector: Injector): Routes {
     return [
@@ -28,7 +28,7 @@ function buildRoutes(injector: Injector): Routes {
             data: {
                 mainMenuTabRoot: CqDashboardMenuService.PAGE_NAME,
             },
-            loadChildren: () => import('./cq_dashboard/cq_dashboard.module').then(m => m.CqDashboardModule),
+            loadChildren: () => import('./cq_dashboard.module').then(m => m.CqDashboardModule),
         },
         // ...conditionalRoutes([
         //     {
@@ -54,4 +54,4 @@ function buildRoutes(injector: Injector): Routes {
         },
     ],
 })
-export class CQPagesLazyModule {}
+export class CqDashboardLazyModule {}

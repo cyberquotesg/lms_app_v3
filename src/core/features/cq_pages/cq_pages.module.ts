@@ -9,13 +9,13 @@ import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-ro
 import { CoreMainMenuDelegate } from '@features/mainmenu/services/mainmenu-delegate';
 import { CoreContentLinksDelegate } from '@features/contentlinks/services/contentlinks-delegate';
 
-import { CqDashboardMenuHandler, CqDashboardMenuService } from './cq_dashboard/cq_menu';
-import { CqDashboardViewHandler } from './cq_dashboard/cq_view';
+import { CqDashboardMenuHandler, CqDashboardMenuService } from './cq_dashboard/cq_dashboard.menu';
+import { CqDashboardViewHandler } from './cq_dashboard/cq_dashboard.view';
 
 const routes: Routes = [
     {
         path: CqDashboardMenuService.PAGE_NAME,
-        loadChildren: () => import('./cq_pages_lazy.module').then(m => m.CQPagesLazyModule),
+        loadChildren: () => import('./cq_dashboard/cq_dashboard.lazy_module').then(m => m.CqDashboardLazyModule),
     },
 ];
 @NgModule({

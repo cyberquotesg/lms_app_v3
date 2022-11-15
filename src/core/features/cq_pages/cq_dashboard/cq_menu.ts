@@ -14,9 +14,9 @@ export class CqDashboardMenuService implements CoreMainMenuHandler
     {
         return {
             icon: 'star',
-            title: 'cq-dashboard',
+            title: 'cq_dashboard',
             page: 'CqDashboard',
-            class: 'cq-dashboard'
+            class: 'cq_dashboard'
         };
     }
 

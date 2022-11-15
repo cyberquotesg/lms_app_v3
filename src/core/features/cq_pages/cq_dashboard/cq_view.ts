@@ -10,7 +10,7 @@ import { makeSingleton } from '@singletons';
 export class CqDashboardViewService extends CoreContentLinksHandlerBase
 {
     name = 'CqDashboardViewHandler';
-    pattern = /\/cq-dashboard\/view\.php/;
+    pattern = /\/cq_dashboard\/view\.php/;
 
     getActions(siteIds: string[], url: string, params: any): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]>
     {

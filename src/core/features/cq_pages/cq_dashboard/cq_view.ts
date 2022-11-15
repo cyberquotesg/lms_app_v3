@@ -17,9 +17,7 @@ export class CqDashboardViewService extends CoreContentLinksHandlerBase
         return [{
             action: (siteId, navCtrl?): void => {
                 const stateParams: any = {};
-                // this.linkHelper.goInSite(navCtrl, 'CqDashboardPage', stateParams, siteId);
-
-                CoreNavigator.navigateToSitePath('/calendar/index', {
+                CoreNavigator.navigateToSitePath('/CqDashboard/index', {
                     params: stateParams,
                     siteId,
                     preferCurrentTab: false,

@@ -65,6 +65,9 @@ import { CoreMessageComponent } from './message/message';
 import { CoreGroupSelectorComponent } from './group-selector/group-selector';
 import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-button-modal';
 
+import { CqTileComponent } from '@features/cq_pages/components/cq_tile/cq_tile';
+import { CqTitleComponent } from '@features/cq_pages/components/cq_title/cq_title';
+
 @NgModule({
     declarations: [
         CoreAttachmentsComponent,
@@ -110,6 +113,8 @@ import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-
         CoreHorizontalScrollControlsComponent,
         CoreSwipeNavigationTourComponent,
         CoreRefreshButtonModalComponent,
+        CqTileComponent,
+        CqTitleComponent,
     ],
     imports: [
         CommonModule,
@@ -163,6 +168,8 @@ import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-
         CoreHorizontalScrollControlsComponent,
         CoreSwipeNavigationTourComponent,
         CoreRefreshButtonModalComponent,
+        CqTileComponent,
+        CqTitleComponent,
     ],
 })
 export class CoreComponentsModule {}

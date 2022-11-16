@@ -1,0 +1,53 @@
+<div>
+    <div *ngIf="isAvailable(items)" class="mt-3 tile-card">
+        <div *ngFor="let item of items" class="tc-item">
+            <ion-card (click)="selectItem(item)">
+                <div class="card-image">
+                    <div *ngIf="item.course_image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.course_image + ')'}"></div>
+                    <span *ngIf="!item.course_image" class="card-image-letter">{{ item.letter }}</span>
+                    
+                    <div style="position: absolute; left: 5px; top: 5px; right: 5px; bottom: 23px; overflow: hidden; text-align: right;">
+                        <ng-container *ngIf="item.media">
+                            <span *ngIf="item.media == 'online'" class="cq-tag dark-grey">E-Learning</span>
+                            <span *ngIf="item.media == 'offline'" class="cq-tag dark-grey">Classroom Training</span>
+                        </ng-container>
+                        <span *ngIf="item.type_text || item.courseTypeText || item.course_type_text" class="cq-tag">{{ item.type_text || item.courseTypeText || item.course_type_text }}</span>
+                        <span *ngIf="item.categoryname" class="cq-tag">{{ item.categoryname }}</span>
+                        <span *ngIf="item.compulsory === true || item.compulsory === 1 || item.compulsory === '1'" class="cq-tag orange">Compulsory</span>
+
+                        <span *ngIf="item.show_enrolled" class="cq-tag green">Enrolled</span>
+                        <span *ngIf="item.show_finished" class="cq-tag green">
+                            <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+                            Finished
+                        </span>
+                    </div>
+                </div>
+
+                <ion-card-header class="text-center">
+                    <div style="max-height: 48px; overflow: hidden;">
+                        {{ ellipsisAfter(item.title, 30) }} 
+                    </div>
+                </ion-card-header>
+
+                <!-- 
+                <ion-card-content class="pt-5 pb-5">
+                    <div class="pb-10" style="max-height: 85px; overflow: hidden;">
+                        {{ item.description ? sanitizeHTML(item.description) : '-' }}
+                    </div>
+                </ion-card-content>
+                 -->
+            </ion-card>
+        </div>
+
+        <div class="tc-item fake"></div>
+        <div class="tc-item fake"></div>
+        <div class="tc-item fake"></div>
+        <div class="tc-item fake"></div>
+        <div class="tc-item fake"></div>
+        <div class="tc-item fake"></div>
+        <div class="tc-item fake"></div>
+        <div class="tc-item fake"></div>
+    </div>
+
+    <cq-empty [empty]="isEmpty(items)"></cq-empty>
+</div>

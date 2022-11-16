@@ -1,11 +1,9 @@
 <ion-header>
-    <ion-toolbar hideBackButton>
-        <cq_title [title]="'My Courses'" [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_title>
-    </ion-toolbar>
+    <cq_header [title]="'My Courses'" [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
 </ion-header>
 
 <ion-content class="cq_my_courses">
-    <ion-refresher [disabled]="!pageStatus" (ionRefresh)="pageRefresh($event)">
+    <ion-refresher slot="fixed" [disabled]="!pageStatus" (ionRefresh)="pageRefresh($event.target)">
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
     </ion-refresher>
 

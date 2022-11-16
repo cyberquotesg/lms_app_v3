@@ -1,0 +1,30 @@
+<!-- 
+<div *ngIf="displayMenu" class="drawer-button normal" (click)="toggleDrawer()">
+    <ion-icon name="menu"></ion-icon>
+</div>
+<div *ngIf="displayNotification" class="drawer-button notifications" (click)="goToNotificationsList()">
+    <ion-icon name="notifications"></ion-icon>
+    <ion-badge *ngIf="isAvailable(notificationCount)" item-end="" class="badge background-grey">{{ notificationCount }}</ion-badge>
+</div>
+ -->
+
+<ion-toolbar hideBackButton>
+    <ion-buttons slot="start">
+        <ion-back-button [text]="'core.back' | translate"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+        <h1 class="color-white text-center">{{ title }}</h1>
+    </ion-title>
+    <ion-buttons slot="end">
+        <!-- 
+        <core-context-menu>
+            <core-context-menu-item [priority]="1000"
+                [content]="'core.settings.showdownloadoptions' | translate" (action)="toggleDownload()" iconAction="toggle"
+                [(toggle)]="downloadEnabled"></core-context-menu-item>
+            <core-context-menu-item [priority]="900" [content]="'core.courses.showonlyenrolled' | translate" (action)="toggleEnrolled()"
+                iconAction="toggle" [(toggle)]="showOnlyEnrolled"></core-context-menu-item>
+        </core-context-menu>
+         -->
+        <core-user-menu-button></core-user-menu-button>
+    </ion-buttons>
+</ion-toolbar>

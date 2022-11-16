@@ -5,10 +5,10 @@ import { CqHelper } from '../../services/cq_helper';
 import { CqComponent } from '../../classes/cq_component';
 
 @Component({
-    selector: 'cq_title',
-    templateUrl: 'cq_title.html'
+    selector: 'cq_header',
+    templateUrl: 'cq_header.html'
 })
-export class CqTitleComponent extends CqComponent implements OnInit, OnChanges, OnDestroy {
+export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges, OnDestroy {
     @Input() title: string = "";
     @Input() displayMenu: boolean = false;
     @Input() displayNotification: boolean = false;

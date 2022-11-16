@@ -2,12 +2,13 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-
 import { CoreSharedModule } from '@/core/shared.module';
-import { CqMyCourses } from './cq_my_courses';
 import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
+import { CqComponentsModule } from '../components/cq_components.module';
 import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
+
+import { CqMyCourses } from './cq_my_courses';
 
 const routes: Routes = [
     {
@@ -28,6 +29,7 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         CoreSharedModule,
         CoreMainMenuComponentsModule,
+        CqComponentsModule,
     ],
     declarations: [
         CqMyCourses,

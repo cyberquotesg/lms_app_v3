@@ -33,9 +33,16 @@ export class CqDashboard extends CqPage implements OnInit
         myCoursesList: 0,
     };
 
+    userFullName: string = '';
+
     constructor(renderer: Renderer2, CH: CqHelper)
     {
         super(renderer, CH);
+
+        let userId = this.CH.getUserId();
+        this.CH.getUser().getUserFullNameWithDefault(userId).then((userFullName) => {
+            this.userFullName = userFullName;
+        });
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }

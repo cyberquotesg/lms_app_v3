@@ -8,12 +8,12 @@ export class CqDashboardMenuService implements CoreMainMenuHandler
     static readonly PAGE_NAME = 'CqDashboard';
 
     name = 'CqDashboardMenuHandler';
-    priority = 2000;
+    priority = 2300;
 
     getDisplayData(): CoreMainMenuHandlerData
     {
         return {
-            icon: 'star',
+            icon: 'home',
             title: 'cq_dashboard',
             page: 'CqDashboard',
             class: 'cq_dashboard'

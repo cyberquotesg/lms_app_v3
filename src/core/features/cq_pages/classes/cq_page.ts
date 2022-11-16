@@ -170,15 +170,13 @@ export class CqPage extends CqGeneral
     /* execute job of a page that has been defined
      * 
      * jobName is a job this executer related to, or the function name
-     * executer can be: no, custom, raw, helper
-     * api name is api name or function name that is stored in server
-     * data is data to be sent to server
+     * params is params to be sent to server
      * moreloader is object for loading more contents
      * refresher is object for refreshing the page
      * callback is additional function
      * finalCallback is additional function that must be set from pageLoad, pageForceReferesh, or pageSoftForceReferesh function
     */
-    pageJobExecuter(jobName: string, executer: string, apiName: string, data: any, callback: any, moreloader?: any, refresher?: any, finalCallback?: any): void
+    pageJobExecuter(jobName: string, params: any, callback: any, moreloader?: any, refresher?: any, finalCallback?: any): void
     {
         // if this is first load and a param value exist, then use it, don't call job
         if (!this.pageStatus && typeof this.pageParams[jobName] != 'undefined')
@@ -191,28 +189,14 @@ export class CqPage extends CqGeneral
             return;
         }
 
-        let promise;
-        if (executer == 'no') promise = this.CH.callNoApi(apiName, data);
-        else if (executer == 'moodle') promise = this.CH.callMoodleApi(apiName, data);
-        else if (executer == 'custom') promise = this.CH.callCustomApi(apiName, data);
-        else if (executer == 'raw') promise = this.CH.callRawApi(apiName, data);
-        else promise = this.CH.callDirectApi(executer, apiName, data);
-
-        if (!promise)
-        {
-            this.CH.log('the executer ' + executer + ' is not recognized');
-            return;
-        }
-
-        promise
+        this.CH.callApi(params)
         .then((response) => {
             this.CH.setPageJobNumbers(this.pageJob, jobName, 1);
             this.CH.log('success to run api', jobName);
             this.CH.log('type of response', typeof response);
-            let callbackData = executer == 'custom' && typeof response == 'string' ? JSON.parse(response) : response;
 
-            if (callbackData && callbackData.exception) throw (callbackData);
-            else callback(callbackData);
+            if (response && response.exception) throw (response);
+            else callback(response);
         })
         .catch((e) => {
             this.CH.setPageJobNumbers(this.pageJob, jobName, -1);

@@ -592,6 +592,7 @@ export class CqHelper
      * the format of parameters follows moodle's way
      * executer: moodle
     */
+    /* *a/
     callMoodleApi(apiName: string, params?: any): Promise<any>
     {
     	let url = this.config().siteurl + '/webservice/rest/server.php?moodlewsrestformat=json';
@@ -607,10 +608,12 @@ export class CqHelper
 
     	return this.http.post(url, data).toPromise();
     }
+    /* */
     /* call custom api that is stored within external.php file, and served using moodle's way
      * the format of parameters doesn't follow moodle's way
      * executer: custom
     */
+    /* *a/
     callCustomApi(apiName: string, params?: any): Promise<any>
     {
     	let url = this.config().siteurl + '/webservice/rest/server.php?moodlewsrestformat=json';
@@ -630,9 +633,11 @@ export class CqHelper
 
     	return this.http.post(url, data).toPromise();
     }
+    /* */
     /* call custom api that is stored within external.php file, but accessed directly, no moodle's way is used
      * executer: raw
     */
+    /* *a/
     callRawApi(functionName: string, data?: any): Promise<any> | null
     {
     	let url = this.config().siteurl + '/local/classroom_training/api.php?function=' + functionName;
@@ -655,10 +660,12 @@ export class CqHelper
 		
     	return this.http.post(url, data, {headers, responseType: 'text'}).toPromise();
     }
+    /* */
     /* call api that is stored library file, in direct manner
      * executer: ct_lib, CqHelper, CqLib, and etc
      * because this functions calls library directly, it will not add additional user_id in parameter
     */
+    /* *a/
     callDirectApi(executer: string, functionName: string, params?: any, additionalParams?: any): Promise<any> | null
     {
     	let path: string;
@@ -690,6 +697,20 @@ export class CqHelper
     	}
 		
     	return this.http.post(url, data, {headers, responseType: 'text'}).toPromise();
+    }
+    /* */
+    callApi(params: any): Promise<any>
+    {
+    	const url = this.config().siteurl + '/cq_lib/call.php';
+		const headers = new HttpHeaders().set('Content-Type', 'text/plain; charset=utf-8');
+
+    	// make sure wstoken is included at the end of sent data
+    	if (!params.wstoken && this.getSite() && this.getWsToken())
+    	{
+	    	params.wstoken = this.getWsToken();
+    	}
+		
+    	return this.http.post(url, params, {headers, responseType: 'text'}).toPromise();
     }
 
     translateTime(unixtimestamp: number): any

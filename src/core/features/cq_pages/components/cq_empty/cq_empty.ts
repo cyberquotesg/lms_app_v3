@@ -9,9 +9,9 @@ import { CqComponent } from '../../classes/cq_component';
     templateUrl: 'cq_empty.html'
 })
 export class CqEmptyComponent extends CqComponent implements OnInit, OnChanges {
-    @Input() empty: boolean;
+    @Input() empty: boolean = false;
     @Output() onChange: EventEmitter<any>;
-    
+
     constructor(CH: CqHelper)
     {
         super(CH);

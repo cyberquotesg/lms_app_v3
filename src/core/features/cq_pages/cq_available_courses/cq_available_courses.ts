@@ -48,7 +48,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
     {
         const params: any = {
             class: 'CqLib',
-            function: 'get_course_types',
+            function: 'get_filter_multiple',
+            page: 'my_courses_list',
         };
 
         this.pageJobExecuter(jobName, params, (data) => {

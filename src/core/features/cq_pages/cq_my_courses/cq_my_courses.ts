@@ -75,11 +75,13 @@ export class CqMyCourses extends CqPage implements OnInit
             else if (modeData.mode == 'loadingmore') this.pageData.courses = this.pageData.courses.concat(result);
             else if (modeData.mode == 'refreshing') this.pageData.courses = result;
             // this.pageData.coursesFiltered = this.filter.getFilteredData(this.pageData.courses);
+            this.pageData.coursesFiltered = this.pageData.courses;
         }, moreloader, refresher, finalCallback);
     }
 
     onFilterChange(): void
     {
         // this.pageData.coursesFiltered = this.filter.getFilteredData(this.pageData.courses);
+        this.pageData.coursesFiltered = this.pageData.courses;
     }
 }

@@ -14,7 +14,7 @@ $line_color: $light_grey;
 $button_drawer_offset: 25px;
 $button_menu_left: 70px;
 $button_menu_height: 48px;
-$component_spacing: 14px;
+$component_spacing: 24px;
 
 $header_height: 50px;
 $footer_height: 50px;
@@ -344,23 +344,94 @@ body
 		border-radius: 16px;
 		background: $component_background;
 		border: 0px;
-		margin: 24px 20px 24px 24px;
-		padding: 18px 24px;
+		margin: $component_spacing;
+		padding: $component_spacing;
 
 		&:not(.no-shadow)
 		{
 			box-shadow: $neumorphism_shadow;
 		}
 
-		ion-card-title
+		.card-image
 		{
-			font-weight: 900;
+			position: relative;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 150px;
+			background: #bbb;
+			margin: #{$component_spacing * -1} #{$component_spacing * -1} 0px;
+
+			.card-image-frame
+			{
+				background-size: cover;
+				background-position: center center;
+				width: 100%;
+				height: 100%;
+			}
+			.card-image-letter
+			{
+				font-size: 40px;
+				color: white;
+			}
+			.card-image-tags
+			{
+				position: absolute;
+			    left: 4px;
+			    top: 4px;
+			    right: 4px;
+			    bottom: 4px;
+			    overflow: hidden;
+			    text-align: right;
+			}
+		}
+		ion-card-header
+		{
+			padding-left: 0px !important;
+			padding-right: 0px !important;
+			padding-bottom: 0px !important;
+
+			ion-card-title
+			{
+				font-weight: 900;
+			}
 		}
 		ion-card-content
 		{
 			padding: 0px !important;
 		}
 	}
+
+    // for tile card
+    .tile-wrapper
+    {
+    	padding: $component_spacing;
+
+	    .tile-card
+	    {
+	    	display: flex;
+	    	flex-wrap: wrap;
+	    	margin: $component_spacing / -2;
+
+	    	.tc-item
+	    	{
+	    		flex-basis: 170px;
+	    		flex-grow: 1;
+	    		padding: $component_spacing / 2;
+
+	    		ion-card
+	    		{
+	    			height: 100%;
+	    			margin: 0px !important;
+	    		}
+
+		    	&.fake
+		    	{
+		    		padding: 0px !important;
+		    	}
+	    	}
+	    }
+    }
 
 	// remove shadows
 	.header-md::after,
@@ -893,16 +964,9 @@ body
 	}
 	.dashboard-content
 	{
-		margin-left: -16px;
-		margin-right: -16px;
-
 		.item
 		{
 			position: relative;
-			padding-top: 12px;
-			padding-bottom: 12px;
-			padding-left: 16px;
-			padding-right: 16px;
 			border-radius: 7px;
 			transition: all ease 0.2s;
 
@@ -917,7 +981,8 @@ body
 			}
 			+ .item
 			{
-				margin-top: 23px;
+				padding-top: 4px;
+				margin-top: 31px;
 
 				&::before
 				{
@@ -925,7 +990,7 @@ body
 					position: absolute;
 					left: 0px;
 					width: 100%;
-					top: -11px;
+					top: -15px;
 					border-top: 1px solid $line_color;
 				}
 			}
@@ -1424,8 +1489,8 @@ body
 		    color: white;
 	    	background: var(--headerBackgroundColor, $cq_purple_dark);
 		    border-radius: 7px;
-		    padding: 3px 8px 4px;
-	    	margin: 3px;
+		    padding: 4px 8px 4px;
+	    	margin: 4px;
 	    	line-height: 18px;
 
 	    	@include elevation2;
@@ -1495,29 +1560,6 @@ body
 	    }
     }
 
-	.card-image
-	{
-		position: relative;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 150px;
-		background: #bbb;
-
-		.card-image-frame
-		{
-			background-size: cover;
-			background-position: center center;
-			width: 100%;
-			height: 100%;
-		}
-		.card-image-letter
-		{
-			font-size: 40px;
-			color: white;
-		}
-	}
-
     $icon_width: 30px;
 	.card-item
 	{
@@ -1546,31 +1588,6 @@ body
 			margin-top: 7px;
 		}
 	}
-
-    // for tile card
-    .tile-card
-    {
-    	display: flex;
-    	flex-wrap: wrap;
-    	margin: $component_spacing / -2;
-
-    	.tc-item
-    	{
-    		flex-basis: 170px;
-    		flex-grow: 1;
-
-    		.card
-    		{
-    			width: calc(100% - #{$component_spacing});
-    			height: calc(100% - #{$component_spacing});
-    			margin: #{$component_spacing / 2} !important;
-    		}
-    	}
-
-    	&.fake
-    	{
-    	}
-    }
 
     .sessions
     {

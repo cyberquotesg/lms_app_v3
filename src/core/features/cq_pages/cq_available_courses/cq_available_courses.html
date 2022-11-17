@@ -9,11 +9,9 @@
 
     <core-loading [hideUntil]="pageStatus">
 
-        <ion-card>
-            <ion-card-content>
-                available courses
-            </ion-card-content>
-        </ion-card>
+        <!-- <cq-filter [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange()"></cq-filter> -->
+        <cq_tile [items]="pageData.coursesFiltered" (onSelectItem)="openCourse($event)"></cq_tile>
+        <core-infinite-loading *ngIf="isAvailable(pageData.coursesFiltered)" [enabled]="!reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
 
     </core-loading>
 </ion-content>

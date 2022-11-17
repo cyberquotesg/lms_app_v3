@@ -86,6 +86,6 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     }
     goToNotificationsList(): void
     {
-        this.onGoToNotificationsList.emit();
+        // this.onGoToNotificationsList.emit();
     }
 }

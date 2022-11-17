@@ -2,10 +2,6 @@
 <div *ngIf="displayMenu" class="drawer-button normal" (click)="toggleDrawer()">
     <ion-icon name="menu"></ion-icon>
 </div>
-<div *ngIf="displayNotification" class="drawer-button notifications" (click)="goToNotificationsList()">
-    <ion-icon name="notifications"></ion-icon>
-    <ion-badge *ngIf="isAvailable(notificationCount)" item-end="" class="badge background-grey">{{ notificationCount }}</ion-badge>
-</div>
  -->
 
 <ion-toolbar hideBackButton>
@@ -25,6 +21,10 @@
                 iconAction="toggle" [(toggle)]="showOnlyEnrolled"></core-context-menu-item>
         </core-context-menu>
          -->
+        <div *ngIf="displayNotification" class="drawer-button notifications" (click)="goToNotificationsList()">
+            <ion-icon name="notifications"></ion-icon>
+            <ion-badge *ngIf="isAvailable(notificationCount)" item-end="" class="badge background-grey">{{ notificationCount }}</ion-badge>
+        </div>
         <core-user-menu-button></core-user-menu-button>
     </ion-buttons>
 </ion-toolbar>

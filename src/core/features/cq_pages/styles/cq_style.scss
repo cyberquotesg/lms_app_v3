@@ -79,19 +79,19 @@ $bar_background: $cq_purple_dark;
 
 @font-face {
   font-family: "mainfont";
-  src: url("#{$font-path}/ubuntu/Ubuntu-Regular.ttf");
+  src: url("../../../../assets/fonts/ubuntu/Ubuntu-Regular.ttf");
 }
 @font-face {
   font-family: "mainfont light";
-  src: url("#{$font-path}/ubuntu/Ubuntu-Light.ttf");
+  src: url("../../../../assets/fonts/ubuntu/Ubuntu-Light.ttf");
 }
 @font-face {
   font-family: "secondfont";
-  src: url("#{$font-path}/ptsans/PTSans-Regular.ttf");
+  src: url("../../../../assets/fonts/ptsans/PTSans-Regular.ttf");
 }
 @font-face {
   font-family: "Roboto";
-  src: url("#{$font-path}/ro-bo-to/Roboto-Regular.ttf");
+  src: url("../../../../assets/fonts/ro-bo-to/Roboto-Regular.ttf");
 }
 
 body
@@ -698,6 +698,15 @@ body
 	// this is used by more than one component
 	.drawer-button
 	{
+	    display: flex;
+	    justify-content: center;
+	    align-items: center;
+		width: 44px;
+		height: 44px;
+		font-size: 25px;
+	    color: white;
+
+		/* *a/
 	    position: absolute;
 	    left: $button_drawer_offset;
 	    right: auto;
@@ -746,6 +755,7 @@ body
                 border-radius: 7px;
 	        }
 	    }
+		/* */
 	}
 	#drawer-menu
 	{
@@ -1614,6 +1624,7 @@ body
 	// ============================================================================================= not logged in pages
 	&.logged-in
 	{
+		/* *a/
 		.drawer-button
 		{
 			&.normal,
@@ -1622,6 +1633,7 @@ body
 				display: block;
 			}
 		}
+		/* */
 		.content
 		{
 			.fixed-content,

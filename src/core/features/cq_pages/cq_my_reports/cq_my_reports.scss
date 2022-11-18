@@ -1,0 +1,24 @@
+.mhc-wrapper
+{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: -15px;
+    margin-bottom: -15px;
+}
+.mhc-wrapper .mhc-item
+{
+    width: 120px;
+    text-align: center;
+    margin: 15px;
+}
+.mhc-wrapper .mhc-item .mhc-value
+{
+    font-size: 1.5em;
+    color: var(--headerBackgroundColor);
+    margin-bottom: 5px;
+}
+.mhc-wrapper .mhc-item .mhc-label
+{
+    font-weight: 700;
+}

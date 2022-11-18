@@ -18,6 +18,9 @@ import { CqMyCoursesViewHandler } from './cq_my_courses/cq_my_courses.view';
 import { CqDashboardMenuHandler, CqDashboardMenuService } from './cq_dashboard/cq_dashboard.menu';
 import { CqDashboardViewHandler } from './cq_dashboard/cq_dashboard.view';
 
+import { CqMyReportsMenuHandler, CqMyReportsMenuService } from './cq_my_reports/cq_my_reports.menu';
+import { CqMyReportsViewHandler } from './cq_my_reports/cq_my_reports.view';
+
 const routes: Routes = [
     {
         path: '',
@@ -35,6 +38,10 @@ const routes: Routes = [
     {
         path: CqDashboardMenuService.PAGE_NAME,
         loadChildren: () => import('./cq_dashboard/cq_dashboard.lazy_module').then(m => m.CqDashboardLazyModule),
+    },
+    {
+        path: CqMyReportsMenuService.PAGE_NAME,
+        loadChildren: () => import('./cq_my_reports/cq_my_reports.lazy_module').then(m => m.CqMyReportsLazyModule),
     },
 ];
 @NgModule({
@@ -58,6 +65,9 @@ const routes: Routes = [
                 
                 CoreMainMenuDelegate.registerHandler(CqDashboardMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqDashboardViewHandler.instance);
+                
+                CoreMainMenuDelegate.registerHandler(CqMyReportsMenuHandler.instance);
+                CoreContentLinksDelegate.registerHandler(CqMyReportsViewHandler.instance);
             },
         },
     ],

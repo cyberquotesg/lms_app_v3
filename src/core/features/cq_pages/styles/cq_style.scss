@@ -24,7 +24,7 @@ $neumorphism_shadow: 6px 6px 12px #d5d5d5, -4px -4px 12px #ffffff;
 $neumorphism_shadow_inset: inset 6px 6px 12px #d5d5d5, inset -4px -4px 12px #ffffff;
 $normal_shadow: 0px 0px 25px -2px #d5d5d5;
 $normal_shadow_inset: inset 0px 0px 25px -2px #d5d5d5;
-$base_background: #fafafa url("../../../../assets/img/pattern/geometry.png");
+$base_background: #fafafa url("../images/pattern/geometry.png");
 $component_background: #ffffff;
 $gradient_background: linear-gradient(270deg, #7d2a81 20%, #4f2a81 80%);
 $bar_background: $gradient_background;
@@ -337,7 +337,7 @@ body
 		svg
 		{
 			display: none;
-			
+
 			polygon
 			{
 				fill: $bar_background !important;

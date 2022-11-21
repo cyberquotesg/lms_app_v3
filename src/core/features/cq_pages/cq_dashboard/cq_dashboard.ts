@@ -64,6 +64,7 @@ export class CqDashboard extends CqPage implements OnInit
         const params: any = {
             class: 'CqLib',
             function: 'get_course_types',
+            include_non_cpd_hours: true,
         };
         
         this.pageJobExecuter(jobName, params, (data) => {

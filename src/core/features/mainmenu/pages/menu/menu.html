@@ -8,7 +8,7 @@
         <ion-tab-button *ngFor="let tab of tabs" (keydown)="tabAction.keyDown($event)" (keyup)="tabAction.keyUp(tab.page, $event)"
             [hidden]="!loaded && tab.hide" [tab]="tab.page" [disabled]="tab.hide" layout="label-hide" class="{{tab.class}}"
             [selected]="tab.page === selectedTab" [tabindex]="selectedTab == tab.page ? 0 : -1" [attr.aria-controls]="tab.id">
-            <ion-icon class="core-tab-icon" [name]="tab.icon" aria-hidden="true"></ion-icon>
+            <ion-icon class="core-tab-icon" name="{{tab.icon}}{{ selectedTab == tab.page ? '' : '-outline' }}" aria-hidden="true"></ion-icon>
             <ion-label aria-hidden="true">{{ tab.title | translate }}</ion-label>
             <ion-badge class="core-tab-badge" *ngIf="tab.badge" aria-hidden="true">{{ tab.badge }}</ion-badge>
             <span class="sr-only">{{ tab.title | translate }}</span>

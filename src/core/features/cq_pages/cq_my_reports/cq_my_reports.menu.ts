@@ -13,7 +13,7 @@ export class CqMyReportsMenuService implements CoreMainMenuHandler
     getDisplayData(): CoreMainMenuHandlerData
     {
         return {
-            icon: 'stats-chart',
+            icon: 'bar-chart',
             title: 'cq_my_reports',
             page: 'CqMyReports',
             class: 'cq_my_reports'

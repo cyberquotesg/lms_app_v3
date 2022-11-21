@@ -20,12 +20,14 @@ $header_height: 50px;
 $footer_height: 50px;
 $tab_height: 40px;
 
-$neumorphism_shadow: 6px 6px 12px #d0d0d0, -4px -4px 12px #ffffff;
-$neumorphism_shadow_inset: inset 6px 6px 12px #d0d0d0, inset -4px -4px 12px #ffffff;
-$base_background: #f5f5f5; // url("#{$img-path}/pattern/geometry.png");
-$component_background: #f5f5f5;
+$neumorphism_shadow: 6px 6px 12px #d5d5d5, -4px -4px 12px #ffffff;
+$neumorphism_shadow_inset: inset 6px 6px 12px #d5d5d5, inset -4px -4px 12px #ffffff;
+$normal_shadow: 0px 0px 25px -2px #d5d5d5;
+$normal_shadow_inset: inset 0px 0px 25px -2px #d5d5d5;
+$base_background: #fafafa url("../../../../assets/img/pattern/geometry.png");
+$component_background: #ffffff;
 $gradient_background: linear-gradient(270deg, #7d2a81 20%, #4f2a81 80%);
-$bar_background: $cq_purple_dark;
+$bar_background: $gradient_background;
 
 @mixin padding_margin
 {
@@ -252,7 +254,7 @@ body
 	    	    	bottom: 0px;
 	    			background: $gradient_background;
 	    	    	z-index: 1 !important;
-					box-shadow: $neumorphism_shadow;
+					box-shadow: $normal_shadow;
 	    	    }
 	    	    > *
 	    	    {
@@ -291,9 +293,9 @@ body
 	ion-tab-bar
 	{
 		// warning! masih belum pake warna organisasi
-		background: $bar_background !important;
+		background: $gradient_background !important;
 		border: 0px;
-		box-shadow: $neumorphism_shadow;
+		box-shadow: $normal_shadow;
 		justify-content: space-evenly;
 		contain: none;
 
@@ -302,8 +304,9 @@ body
 			flex-grow: 0;
     		flex-basis: 48px;
     		color: white;
-    		background: $bar_background;
+    		background: transparent;
 
+    		/*
     		&.tab-selected
     		{
     			color: white;
@@ -320,7 +323,7 @@ body
 				position: relative;
 				bottom: 12px;
 				border: 10px solid $bar_background;
-				box-shadow: $neumorphism_shadow;
+				box-shadow: $normal_shadow;
 
 	    		&.tab-selected
 	    		{
@@ -329,9 +332,12 @@ body
 					border: 10px solid $bar_background;
 	    		}
 			}
+			*/
 		}
 		svg
 		{
+			display: none;
+			
 			polygon
 			{
 				fill: $bar_background !important;
@@ -349,7 +355,7 @@ body
 
 		&:not(.no-shadow)
 		{
-			box-shadow: $neumorphism_shadow;
+			box-shadow: $normal_shadow;
 		}
 
 		.card-image
@@ -1002,7 +1008,7 @@ body
 
 			&:active
 			{
-				box-shadow: $neumorphism_shadow_inset;
+				box-shadow: $normal_shadow_inset;
 			}
 		}
 	}

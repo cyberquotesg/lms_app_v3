@@ -8,7 +8,7 @@ export class CqAvailableCoursesMenuService implements CoreMainMenuHandler
     static readonly PAGE_NAME = 'CqAvailableCourses';
 
     name = 'CqAvailableCoursesMenuHandler';
-    priority = 2500;
+    priority = 2400;
 
     getDisplayData(): CoreMainMenuHandlerData
     {

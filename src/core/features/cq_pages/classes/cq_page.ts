@@ -30,6 +30,7 @@ export class CqPage extends CqGeneral
     pageData: any = {};
     pageJob: any = {};
     pageJobLoadMore: any = {};
+    pageIsLoading = false;
 
     page = 1;
     length = 12;
@@ -97,6 +98,8 @@ export class CqPage extends CqGeneral
 
         if (firstload || loadingmore || refreshing || this.pageForce || this.pageSoftForce)
         {
+            this.pageIsLoading = true;
+
             // set page data to default
             if (!refreshing && !isDependantCall && !loadingmore && !this.pageSoftForce)
             {
@@ -219,6 +222,8 @@ export class CqPage extends CqGeneral
             this.CH.log('page status', status);
             this.CH.log('page params', this.pageParams);
             this.CH.log('final data', this.pageData);
+
+            this.pageIsLoading = false;
             this.pageStatus = true;
             this.pageForce = false;
             this.pageSoftForce = false;

@@ -14,18 +14,22 @@ $line_color: $light_grey;
 $button_drawer_offset: 25px;
 $button_menu_left: 70px;
 $button_menu_height: 48px;
-$component_spacing: 24px;
+$component_spacing: 20px;
 
 $header_height: 50px;
 $footer_height: 50px;
 $tab_height: 40px;
 
-$neumorphism_shadow: 6px 6px 12px #d5d5d5, -4px -4px 12px #ffffff;
-$neumorphism_shadow_inset: inset 6px 6px 12px #d5d5d5, inset -4px -4px 12px #ffffff;
-$normal_shadow: 0px 0px 25px -2px #d5d5d5;
-$normal_shadow_inset: inset 0px 0px 25px -2px #d5d5d5;
-$base_background: #fafafa url("../images/pattern/geometry.png");
-$component_background: #ffffff;
+$neumorphism_shadow: 6px 6px 12px #d1d1d1, -4px -4px 12px #ffffff;
+$neumorphism_shadow_inset: inset 6px 6px 12px #d1d1d1, inset -4px -4px 12px #ffffff;
+$normal_shadow: 0px 0px 25px -2px #d1d1d1;
+$normal_shadow_inset: inset 0px 0px 25px -2px #d1d1d1;
+$base_background_no_image: #f6f6f6;
+$base_background: #{$base_background_no_image} url("../images/pattern/geometry.png");
+$component_background: #f6f6f6;
+
+// var(--headerBackgroundColor, $cq_purple_dark)
+// warning! belum pake warna organisasi
 $gradient_background: linear-gradient(270deg, #7d2a81 20%, #4f2a81 80%);
 $bar_background: $gradient_background;
 
@@ -254,7 +258,7 @@ body
 	    	    	bottom: 0px;
 	    			background: $gradient_background;
 	    	    	z-index: 1 !important;
-					box-shadow: $normal_shadow;
+					box-shadow: $neumorphism_shadow;
 	    	    }
 	    	    > *
 	    	    {
@@ -267,7 +271,7 @@ body
 		{
 			position: relative;
 		    z-index: 9;
-		    background: $base_background;
+		    background: $base_background_no_image;
 
 		    core-loading
 		    {
@@ -279,7 +283,7 @@ body
 	    	    	top: 0px;
 	    	    	right: 0px;
 	    	    	bottom: 0px;
-	    			background: $base_background;
+	    			background: $base_background_no_image;
 	    	    	z-index: 1 !important;
 	    	    }
 	    	    > *
@@ -295,7 +299,7 @@ body
 		// warning! masih belum pake warna organisasi
 		background: $gradient_background !important;
 		border: 0px;
-		box-shadow: $normal_shadow;
+		box-shadow: $neumorphism_shadow;
 		justify-content: space-evenly;
 		contain: none;
 
@@ -305,34 +309,6 @@ body
     		flex-basis: 48px;
     		color: white;
     		background: transparent;
-
-    		/*
-    		&.tab-selected
-    		{
-    			color: white;
-    			background: $bar_background !important;
-    		}
-
-			&:nth-child(3)
-			{
-				background: $gradient_background;
-				border-radius: 50%;
-				color: white;
-				flex-basis: 70px;
-				height: 70px;
-				position: relative;
-				bottom: 12px;
-				border: 10px solid $bar_background;
-				box-shadow: $normal_shadow;
-
-	    		&.tab-selected
-	    		{
-	    			background: $cq_purple_dark !important;
-    				color: white;
-					border: 10px solid $bar_background;
-	    		}
-			}
-			*/
 		}
 		svg
 		{
@@ -355,7 +331,7 @@ body
 
 		&:not(.no-shadow)
 		{
-			box-shadow: $normal_shadow;
+			box-shadow: $neumorphism_shadow;
 		}
 
 		.card-image
@@ -406,6 +382,11 @@ body
 		{
 			padding: 0px !important;
 		}
+	}
+
+	ion-slides
+	{
+		background: $base_background_no_image;
 	}
 
     // for tile card
@@ -704,21 +685,29 @@ body
 			text-decoration: none !important;
 			line-height: 1.5em;
 			white-space: normal;
+			transition: all ease 0.2s;
 
-			background: var(--buttonColor, $cq_purple_dark);
-			color: var(--buttonTextColor, white);
-			border-color: var(--buttonBorderColor, $cq_purple_dark);
+			// background: var(--buttonColor, $cq_purple_dark);
+			// color: var(--buttonTextColor, white);
+			// border-color: var(--buttonBorderColor, $cq_purple_dark);
+
+			background: $component_background;
+			box-shadow: $neumorphism_shadow;
 
 			&:hover
 			{
-				background: var(--buttonHoverColor, $cq_purple_dark);
-				color: var(--buttonTextColor, white);
-				border-color: var(--buttonHoverBorderColor, $cq_purple_dark);
+				// background: var(--buttonHoverColor, $cq_purple_dark);
+				// color: var(--buttonTextColor, white);
+				// border-color: var(--buttonHoverBorderColor, $cq_purple_dark);
 			}
 			&.button-small
 			{
 				padding: 4px 9px !important;
 	    		border-radius: 13px !important;
+			}
+			&.active
+			{
+				box-shadow: $neumorphism_shadow_inset;
 			}
 		}
 
@@ -1008,7 +997,7 @@ body
 
 			&:active
 			{
-				box-shadow: $normal_shadow_inset;
+				box-shadow: $neumorphism_shadow_inset;
 			}
 		}
 	}
@@ -1362,17 +1351,19 @@ body
     .dot
     {
     	position: relative;
-        height: 130px;
-        width: 130px;
-        background: var(--headerBackgroundColor, $cq_purple_dark);
+        height: 224px;
+        width: 224px;
+        background: $gradient_background;
         border-radius: 50%;
         display: inline-block;
         font-size: 16px;
-        margin: 5px 0px 0px;
+        margin: 0px;
         font-weight: 700;
         text-align: center;
         color: white;
         overflow: hidden;
+        border: 20px solid $base_background_no_image;
+        box-shadow: $neumorphism_shadow;
 
         /* masking */
         &:after
@@ -1400,7 +1391,7 @@ body
 			display: flex;
 			justify-content: center;
 			height: 100%;
-			padding: 0px 15px;
+			padding: 0px 16%;
 
 			.part
 			{

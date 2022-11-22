@@ -174,6 +174,10 @@ export class CqHelper
     {
         return this.capitalize(text.replace(/_/g, ' '));
     }
+    camelToHumanText(text: string): string
+    {
+    	return this.toHumanText(text.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`));
+    }
 	ellipsisAfter(text: string, count: number): string
 	{
 		let lastCount = 0;

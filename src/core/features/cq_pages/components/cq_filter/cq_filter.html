@@ -1,0 +1,48 @@
+<div class="mb-15">
+    <ion-card class="pb-0">
+        <ion-card-content class="pt-0 pb-0">
+            <div [class]="'filter ' + (hasFilterMultiple ? 'has-filter-multiple' : '')">
+
+                <div class="filter-text">
+                    <ion-input type="text" placeholder="{{ placeholder }}" [ngModel]="textFilter" (ngModelChange)="filterTextChange($event)" style="display: inline-block;"></ion-input>
+
+                    <div *ngIf="hasFilterMultiple" [class]="'filter-multiple-button ' + (openFilterMultiple ? 'opened' : '')" (click)="toggleOpenFilterMultiple()">
+                        <ion-icon name="arrow-dropdown"></ion-icon>
+                    </div>
+                </div>
+
+                <div *ngIf="hasFilterMultiple && openFilterMultiple">
+                    <div *ngFor="let filter of filterMultipleFinal" class="filter-multiple-area">
+                        <hr class="checkbox-line" />
+                        <div>
+                            <div class="mt-14 mb-8">{{ toTitle(filter.identifier) }}</div>
+                            <button *ngFor="let option of filter.options" [class]="'button button-small ml-3 mr-3 mt-4 mb-6 ' + (option.selected ? '' : 'inactive')" (click)="filterMultipleChange(filter.identifier, option.value, !option.selected)" data-value="{{option.value}}">{{ option.title }}</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </ion-card-content>
+    </ion-card>
+</div>
+
+<!-- 
+
+<ion-content class="cq-filter-page">
+    <div *ngIf="isAvailable(filterMultipleFinal)">
+        <div *ngFor="let filter of filterMultipleFinal" class="filter-multiple-area">
+            <hr class="checkbox-line" />
+            <div>
+                <div class="mt-14 mb-8">{{ toTitle(filter.identifier) }}</div>
+                <button *ngFor="let option of filter.options" [class]="'button button-small ml-3 mr-3 mt-4 mb-6 ' + (option.selected ? '' : 'inactive')" (click)="filterMultipleChange(filter.identifier, option.value, !option.selected)" data-value="{{option.value}}">{{ option.title }}</button>
+            </div>
+        </div>
+
+        <hr />
+        <span (click)="applyFilter()" class="button button-small" style="width: 100%">Apply Filter</span>
+    </div>
+
+    <cq-empty [empty]="isEmpty(filterMultipleFinal)"></cq-empty>
+</ion-content>
+
+ -->

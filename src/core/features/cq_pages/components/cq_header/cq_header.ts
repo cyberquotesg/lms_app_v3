@@ -12,6 +12,7 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     @Input() title: string = "";
     @Input() displayMenu: boolean = false;
     @Input() displayNotification: boolean = false;
+    @Input() displayProgress: boolean = false;
 
     @Output() onToggleDrawer: EventEmitter<number>;
     @Output() onGoToNotificationsList: EventEmitter<number>;

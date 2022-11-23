@@ -28,7 +28,7 @@ export class CqMyReports extends CqPage implements OnInit
     pageJob: any = {
         filterMultiple: 0,
         getYears: 0,
-        courseTypes: {
+        getCqConfig: {
             value: 0,
             next: {
                 getCoursesReports: 0,
@@ -142,26 +142,53 @@ export class CqMyReports extends CqPage implements OnInit
      * 
      * require page with cqOrganization
     */
-    courseTypes(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
+    getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqCourseLib',
-            function: 'get_course_type_of_user',
+            calls: {
+                courseTypes: {
+                    class: 'CqCourseLib',
+                    function: 'get_course_type_of_user',
+                },
+                cqConfig: {
+                    class: 'CqLib',
+                    function: 'get_cq_config',
+                    name: 'mobile_chart_type,mobile_chart_stacked',
+                },
+            },
+            
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            data = this.CH.toJson(data);
-            let courseTypesArray: any[] = [];
+            let allData = this.CH.toJson(data),
+                callId;
 
-            for (let id in data)
+            for (callId in allData)
             {
-                courseTypesArray.push(data[id]);
-            }
+                let data = allData[callId];
 
-            this.pageData.courseTypes = {
-                object: data,
-                array: courseTypesArray,
-            };
+                if (callId == "courseTypes")
+                {
+                    let courseTypesArray: any[] = [];
+
+                    for (let id in data)
+                    {
+                        courseTypesArray.push(data[id]);
+                    }
+
+                    this.pageData.courseTypes = {
+                        object: data,
+                        array: courseTypesArray,
+                    };
+                }
+                else if (callId == "cqConfig")
+                {
+                    this.pageData.CqConfig = {};
+                    data.forEach((config) => {
+                        this.pageData.CqConfig[config.name] = config.value;
+                    });
+                }
+            }
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -204,33 +231,21 @@ export class CqMyReports extends CqPage implements OnInit
             // compile data for chart
             let chartData: ChartData = {
                 labels: [
-                    /* *a/
-                    'Jan', 'Feb',
-                    'Mar', 'Apr',
-                    'May', 'Jun',
-                    'Jul', 'Aug',
-                    'Sep', 'Oct',
-                    'Nov', 'Dec',
-                    /* */
-
-                    '', 'Feb',
-                    '', 'Apr',
-                    '', 'Jun',
-                    '', 'Aug',
-                    '', 'Oct',
-                    '', 'Dec',
+                    '', 'Feb', '', 'Apr', '', 'Jun',
+                    '', 'Aug', '', 'Oct', '', 'Dec',
                 ],
                 datasets: [],
             };
             let datasets: any[] = [];
 
             var index = 0, courseType, month;
-            for (courseType in data.hours.courseTypes)
+            for (let courseType of this.pageData.courseTypes.array)
             {
-                if (!data.hours.courseTypes[courseType].raw) continue;
+                if (courseType.includetocpdhours != 1) continue;
+                if (!data.hours.courseTypes[courseType.jsIdentifier].raw) continue;
 
                 let dataset: any = {
-                    label: this.CH.camelToHumanText(courseType),
+                    label: courseType.name,
                     fill: false,
                     borderWidth: 2,
                     borderColor: this.CH.getColors(index),
@@ -240,10 +255,10 @@ export class CqMyReports extends CqPage implements OnInit
                 let x = 0, y = 0;
                 // var coordinateData: Coordinate[] = [];
                 var coordinateData: number[] = [];
-                for (month in data.hours.courseTypes[courseType].monthly)
+                for (month in data.hours.courseTypes[courseType.jsIdentifier].monthly)
                 {
                     x++;
-                    y += Number(data.hours.courseTypes[courseType].monthly[month].decimal);
+                    y += Number(data.hours.courseTypes[courseType.jsIdentifier].monthly[month].decimal);
 
                     let coordinate: Coordinate = {
                         x: x,

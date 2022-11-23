@@ -40,7 +40,7 @@
 
                         <ion-card *ngIf="isAvailable(pageData[availableYear].chartData)" class="mb-28">
                             <ion-card-content>
-                                <cq_chart type="line" [stacked]="false" [data]="pageData[availableYear].chartData"></cq_chart>
+                                <cq_chart [type]="pageData.CqConfig.mobile_chart_type" [stacked]="pageData.CqConfig.mobile_chart_stacked" [data]="pageData[availableYear].chartData"></cq_chart>
                             </ion-card-content>
                         </ion-card>
                     </div>
@@ -66,16 +66,19 @@
                         <div *ngIf="isAvailable(pageData[availableYear].perCourseType[courseType.jsIdentifier].courses)">
                             <div class="main-font text-left" class="pl-20 pr-20 pt-28 text-left" style="font-size: 16px;">
                                 {{ courseType.name }}
-                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours > 0">
-                                    {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].hours }}
-                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours == 1">hour</span>
-                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours != 1">hours</span>
-                                </span>
+
+                                {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].hours }}
+                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours == 1">Hour</span>
+                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours != 1">Hours</span>
+
                                 <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes > 0">
                                     {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes }}
-                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes == 1">minute</span>
-                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes != 1">minutes</span>
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes == 1">Minute</span>
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes != 1">Minutes</span>
                                 </span>
+
+                                <small *ngIf="courseType.includetocpdhours != 1" style="display: block;">Excluded from CPD Hours</small>
+
                                 <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
                             </div>
                     
@@ -85,7 +88,7 @@
                                     <div class="card-single-list has-left">
                                         <div class="csl-left">
                                             <!-- warning! masih belum pakai beautiful number -->
-                                            <span class="dot small d-block elevation-1">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
+                                            <span class="dot small d-block elevation-1 {{ course.detailedAttendance != 'accredited' || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
                                         </div>
                                         <div class="csl-center text-left">
                                             <h2 class="mt-4 mb-5">{{course.name || course.coursename}}</h2>
@@ -94,6 +97,7 @@
                                         <div class="cq-tag-wrapper text-left pt-8" style="clear: both;">
                                             <span *ngIf="course.compulsory == 1" class="cq-tag orange">Compulsory</span>
                                             <span class="cq-tag">{{ toHumanText(course.media) }}</span>
+                                            <span class="cq-tag">{{ toHumanText(course.detailedAttendance) }}</span>
                                         </div>
                                     </div>
                                 </ion-card-content>

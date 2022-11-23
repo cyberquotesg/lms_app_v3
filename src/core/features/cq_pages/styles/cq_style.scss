@@ -1377,6 +1377,10 @@ body
         	background-image: linear-gradient(135deg, #fff3, #0000);
         }
 
+        &.plain
+        {
+        	background: #c0c0c0 !important;
+        }
         &.small
         {
             height: 60px;

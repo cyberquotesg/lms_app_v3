@@ -62,9 +62,8 @@ export class CqDashboard extends CqPage implements OnInit
     courseTypes(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqLib',
-            function: 'get_course_types',
-            include_non_cpd_hours: true,
+            class: 'CqCourseLib',
+            function: 'get_course_type_of_user',
         };
         
         this.pageJobExecuter(jobName, params, (data) => {

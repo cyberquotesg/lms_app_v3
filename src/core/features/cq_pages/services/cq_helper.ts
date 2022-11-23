@@ -154,6 +154,15 @@ export class CqHelper
 	    return data.split('|');
 	}
 
+    multipleToSingle(text: string, target: string): string
+    {
+        while (text.indexOf(target + target) > -1)
+        {
+        	text = text.replace(target + target, target);
+        }
+
+        return text;
+    }
 	sanitizeHTML(text: string): string
 	{
 		return text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<[^>]*>/g, '').trim();
@@ -173,6 +182,25 @@ export class CqHelper
     toHumanText(text: string): string
     {
         return this.capitalize(text.replace(/_/g, ' '));
+    }
+
+    toMachineText(text: string, objective: string = "_"): string
+    {
+        let targets = [" ", "/", "\\", ",", ".", "|", "~", "`", "?", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "=", "+", "-", "[", "]", "{", "}", ";", ":", "'", '"', "<", ">"];
+
+        targets.forEach((target) => {
+            text = text.split(target).join(objective);
+        });
+
+        text = this.multipleToSingle(text, objective);
+        text = text.toLowerCase();
+        
+        return text;
+    }
+    toCamelCase(text: string): string
+    {
+    	text = this.toMachineText(text);
+    	return text.split("_").map((t, i) => !i ? t : t[0].toUpperCase() + t.substr(1)).join("");
     }
     camelToHumanText(text: string): string
     {

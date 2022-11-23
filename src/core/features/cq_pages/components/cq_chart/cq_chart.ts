@@ -16,6 +16,7 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
     @ViewChild('cqChart') cqChart: ElementRef;
 
     private chart: Chart;
+    private inited: boolean = false;
 
     constructor(CH: CqHelper)
     {
@@ -28,6 +29,7 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
     ngOnChanges(changes: SimpleChanges): void
     {
         this.implementChanges(changes);
+        if (this.inited) this.generateChart();
     }
 
     ngAfterViewInit(): void
@@ -80,6 +82,11 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
             ],
         };
         /* */
+        this.generateChart();
+    }
+
+    generateChart(): void
+    {
         let options = {
             responsive: true,
             elements: {
@@ -95,6 +102,7 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
                     boxWidth: 20,
                 },
             },
+            scales: {},
         };
         
         if (this.stacked)
@@ -113,5 +121,6 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
             data: this.data,
             options: options,
         });
+        this.inited = true;
     }
 }

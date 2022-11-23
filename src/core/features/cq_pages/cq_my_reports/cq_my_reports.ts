@@ -1,33 +1,29 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
+import { ChartData } from 'chart.js';
 // import { CqFilterComponent } from '../components/cq-filter/cq-filter';
 
 @Component({
     selector: 'cq_my_reports',
     templateUrl: './cq_my_reports.html',
-    styles: ['cq_my_reports.scss'],
+    styles: ['./cq_my_reports.scss'],
 })
 export class CqMyReports extends CqPage implements OnInit
 {
     // @ViewChild(CqFilterComponent) filter: CqFilterComponent;
+    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
     pageParams = {
     };
     pageDefaults: any = {
         filterMultiple: [],
         courseTypes: [],
-        courses: {},
-        coursesFiltered: [],
-        perCourseType: {},
+        currentYear: 0,
         availableYears: [],
-        year: 0,
-        totalCPD: 0,
-        totalCPDInMinutes: 0,
-        totalCPDInHours: 0,
-        customChartData: [],
     };
     pageJob: any = {
         filterMultiple: 0,
@@ -40,8 +36,32 @@ export class CqMyReports extends CqPage implements OnInit
         },
     };
 
-    availableYears: number[] = [];
     year: number = 0;
+
+    yearsSliderOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: true,
+        centeredSlidesBounds: true,
+        breakpoints: {
+            320: {slidesPerView: 4, spaceBetween: 10},
+            400: {slidesPerView: 5, spaceBetween: 10},
+            480: {slidesPerView: 6, spaceBetween: 10},
+            560: {slidesPerView: 7, spaceBetween: 10},
+            640: {slidesPerView: 8, spaceBetween: 10},
+            720: {slidesPerView: 9, spaceBetween: 10},
+            800: {slidesPerView: 10, spaceBetween: 10},
+        },
+    };
+    pageSliderOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: true,
+        centeredSlidesBounds: true,
+        slidesPerView: 1,
+    };
 
     constructor(renderer: Renderer2, CH: CqHelper)
     {
@@ -55,6 +75,27 @@ export class CqMyReports extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+
+    selectYear(year): void
+    {
+        if (this.year != year)
+        {
+            this.year = year;
+            let yearIndex = this.pageData.availableYears.indexOf(this.year);
+            this.pageSlider.slideTo(yearIndex);
+            if (typeof this.pageData[this.year] == "undefined") this.pageSoftForceReferesh();
+        }
+    }
+    pageSliderChange(): void
+    {
+        if (this.pageStatus)
+        {
+            this.pageSlider.getActiveIndex().then((index) => {
+                this.year = this.pageData.availableYears[index];
+                if (typeof this.pageData[this.year] == "undefined") this.pageSoftForceReferesh();
+            });
+        }
+    }
 
     filterMultiple(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -81,8 +122,15 @@ export class CqMyReports extends CqPage implements OnInit
         this.pageJobExecuter(jobName, params, (data) => {
             let yearsData = this.CH.toJson(data);
 
-            this.pageData.year = yearsData.current;
-            this.availableYears = this.pageData.availableYears = yearsData.available;
+            this.pageData.currentYear = yearsData.current;
+            this.pageData.availableYears = yearsData.available;
+
+            // set page slider to the last if this is first call
+            if (!this.pageStatus)
+            {
+                this.yearsSliderOptions.initialSlide = yearsData.available.length - 1;
+                this.pageSliderOptions.initialSlide = yearsData.available.length - 1;
+            }
         }, moreloader, refresher, finalCallback);
     }
 
@@ -97,15 +145,19 @@ export class CqMyReports extends CqPage implements OnInit
     courseTypes(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqLib',
-            function: 'get_course_types',
-            include_non_cpd_hours: true,
+            class: 'CqCourseLib',
+            function: 'get_course_type_of_user',
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
             data = this.CH.toJson(data);
             let courseTypesArray: any[] = [];
-            for (let id in data) courseTypesArray.push(data[id]);
+
+            for (let id in data)
+            {
+                courseTypesArray.push(data[id]);
+            }
+
             this.pageData.courseTypes = {
                 object: data,
                 array: courseTypesArray,
@@ -121,34 +173,106 @@ export class CqMyReports extends CqPage implements OnInit
             class: 'CqCourseLib',
             function: 'get_courses_reports',
             year: this.year,
+            include_monthly_data: true,
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            data = this.CH.toJson(data);
-            this.pageData.perCourseType = data.hours.courseTypes;
-            this.pageData.courses = data.list;
-            this.pageData.totalCPD = data.hours.decimal,
-            this.pageData.totalCPDInHours = this.CH.beautifulNumber(data.hours.hours),
-            this.pageData.totalCPDInMinutes = this.CH.beautifulNumber(data.hours.minutes),
-            this.pageData.customChartData = this.CH.getCustomChartData(this.pageData.perCourseType);
+            type Coordinate = {
+                x: number,
+                y: number,
+            };
 
-            // this.pageData.coursesFiltered = this.filter.getFilteredData(this.pageData.courses);
-            this.pageData.coursesFiltered = this.pageData.courses;
+            if (typeof this.pageData[this.year] == "undefined") this.pageData[this.year] = {};
+
+            data = this.CH.toJson(data);
+            this.pageData[this.year].perCourseType = data.hours.courseTypes;
+            this.pageData[this.year].courses = data.list;
+            this.pageData[this.year].totalCPD = data.hours.decimal,
+            this.pageData[this.year].totalCPDInHours = this.CH.beautifulNumber(data.hours.hours),
+            this.pageData[this.year].totalCPDInMinutes = this.CH.beautifulNumber(data.hours.minutes),
+
+            // this.pageData[this.year].coursesFiltered = this.filter.getFilteredData(this.pageData[this.year].courses);
+            this.pageData[this.year].coursesFiltered = this.pageData[this.year].courses;
+
+            for (let courseType of this.pageData.courseTypes.array)
+            {
+                this.pageData[this.year].perCourseType[courseType.jsIdentifier].courses = this.pageData[this.year].coursesFiltered.filter((course) => {
+                    return (course.type && course.type == courseType.id) ||(course.courseType && course.courseType == courseType.id);
+                });
+            }
+
+            // compile data for chart
+            let chartData: ChartData = {
+                labels: [
+                    /* *a/
+                    'Jan', 'Feb',
+                    'Mar', 'Apr',
+                    'May', 'Jun',
+                    'Jul', 'Aug',
+                    'Sep', 'Oct',
+                    'Nov', 'Dec',
+                    /* */
+
+                    '', 'Feb',
+                    '', 'Apr',
+                    '', 'Jun',
+                    '', 'Aug',
+                    '', 'Oct',
+                    '', 'Dec',
+                ],
+                datasets: [],
+            };
+            let datasets: any[] = [];
+
+            var index = 0, courseType, month;
+            for (courseType in data.hours.courseTypes)
+            {
+                if (!data.hours.courseTypes[courseType].raw) continue;
+
+                let dataset: any = {
+                    label: this.CH.camelToHumanText(courseType),
+                    fill: false,
+                    borderWidth: 2,
+                    borderColor: this.CH.getColors(index),
+                    backgroundColor: this.CH.getColors(index),
+                };
+
+                let x = 0, y = 0;
+                // var coordinateData: Coordinate[] = [];
+                var coordinateData: number[] = [];
+                for (month in data.hours.courseTypes[courseType].monthly)
+                {
+                    x++;
+                    y += Number(data.hours.courseTypes[courseType].monthly[month].decimal);
+
+                    let coordinate: Coordinate = {
+                        x: x,
+                        y: y,
+                    };
+
+                    // coordinateData.push(coordinate);
+                    coordinateData.push(y);
+                }
+
+                // dataset.data = coordinateData;
+                dataset.data = coordinateData;
+                datasets.push(dataset);
+                index++;
+            }
+
+            chartData.datasets = datasets;
+            this.pageData[this.year].chartData = chartData;
         }, moreloader, refresher, finalCallback);
     }
 
-    selectYear(year): void
+    toHumanText(text: string): string
     {
-        if (this.year != year)
-        {
-            this.year = year;
-            this.pageSoftForceReferesh();
-        }
+        return this.CH.toHumanText(text);
     }
 
     onFilterChange(): void
     {
-        // this.pageData.coursesFiltered = this.filter.getFilteredData(this.pageData.courses);
-        this.pageData.coursesFiltered = this.pageData.courses;
+        // this.pageData[this.year].coursesFiltered = this.filter.getFilteredData(this.pageData[this.year].courses);
+        this.pageData[this.year].coursesFiltered = this.pageData[this.year].courses;
     }
 }

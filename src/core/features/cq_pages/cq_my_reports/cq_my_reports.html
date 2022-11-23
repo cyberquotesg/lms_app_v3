@@ -1,5 +1,5 @@
 <ion-header>
-    <cq_header [title]="'My Reports'" [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
+    <cq_header [title]="'My Reports'" [displayMenu]="true" [displayNotification]="true" [displayProgress]="pageIsLoading" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
 </ion-header>
 
 <ion-content class="cq_my_reports">
@@ -9,91 +9,106 @@
 
     <core-loading [hideUntil]="pageStatus">
 
-        <div class="mt-20 text-center">
-            <button *ngFor="let availableYear of availableYears" class="button ml-4 mr-4" (click)="selectYear(availableYear)">
-                {{ availableYear }}
-            </button>
+        <div class="text-center">
+            <ion-slides [options]="yearsSliderOptions">
+                <ion-slide *ngFor="let availableYear of pageData.availableYears" class="mt-36 mb-36">
+                    <button class="{{ availableYear == year ? 'active' : '' }}" (click)="selectYear(availableYear)">
+                        {{ availableYear }}
+                    </button>
+                </ion-slide>
+            </ion-slides>
         </div>
 
-        <ion-card>
-            <ion-card-header>
-                <h4 class="mt-0 mb-20 text-center"><b>My Training Hours in {{year}}</b></h4>
-            </ion-card-header>
-
-            <ion-card-content>
-                <div class="text-center">
-                    <span class="dot elevation-1">
-                        <div class="time-inside-dot second-font">
-                            <div class="part">
-                                <div class="number">{{ pageData.totalCPDInHours }}</div>
-                                <div class="type">{{ 'core.cqShortHoursSymbol' | translate }}</div>
-                            </div>
-                            <div class="part">
-                                <div class="number">{{ pageData.totalCPDInMinutes }}</div>
-                                <div class="type">{{ 'core.cqShortMinutesSymbol' | translate }}</div>
-                            </div>
-                        </div>
-                    </span>
-                </div>
-
-                <div class="mt-10 mb-5">
-                    <!-- <cq-custom-chart *ngIf="isAvailable(pageData.customChartData)" [data]="pageData.customChartData"></cq-custom-chart> -->
-                </div>
-                
-                <!-- 
-                <div class="broken-down-hours">
-                    <div *ngFor="let courseType of pageData.courseTypes.array" class="bdh-item">
-                        <h3 class="bdh-title no-break">{{ courseType.name }}</h3>
-
-                        <div class="bdh-content second-font">
-                            <div class="bdh-cell">
-                                <div class="number">
-                                    <span *ngIf="pageData.perCourseType[courseType.identifier]">{{ pageData.perCourseType[courseType.identifier].hoursBeautiful }}</span>
-                                    <span *ngIf="!pageData.perCourseType[courseType.identifier]">00</span>
+        <ion-slides #pageSlider [options]="pageSliderOptions" (ionSlideDidChange)="pageSliderChange()">
+            <ion-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
+                <div *ngIf="pageData[availableYear]">
+                    <div class="text-center">
+                        <h5 class="mt-0 mb-20 text-center"><b>My Training Hours in {{ availableYear }}</b></h5>
+                        
+                        <span class="dot mt-8 mb-8">
+                            <div class="time-inside-dot second-font">
+                                <div class="part">
+                                    <div class="number">{{ pageData[availableYear].totalCPDInHours }}</div>
+                                    <div class="type">{{ 'core.cqShortHoursSymbol' | translate }}</div>
                                 </div>
-                                <div class="type">{{ 'core.cqShortHoursSymbol' | translate }}</div>
-                            </div>
-                            <div class="bdh-cell">
-                                <div class="number">
-                                    <span *ngIf="pageData.perCourseType[courseType.identifier]">{{ pageData.perCourseType[courseType.identifier].minutesBeautiful }}</span>
-                                    <span *ngIf="!pageData.perCourseType[courseType.identifier]">00</span>
+                                <div class="part">
+                                    <div class="number">{{ pageData[availableYear].totalCPDInMinutes }}</div>
+                                    <div class="type">{{ 'core.cqShortMinutesSymbol' | translate }}</div>
                                 </div>
-                                <div class="type">{{ 'core.cqShortMinutesSymbol' | translate }}</div>
                             </div>
+                        </span>
+
+                        <ion-card *ngIf="isAvailable(pageData[availableYear].chartData)" class="mb-28">
+                            <ion-card-content>
+                                <cq_chart type="line" [stacked]="false" [data]="pageData[availableYear].chartData"></cq_chart>
+                            </ion-card-content>
+                        </ion-card>
+                    </div>
+
+                    <!-- 
+                    data masih salah, ga accredited kok masuk hitungan?
+                    data seperti my reports
+                    config masuk server
+                    scroll bawah masih ngikut slide sebelahnya
+                    filter
+                    kalo pas ga ada data:
+                        dari server emang ga ada
+                        setelah difilter ga ada
+                     -->
+
+                    <!-- 
+                    <div class="mt-14 mb-14">
+                        <cq-filter [filterMultiple]="pageData[availableYear].filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange()"></cq-filter>
+                    </div>
+                     -->
+
+                    <div *ngFor="let courseType of pageData.courseTypes.array">
+                        <div *ngIf="isAvailable(pageData[availableYear].perCourseType[courseType.jsIdentifier].courses)">
+                            <div class="main-font text-left" class="pl-20 pr-20 pt-28 text-left" style="font-size: 16px;">
+                                {{ courseType.name }}
+                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours > 0">
+                                    {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].hours }}
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours == 1">hour</span>
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours != 1">hours</span>
+                                </span>
+                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes > 0">
+                                    {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes }}
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes == 1">minute</span>
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes != 1">minutes</span>
+                                </span>
+                                <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                            </div>
+                    
+                            <!-- warning! masih pake warna purle -->
+                            <ion-card *ngFor="let course of pageData[availableYear].perCourseType[courseType.jsIdentifier].courses">
+                                <ion-card-content>
+                                    <div class="card-single-list has-left">
+                                        <div class="csl-left">
+                                            <!-- warning! masih belum pakai beautiful number -->
+                                            <span class="dot small d-block elevation-1">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
+                                        </div>
+                                        <div class="csl-center text-left">
+                                            <h2 class="mt-4 mb-5">{{course.name || course.coursename}}</h2>
+                                            <p class="no-break">Completion Date: {{course.end_date_text}}</p>
+                                        </div>
+                                        <div class="cq-tag-wrapper text-left pt-8" style="clear: both;">
+                                            <span *ngIf="course.compulsory == 1" class="cq-tag orange">Compulsory</span>
+                                            <span class="cq-tag">{{ toHumanText(course.media) }}</span>
+                                        </div>
+                                    </div>
+                                </ion-card-content>
+                            </ion-card>
                         </div>
                     </div>
                 </div>
-                 -->
-            </ion-card-content>
-        </ion-card>
 
-        <div class="mt-14 mb-14">
-            <!-- <cq-filter [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange()"></cq-filter> -->
-        </div>
-
-        <div *ngIf="isAvailable(pageData.coursesFiltered)">
-            <ion-card *ngFor="let course of pageData.coursesFiltered">
-                <ion-card-content>
-                    <div class="card-single-list has-left has-right">
-                        <div class="csl-left">
-                            <!-- warning! masih belum pakai beautiful number -->
-                            <span class="dot small elevation-1">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
-                        </div>
-                        <div class="csl-right text-right" style="width: auto;">
-                            <span class="cq-tag ml-0 mr-0">{{ course.type_text }}</span>
-                            <br *ngIf="course.compulsory == 1" />
-                            <span *ngIf="course.compulsory == 1" class="cq-tag orange ml-0 mr-0">Compulsory</span>
-                        </div>
-                        <div class="csl-center">
-                            <h2 class="mt-5 mb-5">{{course.name || course.coursename}}</h2>
-                            <p class="no-break">Completion Date: {{course.end_date_text}}</p>
-                        </div>
+                <div *ngIf="!pageData[availableYear]">
+                    <div class="mt-48 pt-48">
+                        <ion-spinner role="progressbar"></ion-spinner>
                     </div>
-                </ion-card-content>
-            </ion-card>
-        </div>
-
-        <cq_empty [empty]="isEmpty(pageData.coursesFiltered)"></cq_empty>
+                </div>
+            </ion-slide>
+        </ion-slides>
 
     </core-loading>
 </ion-content>

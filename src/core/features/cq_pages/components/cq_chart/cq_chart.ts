@@ -6,12 +6,14 @@ import { CqComponent } from '../../classes/cq_component';
 import { Chart, ChartData } from 'chart.js';
 
 @Component({
-    selector: 'cq_line_chart',
-    templateUrl: 'cq_line_chart.html'
+    selector: 'cq_chart',
+    templateUrl: 'cq_chart.html'
 })
-export class CqLineChartComponent extends CqComponent implements OnInit, OnChanges, AfterViewInit {
+export class CqChartComponent extends CqComponent implements OnInit, OnChanges, AfterViewInit {
+    @Input() type: string;
+    @Input() stacked: boolean;
     @Input() data: ChartData;
-    @ViewChild('cqLineChart') cqLineChart: ElementRef;
+    @ViewChild('cqChart') cqChart: ElementRef;
 
     private chart: Chart;
 
@@ -78,25 +80,38 @@ export class CqLineChartComponent extends CqComponent implements OnInit, OnChang
             ],
         };
         /* */
-        this.chart = new Chart(this.cqLineChart.nativeElement, {
-            type: 'line',
-            data: this.data,
-            options: {
-                responsive: true,
-                elements: {
-                    line: {
-                        tension: 0
-                    }
-                },
-                maintainAspectRatio: false,
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 20,
-                    },
+        let options = {
+            responsive: true,
+            elements: {
+                line: {
+                    tension: 0.3
+                }
+            },
+            maintainAspectRatio: false,
+            legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                    boxWidth: 20,
                 },
             },
+        };
+        
+        if (this.stacked)
+        {
+            options.scales = {
+                xAxes: [{
+                    stacked: true
+                }],
+                yAxes: [{
+                    stacked: true
+                }]
+            };
+        }
+        this.chart = new Chart(this.cqChart.nativeElement, {
+            type: this.type,
+            data: this.data,
+            options: options,
         });
     }
 }

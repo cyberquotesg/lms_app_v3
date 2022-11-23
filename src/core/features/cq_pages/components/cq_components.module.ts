@@ -4,14 +4,14 @@ import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/comp
 import { CqTileComponent } from './cq_tile/cq_tile';
 import { CqHeaderComponent } from './cq_header/cq_header';
 import { CqEmptyComponent } from './cq_empty/cq_empty';
-import { CqLineChartComponent } from './cq_line_chart/cq_line_chart';
+import { CqChartComponent } from './cq_chart/cq_chart';
 
 @NgModule({
     declarations: [
         CqTileComponent,
         CqHeaderComponent,
         CqEmptyComponent,
-        CqLineChartComponent,
+        CqChartComponent,
     ],
     imports: [
         CoreSharedModule,
@@ -21,7 +21,7 @@ import { CqLineChartComponent } from './cq_line_chart/cq_line_chart';
         CqTileComponent,
         CqHeaderComponent,
         CqEmptyComponent,
-        CqLineChartComponent,
+        CqChartComponent,
     ],
 })
 export class CqComponentsModule {}

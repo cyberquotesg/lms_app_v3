@@ -1,7 +1,7 @@
 <div class="tile-wrapper">
     <div *ngIf="isAvailable(items)" class="tile-card">
         <div *ngFor="let item of items" class="tc-item">
-            <ion-card (click)="selectItem(item)">
+            <ion-card class="thin" (click)="selectItem(item)">
                 <div class="card-image">
                     <div *ngIf="item.course_image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.course_image + ')'}"></div>
                     <span *ngIf="!item.course_image" class="card-image-letter">{{ item.letter }}</span>
@@ -12,7 +12,7 @@
                                 <span *ngIf="item.media == 'online'" class="cq-tag dark-grey">E-Learning</span>
                                 <span *ngIf="item.media == 'offline'" class="cq-tag dark-grey">Classroom Training</span>
                             </ng-container>
-                            <span *ngIf="item.type_text || item.courseTypeText || item.course_type_text" class="cq-tag">{{ item.type_text || item.courseTypeText || item.course_type_text }}</span>
+                            <span *ngIf="item.typeText || item.courseTypeText" class="cq-tag">{{ item.typeText || item.courseTypeText }}</span>
                             <span *ngIf="item.categoryname" class="cq-tag">{{ item.categoryname }}</span>
                             <span *ngIf="item.compulsory === true || item.compulsory === 1 || item.compulsory === '1'" class="cq-tag orange">Compulsory</span>
 
@@ -25,9 +25,9 @@
                     </div>
                 </div>
 
-                <ion-card-header class="text-center">
-                    <div style="max-height: 48px; overflow: hidden;">
-                        {{ ellipsisAfter(item.title, 30) }} 
+                <ion-card-header>
+                    <div class="card-title">
+                        {{ ellipsisAfter(item.title, 50) }} 
                     </div>
                 </ion-card-header>
 

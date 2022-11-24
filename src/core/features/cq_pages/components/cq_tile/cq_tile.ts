@@ -9,7 +9,7 @@ import { CqComponent } from '../../classes/cq_component';
     templateUrl: 'cq_tile.html'
 })
 export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
-    @Input() items: any[] = [];
+    @Input() items: any | any[] = [];
     @Output() onSelectItem: EventEmitter<number>;
 
     constructor(CH: CqHelper)
@@ -17,24 +17,7 @@ export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
         super(CH);
         
         this.onSelectItem = new EventEmitter();
-
-        if (this.items) this.items.forEach((item) => {
-            item.title = item.title || item.subject || item.name || item.displayname || item.fullname || item.shortname;
-            item.letter = this.CH.getLetter(item.title);
-            item.description = item.description || item.summary || item.smallmessage;
-            item.course_image = item.course_image || item.course_image_full;
-
-            if (item.is_user_finished && item.is_user_finished == '1')
-            {
-                item.show_enrolled = false;
-                item.show_finished = true;
-            }
-            else
-            {
-                item.show_enrolled = item.is_user_enrolled && item.is_user_enrolled == '1';
-                item.show_finished = false;
-            }
-        });
+        this.prepareItems();
     }
 
     ngOnInit(): void
@@ -43,7 +26,23 @@ export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
     ngOnChanges(changes: SimpleChanges): void
     {
         this.implementChanges(changes);
-        if (this.items) this.items.forEach((item) => {
+        this.prepareItems();
+    }
+
+    prepareItems(): void
+    {
+        // initial checks
+        if (!Array.isArray(this.items))
+        {
+            // empty thing, skip
+            if (!this.items) return;
+
+            // make sure it is array
+            else this.items = [this.items];
+        }
+
+        // adjust the properties
+        this.items.forEach((item) => {
             item.title = item.title || item.subject || item.name || item.displayname || item.fullname || item.shortname;
             item.letter = this.CH.getLetter(item.title);
             item.description = item.description || item.summary || item.smallmessage;

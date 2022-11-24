@@ -15,6 +15,7 @@ $button_drawer_offset: 25px;
 $button_menu_left: 70px;
 $button_menu_height: 48px;
 $component_spacing: 20px;
+$component_spacing_thin: 12px;
 
 $header_height: 50px;
 $footer_height: 50px;
@@ -382,6 +383,23 @@ body
 		{
 			padding: 0px !important;
 		}
+
+		&.thin
+		{
+			margin: $component_spacing_thin;
+			padding: $component_spacing_thin;
+
+			.card-image
+			{
+				position: relative;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 150px;
+				background: #bbb;
+				margin: #{$component_spacing_thin * -1} #{$component_spacing_thin * -1} 0px;
+			}
+		}
 	}
 
 	ion-slides
@@ -390,33 +408,53 @@ body
 	}
 
     // for tile card
-    .tile-wrapper
+    cq_tile
     {
-    	padding: $component_spacing;
+    	width: 100%;
 
-	    .tile-card
+	    .tile-wrapper
 	    {
-	    	display: flex;
-	    	flex-wrap: wrap;
-	    	margin: $component_spacing / -2;
+	    	// padding: $component_spacing;
 
-	    	.tc-item
-	    	{
-	    		flex-basis: 170px;
-	    		flex-grow: 1;
-	    		padding: $component_spacing / 2;
+		    .tile-card
+		    {
+		    	display: flex;
+		    	flex-wrap: wrap;
+		    	margin: $component_spacing / -2;
 
-	    		ion-card
-	    		{
-	    			height: 100%;
-	    			margin: 0px !important;
-	    		}
-
-		    	&.fake
+		    	.tc-item
 		    	{
-		    		padding: 0px !important;
+		    		flex-basis: 170px;
+		    		flex-grow: 1;
+		    		padding: $component_spacing / 2;
+
+		    		ion-card
+		    		{
+		    			height: 100%;
+		    			margin: 0px !important;
+
+		    			ion-card-header
+		    			{
+		    				text-align: center;
+
+		    				.card-title
+		    				{
+		    					display: flex;
+		    					justify-content: center;
+		    					align-items: center;
+		    					text-align: center;
+		    					height: 48px;
+		    					overflow: hidden;
+		    				}
+		    			}
+		    		}
+
+			    	&.fake
+			    	{
+			    		padding: 0px !important;
+			    	}
 		    	}
-	    	}
+		    }
 	    }
     }
 
@@ -752,6 +790,16 @@ body
 		}
 	}
 
+	.dashboard-colorizer
+	{
+		position: absolute;
+		left: 0px;
+	    top: 0px;
+	    right: 0px;
+	    height: 50vh;
+		background: $gradient_background;
+	}
+
 	// ============================================================================================= cyberquote component
 	.cq-empty
 	{
@@ -924,6 +972,146 @@ body
 	    	padding-top: 10px;
 	    }
 	}
+
+    .filter
+    {
+    	.filter-text
+    	{
+    		position: relative;
+    		width: 100%;
+    	}
+
+    	&.has-filter-multiple
+    	{
+    		.filter-text
+    		{
+    			width: calc(100% - 40px);
+
+	    		.filter-multiple-button
+	    		{
+	    			position: absolute;
+	    			left: 100%;
+	    			top: 50%;
+	    			transform: translate(10px, -50%);
+	    			display: flex;
+	    			justify-content: center;
+	    			align-items: center;
+	    			width: 30px;
+	    			height: 30px;
+	    			border: 1px solid var(--buttonBorderColor);
+	    			border-radius: 50%;
+	    			font-size: 26px;
+	    			color: var(--buttonTextColor);
+	    			background: var(--buttonColor);
+	    			margin: 0px;
+
+	    			.icon
+	    			{
+	    				transition: all ease 0.3s;
+	    				transform: rotate(0deg);
+	    			}
+
+	    			&.opened
+	    			{
+	    				.icon
+	    				{
+	    					transform: rotate(180deg);
+	    				}
+	    			}
+	    		}
+    		}
+    		.filter-multiple-area
+    		{
+    			text-align: center;
+    			padding-bottom: 5px;
+    			margin: 0px -16px;
+    			transition: all ease 0.3s;
+
+    			&.closed
+    			{
+    				display: none;
+    			}
+
+    			.checkbox-line
+    			{
+    				margin-top: 0px;
+    			}
+    		}
+    	}
+    }
+    .dot
+    {
+    	position: relative;
+        height: 224px;
+        width: 224px;
+        background: $gradient_background;
+        border-radius: 50%;
+        display: inline-block;
+        font-size: 16px;
+        margin: 0px;
+        font-weight: 700;
+        text-align: center;
+        color: white;
+        overflow: hidden;
+        border: 20px solid $base_background_no_image;
+        box-shadow: $neumorphism_shadow;
+
+        /* masking */
+        &:after
+        {
+        	content: "";
+        	position: absolute;
+        	left: 0px;
+        	top: 0px;
+        	right: 0px;
+        	bottom: 0px;
+        	background-image: linear-gradient(135deg, #fff3, #0000);
+        }
+
+        &.plain
+        {
+        	background: #c0c0c0 !important;
+        }
+        &.small
+        {
+            height: 60px;
+            width: 60px;
+            padding-top: 12px;
+            line-height: 1.2em;
+            font-size: 15px;
+        }
+
+		.time-inside-dot
+		{
+			display: flex;
+			justify-content: center;
+			height: 100%;
+			padding: 0px 16%;
+
+			.part
+			{
+				flex: 1 0 50%;
+				display: flex;
+				justify-content: center;
+				flex-direction: column;
+				text-align: center;
+				margin: 0px 3px;
+
+				.number
+				{
+					color: white;
+					font-size: 38px;
+					line-height: 1em;
+					letter-spacing: 0.06em;
+					margin: 6px 0px 1px;
+				}
+				.type
+				{
+					margin-top: 3px;
+				}
+			}
+		}
+    }
 	.round-wrapper
 	{
 		position: fixed;
@@ -942,20 +1130,73 @@ body
 			padding-top: 100%;
 		}
 	}
+
+	$dashboard_box_height: 264px;
 	.dashboard-box
 	{
-	    .hm-value
+		position: absolute;
+	    left: 50%;
+	    bottom: calc(100% - #{$dashboard_box_height});
+	    transform: translateX(-50%);
+	    width: 200%;
+	    border-radius: 50%;
+	    display: inline-block;
+	    font-size: 16px;
+	    margin: 0px;
+	    font-weight: 700;
+	    text-align: center;
+	    color: white;
+	    overflow: hidden;
+	    border: 20px solid $base_background_no_image;
+	    box-shadow: $neumorphism_shadow;
+
+	    .db-sizer
 	    {
-			color: var(--headerBackgroundColor, $cq_purple_dark);
-	        margin: 0px 0px 10px;
-	        font-size: 48px;
-	        font-weight: 700;
-	        line-height: 1em;
+	    	padding-top: 100%;
 	    }
-	    .hm-label
+	    .db-wrapper
 	    {
-	        font-size: 16px;
+	    	position: absolute;
+	        left: 50%;
+	        width: 100vw;
+	        transform: translateX(-50%);
+	    	top: 0px;
+	    	bottom: 0px;
+	    	display: flex;
+    	    flex-direction: column;
+    	    justify-content: flex-end;
+    	    padding-bottom: 60px;
+		    background: $gradient_background;
+
+			.db-title
+			{
+				font-weight: 900;
+				text-align: center;
+				margin: 0px 0px 44px;
+			}
+			.db-body
+			{
+				display: flex;
+				justify-content: center;
+				align-items: center;
+
+				.db-value
+				{
+				    margin: 0px 0px 10px;
+				    font-size: 48px;
+				    font-weight: 700;
+				    line-height: 1em;
+				}
+				.db-label
+				{
+				    font-size: 16px;
+				}
+			}
 	    }
+	}
+	.dashboard-box-fake
+	{
+		height: $dashboard_box_height;
 	}
 	.dashboard-content
 	{
@@ -1281,146 +1522,6 @@ body
 			}
 		}
 	}
-
-    .filter
-    {
-    	.filter-text
-    	{
-    		position: relative;
-    		width: 100%;
-    	}
-
-    	&.has-filter-multiple
-    	{
-    		.filter-text
-    		{
-    			width: calc(100% - 40px);
-
-	    		.filter-multiple-button
-	    		{
-	    			position: absolute;
-	    			left: 100%;
-	    			top: 50%;
-	    			transform: translate(10px, -50%);
-	    			display: flex;
-	    			justify-content: center;
-	    			align-items: center;
-	    			width: 30px;
-	    			height: 30px;
-	    			border: 1px solid var(--buttonBorderColor);
-	    			border-radius: 50%;
-	    			font-size: 26px;
-	    			color: var(--buttonTextColor);
-	    			background: var(--buttonColor);
-	    			margin: 0px;
-
-	    			.icon
-	    			{
-	    				transition: all ease 0.3s;
-	    				transform: rotate(0deg);
-	    			}
-
-	    			&.opened
-	    			{
-	    				.icon
-	    				{
-	    					transform: rotate(180deg);
-	    				}
-	    			}
-	    		}
-    		}
-    		.filter-multiple-area
-    		{
-    			text-align: center;
-    			padding-bottom: 5px;
-    			margin: 0px -16px;
-    			transition: all ease 0.3s;
-
-    			&.closed
-    			{
-    				display: none;
-    			}
-
-    			.checkbox-line
-    			{
-    				margin-top: 0px;
-    			}
-    		}
-    	}
-    }
-    .dot
-    {
-    	position: relative;
-        height: 224px;
-        width: 224px;
-        background: $gradient_background;
-        border-radius: 50%;
-        display: inline-block;
-        font-size: 16px;
-        margin: 0px;
-        font-weight: 700;
-        text-align: center;
-        color: white;
-        overflow: hidden;
-        border: 20px solid $base_background_no_image;
-        box-shadow: $neumorphism_shadow;
-
-        /* masking */
-        &:after
-        {
-        	content: "";
-        	position: absolute;
-        	left: 0px;
-        	top: 0px;
-        	right: 0px;
-        	bottom: 0px;
-        	background-image: linear-gradient(135deg, #fff3, #0000);
-        }
-
-        &.plain
-        {
-        	background: #c0c0c0 !important;
-        }
-        &.small
-        {
-            height: 60px;
-            width: 60px;
-            padding-top: 12px;
-            line-height: 1.2em;
-            font-size: 15px;
-        }
-
-		.time-inside-dot
-		{
-			display: flex;
-			justify-content: center;
-			height: 100%;
-			padding: 0px 16%;
-
-			.part
-			{
-				flex: 1 0 50%;
-				display: flex;
-				justify-content: center;
-				flex-direction: column;
-				text-align: center;
-				margin: 0px 3px;
-
-				.number
-				{
-					color: white;
-					font-size: 38px;
-					line-height: 1em;
-					letter-spacing: 0.06em;
-					margin: 6px 0px 1px;
-				}
-				.type
-				{
-					margin-top: 3px;
-				}
-			}
-		}
-    }
 
     .all-time-line
     {

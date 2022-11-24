@@ -14,26 +14,16 @@ export class CqDashboard extends CqPage implements OnInit
     pageParams = {
     };
     pageDefaults: any = {
-        courseTypes: [],
-        courses: [],
+        userFullName: '',
         dashHours: '00',
         dashMinutes: '00',
-        additionalContent: '',
     };
     pageJob: any = {
-        courseTypes: {
-            value: 0,
-            next: {
-                myCoursesListAndMyHours: 0,
-            },
-        },
-        additionalContent: 0,
+        getAllData: 0,
     };
     pageJobLoadMore: any = {
         myCoursesList: 0,
     };
-
-    userFullName: string = '';
 
     constructor(renderer: Renderer2, CH: CqHelper)
     {
@@ -41,8 +31,25 @@ export class CqDashboard extends CqPage implements OnInit
 
         let userId = this.CH.getUserId();
         this.CH.getUser().getUserFullNameWithDefault(userId).then((userFullName) => {
-            this.userFullName = userFullName;
+            this.pageData.userFullName = userFullName;
         });
+
+        this.pageData.year = new Date().getFullYear();
+
+        // setup slide options
+        this.pageData.slideOptions = {
+            initialSlide: 0,
+            speed: 400,
+            centerInsufficientSlides: false,
+            centeredSlides: false,
+            centeredSlidesBounds: false,
+            breakpoints: {},
+        };
+        let slidesPerView, spaceBetween = 24, widthIterator = 160;
+        for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
+        {
+            this.pageData.slideOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };
+        }
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }
@@ -51,90 +58,68 @@ export class CqDashboard extends CqPage implements OnInit
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
 
-    /* function to get course types
-     * pageDefaults -> courseTypes: [],
-     * pageJob -> courseTypes: 0,
-     * 
-     * if courseTypesAdditionalFunction is defined, then it will be executed
-     * 
-     * require page with cqOrganization
-    */
-    courseTypes(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
+    getAllData(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
-        const params: any = {
-            class: 'CqCourseLib',
-            function: 'get_course_type_of_user',
-        };
-        
-        this.pageJobExecuter(jobName, params, (data) => {
-            data = this.CH.toJson(data);
-            let courseTypesArray: any[] = [];
-            for (let id in data) courseTypesArray.push(data[id]);
-            this.pageData.courseTypes = {
-                object: data,
-                array: courseTypesArray,
-            };
-
-            if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
-        }, moreloader, refresher, finalCallback);
-    }
-    myCoursesListAndMyHours(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
-    {
-        // warning! year masih statis
         const params: any = {
             calls: {
-                myCoursesList: {
+                myHours: {
+                    class: "CqCourseLib",
+                    function: "get_courses_reports",
+                    year: this.pageData.year,
+                    return: "hours",
+                },
+                myCourses: {
                     class: "CqCourseLib",
                     function: "get_my_courses_list",
                     page: 1,
                     length: 5,
                 },
-                myHours: {
+                classroomTrainingList: {
                     class: "CqCourseLib",
-                    function: "get_courses_reports",
-                    year: 2022,
-                    return: "hours",
+                    function: "get_classroom_training_list",
+                    page: 1,
+                    length: 5,
+                },
+                eLearningList: {
+                    class: "CqCourseLib",
+                    function: "get_e_learning_list",
+                    page: 1,
+                    length: 5,
+                },
+                additionalContents: {
+                    class: 'CqLib',
+                    function: 'get_contents_additional',
+                    content_type: 'mobile',
                 },
             },
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            let allData = this.CH.toJson(data),
-                callId, courses, hours;
+            let allData = this.CH.toJson(data);
 
-            for (callId in allData)
-            {
-                if (callId == "myCoursesList")
-                {
-                    courses = allData[callId];
-                    this.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < modeData.length;
-                    if (this.CH.isEmpty(courses)) return;
+            // myHours
+            let hours = allData.myHours;
+            this.pageData.dashHours = this.CH.beautifulNumber(hours.hours.hours);
+            this.pageData.dashMinutes = this.CH.beautifulNumber(hours.hours.minutes);
 
-                    if (modeData.mode == 'firstload') this.pageData.courses = courses;
-                    else if (modeData.mode == 'loadingmore') this.pageData.courses = this.pageData.courses.concat(courses);
-                    else if (modeData.mode == 'refreshing') this.pageData.courses = courses;
-                }
-                else if (callId == "myHours")
-                {
-                    hours = allData[callId];
-                    let brokenDownData = this.CH.breakDownHoursData(this.pageData.courseTypes.array, hours);
+            // myCourses
+            this.pageData.myCourses = allData.myCourses;
 
-                    this.pageData.dashMinutes = brokenDownData.totalCPDInMinutesBeautiful;
-                    this.pageData.dashHours = brokenDownData.totalCPDInHoursBeautiful;
-                }
-            }
+            // classroomTrainingList
+            this.pageData.classroomTrainingList = this.CH.toArray(allData.classroomTrainingList);
+
+            // eLearningList
+            this.pageData.eLearningList = this.CH.toArray(allData.eLearningList);
+
+            // additionalContents
+            this.pageData.additionalContents = allData.additionalContents.length ? allData.additionalContents : "";
         }, moreloader, refresher, finalCallback);
     }
-    additionalContent(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
-    {
-        const params: any = {
-            class: 'CqLib',
-            function: 'get_contents_additional',
-            content_type: 'mobile',
-        };
 
-        this.pageJobExecuter(jobName, params, (data) => {
-            this.pageData.additionalContent = data.length ? data[0].mobile_content : "";
-        }, moreloader, refresher, finalCallback);
+    openCourse(event: any): void
+    {
+    }
+    goToAvailableCourses(): void
+    {
     }
 }

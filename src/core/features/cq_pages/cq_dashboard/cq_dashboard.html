@@ -1,9 +1,10 @@
 <ion-header>
-    <cq_header [title]="'Hello ' + userFullName" [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
+    <cq_header [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
 </ion-header>
 
 <ion-content class="cq_dashboard">
     <ion-refresher slot="fixed" [disabled]="!pageStatus" (ionRefresh)="pageRefresh($event.target)">
+        <div class="dashboard-colorizer"></div>
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
     </ion-refresher>
 
@@ -16,25 +17,27 @@
         </div>
          -->
 
-        <ion-card>
-            <h4 class="mt-0 mb-16 text-center" style="font-weight: 900;">
-                {{ 'core.cqTotalTrainingHours' | translate }}
-            </h4>
-            <ion-card-content>
-                <div class="dashboard-box" style="display: flex;justify-content: center;align-items: center;">
+        <div class="dashboard-box">
+            <div class="db-sizer"></div>
+            <div class="db-wrapper">
+                <h4 class="db-title">
+                    {{ 'core.cqTotalTrainingHours' | translate }}
+                </h4>
+                <div class="db-body">
                     <div class="text-center mr-24">
-                        <div class="hm-value second-font">{{ pageData.dashHours }}</div>
-                        <div class="hm-label second-font">{{ 'core.cqLongHoursSymbol' | translate }}</div>
+                        <div class="db-value second-font">{{ pageData.dashHours }}</div>
+                        <div class="db-label second-font">{{ 'core.cqLongHoursSymbol' | translate }}</div>
                     </div>
                     <div class="text-center">
-                        <div class="hm-value second-font">{{ pageData.dashMinutes }}</div>
-                        <div class="hm-label second-font">{{ 'core.cqLongMinutesSymbol' | translate }}</div>
+                        <div class="db-value second-font">{{ pageData.dashMinutes }}</div>
+                        <div class="db-label second-font">{{ 'core.cqLongMinutesSymbol' | translate }}</div>
                     </div>
                 </div>
-            </ion-card-content>
-        </ion-card>
+            </div>
+        </div>
+        <div class="dashboard-box-fake"></div>
         
-        <div class="ml-24 mt-40 mr-24 mb-20" style="display: flex; justify-content: space-between;">
+        <div class="pl-24 pt-40 pr-24 pb-20" style="display: flex; justify-content: space-between;">
             <div style="font-weight: 900;">
                 {{ 'core.cqUpcomingRegisteredCourses' | translate }}
             </div>
@@ -45,15 +48,15 @@
 
         <ion-card>
             <ion-card-content>
-                <div *ngIf="isAvailable(pageData.courses)" class="dashboard-content">
-                    <div class="item" *ngFor="let course of pageData.courses">
+                <div *ngIf="isAvailable(pageData.myCourses)" class="dashboard-content">
+                    <div class="item" *ngFor="let course of pageData.myCourses">
 
                         <div class="item-link" (click)="openCourse(course)">
                             <div *ngIf="course.media == 'online'">
                                 <h3 class="item-title">{{course.fullname}}</h3>
                                 <div class="cq-tag-wrapper">
                                     <span class="cq-tag dark-grey">E-Learning</span>
-                                    <span *ngIf="pageData.courseTypes.object[course.course_type]" class="cq-tag">{{ pageData.courseTypes.object[course.course_type].name }}</span>
+                                    <span *ngIf="course.courseTypeText" class="cq-tag">{{ course.courseTypeText }}</span>
                                 </div>
                             </div>
 
@@ -61,9 +64,8 @@
                                 <h3 class="item-title">{{course.name}}<br />Batch - {{course.start_date_text}}</h3>
                                 <div class="cq-tag-wrapper">
                                     <span class="cq-tag dark-grey">Classroom Training</span>
-                                    <span *ngIf="pageData.courseTypes.object[course.type]" class="cq-tag">{{ pageData.courseTypes.object[course.type].name }}</span>
+                                    <span *ngIf="course.typeText" class="cq-tag">{{ course.typeText }}</span>
                                 </div>
-
                             </div>
 
                             <cq-will-start-in *ngIf="course.will_start_in > 0" [unixtimestamp]="course.will_start_in"></cq-will-start-in>
@@ -77,14 +79,57 @@
 
                     </div>
                 </div>
-                <div *ngIf="!isAvailable(pageData.courses)" class="cq-empty">{{ 'core.cqNoData' | translate }}</div>
+                <div *ngIf="!isAvailable(pageData.myCourses)" class="cq-empty">{{ 'core.cqNoData' | translate }}</div>
             </ion-card-content>
         </ion-card>
 
-        <div *ngIf="pageData.additionalContent">
+        <div *ngIf="isAvailable(pageData.eLearningList)">
+            <div class="pl-24 pt-40 pr-24 pb-20" style="font-weight: 900;">
+                E-Learning Courses You May Like
+            </div>
+            <ion-slides class="pl-24 pr-24" [options]="pageData.slideOptions">
+                <ion-slide *ngFor="let course of pageData.eLearningList" class="mb-24">
+                   <cq_tile [items]="course" (onSelectItem)="openCourse($event)"></cq_tile>
+                </ion-slide>
+
+                <ion-slide class="mb-24">
+                    <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses()">
+                        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
+                            More Courses
+                            <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>
+                        </div>
+                    </ion-card>
+                </ion-slide>
+            </ion-slides>
+        </div>
+
+        <div *ngIf="isAvailable(pageData.classroomTrainingListclassroomTrainingList)">
+            <div class="pl-24 pt-40 pr-24 pb-20" style="font-weight: 900;">
+                Classroom Training Courses You May Like
+            </div>
+            <ion-slides class="pl-24 pr-24" [options]="pageData.slideOptions">
+                <ion-slide *ngFor="let course of pageData.classroomTrainingList" class="mb-24">
+                   <cq_tile [items]="course" (onSelectItem)="openCourse($event)"></cq_tile>
+                </ion-slide>
+
+                <ion-slide class="mb-24">
+                    <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses()">
+                        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
+                            More Courses
+                            <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>
+                        </div>
+                    </ion-card>
+                </ion-slide>
+            </ion-slides>
+        </div>
+
+        <div *ngIf="pageData.additionalContents">
             <!-- <hr class="additional-content-hr" /> -->
-            <br />
-            <div [innerHtml]="pageData.additionalContent"></div>
+
+            <div *ngFor="let additionalContent of pageData.additionalContents">
+                <br />
+                <div [innerHtml]="additionalContent.mobile_content"></div>
+            </div>
         </div>
 
     </core-loading>

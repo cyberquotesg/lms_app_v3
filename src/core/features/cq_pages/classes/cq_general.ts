@@ -13,6 +13,10 @@ export class CqGeneral
         text = text.replace(/\-/g, ' ').replace(/_/g, ' ');
         return this.CH.capitalize(text);
     }
+    toHumanText(text: string): string
+    {
+        return this.CH.toHumanText(text);
+    }
     toArray(data: any): any[]
     {
         return this.CH.toArray(data);

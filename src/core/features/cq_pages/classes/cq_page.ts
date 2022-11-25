@@ -23,8 +23,8 @@ export class CqPage extends CqGeneral
     */
 
     pageStatus = false;
-    pageForce = false;
-    pageSoftForce = false;
+    pageIsForcedFirstload = false;
+    pageIsForcedRefresh = false;
     pageParams: any = {};
     pageDefaults: any = {};
     pageData: any = {};
@@ -96,12 +96,12 @@ export class CqPage extends CqGeneral
         let mode = this.defineMode(moreloader, refresher);
         let modeData = this.handlePageByMode(mode);
 
-        if (firstload || loadingmore || refreshing || this.pageForce || this.pageSoftForce)
+        if (firstload || loadingmore || refreshing || this.pageIsForcedFirstload || this.pageIsForcedRefresh)
         {
             this.pageIsLoading = true;
 
             // set page data to default
-            if (!refreshing && !isDependantCall && !loadingmore && !this.pageSoftForce)
+            if (!refreshing && !isDependantCall && !loadingmore && !this.pageIsForcedRefresh)
             {
                 for (var key in this.pageDefaults)
                 {
@@ -151,22 +151,20 @@ export class CqPage extends CqGeneral
     }
     pageLoadMore(moreloader: any): void
     {
-        this.CH.log("loading more");
         this.pageLoad(moreloader, null, this.pageJobLoadMore);
     }
     pageRefresh(refresher: any): void
     {
-        this.CH.log("refreshering");
         this.pageLoad(null, refresher);
+    }
+    pageForcedFirstload(finalCallback?: any): void
+    {
+        this.pageIsForcedFirstload = true;
+        this.pageLoad(null, null, null, false, finalCallback);
     }
     pageForceReferesh(finalCallback?: any): void
     {
-        this.pageForce = true;
-        this.pageLoad(null, null, null, false, finalCallback);
-    }
-    pageSoftForceReferesh(finalCallback?: any): void
-    {
-        this.pageSoftForce = true;
+        this.pageIsForcedRefresh = true;
         this.pageLoad(null, null, null, false, finalCallback);
     }
 
@@ -177,7 +175,7 @@ export class CqPage extends CqGeneral
      * moreloader is object for loading more contents
      * refresher is object for refreshing the page
      * callback is additional function
-     * finalCallback is additional function that must be set from pageLoad, pageForceReferesh, or pageSoftForceReferesh function
+     * finalCallback is additional function that must be set from pageLoad, pageForcedFirstload, or pageForceReferesh function
     */
     pageJobExecuter(jobName: string, params: any, callback: any, moreloader?: any, refresher?: any, finalCallback?: any): void
     {
@@ -223,10 +221,10 @@ export class CqPage extends CqGeneral
             this.CH.log('page params', this.pageParams);
             this.CH.log('final data', this.pageData);
 
-            this.pageIsLoading = false;
             this.pageStatus = true;
-            this.pageForce = false;
-            this.pageSoftForce = false;
+            this.pageIsForcedFirstload = false;
+            this.pageIsForcedRefresh = false;
+            this.pageIsLoading = false;
 
             if (typeof moreloader == 'function') moreloader();
             if (refresher) refresher.complete();
@@ -243,37 +241,41 @@ export class CqPage extends CqGeneral
         let loadingmore = typeof moreloader != 'undefined' && moreloader != null,
             refreshing = typeof refresher != 'undefined' && refresher != null;
 
-        if (!loadingmore && !refreshing) return 'firstload';
-        else if (loadingmore) return 'loadingmore';
-        else if (refreshing) return 'refreshing';
+        if (!loadingmore && !refreshing)
+        {
+            if (this.pageIsForcedFirstload) return 'forced-firstload';
+            else if (this.pageIsForcedRefresh) return 'forced-refresh';
+            else return 'firstload';
+        }
+        else if (loadingmore) return 'loadmore';
+        else if (refreshing) return 'refresh';
         else return 'unknown';
     }
     handlePageByMode(mode: string): any
     {
         let page, length;
+        this.CH.log('this is', mode);
 
-        if (mode == 'firstload')
+        if (mode == 'firstload' || mode == 'forced-firstload')
         {
-            this.CH.log('this is firstload');
-            page = this.page;
+            page = 1;
             length = this.length;
         }
-        else if (mode == 'loadingmore')
+        else if (mode == 'loadmore')
         {
-            this.CH.log('this is loadingmore');
             this.page++;
             page = this.page;
             length = this.length;
         }
-        else if (mode == 'refreshing')
+        else if (mode == 'refresh' || mode == 'forced-refresh')
         {
-            this.CH.log('this is refreshing');
             page = 1;
             length = this.page * this.length;
         }
+        
+        // everything else
         else
         {
-            this.CH.log('this is everything else');
             page = this.page;
             length = this.length;
         }

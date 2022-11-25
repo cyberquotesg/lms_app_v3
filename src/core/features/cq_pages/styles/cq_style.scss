@@ -120,6 +120,14 @@ body
 	{
 		font-family: "secondfont" !important;
 	}
+	.component-background
+	{
+		background: $component_background;
+	}
+	.base-background
+	{
+		background: $base_background_no_image;
+	}
 
     .elevation-1 { @include elevation1; }
     .elevation-2 { @include elevation2; }
@@ -321,7 +329,6 @@ body
 			}
 		}
 	}
-
 	ion-card
 	{
 		border-radius: 16px;
@@ -371,6 +378,7 @@ body
 		ion-card-header
 		{
 			padding-left: 0px !important;
+			padding-top: 16px !important;
 			padding-right: 0px !important;
 			padding-bottom: 0px !important;
 
@@ -401,10 +409,24 @@ body
 			}
 		}
 	}
-
-	ion-slides
+	ion-input
 	{
-		background: $base_background_no_image;
+		&:active,
+		&:focus,
+		&:focus-within,
+		&:target,
+		&:hover,
+		&:visited,
+		&:focus-visible
+		{
+			box-shadow: none !important;
+			outline: none !important;
+
+			&:after
+			{
+				display: none;
+			}
+		}
 	}
 
     // for tile card
@@ -457,6 +479,96 @@ body
 		    }
 	    }
     }
+
+    cq_filter
+    {
+	    .cq-filter-wrapper
+	    {
+	    	.cq-filter-input-wrapper
+	    	{
+    		    border-radius: 12px;
+    		    overflow: hidden;
+		    	box-shadow: $neumorphism_shadow_inset;
+	    		padding: 0px #{$component_spacing_thin};
+	    		margin-bottom: $component_spacing;
+	    	}
+	    }
+    }
+
+
+
+    .filter
+    {
+    	.filter-text
+    	{
+    		position: relative;
+    		width: 100%;
+    	}
+
+    	&.has-filter-multiple
+    	{
+    		.filter-text
+    		{
+    			width: calc(100% - 40px);
+
+	    		.filter-multiple-button
+	    		{
+	    			position: absolute;
+	    			left: 100%;
+	    			top: 50%;
+	    			transform: translate(10px, -50%);
+	    			display: flex;
+	    			justify-content: center;
+	    			align-items: center;
+	    			width: 30px;
+	    			height: 30px;
+	    			border: 1px solid var(--buttonBorderColor);
+	    			border-radius: 50%;
+	    			font-size: 26px;
+	    			color: var(--buttonTextColor);
+	    			background: var(--buttonColor);
+	    			margin: 0px;
+
+	    			.icon
+	    			{
+	    				transition: all ease 0.3s;
+	    				transform: rotate(0deg);
+	    			}
+
+	    			&.opened
+	    			{
+	    				.icon
+	    				{
+	    					transform: rotate(180deg);
+	    				}
+	    			}
+	    		}
+    		}
+    		.filter-multiple-area
+    		{
+    			text-align: center;
+    			padding-bottom: 5px;
+    			margin: 0px -16px;
+    			transition: all ease 0.3s;
+
+    			&.closed
+    			{
+    				display: none;
+    			}
+
+    			.checkbox-line
+    			{
+    				margin-top: 0px;
+    			}
+    		}
+    	}
+    }
+
+
+
+
+
+
 
 	// remove shadows
 	.header-md::after,
@@ -973,72 +1085,6 @@ body
 	    }
 	}
 
-    .filter
-    {
-    	.filter-text
-    	{
-    		position: relative;
-    		width: 100%;
-    	}
-
-    	&.has-filter-multiple
-    	{
-    		.filter-text
-    		{
-    			width: calc(100% - 40px);
-
-	    		.filter-multiple-button
-	    		{
-	    			position: absolute;
-	    			left: 100%;
-	    			top: 50%;
-	    			transform: translate(10px, -50%);
-	    			display: flex;
-	    			justify-content: center;
-	    			align-items: center;
-	    			width: 30px;
-	    			height: 30px;
-	    			border: 1px solid var(--buttonBorderColor);
-	    			border-radius: 50%;
-	    			font-size: 26px;
-	    			color: var(--buttonTextColor);
-	    			background: var(--buttonColor);
-	    			margin: 0px;
-
-	    			.icon
-	    			{
-	    				transition: all ease 0.3s;
-	    				transform: rotate(0deg);
-	    			}
-
-	    			&.opened
-	    			{
-	    				.icon
-	    				{
-	    					transform: rotate(180deg);
-	    				}
-	    			}
-	    		}
-    		}
-    		.filter-multiple-area
-    		{
-    			text-align: center;
-    			padding-bottom: 5px;
-    			margin: 0px -16px;
-    			transition: all ease 0.3s;
-
-    			&.closed
-    			{
-    				display: none;
-    			}
-
-    			.checkbox-line
-    			{
-    				margin-top: 0px;
-    			}
-    		}
-    	}
-    }
     .dot
     {
     	position: relative;

@@ -1,5 +1,5 @@
 <ion-header>
-    <cq_header [title]="'My Courses'" [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
+    <cq_header [title]="'My Courses'" [displayMenu]="true" [displayNotification]="true" [displayProgress]="pageIsLoading" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
 </ion-header>
 
 <ion-content class="cq_my_courses">
@@ -8,10 +8,14 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
+        <div class="base-background">
 
-        <!-- <cq-filter [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange()"></cq-filter> -->
-        <cq_tile [items]="pageData.coursesFiltered" (onSelectItem)="openCourse($event)"></cq_tile>
-        <core-infinite-loading *ngIf="isAvailable(pageData.coursesFiltered)" [enabled]="!reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
+        <div class="ml-20 mt-20 mr-20">
+            <cq_filter [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange($event)"></cq_filter>
+            <cq_tile [items]="pageData.courses" (onSelectItem)="openCourse($event)"></cq_tile>
+            <core-infinite-loading *ngIf="isAvailable(pageData.courses)" [enabled]="!reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
+        </div>
 
+        </div>
     </core-loading>
 </ion-content>

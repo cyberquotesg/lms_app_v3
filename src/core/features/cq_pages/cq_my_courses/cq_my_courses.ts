@@ -19,7 +19,8 @@ export class CqMyCourses extends CqPage implements OnInit
     pageDefaults: any = {
         filterMultiple: [],
         courses: [],
-        coursesFiltered: [],
+        filterAgent: null,
+        filterText: "",
     };
     pageJob: any = {
         filterMultiple: {
@@ -30,7 +31,7 @@ export class CqMyCourses extends CqPage implements OnInit
         },
     };
     pageJobLoadMore: any = {
-        courses: 0,
+        myCoursesList: 0,
     };
 
     constructor(renderer: Renderer2, CH: CqHelper)
@@ -65,24 +66,33 @@ export class CqMyCourses extends CqPage implements OnInit
             function: "get_my_courses_list",
             page: 1,
             length: 5,
+            search: this.pageData.filterText ? this.pageData.filterText : null,
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            let result = this.CH.toJson(data);
+            let result = this.CH.toArray(this.CH.toJson(data));
             this.reachedEndOfList = this.CH.isEmpty(result) || this.CH.getLength(result) < modeData.length;
-            if (this.CH.isEmpty(result)) return;
 
-            if (modeData.mode == 'firstload') this.pageData.courses = result;
-            else if (modeData.mode == 'loadingmore') this.pageData.courses = this.pageData.courses.concat(result);
-            else if (modeData.mode == 'refreshing') this.pageData.courses = result;
-            // this.pageData.coursesFiltered = this.filter.getFilteredData(this.pageData.courses);
-            this.pageData.coursesFiltered = this.pageData.courses;
+            if (modeData.mode != 'loadmore') this.pageData.courses = result;
+            else this.pageData.courses = this.pageData.courses.concat(result);
         }, moreloader, refresher, finalCallback);
     }
 
-    onFilterChange(): void
+    onFilterChange(data: any): void
     {
-        // this.pageData.coursesFiltered = this.filter.getFilteredData(this.pageData.courses);
-        this.pageData.coursesFiltered = this.pageData.courses;
+        this.pageIsLoading = true;
+        clearTimeout(this.pageData.filterAgent);
+        let locaAgent = this.pageData.filterAgent = setTimeout(() => {
+            let text = data.text.trim().toLowerCase();
+
+            if (locaAgent != this.pageData.filterAgent || text == this.pageData.filterText)
+            {
+                this.pageIsLoading = false;
+                return;
+            }
+
+            this.pageData.filterText = data.text;
+            this.pageForceReferesh();
+        }, 1000);
     }
 }

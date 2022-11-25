@@ -109,8 +109,9 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
 
     filterTextChange(value: string): void
     {
-        this.filterText = value;
-        this.onFilterChange.emit();
+        this.onFilterChange.emit({
+            text: value,
+        });
     }
     filterMultipleChange(identifier: string, value: string, selected?: boolean): void
     {

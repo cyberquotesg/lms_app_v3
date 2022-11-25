@@ -4,6 +4,7 @@ import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/comp
 import { CqTileComponent } from './cq_tile/cq_tile';
 import { CqHeaderComponent } from './cq_header/cq_header';
 import { CqEmptyComponent } from './cq_empty/cq_empty';
+import { CqFilterComponent } from './cq_filter/cq_filter';
 import { CqChartComponent } from './cq_chart/cq_chart';
 
 @NgModule({
@@ -11,6 +12,7 @@ import { CqChartComponent } from './cq_chart/cq_chart';
         CqTileComponent,
         CqHeaderComponent,
         CqEmptyComponent,
+        CqFilterComponent,
         CqChartComponent,
     ],
     imports: [
@@ -21,6 +23,7 @@ import { CqChartComponent } from './cq_chart/cq_chart';
         CqTileComponent,
         CqHeaderComponent,
         CqEmptyComponent,
+        CqFilterComponent,
         CqChartComponent,
     ],
 })

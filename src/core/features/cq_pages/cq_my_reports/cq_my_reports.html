@@ -8,18 +8,19 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
+        <div class="base-background">
 
         <div class="text-center">
-            <ion-slides [options]="yearsSliderOptions">
+            <ion-slides [options]="pageData.yearsSliderOptions">
                 <ion-slide *ngFor="let availableYear of pageData.availableYears" class="mt-36 mb-36">
-                    <button class="{{ availableYear == year ? 'active' : '' }}" (click)="selectYear(availableYear)">
+                    <button class="{{ availableYear == pageData.selectedYear ? 'active' : '' }}" (click)="selectYear(availableYear)">
                         {{ availableYear }}
                     </button>
                 </ion-slide>
             </ion-slides>
         </div>
 
-        <ion-slides #pageSlider [options]="pageSliderOptions" (ionSlideDidChange)="pageSliderChange()">
+        <ion-slides #pageSlider [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()">
             <ion-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
                 <div *ngIf="pageData[availableYear]">
                     <div class="text-center">
@@ -46,14 +47,18 @@
                     </div>
 
                     <!-- 
-                    data masih salah, ga accredited kok masuk hitungan?
-                    data seperti my reports
-                    config masuk server
+                    > data masih salah, ga accredited kok masuk hitungan?
+                    > data seperti my reports
+                    v config masuk server
+
                     scroll bawah masih ngikut slide sebelahnya
                     filter
                     kalo pas ga ada data:
                         dari server emang ga ada
                         setelah difilter ga ada
+
+                    v variable di sini mestinya masuk pageData
+                    v slide options mesti otomatis seperti di dashbaord
                      -->
 
                     <!-- 
@@ -97,7 +102,7 @@
                                         <div class="cq-tag-wrapper text-left pt-8" style="clear: both;">
                                             <span *ngIf="course.compulsory == 1" class="cq-tag orange">Compulsory</span>
                                             <span class="cq-tag">{{ toHumanText(course.media) }}</span>
-                                            <span class="cq-tag">{{ toHumanText(course.detailedAttendance) }}</span>
+                                            <span class="cq-tag {{ course.detailedAttendance != 'accredited' ? 'red' : 'green' }}">{{ toHumanText(course.detailedAttendance) }}</span>
                                         </div>
                                     </div>
                                 </ion-card-content>
@@ -113,6 +118,7 @@
                 </div>
             </ion-slide>
         </ion-slides>
-
+        
+        </div>
     </core-loading>
 </ion-content>

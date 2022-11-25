@@ -1,5 +1,5 @@
 <ion-header>
-    <cq_header [title]="'Available Courses'" [displayMenu]="true" [displayNotification]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
+    <cq_header [title]="'Available Courses'" [displayMenu]="true" [displayNotification]="true" [displayProgress]="pageIsLoading" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
 </ion-header>
 
 <ion-content class="cq_available_courses">
@@ -8,10 +8,25 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
+        <div class="base-background">
 
-        <!-- <cq-filter [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange()"></cq-filter> -->
-        <cq_tile [items]="pageData.coursesFiltered" (onSelectItem)="openCourse($event)"></cq_tile>
-        <core-infinite-loading *ngIf="isAvailable(pageData.coursesFiltered)" [enabled]="!reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
+        <div class="text-center mt-36">
+            <button *ngFor="let media of pageData.medias" class="{{ media == pageData.media ? 'active' : '' }}" class="ml-12 mr-12" (click)="selectMedia(media)" style="width: 145px">
+                <span *ngIf="media == 'online'">E-Learning</span>
+                <span *ngIf="media == 'offline'">Classroom Training</span>
+            </button>
+        </div>
 
+        <ion-slides #pageSlider [options]="pageData.sliderOptions" (ionSlideDidChange)="pageSliderChange()">
+            <ion-slide *ngFor="let media of pageData.medias" class="mt-36 mb-36">
+                <div class="text-left ml-20 mr-20" style="width: 100%">
+                    <cq_filter [filterMultiple]="pageData[media].filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange($event)"></cq_filter>
+                    <cq_tile [items]="pageData[media].courses" (onSelectItem)="openCourse($event)"></cq_tile>
+                    <core-infinite-loading *ngIf="isAvailable(pageData[media].courses)" [enabled]="!pageData[media].reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
+                </div>
+            </ion-slide>
+        </ion-slides>
+        
+        </div>
     </core-loading>
 </ion-content>

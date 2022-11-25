@@ -9,6 +9,8 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
+        <div class="base-background">
+
         <!-- 
         <div class="fake-header-replacement" style="height: 48px">&nbsp;</div>
 
@@ -83,44 +85,27 @@
             </ion-card-content>
         </ion-card>
 
-        <div *ngIf="isAvailable(pageData.eLearningList)">
-            <div class="pl-24 pt-40 pr-24 pb-20" style="font-weight: 900;">
-                E-Learning Courses You May Like
+        <div *ngFor="let mediaList of ['eLearningList', 'classroomTrainingList']">
+            <div *ngIf="isAvailable(pageData[mediaList])">
+                <div class="pl-24 pt-40 pr-24 pb-20" style="font-weight: 900;">
+                    <span *ngIf="mediaList == 'eLearningList'">E-Learning You May Like</span>
+                    <span *ngIf="mediaList == 'classroomTrainingList'">Classroom Training You May Like</span>
+                </div>
+                <ion-slides class="pl-24 pr-24" [options]="pageData.slideOptions">
+                    <ion-slide *ngFor="let course of pageData[mediaList]" class="mb-24">
+                       <cq_tile [items]="course" (onSelectItem)="openCourse($event)"></cq_tile>
+                    </ion-slide>
+
+                    <ion-slide class="mb-24">
+                        <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses()">
+                            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
+                                More Courses
+                                <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>
+                            </div>
+                        </ion-card>
+                    </ion-slide>
+                </ion-slides>
             </div>
-            <ion-slides class="pl-24 pr-24" [options]="pageData.slideOptions">
-                <ion-slide *ngFor="let course of pageData.eLearningList" class="mb-24">
-                   <cq_tile [items]="course" (onSelectItem)="openCourse($event)"></cq_tile>
-                </ion-slide>
-
-                <ion-slide class="mb-24">
-                    <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses()">
-                        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
-                            More Courses
-                            <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>
-                        </div>
-                    </ion-card>
-                </ion-slide>
-            </ion-slides>
-        </div>
-
-        <div *ngIf="isAvailable(pageData.classroomTrainingListclassroomTrainingList)">
-            <div class="pl-24 pt-40 pr-24 pb-20" style="font-weight: 900;">
-                Classroom Training Courses You May Like
-            </div>
-            <ion-slides class="pl-24 pr-24" [options]="pageData.slideOptions">
-                <ion-slide *ngFor="let course of pageData.classroomTrainingList" class="mb-24">
-                   <cq_tile [items]="course" (onSelectItem)="openCourse($event)"></cq_tile>
-                </ion-slide>
-
-                <ion-slide class="mb-24">
-                    <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses()">
-                        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
-                            More Courses
-                            <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>
-                        </div>
-                    </ion-card>
-                </ion-slide>
-            </ion-slides>
         </div>
 
         <div *ngIf="pageData.additionalContents">
@@ -132,5 +117,6 @@
             </div>
         </div>
 
+        </div>
     </core-loading>
 </ion-content>

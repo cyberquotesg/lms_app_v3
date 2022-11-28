@@ -5,7 +5,6 @@ import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { ChartData } from 'chart.js';
-// import { CqFilterComponent } from '../components/cq-filter/cq-filter';
 
 @Component({
     selector: 'cq_my_reports',
@@ -14,7 +13,6 @@ import { ChartData } from 'chart.js';
 })
 export class CqMyReports extends CqPage implements OnInit
 {
-    // @ViewChild(CqFilterComponent) filter: CqFilterComponent;
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
     pageParams = {
@@ -41,8 +39,8 @@ export class CqMyReports extends CqPage implements OnInit
         this.pageData.yearsSliderOptions = {
             initialSlide: 0,
             speed: 400,
-            centerInsufficientSlides: true,
-            centeredSlides: true,
+            centerInsufficientSlides: false,
+            centeredSlides: false,
             centeredSlidesBounds: true,
             breakpoints: {},
         };
@@ -153,15 +151,14 @@ export class CqMyReports extends CqPage implements OnInit
             data = this.CH.toJson(data);
             thisYearData.perCourseType = data.hours.courseTypes;
             thisYearData.courses = data.list;
-            thisYearData.totalCPD = data.hours.decimal,
-            thisYearData.totalCPDInHours = this.CH.beautifulNumber(data.hours.hours),
-            thisYearData.totalCPDInMinutes = this.CH.beautifulNumber(data.hours.minutes),
-
-            // thisYearData.coursesFiltered = this.filter.getFilteredData(thisYearData.courses);
-            thisYearData.coursesFiltered = thisYearData.courses;
+            thisYearData.coursesFiltered = this.CH.getFilteredData(thisYearData.courses, thisYearData.filterText, thisYearData.filterMultiple);
+            thisYearData.totalCPD = data.hours.decimal;
+            thisYearData.totalCPDInHours = this.CH.beautifulNumber(data.hours.hours);
+            thisYearData.totalCPDInMinutes = this.CH.beautifulNumber(data.hours.minutes);
 
             for (let courseType of this.pageData.courseTypes.array)
             {
+                if (!thisYearData.perCourseType[courseType.jsIdentifier]) continue;
                 thisYearData.perCourseType[courseType.jsIdentifier].courses = thisYearData.coursesFiltered.filter((course) => {
                     return (course.type && course.type == courseType.id) || (course.courseType && course.courseType == courseType.id);
                 });
@@ -181,6 +178,7 @@ export class CqMyReports extends CqPage implements OnInit
             for (let courseType of this.pageData.courseTypes.array)
             {
                 if (courseType.includetocpdhours != 1) continue;
+                if (!data.hours.courseTypes[courseType.jsIdentifier]) continue;
                 if (!data.hours.courseTypes[courseType.jsIdentifier].raw) continue;
 
                 let dataset: any = {
@@ -216,6 +214,8 @@ export class CqMyReports extends CqPage implements OnInit
 
             chartData.datasets = datasets;
             thisYearData.chartData = chartData;
+
+            this.adjustScreenHeight();
         }, moreloader, refresher, finalCallback);
     }
 
@@ -236,13 +236,46 @@ export class CqMyReports extends CqPage implements OnInit
             this.pageSlider.getActiveIndex().then((index) => {
                 this.pageData.selectedYear = this.pageData.availableYears[index];
                 if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
-                else this.CH.log('final data', this.pageData);
+                else
+                {
+                    this.adjustScreenHeight();
+                    this.CH.log('final data', this.pageData);
+                }
             });
         }
+        else
+        {
+            this.adjustScreenHeight();
+        }
     }
-    onFilterChange(): void
+    onFilterChange(filter): void
     {
-        // this.pageData[this.pageData.selectedYear].coursesFiltered = this.filter.getFilteredData(this.pageData[this.pageData.selectedYear].courses);
-        this.pageData[this.pageData.selectedYear].coursesFiltered = this.pageData[this.pageData.selectedYear].courses;
+        let thisYearData = this.pageData[this.pageData.selectedYear];
+        thisYearData.filterText = filter.text;
+        thisYearData.filterMultiple = filter.multiple;
+        thisYearData.coursesFiltered = this.CH.getFilteredData(thisYearData.courses, thisYearData.filterText, thisYearData.filterMultiple);
+
+        for (let courseType of this.pageData.courseTypes.array)
+        {
+            if (!thisYearData.perCourseType[courseType.jsIdentifier]) continue;
+            thisYearData.perCourseType[courseType.jsIdentifier].courses = thisYearData.coursesFiltered.filter((course) => {
+                return (course.type && course.type == courseType.id) || (course.courseType && course.courseType == courseType.id);
+            });
+        }
+
+        this.adjustScreenHeight();
+    }
+
+    adjustScreenHeight()
+    {
+        // a moment after slide, make sure the slider has proper height
+        this.pageSlider.el.style.transition = "height ease 0.2s";
+        let activeChild = document.querySelector(".page-slider .swiper-wrapper .swiper-slide-active");
+        if (activeChild)
+        {
+            setTimeout(() => {
+                this.pageSlider.el.style.height = activeChild.firstChild.offsetHeight + 20 + "px";
+            }, 200);
+        }
     }
 }

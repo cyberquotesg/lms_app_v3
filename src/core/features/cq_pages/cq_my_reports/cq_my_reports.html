@@ -20,7 +20,7 @@
             </ion-slides>
         </div>
 
-        <ion-slides #pageSlider [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()">
+        <ion-slides #pageSlider class="page-slider" [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()">
             <ion-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
                 <div *ngIf="pageData[availableYear]">
                     <div class="text-center">
@@ -46,69 +46,56 @@
                         </ion-card>
                     </div>
 
-                    <!-- 
-                    > data masih salah, ga accredited kok masuk hitungan?
-                    > data seperti my reports
-                    v config masuk server
-
-                    scroll bawah masih ngikut slide sebelahnya
-                    filter
-                    kalo pas ga ada data:
-                        dari server emang ga ada
-                        setelah difilter ga ada
-
-                    v variable di sini mestinya masuk pageData
-                    v slide options mesti otomatis seperti di dashbaord
-                     -->
-
-                    <!-- 
-                    <div class="mt-14 mb-14">
-                        <cq-filter [filterMultiple]="pageData[availableYear].filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange()"></cq-filter>
+                    <div *ngIf="!isEmpty(pageData[availableYear].courses)" class="pl-cs pr-cs pt-12 pb-0">
+                        <cq_filter [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange($event)"></cq_filter>
                     </div>
-                     -->
 
-                    <div *ngFor="let courseType of pageData.courseTypes.array">
-                        <div *ngIf="isAvailable(pageData[availableYear].perCourseType[courseType.jsIdentifier].courses)">
-                            <div class="main-font text-left" class="pl-20 pr-20 pt-28 text-left" style="font-size: 16px;">
-                                {{ courseType.name }}
+                    <div *ngIf="!isEmpty(pageData[availableYear].coursesFiltered)">
+                        <div *ngFor="let courseType of pageData.courseTypes.array">
+                            <div *ngIf="isAvailable(pageData[availableYear].perCourseType[courseType.jsIdentifier].courses)">
+                                <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                                    {{ courseType.name }}
 
-                                {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].hours }}
-                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours == 1">Hour</span>
-                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours != 1">Hours</span>
+                                    {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].hours }}
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours == 1">Hour</span>
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].hours != 1">Hours</span>
 
-                                <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes > 0">
-                                    {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes }}
-                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes == 1">Minute</span>
-                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes != 1">Minutes</span>
-                                </span>
+                                    <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes > 0">
+                                        {{ pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes }}
+                                        <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes == 1">Minute</span>
+                                        <span *ngIf="pageData[availableYear].perCourseType[courseType.jsIdentifier].minutes != 1">Minutes</span>
+                                    </span>
 
-                                <small *ngIf="courseType.includetocpdhours != 1" style="display: block;">Excluded from CPD Hours</small>
+                                    <small *ngIf="courseType.includetocpdhours != 1" style="display: block;">Excluded from CPD Hours</small>
 
-                                <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                                    <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                                </div>
+                        
+                                <!-- warning! masih pake warna purle -->
+                                <ion-card *ngFor="let course of pageData[availableYear].perCourseType[courseType.jsIdentifier].courses">
+                                    <ion-card-content>
+                                        <div class="card-single-list has-left">
+                                            <div class="csl-left">
+                                                <!-- warning! masih belum pakai beautiful number -->
+                                                <span class="dot small d-block elevation-1 {{ course.detailedAttendance != 'accredited' || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
+                                            </div>
+                                            <div class="csl-center text-left">
+                                                <h2 class="mt-4 mb-5">{{course.name || course.coursename}}</h2>
+                                                <p class="no-break">Completion Date: {{course.end_date_text}}</p>
+                                            </div>
+                                            <div class="cq-tag-wrapper text-left pt-8" style="clear: both;">
+                                                <span *ngIf="course.compulsory == 1" class="cq-tag orange">Compulsory</span>
+                                                <span class="cq-tag">{{ toHumanText(course.media) }}</span>
+                                                <span class="cq-tag {{ course.detailedAttendance != 'accredited' ? 'red' : 'green' }}">{{ toHumanText(course.detailedAttendance) }}</span>
+                                            </div>
+                                        </div>
+                                    </ion-card-content>
+                                </ion-card>
                             </div>
-                    
-                            <!-- warning! masih pake warna purle -->
-                            <ion-card *ngFor="let course of pageData[availableYear].perCourseType[courseType.jsIdentifier].courses">
-                                <ion-card-content>
-                                    <div class="card-single-list has-left">
-                                        <div class="csl-left">
-                                            <!-- warning! masih belum pakai beautiful number -->
-                                            <span class="dot small d-block elevation-1 {{ course.detailedAttendance != 'accredited' || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
-                                        </div>
-                                        <div class="csl-center text-left">
-                                            <h2 class="mt-4 mb-5">{{course.name || course.coursename}}</h2>
-                                            <p class="no-break">Completion Date: {{course.end_date_text}}</p>
-                                        </div>
-                                        <div class="cq-tag-wrapper text-left pt-8" style="clear: both;">
-                                            <span *ngIf="course.compulsory == 1" class="cq-tag orange">Compulsory</span>
-                                            <span class="cq-tag">{{ toHumanText(course.media) }}</span>
-                                            <span class="cq-tag {{ course.detailedAttendance != 'accredited' ? 'red' : 'green' }}">{{ toHumanText(course.detailedAttendance) }}</span>
-                                        </div>
-                                    </div>
-                                </ion-card-content>
-                            </ion-card>
                         </div>
                     </div>
+
+                    <cq_empty [empty]="isEmpty(pageData[availableYear].coursesFiltered)"></cq_empty>
                 </div>
 
                 <div *ngIf="!pageData[availableYear]">
@@ -118,7 +105,7 @@
                 </div>
             </ion-slide>
         </ion-slides>
-        
+
         </div>
     </core-loading>
 </ion-content>

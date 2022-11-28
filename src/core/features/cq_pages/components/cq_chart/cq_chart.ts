@@ -3,7 +3,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, SimpleChange, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CqHelper } from '../../services/cq_helper';
 import { CqComponent } from '../../classes/cq_component';
-import { Chart, ChartData } from 'chart.js';
+import { Chart, ChartData, ChartOptions } from 'chart.js';
 
 @Component({
     selector: 'cq_chart',
@@ -87,7 +87,7 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
 
     generateChart(): void
     {
-        let options = {
+        let options: ChartOptions = {
             responsive: true,
             elements: {
                 line: {

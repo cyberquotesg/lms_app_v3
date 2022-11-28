@@ -110,7 +110,7 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
     filterTextChange(value: string): void
     {
         this.onFilterChange.emit({
-            text: value,
+            text: value.trim(),
         });
     }
     filterMultipleChange(identifier: string, value: string, selected?: boolean): void
@@ -130,6 +130,7 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
         this.onFilterChange.emit();
     }
 
+    /* *a/
     getFilteredData(items: any): any[]
     {
         const showLog = false;
@@ -140,6 +141,7 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
             items = this.CH.getFiltered(items, this.filterText);
         }
 
+        /* *a/
         if (!this.CH.isEmpty(this.filterMultipleFinal))
         {
             if (showLog) this.CH.log('getFilteredData - start getFilteredData');
@@ -226,7 +228,18 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
             }
             if (showLog) this.CH.log('getFilteredData - end getFilteredData');
         }
+        /* *a/
 
         return items;
     }
+    /* */
+
+    /* *a/
+    async openModal(): Promise<any>
+    {
+        return await this.CH.modal(CqFilterParentModule, {filterMultipleFinal: this.filterMultipleFinal}, (data) => {
+            this.filterMultipleFinal = data.filterMultipleFinal;
+        });
+    }
+    /* */
 }

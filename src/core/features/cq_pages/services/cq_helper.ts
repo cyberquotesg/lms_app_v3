@@ -478,6 +478,106 @@ export class CqHelper
 
         return filteredData;
     }
+    getFilteredData(items: any, filterText?: string, filterMultiple?: any[]): any[]
+    {
+        const showLog = false;
+        items = this.toArray(items);
+
+        if (!this.isEmpty(filterText))
+        {
+            items = this.getFiltered(items, filterText);
+        }
+
+        if (!this.isEmpty(filterMultiple))
+        {
+            if (showLog) this.log('getFilteredData - start getFilteredData');
+            
+            for (let index in filterMultiple)
+            {
+                let filter = filterMultiple[index];
+                let fieldsToCheck = this.toArray(filter.fieldsToCheck);
+
+                // compile true options first
+                let trueOptions: any[] = [];
+                for (let index in filter.options)
+                {
+                    if (filter.options[index].selected) trueOptions.push(filter.options[index].value);
+                }
+
+                if (showLog)
+                {
+                    this.log('getFilteredData - checking this filter:', filter);
+                    this.log('getFilteredData - trueOptions for this filter:', trueOptions);
+                }
+
+                let newItems: any[] = [];
+                for (let index in items)
+                {
+                    let item = items[index];
+                    if (showLog) this.log('> getFilteredData - checking this item:', item);
+
+                    fieldsToCheck.forEach((fieldToCheck) => {
+                        if (showLog) this.log('>> getFilteredData - checking this field:', fieldToCheck);
+
+                        if (typeof item[fieldToCheck] == 'undefined')
+                        {
+                            if (showLog) this.log('>> getFilteredData - fieldToCheck is not found on item');
+                            return;
+                        }
+                        else
+                        {
+                            if (showLog) this.log('>> getFilteredData - fieldToCheck is found');
+
+                            trueOptions.forEach((trueOption) => {
+                                if (showLog) this.log('>>> getFilteredData - checking this option:', trueOption);
+
+                                if (typeof trueOption == 'undefined')
+                                {
+                                    if (typeof item[fieldToCheck] == 'undefined' || item[fieldToCheck] === null || item[fieldToCheck] === '')
+                                    {
+                                        if (showLog) this.log('>>> getFilteredData - not set!');
+                                    }
+                                    else
+                                    {
+                                        if (showLog) this.log('>>> getFilteredData - NOT match!');
+                                        return;
+                                    }
+                                }
+                                else
+                                {
+                                    if (trueOption == item[fieldToCheck])
+                                    {
+                                        if (showLog) this.log('>>> getFilteredData - match!');
+                                    }
+                                    else
+                                    {
+                                        if (showLog) this.log('>>> getFilteredData - NOT match!');
+                                        return;
+                                    }
+                                }
+
+                                // final check
+                                if (this.isItemFoundByCriteria(newItems, 'id', item.id))
+                                {
+                                    if (showLog) this.log('>>> item already exists, skipping');
+                                    return;
+                                }
+                                else
+                                {
+                                    if (showLog) this.log('>>> item doesn\'t exist, adding');
+                                    newItems.push(item);
+                                }
+                            });
+                        }
+                    });
+                }
+                items = newItems;
+            }
+            if (showLog) this.log('getFilteredData - end getFilteredData');
+        }
+
+        return items;
+    }
     getItemByCriteria(data: any, field: string, value: any, useStrict?: boolean): any
     {
         for (let i in data)

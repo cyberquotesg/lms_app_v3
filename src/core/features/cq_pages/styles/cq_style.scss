@@ -154,11 +154,15 @@ body
     {
         display: flex;
 
-        .justify-center
+        &.justify-center
         {
             justify-content: center;
         }
-        .align-center
+        &.justify-between
+        {
+            justify-content: space-between;
+        }
+        &.align-center
         {
             align-items: center;
         }
@@ -249,6 +253,40 @@ body
     .color-footer-text-color { color: var(--footerTextColor, white) !important; }
 
     .font-bold { font-weight: 700 !important; }
+
+    .pl-cs
+    {
+    	padding-left: $component_spacing;
+    }
+    .pr-cs
+    {
+    	padding-right: $component_spacing;
+    }
+    .ml-cs
+    {
+    	margin-left: $component_spacing;
+    }
+    .mr-cs
+    {
+    	margin-right: $component_spacing;
+    }
+
+    .pl-cst
+    {
+    	padding-left: $component_spacing_thin;
+    }
+    .pr-cst
+    {
+    	padding-right: $component_spacing_thin;
+    }
+    .ml-cst
+    {
+    	margin-left: $component_spacing_thin;
+    }
+    .mr-cst
+    {
+    	margin-right: $component_spacing_thin;
+    }
 
 	// ============================================================================================= angular / ionic / moodle component
 	ion-tabs
@@ -486,10 +524,11 @@ body
 	    {
 	    	.cq-filter-input-wrapper
 	    	{
+	    		font-size: 16px;
     		    border-radius: 12px;
     		    overflow: hidden;
 		    	box-shadow: $neumorphism_shadow_inset;
-	    		padding: 0px #{$component_spacing_thin};
+	    		padding: 4px #{$component_spacing_thin};
 	    		margin-bottom: $component_spacing;
 	    	}
 	    }
@@ -916,7 +955,7 @@ body
 	.cq-empty
 	{
 	    text-align: center;
-	    padding: 40px 0px 20px;
+	    padding: 40px 0px;
 	    font-size: 12px;
 	    color: #989898;
 	}

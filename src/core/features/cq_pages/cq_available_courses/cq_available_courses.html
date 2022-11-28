@@ -10,8 +10,8 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background">
 
-        <div class="text-center mt-36">
-            <button *ngFor="let media of pageData.medias" class="{{ media == pageData.media ? 'active' : '' }}" class="ml-12 mr-12" (click)="selectMedia(media)" style="width: 145px">
+        <div class="text-center mt-36 ml-cs mr-cs d-flex justify-between">
+            <button *ngFor="let media of pageData.medias" class="{{ media == pageData.media ? 'active' : '' }}" class="" (click)="selectMedia(media)" style="width: calc(50% - 12px)">
                 <span *ngIf="media == 'online'">E-Learning</span>
                 <span *ngIf="media == 'offline'">Classroom Training</span>
             </button>
@@ -26,7 +26,7 @@
                 </div>
             </ion-slide>
         </ion-slides>
-        
+
         </div>
     </core-loading>
 </ion-content>

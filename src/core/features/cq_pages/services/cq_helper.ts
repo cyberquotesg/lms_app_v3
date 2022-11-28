@@ -478,7 +478,7 @@ export class CqHelper
 
         return filteredData;
     }
-    getFilteredData(items: any, filterText?: string, filterMultiple?: any[]): any[]
+    getFilteredData(items: any, filterText: string, filterMultiple: any[]): any[]
     {
         const showLog = false;
         items = this.toArray(items);
@@ -491,7 +491,7 @@ export class CqHelper
         if (!this.isEmpty(filterMultiple))
         {
             if (showLog) this.log('getFilteredData - start getFilteredData');
-            
+
             for (let index in filterMultiple)
             {
                 let filter = filterMultiple[index];

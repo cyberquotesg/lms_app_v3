@@ -77,16 +77,25 @@
                                         <div class="card-single-list has-left">
                                             <div class="csl-left">
                                                 <!-- warning! masih belum pakai beautiful number -->
-                                                <span class="dot small d-block elevation-1 {{ course.detailedAttendance != 'accredited' || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
+                                                <span class="dot small d-block elevation-1 {{ course.detailedUserStatusInSession != 'accredited' || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
                                             </div>
                                             <div class="csl-center text-left">
                                                 <h2 class="mt-4 mb-5">{{course.name || course.coursename}}</h2>
                                                 <p class="no-break">Completion Date: {{course.end_date_text}}</p>
                                             </div>
                                             <div class="cq-tag-wrapper text-left pt-8" style="clear: both;">
-                                                <span *ngIf="course.compulsory == 1" class="cq-tag orange">Compulsory</span>
-                                                <span class="cq-tag">{{ toHumanText(course.media) }}</span>
-                                                <span class="cq-tag {{ course.detailedAttendance != 'accredited' ? 'red' : 'green' }}">{{ toHumanText(course.detailedAttendance) }}</span>
+                                                <span *ngIf="course.media == 'online'" class="cq-tag">E-Learning</span>
+                                                <span *ngIf="course.media == 'offline'" class="cq-tag">Classroom Training</span>
+
+                                                <span *ngIf="course.detailedUserStatusInSession != 'accredited'" class="cq-tag red">{{ course.detailedUserStatusInSessionText }}</span>
+                                                <span *ngIf="course.detailedUserStatusInSession == 'accredited'" class="cq-tag green">
+                                                    <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+                                                    {{ course.detailedUserStatusInSessionText }}
+                                                </span>
+
+                                                <span *ngIf="course.compulsory === true || course.compulsory === 1 || course.compulsory === '1'" class="cq-tag orange">Compulsory</span>
+                                                <span *ngIf="course.typeText || course.courseTypeText" class="cq-tag dark-grey">{{ course.typeText || course.courseTypeText }}</span>
+                                                <span *ngIf="course.categoryname || course.categoryName" class="cq-tag dark-grey">{{ course.categoryname || course.categoryName }}</span>
                                             </div>
                                         </div>
                                     </ion-card-content>

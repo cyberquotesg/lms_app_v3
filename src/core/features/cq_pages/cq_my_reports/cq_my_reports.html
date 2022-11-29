@@ -20,7 +20,7 @@
             </ion-slides>
         </div>
 
-        <ion-slides #pageSlider class="page-slider" [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()">
+        <ion-slides #pageSlider class="page-slider" [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height 0.2s ease 0s;">
             <ion-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
                 <div *ngIf="pageData[availableYear]">
                     <div class="text-center">

@@ -269,14 +269,12 @@ export class CqMyReports extends CqPage implements OnInit
     adjustScreenHeight()
     {
         // a moment after slide, make sure the slider has proper height
-        let parent = document.querySelector<HTMLElement>(".page-slider .swiper-wrapper");
-        let activeChild = document.querySelector<HTMLElement>(".page-slider .swiper-wrapper .swiper-slide-active > div:first-child");
-
-        parent!.style!.transition = "height ease 0.2s";
+        this.pageSlider.el.style.transition = "height ease 0.2s";
+        let activeChild = document.querySelector(".page-slider .swiper-wrapper .swiper-slide-active");
         if (activeChild)
         {
             setTimeout(() => {
-                parent!.style!.height = activeChild!.offsetHeight + 20 + "px";
+                this.pageSlider.el.style.height = activeChild.firstChild.offsetHeight + 20 + "px";
             }, 200);
         }
     }

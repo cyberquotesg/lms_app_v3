@@ -39,7 +39,7 @@ export class CqMyReports extends CqPage implements OnInit
         this.pageData.yearsSliderOptions = {
             initialSlide: 0,
             speed: 400,
-            centerInsufficientSlides: false,
+            centerInsufficientSlides: true,
             centeredSlides: false,
             centeredSlidesBounds: true,
             breakpoints: {},

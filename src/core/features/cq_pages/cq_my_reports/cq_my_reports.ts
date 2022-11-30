@@ -215,7 +215,7 @@ export class CqMyReports extends CqPage implements OnInit
             chartData.datasets = datasets;
             thisYearData.chartData = chartData;
 
-            this.adjustScreenHeight();
+            this.adjustScreenHeight(".page-slider-cqmr");
         }, moreloader, refresher, finalCallback);
     }
 
@@ -238,14 +238,14 @@ export class CqMyReports extends CqPage implements OnInit
                 if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
                 else
                 {
-                    this.adjustScreenHeight();
+                    this.adjustScreenHeight(".page-slider-cqmr");
                     this.CH.log('final data', this.pageData);
                 }
             });
         }
         else
         {
-            this.adjustScreenHeight();
+            this.adjustScreenHeight(".page-slider-cqmr");
         }
     }
     onFilterChange(filter): void
@@ -263,19 +263,6 @@ export class CqMyReports extends CqPage implements OnInit
             });
         }
 
-        this.adjustScreenHeight();
-    }
-
-    adjustScreenHeight()
-    {
-        // a moment after slide, make sure the slider has proper height
-        setTimeout(() => {
-            let parent = document.querySelector(".page-slider") as HTMLElement | null;
-            let activeChild = document.querySelector(".page-slider .swiper-wrapper .swiper-slide-active > div:first-child") as HTMLDivElement | null;
-            if (parent && activeChild)
-            {
-                parent.style.height = activeChild.offsetHeight + 20 + "px";
-            }
-        }, 200);
+        this.adjustScreenHeight(".page-slider-cqmr");
     }
 }

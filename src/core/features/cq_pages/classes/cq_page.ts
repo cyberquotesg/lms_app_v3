@@ -24,6 +24,7 @@ export class CqPage extends CqGeneral
 
     pageStatus = false;
     pageIsForcedFirstload = false;
+    pageIsForcedLoadMore = false;
     pageIsForcedRefresh = false;
     pageParams: any = {};
     pageDefaults: any = {};
@@ -33,7 +34,7 @@ export class CqPage extends CqGeneral
     pageIsLoading = false;
 
     page = 1;
-    length = 12;
+    length = 36;
     reachedEndOfList = false;
     loadMoreError = false;
 
@@ -96,12 +97,12 @@ export class CqPage extends CqGeneral
         let mode = this.defineMode(moreloader, refresher);
         let modeData = this.handlePageByMode(mode);
 
-        if (firstload || loadingmore || refreshing || this.pageIsForcedFirstload || this.pageIsForcedRefresh)
+        if (firstload || loadingmore || refreshing || this.pageIsForcedFirstload || this.pageIsForcedLoadMore || this.pageIsForcedRefresh)
         {
             this.pageIsLoading = true;
 
             // set page data to default
-            if (!refreshing && !isDependantCall && !loadingmore && !this.pageIsForcedRefresh)
+            if (!refreshing && !isDependantCall && !loadingmore && !this.pageIsForcedLoadMore && !this.pageIsForcedRefresh)
             {
                 for (var key in this.pageDefaults)
                 {
@@ -160,6 +161,11 @@ export class CqPage extends CqGeneral
     pageForcedFirstload(finalCallback?: any): void
     {
         this.pageIsForcedFirstload = true;
+        this.pageLoad(null, null, null, false, finalCallback);
+    }
+    pageForceLoadMore(finalCallback?: any): void
+    {
+        this.pageIsForcedLoadMore = true;
         this.pageLoad(null, null, null, false, finalCallback);
     }
     pageForceReferesh(finalCallback?: any): void
@@ -223,6 +229,7 @@ export class CqPage extends CqGeneral
 
             this.pageStatus = true;
             this.pageIsForcedFirstload = false;
+            this.pageIsForcedLoadMore = false;
             this.pageIsForcedRefresh = false;
             this.pageIsLoading = false;
 
@@ -244,6 +251,7 @@ export class CqPage extends CqGeneral
         if (!loadingmore && !refreshing)
         {
             if (this.pageIsForcedFirstload) return 'forced-firstload';
+            else if (this.pageIsForcedLoadMore) return 'forced-loadmore';
             else if (this.pageIsForcedRefresh) return 'forced-refresh';
             else return 'firstload';
         }
@@ -258,10 +266,11 @@ export class CqPage extends CqGeneral
 
         if (mode == 'firstload' || mode == 'forced-firstload')
         {
-            page = 1;
+            this.page = 1;
+            page = this.page;
             length = this.length;
         }
-        else if (mode == 'loadmore')
+        else if (mode == 'loadmore' || mode == 'forced-loadmore')
         {
             this.page++;
             page = this.page;
@@ -272,7 +281,7 @@ export class CqPage extends CqGeneral
             page = 1;
             length = this.page * this.length;
         }
-        
+
         // everything else
         else
         {
@@ -359,5 +368,18 @@ export class CqPage extends CqGeneral
     openOnlineCourseById(courseId: number): void
     {
         this.openCourseById('online', courseId);
+    }
+
+    adjustScreenHeight(pageClass: string): void
+    {
+        // a moment after slide, make sure the slider has proper height
+        setTimeout(() => {
+            let parent = document.querySelector(pageClass) as HTMLElement | null;
+            let activeChild = document.querySelector(pageClass + " .swiper-wrapper .swiper-slide-active > div:first-child") as HTMLDivElement | null;
+            if (parent && activeChild)
+            {
+                parent.style.height = activeChild.offsetHeight + 0 + "px";
+            }
+        }, 200);
     }
 }

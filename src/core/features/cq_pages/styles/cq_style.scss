@@ -128,6 +128,10 @@ body
 	{
 		background: $base_background_no_image;
 	}
+	.gradient-background
+	{
+		background-image: $gradient_background !important;
+	}
 
     .elevation-1 { @include elevation1; }
     .elevation-2 { @include elevation2; }
@@ -466,6 +470,19 @@ body
 			}
 		}
 	}
+	ion-slides
+	{
+		&.page-slider
+		{
+			.swiper-wrapper
+			{
+				.swiper-slide
+				{
+					align-items: flex-start;
+				}
+			}
+		}
+	}
 
     // for tile card
     cq_tile
@@ -503,8 +520,18 @@ body
 		    					justify-content: center;
 		    					align-items: center;
 		    					text-align: center;
-		    					height: 48px;
+		    					height: 50px;
+		    					line-height: 1.2em;
 		    					overflow: hidden;
+
+		    					.card-title-inner
+		    					{
+		    						display: flex;
+		    						justify-content: center;
+		    						align-items: flex-start;
+		    						height: auto;
+		    						max-height: 100%;
+		    					}
 		    				}
 		    			}
 		    		}
@@ -897,6 +924,31 @@ body
 			&.active
 			{
 				box-shadow: $neumorphism_shadow_inset;
+			}
+			&.load-more-button
+			{
+				display: block;
+				width: 50px !important;
+				height: 50px !important;
+				padding: 0px !important;
+				margin: 36px auto 0px;
+				line-height: 58px !important;
+				font-size: 30px;
+				border-radius: 50% !important;
+				background: $component_background;
+				box-shadow: $neumorphism_shadow;
+
+				ion-icon
+				{
+					border-radius: 50%;
+					background: $gradient_background;
+					color: $component_background;
+				}
+
+				&.loading
+				{
+					box-shadow: $neumorphism_shadow_inset;
+				}
 			}
 		}
 
@@ -1672,7 +1724,7 @@ body
 	    .cq-tag
 	    {
 	    	display: inline-block;
-		    font-size: 13px;
+		    font-size: 12px;
 		    color: white;
 	    	background: var(--headerBackgroundColor, $cq_purple_dark);
 		    border-radius: 7px;

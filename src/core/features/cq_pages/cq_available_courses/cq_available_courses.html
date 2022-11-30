@@ -10,19 +10,22 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background">
 
-        <div class="text-center mt-36 ml-cs mr-cs d-flex justify-between">
+        <div class="text-center pt-36 ml-cs mr-cs d-flex justify-between">
             <button *ngFor="let media of pageData.medias" class="{{ media == pageData.media ? 'active' : '' }}" class="" (click)="selectMedia(media)" style="width: calc(50% - 12px)">
                 <span *ngIf="media == 'online'">E-Learning</span>
                 <span *ngIf="media == 'offline'">Classroom Training</span>
             </button>
         </div>
 
-        <ion-slides #pageSlider [options]="pageData.sliderOptions" (ionSlideDidChange)="pageSliderChange()">
-            <ion-slide *ngFor="let media of pageData.medias" class="mt-36 mb-36">
-                <div class="text-left ml-20 mr-20" style="width: 100%">
+        <ion-slides #pageSlider class="page-slider page-slider-cqac" [options]="pageData.sliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height 0.2s ease 0s; min-height: calc(100vh - 50px - 80px - 48px);">
+            <ion-slide *ngFor="let media of pageData.medias">
+                <div class="text-left ml-20 mr-20 pt-36 pb-36" style="width: 100%">
                     <cq_filter [filterMultiple]="pageData[media].filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange($event)"></cq_filter>
                     <cq_tile [items]="pageData[media].courses" (onSelectItem)="openCourse($event)"></cq_tile>
-                    <core-infinite-loading *ngIf="isAvailable(pageData[media].courses)" [enabled]="!pageData[media].reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
+                    <button *ngIf="isAvailable(pageData[media].courses)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="pageData[media].reachedEndOfList">
+                        <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>
+                        <ion-spinner *ngIf="pageIsLoading"></ion-spinner>
+                    </button>
                 </div>
             </ion-slide>
         </ion-slides>

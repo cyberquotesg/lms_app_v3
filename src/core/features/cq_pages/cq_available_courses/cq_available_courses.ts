@@ -27,6 +27,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
             filterMultiple: [],
             filterAgent: null,
             filterText: "",
+            page: this.page,
+            length: this.length,
         },
         offline: {
             initiated: false,
@@ -34,6 +36,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
             filterMultiple: [],
             filterAgent: null,
             filterText: "",
+            page: this.page,
+            length: this.length,
         },
     };
     pageJob: any = {
@@ -96,43 +100,68 @@ export class CqAvailableCourses extends CqPage implements OnInit
     }
     courses(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
-        if (this.pageData.media == "online")
+        // don't use modeData.mode, but use it's own duplicated functionality
+        let page, length, media = this.pageData.media;
+        if (modeData.mode == 'firstload' || modeData.mode == 'forced-firstload')
         {
-            // warning! modeData itu bisa bingung antara dua slide
+            this.pageData[media].page = 1;
+            page = this.pageData[media].page;
+            length = this.pageData[media].length;
+        }
+        else if (modeData.mode == 'loadmore' || modeData.mode == 'forced-loadmore')
+        {
+            this.pageData[media].page++;
+            page = this.pageData[media].page;
+            length = this.pageData[media].length;
+        }
+        else if (modeData.mode == 'refresh' || modeData.mode == 'forced-refresh')
+        {
+            page = 1;
+            length = this.pageData[media].page * this.pageData[media].length;
+        }
+        else
+        {
+            page = this.pageData[media].page;
+            length = this.pageData[media].length;
+        }
+
+        if (media == "online")
+        {
             const params: any = {
                 class: "CqCourseLib",
                 function: "get_e_learning_list",
-                page: modeData.page,
-                length: modeData.length,
+                page: page,
+                length: length,
                 search: this.pageData.online.filterText,
             };
 
             this.pageJobExecuter(jobName, params, (data) => {
                 let courses = this.CH.toArray(this.CH.toJson(data));
                 this.pageData.online.initiated = true;
-                this.pageData.online.reachedEndOfList = this.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < modeData.length;
+                this.pageData.online.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < this.pageData.online.length;
 
-                if (modeData.mode != 'loadmore') this.pageData.online.courses = courses;
-                else this.pageData.courses = this.pageData.online.courses.concat(courses);
+                if (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') this.pageData.online.courses = courses;
+                else this.pageData.online.courses = this.pageData.online.courses.concat(courses);
 
                 if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
+
+                this.adjustScreenHeight(".page-slider-cqac");
             }, moreloader, refresher, finalCallback);
         }
-        else if (this.pageData.media == "offline")
+        else if (media == "offline")
         {
-            // warning! modeData itu bisa bingung antara dua slide
             const params: any = {
                 class: "CqCourseLib",
                 function: "get_classroom_training_list",
-                page: modeData.page,
-                length: modeData.length,
+                page: page,
+                length: length,
                 search: this.pageData.offline.filterText,
             };
 
             this.pageJobExecuter(jobName, params, (data) => {
                 let courses = this.CH.toArray(this.CH.toJson(data));
                 this.pageData.offline.initiated = true;
-                this.pageData.offline.reachedEndOfList = this.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < modeData.length;
+                this.pageData.offline.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < this.pageData.offline.length;
 
                 // aditional information
                 for (let id in courses)
@@ -142,10 +171,12 @@ export class CqAvailableCourses extends CqPage implements OnInit
                     courses[id].media = 'offline';
                 }
 
-                if (modeData.mode != 'loadmore') this.pageData.offline.courses = courses;
-                else this.pageData.courses = this.pageData.offline.courses.concat(courses);
+                if (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') this.pageData.offline.courses = courses;
+                else this.pageData.offline.courses = this.pageData.offline.courses.concat(courses);
 
                 if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
+
+                this.adjustScreenHeight(".page-slider-cqac");
             }, moreloader, refresher, finalCallback);
         }
     }
@@ -167,24 +198,34 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageSlider.getActiveIndex().then((index) => {
                 this.pageData.media = this.pageData.medias[index];
                 if (!this.pageData[this.pageData.media].initiated) this.pageForceReferesh();
-                else this.CH.log('final data', this.pageData);
+                else
+                {
+                    this.adjustScreenHeight(".page-slider-cqac");
+                    this.CH.log('final data', this.pageData);
+                }
             });
+        }
+        else
+        {
+            this.adjustScreenHeight(".page-slider-cqac");
         }
     }
     onFilterChange(data: any): void
     {
+        let media = this.pageData.media;
         this.pageIsLoading = true;
-        clearTimeout(this.pageData[this.pageData.media].filterAgent);
-        let locaAgent = this.pageData[this.pageData.media].filterAgent = setTimeout(() => {
+        clearTimeout(this.pageData[media].filterAgent);
+        let locaAgent = this.pageData[media].filterAgent = setTimeout(() => {
             let text = data.text.trim().toLowerCase();
 
-            if (locaAgent != this.pageData[this.pageData.media].filterAgent || text == this.pageData[this.pageData.media].filterText)
+            if (locaAgent != this.pageData[media].filterAgent || text == this.pageData[media].filterText)
             {
                 this.pageIsLoading = false;
                 return;
             }
 
-            this.pageData[this.pageData.media].filterText = data.text;
+            this.pageData[media].filterText = data.text;
+            this.pageData[media].page = 1;
             this.pageForceReferesh();
         }, 1000);
     }

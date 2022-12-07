@@ -24,9 +24,10 @@ filterMultiple: [
 ]
 */
 
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, SimpleChange , ViewChild} from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, SimpleChange, ViewChild} from '@angular/core';
 import { CqHelper } from '../../services/cq_helper';
 import { CqComponent } from '../../classes/cq_component';
+import { CqFilterComponentModal } from './cq_filter_modal';
 
 @Component({
     selector: 'cq_filter',
@@ -42,7 +43,6 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
     private filterMultipleFinal: any[] = [];
     private openFilterMultiple = false;
     private hasFilterMultiple: boolean = false;
-    private usingFullFilter = false;
 
     constructor(CH: CqHelper)
     {
@@ -104,7 +104,10 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
 
     toggleOpenFilterMultiple(): void
     {
-        if (!this.usingFullFilter) this.openFilterMultiple = !this.openFilterMultiple;
+        this.CH.modal(CqFilterComponentModal, {filterMultipleFinal: this.filterMultipleFinal}, (data) => {
+            console.log("closed", data);
+            this.filterMultipleFinal = data.filterMultipleFinal;
+        });
     }
 
     filterTextChange(value: string): void
@@ -129,6 +132,16 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
         }
         this.onFilterChange.emit();
     }
+
+
+
+
+
+
+
+
+
+
 
     /* *a/
     getFilteredData(items: any): any[]
@@ -231,15 +244,6 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
         /* *a/
 
         return items;
-    }
-    /* */
-
-    /* *a/
-    async openModal(): Promise<any>
-    {
-        return await this.CH.modal(CqFilterParentModule, {filterMultipleFinal: this.filterMultipleFinal}, (data) => {
-            this.filterMultipleFinal = data.filterMultipleFinal;
-        });
     }
     /* */
 }

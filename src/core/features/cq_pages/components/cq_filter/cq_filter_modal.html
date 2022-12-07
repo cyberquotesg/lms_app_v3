@@ -1,0 +1,31 @@
+<ion-header>
+    <ion-toolbar hideBackButton>
+        <ion-buttons slot="start">
+            <ion-back-button [text]="'core.back' | translate"></ion-back-button>
+        </ion-buttons>
+        <ion-buttons slot="end">
+            <button (click)="dismiss()">Close</button>
+        </ion-buttons>
+
+        <ion-title>
+            <h1 class="color-white text-center">Filter</h1>
+        </ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="cq-filter-page">
+    <div *ngIf="isAvailable(filterMultipleFinal)">
+        <div *ngFor="let filter of filterMultipleFinal" class="filter-multiple-area">
+            <hr class="checkbox-line" />
+            <div>
+                <div class="mt-14 mb-8">{{ toTitle(filter.identifier) }}</div>
+                <button *ngFor="let option of filter.options" [class]="'button button-small ml-3 mr-3 mt-4 mb-6 ' + (option.selected ? '' : 'inactive')" (click)="filterMultipleChange(filter.identifier, option.value, !option.selected)" data-value="{{option.value}}">{{ option.title }}</button>
+            </div>
+        </div>
+
+        <hr />
+        <span (click)="applyFilter()" class="button button-small" style="width: 100%">Apply Filter</span>
+    </div>
+
+    <cq_empty [empty]="isEmpty(filterMultipleFinal)"></cq_empty>
+</ion-content>

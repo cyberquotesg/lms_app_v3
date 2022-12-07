@@ -5,6 +5,7 @@ import { CqTileComponent } from './cq_tile/cq_tile';
 import { CqHeaderComponent } from './cq_header/cq_header';
 import { CqEmptyComponent } from './cq_empty/cq_empty';
 import { CqFilterComponent } from './cq_filter/cq_filter';
+import { CqFilterComponentModal } from './cq_filter/cq_filter_modal';
 import { CqChartComponent } from './cq_chart/cq_chart';
 
 @NgModule({
@@ -13,6 +14,7 @@ import { CqChartComponent } from './cq_chart/cq_chart';
         CqHeaderComponent,
         CqEmptyComponent,
         CqFilterComponent,
+        CqFilterComponentModal,
         CqChartComponent,
     ],
     imports: [
@@ -24,6 +26,7 @@ import { CqChartComponent } from './cq_chart/cq_chart';
         CqHeaderComponent,
         CqEmptyComponent,
         CqFilterComponent,
+        CqFilterComponentModal,
         CqChartComponent,
     ],
 })

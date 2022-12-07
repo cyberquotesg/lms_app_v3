@@ -22,7 +22,7 @@
             <ion-icon name="notifications"></ion-icon>
             <ion-badge *ngIf="isAvailable(notificationCount)" item-end="" class="badge background-grey">{{ notificationCount }}</ion-badge>
         </div>
-        <core-user-menu-button></core-user-menu-button>
+        <core-user-menu-button *ngIf="displayUserMenu"></core-user-menu-button>
     </ion-buttons>
 
     <ion-title>

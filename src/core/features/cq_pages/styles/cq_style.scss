@@ -551,13 +551,41 @@ body
 	    {
 	    	.cq-filter-input-wrapper
 	    	{
-	    		font-size: 16px;
+	    		font-size: 14px;
     		    border-radius: 12px;
     		    overflow: hidden;
 		    	box-shadow: $neumorphism_shadow_inset;
 	    		padding: 4px #{$component_spacing_thin};
 	    		margin-bottom: $component_spacing;
+	    		text-align: center;
+
+	    		ion-input
+	    		{
+	    			input
+	    			{
+	    				padding-right: 0px;
+	    			}
+	    		}
 	    	}
+
+    		&.has-filter-multiple
+    		{
+	    		display: flex;
+
+	    		.cq-filter-input-wrapper
+	    		{
+		    		margin-right: $component_spacing;
+	    			flex-grow: 1;
+    				flex-shrink: 1;
+	    		}
+    			.cq-filter-button-wrapper
+    			{
+		    		margin-bottom: $component_spacing;
+				    flex-grow: 0;
+				    flex-shrink: 0;
+				    font-size: 18px;
+    			}
+    		}
 	    }
     }
 
@@ -897,7 +925,7 @@ body
 		&:not(.bar-button):not(.tab-button):not(.alert-button):not(.action-sheet-button):not(.excluded-button)
 		{
 		    padding: 7px 13px !important;
-			border-radius: 17px !important;
+			border-radius: 12px;
 			text-decoration: none !important;
 			line-height: 1.5em;
 			white-space: normal;

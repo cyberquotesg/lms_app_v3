@@ -55,7 +55,7 @@
 
                         <div class="item-link" (click)="openCourse(course)">
                             <div *ngIf="course.media == 'online'">
-                                <h3 class="item-title">{{course.fullname}}</h3>
+                                <h3 class="item-title">{{course.fullname_trimmed || course.fullname}}</h3>
                                 <div class="cq-tag-wrapper">
                                     <span class="cq-tag dark-grey">E-Learning</span>
                                     <span *ngIf="course.courseTypeText" class="cq-tag">{{ course.courseTypeText }}</span>

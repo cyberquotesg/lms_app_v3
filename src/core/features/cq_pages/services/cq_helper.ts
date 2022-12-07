@@ -133,7 +133,8 @@ export class CqHelper
 
 	    for (i in list)
 	    {
-	    	if (typeof list[i].fullname != 'undefined') thisName = list[i].fullname.toLowerCase();
+	    	if (typeof list[i].fullname_trimmed != 'undefined') thisName = list[i].fullname_trimmed.toLowerCase();
+	    	else if (typeof list[i].fullname != 'undefined') thisName = list[i].fullname.toLowerCase();
 	    	else if (typeof list[i].name != 'undefined') thisName = list[i].name.toLowerCase();
 	    	else if (typeof list[i].title != 'undefined') thisName = list[i].title.toLowerCase();
 	    	else continue;
@@ -440,6 +441,7 @@ export class CqHelper
     		'name',
     		'title',
     		'displayname',
+    		'fullname_trimmed',
     		'fullname',
     		'shortname',
     		'coursename',
@@ -841,6 +843,9 @@ export class CqHelper
     	{
 	    	params.wstoken = this.getWsToken();
     	}
+
+    	// api version
+    	params.api_version = "2.0";
 		
     	return this.http.post(url, params, {headers, responseType: 'text'}).toPromise();
     }
@@ -1067,8 +1072,8 @@ export class CqHelper
             }
             else
             {
-                let c1Name = (c1.name || c1.fullname).toLowerCase().trim();
-                let c2Name = (c2.name || c2.fullname).toLowerCase().trim();
+                let c1Name = (c1.name || c1.fullname_trimmed || c1.fullname).toLowerCase().trim();
+                let c2Name = (c2.name || c2.fullname_trimmed || c2.fullname).toLowerCase().trim();
                 return c1Name > c2Name ? 1 : c1Name == c2Name ? 0 : -1;
             }
         });

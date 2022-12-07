@@ -43,7 +43,7 @@ export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
 
         // adjust the properties
         this.items.forEach((item) => {
-            item.title = item.title || item.subject || item.name || item.displayname || item.fullname || item.shortname;
+            item.title = item.title || item.subject || item.name || item.displayname || item.fullname_trimmed|| item.fullname || item.shortname;
             item.letter = this.CH.getLetter(item.title);
             item.description = item.description || item.summary || item.smallmessage;
             item.course_image = item.course_image || item.course_image_full;

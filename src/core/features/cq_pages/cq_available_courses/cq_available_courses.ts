@@ -44,7 +44,6 @@ export class CqAvailableCourses extends CqPage implements OnInit
         filterMultiple: 0,
         courses: 0,
     };
-    // warning! harus bisa bedain online dan offline
     pageJobLoadMore: any = {
         courses: 0,
     };

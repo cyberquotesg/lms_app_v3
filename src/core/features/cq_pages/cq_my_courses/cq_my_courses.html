@@ -11,7 +11,7 @@
         <div class="base-background">
 
         <div class="ml-20 mt-20 mr-20">
-            <cq_filter [filterMultipleTitle]="'Course Filter'" [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange($event)"></cq_filter>
+            <cq_filter [filterMultipleTitle]="'Course Filter'" [filterMultiple]="pageData.filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
             <cq_tile [items]="pageData.courses" (onSelectItem)="openCourse($event)"></cq_tile>
             <core-infinite-loading *ngIf="isAvailable(pageData.courses)" [enabled]="!reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
         </div>

@@ -87,7 +87,7 @@ export class CqMyReports extends CqPage implements OnInit
                 filterMultiple: {
                     class: 'CqLib',
                     function: 'get_filter_multiple',
-                    page: 'my_courses_list',
+                    page: 'my_reports',
                 },
             },
         };
@@ -248,11 +248,11 @@ export class CqMyReports extends CqPage implements OnInit
             this.adjustScreenHeight(".page-slider-cqmr");
         }
     }
-    onFilterChange(filter): void
+    onFilterChange(data: any): void
     {
         let thisYearData = this.pageData[this.pageData.selectedYear];
-        thisYearData.filterText = filter.text;
-        thisYearData.filterMultiple = filter.multiple;
+        thisYearData.filterText = data.text.trim().toLowerCase();
+        thisYearData.filterMultiple = this.CH.cloneJson(data.filterMultiple);
         thisYearData.coursesFiltered = this.CH.getFilteredData(thisYearData.courses, thisYearData.filterText, thisYearData.filterMultiple);
 
         for (let courseType of this.pageData.courseTypes.array)

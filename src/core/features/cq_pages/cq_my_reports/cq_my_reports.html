@@ -47,7 +47,7 @@
                     </div>
 
                     <div *ngIf="!isEmpty(pageData[availableYear].courses)" class="pl-cs pr-cs pt-12 pb-0">
-                        <cq_filter [filterMultiple]="pageData.filterMultiple" [includeEmptyOptionForAll]="true" (onFilterChange)="onFilterChange($event)"></cq_filter>
+                        <cq_filter [filterMultipleTitle]="'Course Filter'" [filterMultiple]="pageData.filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
                     </div>
 
                     <div *ngIf="!isEmpty(pageData[availableYear].coursesFiltered)">

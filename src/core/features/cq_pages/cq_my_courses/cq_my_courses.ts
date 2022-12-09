@@ -73,7 +73,7 @@ export class CqMyCourses extends CqPage implements OnInit
             item.options.forEach((option) => {
                 if (option.selected) bucket.push(option.value);
             });
-            if (bucket.length) params[item.plural] = bucket.join(",");
+            params[item.plural] = bucket.join(",");
         });
 
         this.pageJobExecuter(jobName, params, (data) => {

@@ -43,6 +43,7 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
     private filterText = '';
     private filterMultipleInternal: any[] = [];
     private hasFilterMultiple: boolean = false;
+    private openingFilterMultiple: boolean = false;
 
     constructor(CH: CqHelper)
     {
@@ -98,10 +99,12 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
     }
     openFilterMultiple(): void
     {
+        this.openingFilterMultiple = true;
         this.CH.modal(CqFilterComponentModal, {
             filterMultipleTitle: this.filterMultipleTitle,
             filterMultiple: this.filterMultipleInternal
         }, (data) => {
+            this.openingFilterMultiple = false;
             if (data.apply)
             {
                 this.filterMultipleInternal = this.CH.cloneJson(data.filterMultiple);

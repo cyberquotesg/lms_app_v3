@@ -9,52 +9,63 @@ import { CqComponent } from '../../classes/cq_component';
     templateUrl: 'cq_filter_modal.html'
 })
 export class CqFilterComponentModal extends CqComponent implements OnInit, OnChanges {
-    @Input() filterMultipleFinal: any[];
-    @Output() onFilterMultipleChange: EventEmitter<any>;
+    @Input() filterMultiple: any[];
+    @Input() filterMultipleTitle?: string;
+
+    private filterMultipleInternal: any[] = [];
 
     constructor(CH: CqHelper)
     {
         super(CH);
-        this.onFilterMultipleChange = new EventEmitter();
     }
 
     ngOnInit(): void
     {
+        this.filterMultipleInternal = this.CH.cloneJson(this.filterMultiple);
     }
     ngOnChanges(changes: SimpleChanges): void
     {
         this.implementChanges(changes);
+        this.filterMultipleInternal = this.CH.cloneJson(this.filterMultiple);
     }
 
-    filterMultipleChange(identifier: string, value: string, selected?: boolean): void
+    toggleOption(option: any): void
     {
-        /* *a/
-        // implement to filterMultipleFinal
-        for (let index in this.filterMultipleFinal)
-        {
-            let filter = this.filterMultipleFinal[index];
-            if (filter.identifier != identifier) continue;
+        option.selected = !option.selected;
+    }
+    optionsSelectedCount(options: any[]): string
+    {
+        let total: number = 0;
+        let totalSelected: number = 0;
 
-            for (let optionIndex in filter.options)
-            {
-                let option = filter.options[optionIndex];
-                if (option.value == value) this.filterMultipleFinal[index].options[optionIndex].selected = selected;
-            }
-        }
-        /* */
+        options.forEach((option) => {
+            total++;
+            if (option.selected) totalSelected++;
+        });
+
+        if (totalSelected == 0) return "none";
+        else if (total == totalSelected) return "all";
+        else return "some";
     }
-    applyFilter(): void
+    setOptions(options: any): void
     {
-        this.CH.dismissModal({
-            apply: true,
-            filterMultipleFinal: this.filterMultipleFinal
+        let value = this.optionsSelectedCount(options) != "all";
+        options.forEach((option) => {
+            option.selected = value;
         });
     }
-    dismiss(): void
+    getClassByOptionsSelected(options: any): string
     {
-        this.CH.dismissModal({
-            apply: false,
-            filterMultipleFinal: {}
-        });
+        let value = this.optionsSelectedCount(options);
+
+        if (value == "all") return "active";
+        else return "";
+    }
+    applyFilter(apply: boolean): void
+    {
+        let returnData: any = {apply};
+        if (apply) returnData.filterMultiple = this.filterMultipleInternal;
+
+        this.CH.dismissModal(returnData);
     }
 }

@@ -36,12 +36,12 @@ import { CqFilterComponentModal } from './cq_filter_modal';
 export class CqFilterComponent extends CqComponent implements OnInit, OnChanges {
     @Input() placeholder?: string;
     @Input() filterMultiple?: any[];
+    @Input() filterMultipleTitle?: string;
     @Input() includeEmptyOptionForAll?: boolean;
     @Output() onFilterChange: EventEmitter<any>;
 
     private filterText = '';
-    private filterMultipleFinal: any[] = [];
-    private openFilterMultiple = false;
+    private filterMultipleInternal: any[] = [];
     private hasFilterMultiple: boolean = false;
 
     constructor(CH: CqHelper)
@@ -55,83 +55,70 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
     ngOnInit(): void
     {
         this.hasFilterMultiple = !this.CH.isEmpty(this.filterMultiple);
-        if (this.hasFilterMultiple) this.filterMultipleFinal = this.getFilterMultipleFinal(this.filterMultiple);
+        if (this.hasFilterMultiple) this.filterMultipleInternal = this.getFilterMultipleInternal(this.filterMultiple);
     }
     ngOnChanges(changes: SimpleChanges): void
     {
         this.implementChanges(changes);
 
         this.hasFilterMultiple = !this.CH.isEmpty(this.filterMultiple);
-        if (this.hasFilterMultiple) this.filterMultipleFinal = this.getFilterMultipleFinal(this.filterMultiple);
+        if (this.hasFilterMultiple) this.filterMultipleInternal = this.getFilterMultipleInternal(this.filterMultiple);
     }
 
-    getFilterMultipleFinal(filterMultiple: any[] | undefined): any[]
+    getFilterMultipleInternal(filterMultiple: any[] | undefined): any[]
     {
         if (typeof filterMultiple == "undefined") return [];
         else
         {
-            let filterMultipleFinal: any[] = [];
+            let filterMultipleInternal: any[] = [];
             filterMultiple.forEach((filter) => {
-                var includeEmptyOption = false;
-
-                if (typeof filter.includeEmptyOption != 'undefined')
+                if (filter.includeEmptyOption || this.includeEmptyOptionForAll) 
                 {
-                    includeEmptyOption = filter.includeEmptyOption;
-                }
-                else if (typeof this.includeEmptyOptionForAll != 'undefined')
-                {
-                    includeEmptyOption = this.includeEmptyOptionForAll;
-                }
-
-                if (includeEmptyOption)
-                {
-                    // let title = 'No ' + this.toTitle(filter.identifier);
-                    let title = 'Not Set';
-
-                    filter.options.push({
-                        title: title,
-                        value: undefined,
+                    filter.options.splice(0, 0, {
+                        title: 'Not Set',
+                        value: -1,
                         selected: true,
                     });
                 }
 
-                filterMultipleFinal.push(filter);
+                filterMultipleInternal.push(filter);
             });
 
-            return filterMultipleFinal;
+            return filterMultipleInternal;
         }
     }
 
-    toggleOpenFilterMultiple(): void
+    filterTextChange(text: string): void
     {
-        this.CH.modal(CqFilterComponentModal, {filterMultipleFinal: this.filterMultipleFinal}, (data) => {
-            console.log("closed", data);
-            this.filterMultipleFinal = data.filterMultipleFinal;
-        });
+        this.filterText = text.trim();
+        this.emitFilter();
     }
-
-    filterTextChange(value: string): void
+    openFilterMultiple(): void
     {
-        this.onFilterChange.emit({
-            text: value.trim(),
-        });
-    }
-    filterMultipleChange(identifier: string, value: string, selected?: boolean): void
-    {
-        // implement to filterMultipleFinal
-        for (let index in this.filterMultipleFinal)
-        {
-            let filter = this.filterMultipleFinal[index];
-            if (filter.identifier != identifier) continue;
-
-            for (let optionIndex in filter.options)
+        this.CH.modal(CqFilterComponentModal, {
+            filterMultipleTitle: this.filterMultipleTitle,
+            filterMultiple: this.filterMultipleInternal
+        }, (data) => {
+            if (data.apply)
             {
-                let option = filter.options[optionIndex];
-                if (option.value == value) this.filterMultipleFinal[index].options[optionIndex].selected = selected;
+                this.filterMultipleInternal = this.CH.cloneJson(data.filterMultiple);
+                this.emitFilter();
             }
-        }
-        this.onFilterChange.emit();
+        });
     }
+    emitFilter(): void
+    {
+        let emitData: any = {
+            text: this.filterText,
+            filterMultiple: this.filterMultipleInternal,
+        };
+        this.CH.log('emit data', emitData);
+        this.onFilterChange.emit(emitData);
+    }
+
+
+
+
 
 
 

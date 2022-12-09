@@ -118,7 +118,7 @@ export class CqHelper
 		if (typeof componentProps == 'undefined') componentProps = {};
 		let modal = await this.modalController.create({component, componentProps});
 		modal.onDidDismiss().then((data) => {
-			if (callback) callback(data);
+			if (callback) callback(data.data);
 		});
 		return await modal.present();
     }
@@ -609,6 +609,14 @@ export class CqHelper
         return false;
     }
 
+    cloneJson(data: any): any
+    {
+    	return JSON.parse(
+    		JSON.stringify(
+    			data
+    		)
+    	);
+    }
     isJsonString(data: any): boolean
     {
     	if (typeof data != 'string') return false;
@@ -649,6 +657,15 @@ export class CqHelper
         }
 
         return dataArray;
+    }
+    collectFromJson(data: any[], target: string): any[]
+    {
+    	let bucket: [] = [];
+    	data.forEach((item) => {
+    		bucket.push(item[target]);
+    	});
+
+    	return bucket;
     }
 
     getLength(data: any, justCheck?: boolean): number

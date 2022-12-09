@@ -4,28 +4,42 @@
             <ion-back-button [text]="'core.back' | translate"></ion-back-button>
         </ion-buttons>
         <ion-buttons slot="end">
-            <button (click)="dismiss()">Close</button>
+            <div class="drawer-button notifications" (click)="applyFilter(false)">
+                <ion-icon name="close"></ion-icon>
+            </div>
         </ion-buttons>
 
         <ion-title>
-            <h1 class="color-white text-center">Filter</h1>
+            <h1 class="color-white text-center">{{ filterMultipleTitle ? filterMultipleTitle : "Filter"}}</h1>
         </ion-title>
     </ion-toolbar>
 </ion-header>
 
-<ion-content class="cq-filter-page">
-    <div *ngIf="isAvailable(filterMultipleFinal)">
-        <div *ngFor="let filter of filterMultipleFinal" class="filter-multiple-area">
-            <hr class="checkbox-line" />
-            <div>
-                <div class="mt-14 mb-8">{{ toTitle(filter.identifier) }}</div>
-                <button *ngFor="let option of filter.options" [class]="'button button-small ml-3 mr-3 mt-4 mb-6 ' + (option.selected ? '' : 'inactive')" (click)="filterMultipleChange(filter.identifier, option.value, !option.selected)" data-value="{{option.value}}">{{ option.title }}</button>
-            </div>
-        </div>
-
-        <hr />
-        <span (click)="applyFilter()" class="button button-small" style="width: 100%">Apply Filter</span>
+<ion-content class="cq-filter-multiple">
+    <div *ngIf="isAvailable(filterMultipleInternal)" class="base-background pl-cs pt-cs-half pr-cs pb-cs" style="position: fixed; z-index: 9; left: 0px; bottom: 0px; right: 0px;">
+        <button (click)="applyFilter(true)" class="button button-small" style="width: 100%">Apply Filter</button>
     </div>
 
-    <cq_empty [empty]="isEmpty(filterMultipleFinal)"></cq_empty>
+    <div *ngIf="isAvailable(filterMultipleInternal)" class="base-background" style="padding-bottom: 84px;">
+        <div *ngFor="let filter of filterMultipleInternal" class="ml-cs mr-cs pb-cs">
+            <div class="pt-cs" style="font-size: 16px; display: flex;">
+                <div style="flex-grow: 1; display: flex; justify-content: center; flex-direction: column;">{{ toTitle(filter.identifier) }}</div>
+                <button style="font-size: 30px; line-height: 0px;" (click)="setOptions(filter.options)" class="{{ getClassByOptionsSelected(filter.options) }}">
+                    <ion-icon *ngIf="optionsSelectedCount(filter.options) == 'all'" name="checkmark-circle"></ion-icon>
+                    <ion-icon *ngIf="optionsSelectedCount(filter.options) == 'some'" name="stop-circle"></ion-icon>
+                    <ion-icon *ngIf="optionsSelectedCount(filter.options) == 'none'" name="ellipse"></ion-icon>
+                </button>
+            </div>
+
+            <button *ngFor="let option of filter.options" class="mt-cs {{ option.selected ? 'active' : '' }}" (click)="toggleOption(option)" style="width: 100%;">
+                <div style="display: flex;">
+                    <ion-label style="flex-grow: 1; text-align: left; padding-left: 8px; padding-top: 6px; font-size: 14px;">{{ option.title }}</ion-label>
+                    <ion-icon *ngIf="option.selected" name="checkmark-circle-outline" style="font-size: 30px;"></ion-icon>
+                    <ion-icon *ngIf="!option.selected" name="ellipse-outline" style="font-size: 30px;"></ion-icon>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <cq_empty [empty]="isEmpty(filterMultipleInternal)"></cq_empty>
 </ion-content>

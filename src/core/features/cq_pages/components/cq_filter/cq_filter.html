@@ -3,7 +3,7 @@
         <ion-input type="text" placeholder="{{ placeholder }}" [ngModel]="filterText" (ngModelChange)="filterTextChange($event)" style="display: inline-block;"></ion-input>
     </div>
 
-    <button *ngIf="hasFilterMultiple" class="cq-filter-button-wrapper" (click)="toggleOpenFilterMultiple()">
+    <button *ngIf="hasFilterMultiple" class="cq-filter-button-wrapper" (click)="openFilterMultiple()">
         <ion-icon name="options"></ion-icon>
     </button>
 </div>

@@ -58,6 +58,52 @@ $bar_background: $gradient_background;
     }
 }
 
+@mixin padding_margin_component_spacing
+{
+    $properties: p, m;
+    $directions: l, t, r, b;
+    $spacings: cs, cst;
+    $sizes: full, half;
+    $dictionary: ("p": padding, "m": margin, "l": left, "t": top, "r": right, "b": bottom);
+
+    @each $property in $properties
+    {
+        $p: map-get($dictionary, $property);
+        @each $direction in $directions
+        {
+            $d: map-get($dictionary, $direction);
+            @each $spacing in $spacings
+            {
+	            @each $size in $sizes
+	            {
+	            	@if $spacing == cs
+	            	{
+	            		@if $size == full
+	            		{
+		            		.#{$property + $direction}-#{$spacing} { #{$p}-#{$d}: #{$component_spacing} !important }
+	            		}
+	            		@else
+	            		{
+		            		.#{$property + $direction}-#{$spacing}-half { #{$p}-#{$d}: #{$component_spacing / 2} !important }
+	            		}
+	            	}
+	            	@else
+	            	{
+	            		@if $size == full
+	            		{
+		            		.#{$property + $direction}-#{$spacing} { #{$p}-#{$d}: #{$component_spacing_thin} !important }
+	            		}
+	            		@else
+	            		{
+		            		.#{$property + $direction}-#{$spacing}-half { #{$p}-#{$d}: #{$component_spacing_thin / 2} !important }
+	            		}
+	            	}
+	            }
+            }
+        }
+    }
+}
+
 @mixin elevation1
 {
     border: 0px !important;
@@ -112,6 +158,8 @@ body
 
 	// ============================================================================================= helper
 	@include padding_margin;
+	@include padding_margin_component_spacing;
+
 	.main-font
 	{
 		font-family: "mainfont" !important;
@@ -258,42 +306,8 @@ body
 
     .font-bold { font-weight: 700 !important; }
 
-    .pl-cs
-    {
-    	padding-left: $component_spacing;
-    }
-    .pr-cs
-    {
-    	padding-right: $component_spacing;
-    }
-    .ml-cs
-    {
-    	margin-left: $component_spacing;
-    }
-    .mr-cs
-    {
-    	margin-right: $component_spacing;
-    }
-
-    .pl-cst
-    {
-    	padding-left: $component_spacing_thin;
-    }
-    .pr-cst
-    {
-    	padding-right: $component_spacing_thin;
-    }
-    .ml-cst
-    {
-    	margin-left: $component_spacing_thin;
-    }
-    .mr-cst
-    {
-    	margin-right: $component_spacing_thin;
-    }
-
 	// ============================================================================================= angular / ionic / moodle component
-	ion-tabs
+	ion-tabs, ion-modal
 	{
 		ion-header
 		{
@@ -952,6 +966,10 @@ body
 			&.active
 			{
 				box-shadow: $neumorphism_shadow_inset;
+			}
+			&.force-flat
+			{
+				box-shadow: none !important;
 			}
 			&.load-more-button
 			{

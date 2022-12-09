@@ -1,9 +1,8 @@
-// done v3
+// (C) Copyright 2022 Cyberquote Indonesia
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
-// import { CqFilterComponent } from '../components/cq-filter/cq-filter';
 
 @Component({
     selector: 'cq_my_courses',
@@ -12,8 +11,6 @@ import { CqPage } from '../classes/cq_page';
 })
 export class CqMyCourses extends CqPage implements OnInit
 {
-    // @ViewChild(CqFilterComponent) filter: CqFilterComponent;
-
     pageParams = {
     };
     pageDefaults: any = {
@@ -31,6 +28,9 @@ export class CqMyCourses extends CqPage implements OnInit
         },
     };
     pageJobLoadMore: any = {
+        myCoursesList: 0,
+    };
+    pageJobRefresh: any = {
         myCoursesList: 0,
     };
 
@@ -68,6 +68,13 @@ export class CqMyCourses extends CqPage implements OnInit
             length: 5,
             search: this.pageData.filterText ? this.pageData.filterText : null,
         };
+        this.pageData.filterMultiple.forEach((item) => {
+            let bucket = [];
+            item.options.forEach((option) => {
+                if (option.selected) bucket.push(option.value);
+            });
+            if (bucket.length) params[item.plural] = bucket.join(",");
+        });
 
         this.pageJobExecuter(jobName, params, (data) => {
             let result = this.CH.toArray(this.CH.toJson(data));
@@ -83,15 +90,44 @@ export class CqMyCourses extends CqPage implements OnInit
         this.pageIsLoading = true;
         clearTimeout(this.pageData.filterAgent);
         let locaAgent = this.pageData.filterAgent = setTimeout(() => {
-            let text = data.text.trim().toLowerCase();
-
-            if (locaAgent != this.pageData.filterAgent || text == this.pageData.filterText)
+            if (locaAgent != this.pageData.filterAgent)
             {
+                this.CH.log("filter rejected: agent is different");
+
                 this.pageIsLoading = false;
                 return;
             }
 
-            this.pageData.filterText = data.text;
+            let newText = data.text.trim().toLowerCase();
+            let textIsSame = newText == this.pageData.filterText;
+
+            let newMultiple = this.CH.cloneJson(data.filterMultiple);
+            let multipleIsSame = true;
+            for (let i in newMultiple)
+            {
+                for (let o in newMultiple[i].options)
+                {
+                    if (newMultiple[i].options[o].selected != this.pageData.filterMultiple[i].options[o].selected)
+                    {
+                        multipleIsSame = false;
+                        break;
+                    }
+                }
+
+                if (!multipleIsSame) break;
+            }
+
+            if (textIsSame && multipleIsSame)
+            {
+                this.CH.log("filter rejected: textIsSame", textIsSame);
+                this.CH.log("filter rejected: multipleIsSame", multipleIsSame);
+
+                this.pageIsLoading = false;
+                return;
+            }
+
+            this.pageData.filterText = newText;
+            this.pageData.filterMultiple = newMultiple;
             this.pageForceReferesh();
         }, 1000);
     }

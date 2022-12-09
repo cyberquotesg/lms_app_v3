@@ -74,11 +74,14 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
             filterMultiple.forEach((filter) => {
                 if (filter.includeEmptyOption || this.includeEmptyOptionForAll) 
                 {
-                    filter.options.splice(0, 0, {
-                        title: 'Not Set',
-                        value: -1,
-                        selected: true,
-                    });
+                    if (!this.CH.isItemFoundByCriteria(filter.options, "value", -1))
+                    {
+                        filter.options.splice(0, 0, {
+                            title: 'Not Set',
+                            value: -1,
+                            selected: true,
+                        });
+                    }
                 }
 
                 filterMultipleInternal.push(filter);

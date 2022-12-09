@@ -31,6 +31,7 @@ export class CqPage extends CqGeneral
     pageData: any = {};
     pageJob: any = {};
     pageJobLoadMore: any = {};
+    pageJobRefresh: any = {};
     pageIsLoading = false;
 
     page = 1;
@@ -112,7 +113,7 @@ export class CqPage extends CqGeneral
             }
 
             // check the job
-            if (typeof pageJob == 'undefined' || pageJob == null)
+            if (typeof pageJob == 'undefined' || pageJob == null || this.CH.isEmpty(pageJob))
             {
                 pageJob = this.pageJob;
             }
@@ -156,8 +157,9 @@ export class CqPage extends CqGeneral
     }
     pageRefresh(refresher: any): void
     {
-        this.pageLoad(null, refresher);
+        this.pageLoad(null, refresher, this.pageJobRefresh);
     }
+
     pageForcedFirstload(finalCallback?: any): void
     {
         this.pageIsForcedFirstload = true;
@@ -166,12 +168,12 @@ export class CqPage extends CqGeneral
     pageForceLoadMore(finalCallback?: any): void
     {
         this.pageIsForcedLoadMore = true;
-        this.pageLoad(null, null, null, false, finalCallback);
+        this.pageLoad(null, null, this.pageJobLoadMore, false, finalCallback);
     }
     pageForceReferesh(finalCallback?: any): void
     {
         this.pageIsForcedRefresh = true;
-        this.pageLoad(null, null, null, false, finalCallback);
+        this.pageLoad(null, null, this.pageJobRefresh, false, finalCallback);
     }
 
     /* execute job of a page that has been defined

@@ -660,7 +660,7 @@ export class CqHelper
     }
     collectFromJson(data: any[], target: string): any[]
     {
-    	let bucket: [] = [];
+    	let bucket: any[] = [];
     	data.forEach((item) => {
     		bucket.push(item[target]);
     	});

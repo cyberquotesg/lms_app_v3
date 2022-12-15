@@ -69,7 +69,7 @@ export class CqMyCourses extends CqPage implements OnInit
             search: this.pageData.filterText ? this.pageData.filterText : null,
         };
         this.pageData.filterMultiple.forEach((item) => {
-            let bucket = [];
+            let bucket: any[] = [];
             item.options.forEach((option) => {
                 if (option.selected) bucket.push(option.value);
             });

@@ -41,8 +41,12 @@ export class CqAvailableCourses extends CqPage implements OnInit
         },
     };
     pageJob: any = {
-        filterMultiple: 0,
-        courses: 0,
+        filterMultiple: {
+            value: 0,
+            next: {
+                courses: 0,
+            },
+        },
     };
     pageJobLoadMore: any = {
         courses: 0,
@@ -137,7 +141,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
                 search: this.pageData.online.filterText,
             };
             this.pageData.online.filterMultiple.forEach((item) => {
-                let bucket = [];
+                let bucket: any[] = [];
                 item.options.forEach((option) => {
                     if (option.selected) bucket.push(option.value);
                 });
@@ -167,7 +171,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
                 search: this.pageData.offline.filterText,
             };
             this.pageData.offline.filterMultiple.forEach((item) => {
-                let bucket = [];
+                let bucket: any[] = [];
                 item.options.forEach((option) => {
                     if (option.selected) bucket.push(option.value);
                 });

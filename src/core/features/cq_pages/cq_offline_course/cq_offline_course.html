@@ -1,0 +1,17 @@
+<ion-header>
+    <cq_header [title]="'Online Course'" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
+</ion-header>
+
+<ion-content class="cq_offline_course">
+    <ion-refresher slot="fixed" [disabled]="!pageStatus" (ionRefresh)="pageRefresh($event.target)">
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+    </ion-refresher>
+
+    <core-loading [hideUntil]="pageStatus">
+        <div class="base-background">
+
+            this is online course
+
+        </div>
+    </core-loading>
+</ion-content>

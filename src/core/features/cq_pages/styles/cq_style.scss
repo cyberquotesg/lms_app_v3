@@ -602,81 +602,18 @@ body
     		}
 	    }
     }
-
-
-
-    .filter
+    .cq-filter-multiple
     {
-    	.filter-text
+    	.button-option-filter
     	{
-    		position: relative;
-    		width: 100%;
-    	}
+		    color: #aaa;
 
-    	&.has-filter-multiple
-    	{
-    		.filter-text
-    		{
-    			width: calc(100% - 40px);
-
-	    		.filter-multiple-button
-	    		{
-	    			position: absolute;
-	    			left: 100%;
-	    			top: 50%;
-	    			transform: translate(10px, -50%);
-	    			display: flex;
-	    			justify-content: center;
-	    			align-items: center;
-	    			width: 30px;
-	    			height: 30px;
-	    			border: 1px solid var(--buttonBorderColor);
-	    			border-radius: 50%;
-	    			font-size: 26px;
-	    			color: var(--buttonTextColor);
-	    			background: var(--buttonColor);
-	    			margin: 0px;
-
-	    			.icon
-	    			{
-	    				transition: all ease 0.3s;
-	    				transform: rotate(0deg);
-	    			}
-
-	    			&.opened
-	    			{
-	    				.icon
-	    				{
-	    					transform: rotate(180deg);
-	    				}
-	    			}
-	    		}
-    		}
-    		.filter-multiple-area
-    		{
-    			text-align: center;
-    			padding-bottom: 5px;
-    			margin: 0px -16px;
-    			transition: all ease 0.3s;
-
-    			&.closed
-    			{
-    				display: none;
-    			}
-
-    			.checkbox-line
-    			{
-    				margin-top: 0px;
-    			}
-    		}
+		    &.active
+		    {
+		    	color: inherit !important;
+		    }
     	}
     }
-
-
-
-
-
-
 
 	// remove shadows
 	.header-md::after,

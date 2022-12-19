@@ -307,28 +307,20 @@ export class CqPage extends CqGeneral
     {
         if (course.media == 'online')
         {
-            // this.CH.getCourses().getCoursesByField().then((courses) => {
-            //     var thisCourse = courses.filter((thisCourse) => {
-            //         return thisCourse.id == course.id;
-            //     })[0];
-
-            //     if (thisCourse.isEnrolled) {
-            //         this.CH.getCourseHelper().openCourse(thisCourse);
-            //     } else {
-            //         CoreNavigator.navigate('CoreCoursesCoursePreviewPage', {course: thisCourse});
-            //     }
-            // }).catch((error) => {
-            //     this.CH.alert('Ups!', error.message);
-            // });
-
-            // CoreNavigator.navigate('CoreCoursesCoursePreviewPage', {course: course});
+            if (course.isUserEnrolled) CoreCourseHelper.openCourse(course);
+            else CoreNavigator.navigateToSitePath(
+                `/course/${course.id}/summary`,
+                { params: { course: course } },
+            );
         }
         else if (course.media == 'offline')
         {
-            // CoreNavigator.navigate('CqClassroomTrainingPage', {
-            //     courseId: course.id,
-            //     courseName: course.name
-            // });
+            const stateParams: any = {};
+            CoreNavigator.navigateToSitePath('/CqOfflineCourse/index', {
+                params: stateParams,
+                siteId: this.CH.getSiteId(),
+                preferCurrentTab: false,
+            });
         }
         else
         {
@@ -357,10 +349,16 @@ export class CqPage extends CqGeneral
         }
         else if (media == 'offline')
         {
-            // CoreNavigator.navigate('CqClassroomTrainingPage', {
-            //     courseId: courseId,
-            //     courseName: ''
-            // });
+            const stateParams: any = {};
+            CoreNavigator.navigateToSitePath('/CqOfflineCourse/index', {
+                params: stateParams,
+                siteId: this.CH.getSiteId(),
+                preferCurrentTab: false,
+            });
+        }
+        else
+        {
+            this.CH.log("course media is not defined");
         }
     }
     openOfflineCourseById(courseId: number): void

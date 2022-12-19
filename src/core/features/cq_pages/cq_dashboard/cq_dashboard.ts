@@ -11,8 +11,6 @@ import { CqPage } from '../classes/cq_page';
 })
 export class CqDashboard extends CqPage implements OnInit
 {
-    pageParams = {
-    };
     pageDefaults: any = {
         userFullName: '',
         dashHours: '00',

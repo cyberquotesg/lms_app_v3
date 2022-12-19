@@ -15,8 +15,6 @@ export class CqOfflineCourse extends CqPage implements OnInit
 {
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
-    pageParams = {
-    };
     pageDefaults: any = {
     };
     pageJob: any = {

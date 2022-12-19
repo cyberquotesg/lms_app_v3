@@ -1,6 +1,6 @@
 <div class="tile-wrapper">
     <div *ngIf="isAvailable(items)" class="tile-card">
-        <div *ngFor="let item of items" class="tc-item">
+        <div *ngFor="let item of items" class="tc-item" data-id="{{ item.id }}">
             <ion-card class="thin" (click)="selectItem(item)">
                 <div class="card-image">
                     <div *ngIf="item.course_image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.course_image + ')'}"></div>

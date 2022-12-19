@@ -62,7 +62,7 @@ export class CqPage extends CqGeneral
             // catch parameters automatically
         	for (let paramName in this.pageParams)
         	{
-        		this.pageParams[paramName] = CoreNavigator.getRouteNumberParam(paramName);
+        		this.pageParams[paramName] = CoreNavigator.getRouteParam(paramName);
         	}
 
             this.pageLoad();
@@ -315,7 +315,10 @@ export class CqPage extends CqGeneral
         }
         else if (course.media == 'offline')
         {
-            const stateParams: any = {};
+            const stateParams: any = {
+                courseId: course.id,
+                courseName: course.name,
+            };
             CoreNavigator.navigateToSitePath('/CqOfflineCourse/index', {
                 params: stateParams,
                 siteId: this.CH.getSiteId(),
@@ -326,48 +329,6 @@ export class CqPage extends CqGeneral
         {
             this.CH.log("course media is not defined");
         }
-    }
-    openOfflineCourse(course: any): void
-    {
-        course.media = 'offline';
-        this.openCourse(course);
-    }
-    openOnlineCourse(course: any): void
-    {
-        course.media = 'online';
-        this.openCourse(course);
-    }
-
-    /**
-     * media: online or offline
-    */
-    openCourseById(media: string, courseId: number): void
-    {
-        if (media == 'online')
-        {
-            CoreCourseHelper.openCourse({id: courseId});
-        }
-        else if (media == 'offline')
-        {
-            const stateParams: any = {};
-            CoreNavigator.navigateToSitePath('/CqOfflineCourse/index', {
-                params: stateParams,
-                siteId: this.CH.getSiteId(),
-                preferCurrentTab: false,
-            });
-        }
-        else
-        {
-            this.CH.log("course media is not defined");
-        }
-    }
-    openOfflineCourseById(courseId: number): void
-    {
-        this.openCourseById('offline', courseId);
-    }
-    openOnlineCourseById(courseId: number): void
-    {
-        this.openCourseById('online', courseId);
     }
 
     adjustScreenHeight(pageClass: string): void

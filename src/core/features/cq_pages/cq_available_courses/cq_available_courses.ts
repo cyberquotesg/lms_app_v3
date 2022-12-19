@@ -16,6 +16,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
     // @ViewChild(CqFilterComponent) filter: CqFilterComponent;
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
+    pageParams: any = {
+    };
     pageDefaults: any = {
         medias: ["online", "offline"],
         media: "online",

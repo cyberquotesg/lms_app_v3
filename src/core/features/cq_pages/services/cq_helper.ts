@@ -237,7 +237,7 @@ export class CqHelper
 	    // prepare some variables
 	    var totalTime = 0,
 	        comparatorTime = 12 * 60 * 60 * 1000,
-	        originalTime = time,
+	        originalTime: string = String(time),
 	        i: any, t: any;
 
 	    // prepare the time to suitable format
@@ -262,7 +262,7 @@ export class CqHelper
 
 	    // turn the format back
 	    time[0] = time[0] % 12 || time[0];
-	    time = time.map((value) => {
+	    time = time.map((value: any) => {
             return this.beautifulNumber(value);
         }).join(':');
 
@@ -280,7 +280,7 @@ export class CqHelper
 	}
 	time24To12Batch(data: string): string
 	{
-	    return data.split(' ').map((text) => {
+	    return data.split(' ').map((text: string) => {
 	        return text.indexOf(':') === -1 ? text : this.time24To12(text);
 	    }).join(' ');
 	}

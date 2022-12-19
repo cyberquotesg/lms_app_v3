@@ -446,6 +446,34 @@ body
 		ion-card-content
 		{
 			padding: 0px !important;
+
+		    $icon_width: 30px;
+			.card-item
+			{
+				display: flex;
+
+				.card-item-icon
+				{
+					display: flex;
+				    justify-content: center;
+				    align-items: flex-start;
+					width: $icon_width;
+				    font-size: 20px;
+				    color: black;
+				    padding-top: 1px;
+				    line-height: 0px;
+				}
+				.card-item-text
+				{
+					display: block;
+					width: calc(100% - #{$icon_width});
+					padding-left: 7px;
+				}
+				+ .card-item
+				{
+					margin-top: $component_spacing;
+				}
+			}
 		}
 
 		&.thin
@@ -855,18 +883,6 @@ body
 			{
 				border-top: 1px solid $line_color;
 				padding-top: 14px !important;
-			}
-		}
-		.card-buttons
-		{
-			display: flex;
-			justify-content: center;
-			flex-direction: column;
-			margin-top: 18px;
-
-			.card-button
-			{
-				width: 100%;
 			}
 		}
 	}
@@ -1782,35 +1798,6 @@ body
 	    }
     }
 
-    $icon_width: 30px;
-	.card-item
-	{
-		display: flex;
-
-		.card-item-icon
-		{
-			display: flex;
-		    justify-content: center;
-		    align-items: center;
-			width: $icon_width;
-		    font-size: 20px;
-		    color: black;
-		    line-height: 0px;
-		}
-		.card-item-text
-		{
-			display: block;
-			width: calc(100% - #{$icon_width});
-			padding-top: 2px;
-			padding-left: 7px;
-		}
-
-		+ .card-item
-		{
-			margin-top: 7px;
-		}
-	}
-
     .sessions
     {
     	.session
@@ -1821,8 +1808,8 @@ body
 
     		+ .session
     		{
-    			padding-top: 12px;
-    			margin-top: 12px;
+    			padding-top: $component_spacing;
+    			margin-top: $component_spacing;
     			border-top: 1px solid $line_color;
     		}
     	}

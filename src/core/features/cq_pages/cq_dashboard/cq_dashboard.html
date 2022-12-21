@@ -46,26 +46,23 @@
                     <div class="item" *ngFor="let course of pageData.myCourses">
 
                         <div class="item-link" (click)="openCourse(course)">
-                            <div *ngIf="course.media == 'online'">
-                                <h2 class="item-title">{{course.fullnameTrimmed || course.fullname}}</h2>
-                                <div class="mt-cs">
-                                    <cq_tags [item]="course" [hideList]="'courseType, categoryName'"></cq_tags>
+                            <h2 class="item-title text-center">
+                                <span *ngIf="course.media == 'online'">{{course.fullnameTrimmed || course.fullname}}</span>
+                                <span *ngIf="course.media == 'offline'">{{course.name}}<br />Batch - {{course.startDateText}}</span>
+                            </h2>
+
+                            <div class="pt-4 pb-8">
+                                <cq_will_start_in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn"></cq_will_start_in>
+                                <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font">
+                                    Starting
+                                </div>
+                                <div *ngIf="course.willStartIn < 0" class="will-start-in-information second-font">
+                                    Ongoing
                                 </div>
                             </div>
 
-                            <div *ngIf="course.media == 'offline'">
-                                <h2 class="item-title">{{course.name}}<br />Batch - {{course.startDateText}}</h2>
-                                <div class="mt-cs">
-                                    <cq_tags [item]="course" [hideList]="'courseType, categoryName'"></cq_tags>
-                                </div>
-                            </div>
-
-                            <cq-will-start-in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn"></cq-will-start-in>
-                            <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font">
-                                <span class="start-number">Starting</span>
-                            </div>
-                            <div *ngIf="course.willStartIn < 0" class="will-start-in-information second-font">
-                                <span class="start-number">Ongoing</span>
+                            <div class="mt-cs text-center">
+                                <cq_tags [item]="course" [hideList]="'courseType, categoryName'"></cq_tags>
                             </div>
                         </div>
 

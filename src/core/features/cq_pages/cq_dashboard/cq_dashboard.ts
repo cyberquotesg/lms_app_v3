@@ -1,6 +1,7 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 
@@ -74,15 +75,15 @@ export class CqDashboard extends CqPage implements OnInit
                     page: 1,
                     length: 5,
                 },
-                classroomTrainingList: {
-                    class: "CqCourseLib",
-                    function: "get_classroom_training_list",
-                    page: 1,
-                    length: 5,
-                },
                 eLearningList: {
                     class: "CqCourseLib",
                     function: "get_e_learning_list",
+                    page: 1,
+                    length: 5,
+                },
+                classroomTrainingList: {
+                    class: "CqCourseLib",
+                    function: "get_classroom_training_list",
                     page: 1,
                     length: 5,
                 },
@@ -112,14 +113,20 @@ export class CqDashboard extends CqPage implements OnInit
             this.pageData.eLearningList = this.CH.toArray(allData.eLearningList);
 
             // additionalContents
-            this.pageData.additionalContents = allData.additionalContents.length ? allData.additionalContents : "";
+            this.pageData.additionalContents = allData.additionalContents;
         }, moreloader, refresher, finalCallback);
     }
 
-    openCourse(event: any): void
+    goToAvailableCourses(mediaList): void
     {
-    }
-    goToAvailableCourses(): void
-    {
+        // warning! harus bisa membedakan tab online dan offline
+        const stateParams: any = {
+            media: mediaList == "eLearningList" ? "online" : "offline",
+        };
+        CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
+            params: stateParams,
+            siteId: this.CH.getSiteId(),
+            preferCurrentTab: false,
+        });
     }
 }

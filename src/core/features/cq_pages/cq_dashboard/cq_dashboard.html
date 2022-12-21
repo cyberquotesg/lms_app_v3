@@ -9,15 +9,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
-        <div class="base-background">
-
-        <!-- 
-        <div class="fake-header-replacement" style="height: 48px">&nbsp;</div>
-
-        <div class="round-wrapper">
-            <div class="round-background"></div>
-        </div>
-         -->
+        <div class="base-background pb-5">
 
         <div class="dashboard-box">
             <div class="db-sizer"></div>
@@ -55,7 +47,7 @@
 
                         <div class="item-link" (click)="openCourse(course)">
                             <div *ngIf="course.media == 'online'">
-                                <h3 class="item-title">{{course.fullname_trimmed || course.fullname}}</h3>
+                                <h3 class="item-title">{{course.fullnameTrimmed || course.fullname}}</h3>
                                 <div class="cq-tag-wrapper">
                                     <span class="cq-tag dark-grey">E-Learning</span>
                                     <span *ngIf="course.courseTypeText" class="cq-tag">{{ course.courseTypeText }}</span>
@@ -63,18 +55,18 @@
                             </div>
 
                             <div *ngIf="course.media == 'offline'">
-                                <h3 class="item-title">{{course.name}}<br />Batch - {{course.start_date_text}}</h3>
+                                <h3 class="item-title">{{course.name}}<br />Batch - {{course.startDateText}}</h3>
                                 <div class="cq-tag-wrapper">
                                     <span class="cq-tag dark-grey">Classroom Training</span>
                                     <span *ngIf="course.typeText" class="cq-tag">{{ course.typeText }}</span>
                                 </div>
                             </div>
 
-                            <cq-will-start-in *ngIf="course.will_start_in > 0" [unixtimestamp]="course.will_start_in"></cq-will-start-in>
-                            <div *ngIf="course.will_start_in == 0" class="will-start-in-information time-urgency-1 second-font pt-8">
+                            <cq-will-start-in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn"></cq-will-start-in>
+                            <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font pt-8">
                                 <span class="start-number">Starting</span>
                             </div>
-                            <div *ngIf="course.will_start_in < 0" class="will-start-in-information second-font pt-8">
+                            <div *ngIf="course.willStartIn < 0" class="will-start-in-information second-font pt-8">
                                 <span class="start-number">Ongoing</span>
                             </div>
                         </div>
@@ -97,7 +89,7 @@
                     </ion-slide>
 
                     <ion-slide class="mb-24">
-                        <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses()">
+                        <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses(mediaList)">
                             <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
                                 More Courses
                                 <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>
@@ -108,13 +100,9 @@
             </div>
         </div>
 
-        <div *ngIf="pageData.additionalContents">
-            <!-- <hr class="additional-content-hr" /> -->
-
-            <div *ngFor="let additionalContent of pageData.additionalContents">
-                <br />
-                <div [innerHtml]="additionalContent.mobile_content"></div>
-            </div>
+        <div *ngFor="let additionalContent of pageData.additionalContents">
+            <br />
+            <div [innerHtml]="additionalContent.mobileContent"></div>
         </div>
 
         </div>

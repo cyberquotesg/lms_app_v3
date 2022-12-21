@@ -10,10 +10,27 @@ import { CqComponent } from '../../classes/cq_component';
 })
 export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() item: any = {};
+    @Input() hideList: string | string[] = "";
+
+    private hideMedia;
+    private userStatus;
+    private compulsory;
+    private courseType;
+    private categoryName;
 
     constructor(CH: CqHelper)
     {
         super(CH);
+
+        let hideList: boolean;
+        if (Array.isArray(this.hideList)) hideList = this.hideList;
+        else hideList = this.hideList.trim().replace(/ /g, "").split(",");
+
+        this.hideMedia = hideList.includes("hideMedia");
+        this.userStatus = hideList.includes("userStatus");
+        this.compulsory = hideList.includes("compulsory");
+        this.courseType = hideList.includes("courseType");
+        this.categoryName = hideList.includes("categoryName");
     }
 
     ngOnInit(): void

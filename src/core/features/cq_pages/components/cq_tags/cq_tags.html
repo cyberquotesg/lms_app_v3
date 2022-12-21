@@ -1,18 +1,30 @@
 <div class="cq-tag-wrapper">
-    <ng-container *ngIf="item.media">
-        <span data-id="online" *ngIf="item.media == 'online'" class="cq-tag">E-Learning</span>
-        <span data-id="offline" *ngIf="item.media == 'offline'" class="cq-tag">Classroom Training</span>
+    <ng-container *ngIf="!hideMedia">
+        <ng-container *ngIf="item.media">
+            <span data-id="online" *ngIf="item.media == 'online'" class="cq-tag">E-Learning</span>
+            <span data-id="offline" *ngIf="item.media == 'offline'" class="cq-tag">Classroom Training</span>
+        </ng-container>
     </ng-container>
 
-    <ng-container *ngIf="item.detailedUserStatusInSession && item.detailedUserStatusInSession != 'unenrolled' && item.detailedUserStatusInSession != 'withdrawn'">
-        <span data-id="detailedUserStatusInSession" *ngIf="item.detailedUserStatusInSession != 'enrolled' && item.detailedUserStatusInSession != 'accredited'" class="cq-tag">{{ item.detailedUserStatusInSessionText }}</span>
-        <span data-id="accredited" *ngIf="item.detailedUserStatusInSession == 'enrolled' || item.detailedUserStatusInSession == 'accredited'" class="cq-tag green">
-            <ion-icon *ngIf="item.detailedUserStatusInSession == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-            {{ item.detailedUserStatusInSessionText }}
-        </span>
+    <ng-container *ngIf="!userStatus">
+        <ng-container *ngIf="item.detailedUserStatusInSession && item.detailedUserStatusInSession != 'unenrolled' && item.detailedUserStatusInSession != 'withdrawn'">
+            <span data-id="detailedUserStatusInSession" *ngIf="item.detailedUserStatusInSession != 'enrolled' && item.detailedUserStatusInSession != 'accredited'" class="cq-tag">{{ item.detailedUserStatusInSessionText }}</span>
+            <span data-id="accredited" *ngIf="item.detailedUserStatusInSession == 'enrolled' || item.detailedUserStatusInSession == 'accredited'" class="cq-tag green">
+                <ion-icon *ngIf="item.detailedUserStatusInSession == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+                {{ item.detailedUserStatusInSessionText }}
+            </span>
+        </ng-container>
     </ng-container>
 
-    <span data-id="compulsory" *ngIf="item.compulsory === true || item.compulsory === 1 || item.compulsory === '1'" class="cq-tag orange">Compulsory</span>
-    <span data-id="courseTypeText" *ngIf="item.typeText || item.courseTypeText" class="cq-tag dark-grey">{{ item.typeText || item.courseTypeText }}</span>
-    <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">{{ item.categoryname || item.categoryName }}</span>
+    <ng-container *ngIf="!compulsory">
+        <span data-id="compulsory" *ngIf="item.compulsory === true || item.compulsory === 1 || item.compulsory === '1'" class="cq-tag orange">Compulsory</span>
+    </ng-container>
+    
+    <ng-container *ngIf="!courseType">
+        <span data-id="courseTypeText" *ngIf="item.typeText || item.courseTypeText" class="cq-tag dark-grey">{{ item.typeText || item.courseTypeText }}</span>
+    </ng-container>
+    
+    <ng-container *ngIf="!categoryName">
+        <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">{{ item.categoryname || item.categoryName }}</span>
+    </ng-container>
 </div>

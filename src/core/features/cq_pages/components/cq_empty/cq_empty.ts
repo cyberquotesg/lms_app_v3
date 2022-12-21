@@ -10,13 +10,10 @@ import { CqComponent } from '../../classes/cq_component';
 })
 export class CqEmptyComponent extends CqComponent implements OnInit, OnChanges {
     @Input() empty: boolean = false;
-    @Output() onChange: EventEmitter<any>;
 
     constructor(CH: CqHelper)
     {
         super(CH);
-
-        this.onChange = new EventEmitter();
     }
 
     ngOnInit(): void

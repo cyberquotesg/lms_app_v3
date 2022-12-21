@@ -47,7 +47,7 @@ export class CqPage extends CqGeneral
         super(CH);
     }
 
-    usuallyOnInit(): void
+    usuallyOnInit(beforePageLoad?: any): void
     {
         const isLoggedIn = this.CH.isLoggedIn();
         const data = this.CH.getCountryOrganizationData();
@@ -59,12 +59,9 @@ export class CqPage extends CqGeneral
             this.renderer.addClass(this.CH.getBody(), 'logged-in');
             this.renderer.setProperty(this.CH.getBody(), 'style', data.cssVars.join(';'));
 
-            // catch parameters automatically
-        	for (let paramName in this.pageParams)
-        	{
-        		this.pageParams[paramName] = CoreNavigator.getRouteParam(paramName);
-        	}
-
+            this.consumePageParams();
+            this.consumePageDefault();
+            if (typeof beforePageLoad == "function") beforePageLoad();
             this.pageLoad();
         }
         else
@@ -87,6 +84,27 @@ export class CqPage extends CqGeneral
     {
     }
 
+    consumePageParams(): void
+    {
+        console.log("pageParams", JSON.stringify(this.pageParams));
+
+        for (let paramName in this.pageParams)
+        {
+            let paramValue = CoreNavigator.getRouteParam(paramName);
+            if (typeof paramValue != "undefined") this.pageParams[paramName] = paramValue;
+        }
+    }
+    consumePageDefault(): void
+    {
+        console.log("pageDefaults", JSON.stringify(this.pageDefaults));
+
+        for (let key in this.pageDefaults)
+        {
+            if (typeof this.pageDefaults[key] != 'object') this.pageData[key] = this.pageDefaults[key];
+            else this.pageData[key] = JSON.parse(JSON.stringify(this.pageDefaults[key]));
+        }
+    }
+
     /* handles page load
      * this function should work automatically
     */
@@ -102,14 +120,11 @@ export class CqPage extends CqGeneral
         {
             this.pageIsLoading = true;
 
-            // set page data to default
-            if (!refreshing && !isDependantCall && !loadingmore && !this.pageIsForcedLoadMore && !this.pageIsForcedRefresh)
+            // set page data to default if only the mode is pageIsForcedFirstload
+            // first load has been handled by usuallyOnInit
+            if (!isDependantCall && this.pageIsForcedFirstload)
             {
-                for (var key in this.pageDefaults)
-                {
-                    if (typeof this.pageDefaults[key] != 'object') this.pageData[key] = this.pageDefaults[key];
-                    else this.pageData[key] = JSON.parse(JSON.stringify(this.pageDefaults[key]));
-                }
+                this.consumePageDefault();
             }
 
             // check the job

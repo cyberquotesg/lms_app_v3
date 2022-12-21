@@ -252,56 +252,58 @@
                             </ion-card>
 
                             <!-- progress card for enrolled course -->
-                            <ion-card *ngIf="session.userEnrolment == '2'">
-                                <ion-card-header style="position: relative;">
-                                    Your Progress
-
-                                    <div *ngIf="session.userAttendance == 'attended_only'" class="cq-tag" style="position: absolute; right: 10px; top: 13px;">
-                                        {{ session.userAttendanceText }}
-                                    </div>
-                                    <div *ngIf="session.userAttendance == 'accredited'" class="cq-tag green" style="position: absolute; right: 10px; top: 13px;">
-                                        {{ session.userAttendanceText }}
-                                    </div>
-                                    <div *ngIf="session.userAttendance != 'attended_only' && session.userAttendance != 'accredited'" class="cq-tag grey" style="position: absolute; right: 10px; top: 13px;">
-                                        {{ session.userAttendanceText }}
-                                    </div>
-                                </ion-card-header>
-
-                                <ion-card-content>
-                                    <cq-will-start-in *ngIf="session.willStartInDegradated > 0" [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true"></cq-will-start-in>
-
-                                    <div *ngIf="session.willStartInDegradated <= 3600" class="text-center" style="position: relative;">
-                                        <ion-icon name='qr-scanner' style="font-size: 90px;" (click)="scanQRCode(session.venueCheck)" class="pl-10 pr-10"></ion-icon>
-                                        <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); user-select: none;">SCAN</div>
+                            <ng-container *ngIf="session.userEnrolment == '2'">
+                                <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                                    Progress
+                                    <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
+                                        <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : '' }}">
+                                            <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+                                            {{ session.userAttendanceText }}
+                                        </div>
                                     </div>
 
-                                    <hr class="mt-15 mb-15" />
+                                    <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                                </div>
 
-                                    <div class="session-checklog">
-                                        <div class="sc-row">
-                                            <div class="sc-col">IN/OUT</div>
-                                            <div class="sc-col">Time</div>
-                                            <div class="sc-col">Status</div>
+                                <ion-card>
+                                    <ion-card-content>
+                                        <div class="pb-cs">
+                                            <cq_will_start_in *ngIf="session.willStartInDegradated > 0" [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true"></cq_will_start_in>
                                         </div>
 
-                                        <div *ngFor="let checklog of session.checklogs" class="sc-row">
-                                            <div class="sc-col">{{ checklog.inOut }}</div>
-                                            <div class="sc-col">{{ checklog.date }} {{ time24To12(checklog.time) }}</div>
-                                            <div class="sc-col">
-                                                <span *ngIf="checklog.status == '-1' && session.userAttendance != 'accredited'">{{checklog.statusText}}</span>
-
-                                                <span *ngIf="checklog.status == '0' && session.userAttendance != 'accredited'">
-                                                    <ion-icon name="close-circle" (click)="showRejectedReason(checklog.reasonOfChecklogRejection)" class="color-red" style="font-size: 20px;"></ion-icon>
-                                                </span>
-
-                                                <span *ngIf="checklog.status == '1' || session.userAttendance == 'accredited'">
-                                                    <ion-icon name="checkmark-circle" class="color-green" style="font-size: 20px;"></ion-icon>
-                                                </span>
+                                        <div *ngIf="session.willStartInDegradated <= 3600" class="qr-scanner-button">
+                                            <div class="button">
+                                                <ion-icon class="button-big pl-10 pr-10" name='scan-outline' (click)="scanQRCode(session.venueCheck)"></ion-icon>
+                                                <ion-icon class="button-small" name='qr-code-outline'></ion-icon>
                                             </div>
                                         </div>
-                                    </div>
-                                </ion-card-content>
-                            </ion-card>
+
+                                        <div class="session-checklog mt-cs">
+                                            <div class="sc-row first-row">
+                                                <div class="sc-col">IN/OUT</div>
+                                                <div class="sc-col">Time</div>
+                                                <div class="sc-col">Status</div>
+                                            </div>
+
+                                            <div *ngFor="let checklog of session.checklogs" class="sc-row">
+                                                <div class="sc-col">{{ checklog.inOut }}</div>
+                                                <div class="sc-col">{{ checklog.date }} {{ time24To12(checklog.time) }}</div>
+                                                <div class="sc-col">
+                                                    <span *ngIf="checklog.status == '-1' && session.userAttendance != 'accredited'">{{checklog.statusText}}</span>
+
+                                                    <span *ngIf="checklog.status == '0' && session.userAttendance != 'accredited'">
+                                                        <ion-icon name="close-circle" (click)="showRejectedReason(checklog.reasonOfChecklogRejection)" class="color-red" style="font-size: 20px;"></ion-icon>
+                                                    </span>
+
+                                                    <span *ngIf="checklog.status == '1' || session.userAttendance == 'accredited'">
+                                                        <ion-icon name="checkmark-circle" class="color-green" style="font-size: 20px;"></ion-icon>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ion-card-content>
+                                </ion-card>
+                            </ng-container>
                         </ng-container>
 
                     </ng-container>

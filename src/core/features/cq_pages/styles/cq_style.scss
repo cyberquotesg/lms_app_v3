@@ -434,7 +434,7 @@ body
 		ion-card-header
 		{
 			padding-left: 0px !important;
-			padding-top: 16px !important;
+			padding-top: 0px !important;
 			padding-right: 0px !important;
 			padding-bottom: 0px !important;
 
@@ -473,6 +473,15 @@ body
 				{
 					margin-top: $component_spacing;
 				}
+			}
+		}
+
+		*
+		{
+			+ ion-card-header,
+			+ ion-card-content
+			{
+				margin-top: $component_spacing;
 			}
 		}
 
@@ -638,6 +647,40 @@ body
 		    {
 		    	color: inherit !important;
 		    }
+    	}
+    }
+    .qr-scanner-button
+    {
+    	text-align: center;
+    	margin-top: 8px;
+
+    	.button
+    	{
+    		position: relative;
+    		display: inline-block;
+    		width: 110px !important;
+		    height: 110px !important;
+    		padding: 0px !important;
+		    border-radius: 22% !important;
+
+    		ion-icon
+    		{
+    			position: absolute;
+    			left: 50%;
+    			top: 50%;
+    			transform: translate(-50%, -50%);
+
+    			&.button-small
+    			{
+	    			font-size: 32px;
+    				z-index: 1;
+    			}
+    			&.button-big
+    			{
+    				font-size: 90px;
+    				z-index: 2;
+    			}
+    		}
     	}
     }
 
@@ -895,19 +938,13 @@ body
 			line-height: 1.5em;
 			white-space: normal;
 			transition: all ease 0.2s;
-
-			// background: var(--buttonColor, $cq_purple_dark);
-			// color: var(--buttonTextColor, white);
-			// border-color: var(--buttonBorderColor, $cq_purple_dark);
-
 			background: $component_background;
 			box-shadow: $neumorphism_shadow;
 
-			&:hover
+			&.active,
+			&:active
 			{
-				// background: var(--buttonHoverColor, $cq_purple_dark);
-				// color: var(--buttonTextColor, white);
-				// border-color: var(--buttonHoverBorderColor, $cq_purple_dark);
+				box-shadow: $neumorphism_shadow_inset;
 			}
 			&.button-small
 			{
@@ -1376,7 +1413,6 @@ body
 	    font-weight: 700;
 	    color: initial;
 	    line-height: 1em;
-	    margin-top: $component_spacing;
 
 	    .start-number
 	    {
@@ -1391,8 +1427,6 @@ body
 
         &.big
         {
-        	font-size: 18px;
-
 		    .start-number
 		    {
 		        font-size: 32px;
@@ -1810,10 +1844,20 @@ body
 
     .session-checklog
     {
+    	font-size: 14px;
+    	line-height: 1.6em;
+
     	.sc-row
     	{
     		display: flex;
     		padding: 2px 0px;
+
+    		&.first-row
+    		{
+    			padding-bottom: $component_spacing_thin;
+			    margin-bottom: $component_spacing_thin;
+			    border-bottom: 1px solid lightgrey;
+    		}
 
     		.sc-col
     		{

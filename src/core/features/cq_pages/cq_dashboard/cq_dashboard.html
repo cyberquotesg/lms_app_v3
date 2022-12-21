@@ -51,7 +51,7 @@
                                 <span *ngIf="course.media == 'offline'">{{course.name}}<br />Batch - {{course.startDateText}}</span>
                             </h2>
 
-                            <div class="pt-4 pb-8">
+                            <div class="pt-4 pb-8 mt-cs">
                                 <cq_will_start_in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn"></cq_will_start_in>
                                 <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font">
                                     Starting

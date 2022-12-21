@@ -37,14 +37,6 @@ export class CqAvailableCourses extends CqPage implements OnInit
             page: this.page,
             length: this.length,
         },
-        pageSliderOptions: {
-            initialSlide: 0,
-            speed: 400,
-            centerInsufficientSlides: true,
-            centeredSlides: true,
-            centeredSlidesBounds: true,
-            slidesPerView: 1,
-        },
     };
     pageJob: any = {
         filterMultiple: {
@@ -64,11 +56,22 @@ export class CqAvailableCourses extends CqPage implements OnInit
     constructor(renderer: Renderer2, CH: CqHelper)
     {
         super(renderer, CH);
-
-        this.pageData.media = this.pageParams.media;
     }
 
-    ngOnInit(): void { this.usuallyOnInit(); }
+    ngOnInit(): void
+    {
+        this.usuallyOnInit(() => {
+            this.pageData.media = this.pageParams.media;
+            this.pageData.pageSliderOptions = {
+                initialSlide: this.pageParams.media == "online" ? 0 : 1,
+                speed: 400,
+                centerInsufficientSlides: true,
+                centeredSlides: true,
+                centeredSlidesBounds: true,
+                slidesPerView: 1,
+            };
+        });
+    }
     ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }

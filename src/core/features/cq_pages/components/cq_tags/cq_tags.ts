@@ -12,17 +12,17 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() item: any = {};
     @Input() hideList: string | string[] = "";
 
-    private hideMedia;
-    private userStatus;
-    private compulsory;
-    private courseType;
-    private categoryName;
+    private hideMedia: boolean;
+    private userStatus: boolean;
+    private compulsory: boolean;
+    private courseType: boolean;
+    private categoryName: boolean;
 
     constructor(CH: CqHelper)
     {
         super(CH);
 
-        let hideList: boolean;
+        let hideList: string[];
         if (Array.isArray(this.hideList)) hideList = this.hideList;
         else hideList = this.hideList.trim().replace(/ /g, "").split(",");
 

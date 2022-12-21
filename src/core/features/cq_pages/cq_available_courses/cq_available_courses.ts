@@ -4,7 +4,6 @@ import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
 import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
-// import { CqFilterComponent } from '../components/cq-filter/cq-filter';
 
 @Component({
     selector: 'cq_available_courses',
@@ -13,14 +12,13 @@ import { CqPage } from '../classes/cq_page';
 })
 export class CqAvailableCourses extends CqPage implements OnInit
 {
-    // @ViewChild(CqFilterComponent) filter: CqFilterComponent;
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
     pageParams: any = {
+        media: "online",
     };
     pageDefaults: any = {
         medias: ["online", "offline"],
-        media: "online",
         online: {
             initiated: false,
             courses: [],
@@ -38,6 +36,14 @@ export class CqAvailableCourses extends CqPage implements OnInit
             filterText: "",
             page: this.page,
             length: this.length,
+        },
+        pageSliderOptions: {
+            initialSlide: 0,
+            speed: 400,
+            centerInsufficientSlides: true,
+            centeredSlides: true,
+            centeredSlidesBounds: true,
+            slidesPerView: 1,
         },
     };
     pageJob: any = {
@@ -59,14 +65,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
     {
         super(renderer, CH);
 
-        this.pageData.pageSliderOptions = {
-            initialSlide: 0,
-            speed: 400,
-            centerInsufficientSlides: true,
-            centeredSlides: true,
-            centeredSlidesBounds: true,
-            slidesPerView: 1,
-        };
+        this.pageData.media = this.pageParams.media;
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }

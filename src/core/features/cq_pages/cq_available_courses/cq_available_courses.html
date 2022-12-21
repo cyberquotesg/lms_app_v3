@@ -8,7 +8,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
-        <div class="base-background">
+        <div class="base-background pb-5">
 
         <div class="text-center pt-36 ml-cs mr-cs d-flex justify-between">
             <button *ngFor="let media of pageData.medias" class="{{ media == pageData.media ? 'active' : '' }}" class="" (click)="selectMedia(media)" style="width: calc(50% - 12px)">

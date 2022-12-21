@@ -35,7 +35,7 @@
             <div style="font-weight: 900;">
                 {{ 'core.cqUpcomingRegisteredCourses' | translate }}
             </div>
-            <div style="opacity: 0.8;">
+            <div style="opacity: 0.8;" (click)="goToMyCourses()">
                 View All
             </div>
         </div>
@@ -47,26 +47,24 @@
 
                         <div class="item-link" (click)="openCourse(course)">
                             <div *ngIf="course.media == 'online'">
-                                <h3 class="item-title">{{course.fullnameTrimmed || course.fullname}}</h3>
-                                <div class="cq-tag-wrapper">
-                                    <span class="cq-tag dark-grey">E-Learning</span>
-                                    <span *ngIf="course.courseTypeText" class="cq-tag">{{ course.courseTypeText }}</span>
+                                <h2 class="item-title">{{course.fullnameTrimmed || course.fullname}}</h2>
+                                <div class="mt-cs">
+                                    <cq_tags [item]="course" [hideList]="'courseType, categoryName'"></cq_tags>
                                 </div>
                             </div>
 
                             <div *ngIf="course.media == 'offline'">
-                                <h3 class="item-title">{{course.name}}<br />Batch - {{course.startDateText}}</h3>
-                                <div class="cq-tag-wrapper">
-                                    <span class="cq-tag dark-grey">Classroom Training</span>
-                                    <span *ngIf="course.typeText" class="cq-tag">{{ course.typeText }}</span>
+                                <h2 class="item-title">{{course.name}}<br />Batch - {{course.startDateText}}</h2>
+                                <div class="mt-cs">
+                                    <cq_tags [item]="course" [hideList]="'courseType, categoryName'"></cq_tags>
                                 </div>
                             </div>
 
                             <cq-will-start-in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn"></cq-will-start-in>
-                            <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font pt-8">
+                            <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font">
                                 <span class="start-number">Starting</span>
                             </div>
-                            <div *ngIf="course.willStartIn < 0" class="will-start-in-information second-font pt-8">
+                            <div *ngIf="course.willStartIn < 0" class="will-start-in-information second-font">
                                 <span class="start-number">Ongoing</span>
                             </div>
                         </div>

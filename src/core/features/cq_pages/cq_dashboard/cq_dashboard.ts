@@ -129,4 +129,14 @@ export class CqDashboard extends CqPage implements OnInit
             preferCurrentTab: false,
         });
     }
+    goToMyCourses(): void
+    {
+        const stateParams: any = {
+        };
+        CoreNavigator.navigateToSitePath('/CqMyCourses/index', {
+            params: stateParams,
+            siteId: this.CH.getSiteId(),
+            preferCurrentTab: false,
+        });
+    }
 }

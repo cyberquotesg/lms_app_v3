@@ -1,0 +1,29 @@
+<div class="will-start-in-information second-font time-urgency-{{timeUrgency}} pt-10 pb-10 {{bigClass}} {{focusOn}}">
+    Will starts in
+
+    <div style="display: inline-block;">
+        <ng-container *ngIf="focusOn == 'focus-on-days'">
+            <span class="start-number days">
+                {{ beautifulNumber(startInDays) }}
+            </span> day{{ s(startInDays) }}
+        </ng-container>
+
+        <ng-container *ngIf="focusOn == 'focus-on-days' || focusOn == 'focus-on-hours'">
+            <span class="start-number hours">
+                {{ beautifulNumber(startInHours) }}
+            </span> hour{{ s(startInHours) }}
+        </ng-container>
+
+        <ng-container *ngIf="focusOn == 'focus-on-hours' || focusOn == 'focus-on-minutes'">
+            <span class="start-number minutes">
+                {{ beautifulNumber(startInMinutes) }}
+            </span> minute{{ s(startInMinutes) }}
+        </ng-container>
+
+        <ng-container *ngIf="focusOn == 'focus-on-minutes'">
+            <span class="start-number seconds">
+                {{ beautifulNumber(startInSeconds) }}
+            </span> second{{ s(startInSeconds) }}
+        </ng-container>
+    </div>
+</div>

@@ -7,6 +7,7 @@ import { CqEmptyComponent } from './cq_empty/cq_empty';
 import { CqFilterComponent } from './cq_filter/cq_filter';
 import { CqFilterComponentModal } from './cq_filter/cq_filter_modal';
 import { CqChartComponent } from './cq_chart/cq_chart';
+import { CqTagsComponent } from './cq_tags/cq_tags';
 
 @NgModule({
     declarations: [
@@ -16,6 +17,7 @@ import { CqChartComponent } from './cq_chart/cq_chart';
         CqFilterComponent,
         CqFilterComponentModal,
         CqChartComponent,
+        CqTagsComponent,
     ],
     imports: [
         CoreSharedModule,
@@ -28,6 +30,7 @@ import { CqChartComponent } from './cq_chart/cq_chart';
         CqFilterComponent,
         CqFilterComponentModal,
         CqChartComponent,
+        CqTagsComponent,
     ],
 })
 export class CqComponentsModule {}

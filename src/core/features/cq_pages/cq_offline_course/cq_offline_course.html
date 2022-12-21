@@ -20,23 +20,8 @@
                     <div *ngIf="pageData.course.courseImageFull" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + pageData.course.courseImageFull + ')'}"></div>
                     <span *ngIf="!pageData.course.courseImageFull" class="card-image-letter">{{ getLetter(pageData.course.name) }}</span>
 
-                    <div class="cq-tag-wrapper" style="position: absolute; top: 5px; right: 5px; text-align: right;">
-                        <span class="cq-tag dark-grey">Classroom Training</span>
-                        <span *ngIf="pageData.course.typeText" class="cq-tag">{{ pageData.course.typeText }}</span>
-                        <span *ngIf="pageData.course.compulsory == '1'" class="cq-tag orange">Compulsory</span>
-
-                        <span *ngIf="pageData.course.showEnrolled" class="cq-tag green">Enrolled</span>
-                        <span *ngIf="pageData.course.showFinished" class="cq-tag green">
-                            <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-                            Finished
-                        </span>
-
-                        <!-- sign if the course is finished -->
-                        <ng-container *ngIf="pageData.course.sessionHasEnded">
-                            <br />
-                            <span *ngIf="pageData.course.userAttendance == 'accredited'" class="cq-tag green">Accredited</span>
-                            <span *ngIf="pageData.course.userAttendance != 'accredited'" class="cq-tag green">Not Accredited</span>
-                        </ng-container>
+                    <div style="position: absolute; top: 5px; right: 5px; text-align: right;">
+                        <cq_tags [item]="pageData.course"></cq_tags>
                     </div>
                 </div>
 

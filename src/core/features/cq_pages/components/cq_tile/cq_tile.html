@@ -7,22 +7,7 @@
                     <span *ngIf="!item.course_image" class="card-image-letter">{{ item.letter }}</span>
                     
                     <div class="card-image-tags">
-                        <div class="cq-tag-wrapper">
-                            <ng-container *ngIf="item.media">
-                                <span *ngIf="item.media == 'online'" class="cq-tag">E-Learning</span>
-                                <span *ngIf="item.media == 'offline'" class="cq-tag">Classroom Training</span>
-                            </ng-container>
-
-                            <span *ngIf="item.detailedUserStatusInSession == 'enrolled'" class="cq-tag">{{ item.detailedUserStatusInSessionText }}</span>
-                            <span *ngIf="item.detailedUserStatusInSession == 'accredited'" class="cq-tag green">
-                                <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-                                {{ item.detailedUserStatusInSessionText }}
-                            </span>
-
-                            <span *ngIf="item.compulsory === true || item.compulsory === 1 || item.compulsory === '1'" class="cq-tag orange">Compulsory</span>
-                            <span *ngIf="item.typeText || item.courseTypeText" class="cq-tag dark-grey">{{ item.typeText || item.courseTypeText }}</span>
-                            <span *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">{{ item.categoryname || item.categoryName }}</span>
-                        </div>
+                        <cq_tags [item]="item"></cq_tags>
                     </div>
                 </div>
 

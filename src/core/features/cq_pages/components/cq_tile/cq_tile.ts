@@ -12,6 +12,8 @@ export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
     @Input() items: any | any[] = [];
     @Output() onSelectItem: EventEmitter<number>;
 
+    private showFakeItems: boolean = false;
+
     constructor(CH: CqHelper)
     {
         super(CH);
@@ -39,6 +41,12 @@ export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
 
             // make sure it is array
             else this.items = [this.items];
+
+            this.showFakeItems = false;
+        }
+        else
+        {
+            this.showFakeItems = true;
         }
 
         // adjust the properties

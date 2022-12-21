@@ -21,14 +21,16 @@
             </ion-card>
         </div>
 
-        <div class="tc-item fake"></div>
-        <div class="tc-item fake"></div>
-        <div class="tc-item fake"></div>
-        <div class="tc-item fake"></div>
-        <div class="tc-item fake"></div>
-        <div class="tc-item fake"></div>
-        <div class="tc-item fake"></div>
-        <div class="tc-item fake"></div>
+        <ng-container *ngIf="showFakeItems">
+            <div class="tc-item fake"></div>
+            <div class="tc-item fake"></div>
+            <div class="tc-item fake"></div>
+            <div class="tc-item fake"></div>
+            <div class="tc-item fake"></div>
+            <div class="tc-item fake"></div>
+            <div class="tc-item fake"></div>
+            <div class="tc-item fake"></div>
+        </ng-container>
     </div>
 
     <cq_empty [empty]="isEmpty(items)"></cq_empty>

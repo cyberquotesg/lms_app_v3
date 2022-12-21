@@ -22,92 +22,28 @@ export class CqOfflineCourse extends CqPage implements OnInit
         courseName: '',
     };
     pageDefaults: any = {
-
-
-
         course: {},
         sessions: [],
         isIos: false,
-
-
-
     };
     pageJob: any = {
-
-
-
-        getCqConfig: 0,
         course: 0,
-
-
-
     };
 
     private agent: any;
+    private loading: any = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper, private platform: Platform)
+    constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
     {
         super(renderer, CH);
+        this.pageData.isIos = platform.is('ios');
     }
 
-    ngOnInit(): void {
-        this.usuallyOnInit();
-        this.pageData.isIos = this.platform.is('ios');
-    }
+    ngOnInit(): void { this.usuallyOnInit(); }
     ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
-
-    getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
-    {
-        const params: any = {
-            calls: {
-                courseTypes: {
-                    class: 'CqCourseLib',
-                    function: 'get_course_type_of_user',
-                },
-            },
-        };
-
-        this.pageJobExecuter(jobName, params, (data) => {
-            let allData = this.CH.toJson(data);
-
-            // courseTypes
-            let courseTypesArray: any[] = [];
-            for (let id in allData.courseTypes)
-            {
-                courseTypesArray.push(allData.courseTypes[id]);
-            }
-            this.pageData.courseTypes = {
-                object: allData.courseTypes,
-                array: courseTypesArray,
-            };
-
-
-
-
-
-
-            
-
-            if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
-        }, moreloader, refresher, finalCallback);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     course(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -116,103 +52,85 @@ export class CqOfflineCourse extends CqPage implements OnInit
             function: 'view_classroom_training',
             course_id: this.pageParams.courseId,
         };
-
         this.pageJobExecuter(jobName, params, (data) => {
             data = this.CH.toJson(data);
-            this.handleCourseData(data);
+
+            this.pageData.course = data.ctData;
+            this.pageData.course.venue = this.pageData.course.venue ? this.pageData.course.venue : '-';
+
+            if (this.pageData.course.isUserFinished && this.pageData.course.isUserFinished == '1')
+            {
+                this.pageData.course.showEnrolled = false;
+                this.pageData.course.showFinished = true;
+            }
+            else
+            {
+                this.pageData.course.showEnrolled = this.pageData.course.isUserEnrolled && this.pageData.course.isUserEnrolled == '1';
+                this.pageData.course.showFinished = false;
+            }
+
+            this.pageData.sessions = this.CH.toArray(data.ctSessionData);
+            this.pageData.sessions.map((session) => {
+                let tempDateTime: string[] = [];
+                session.fullDateTimeText.forEach((dateTime: any) => {
+                    let temp: string = this.CH.time24To12Batch(dateTime);
+                    tempDateTime.push(temp);
+                });
+
+                session.fullDateTimeTextCombined = tempDateTime.join(', ');
+                session.availableSeat = Number(session.capacity) - Number(session.enrolledCount);
+                session.willStartInDegradated = session.willStartIn;
+            });
+
+            this.agent = setInterval(() => {
+                this.pageData.sessions.map((session) => {
+                    session.willStartInDegradated--;
+                });
+            }, 1000);
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
     }
-    handleCourseData(data: any): void
-    {
-        this.pageData.course = data.ctData;
-        this.pageData.course.venue = this.pageData.course.venue ? this.pageData.course.venue : '-';
-
-        if (this.pageData.course.isUserFinished && this.pageData.course.isUserFinished == '1')
-        {
-            this.pageData.course.showEnrolled = false;
-            this.pageData.course.showFinished = true;
-        }
-        else
-        {
-            this.pageData.course.showEnrolled = this.pageData.course.isUserEnrolled && this.pageData.course.isUserEnrolled == '1';
-            this.pageData.course.showFinished = false;
-        }
-
-        this.pageData.sessions = this.CH.toArray(data.ctSessionData);
-        this.pageData.sessions.map((session) => {
-            let tempDateTime: string[] = [];
-            session.fullDateTimeText.forEach((dateTime: any) => {
-                let temp: string = this.CH.time24To12Batch(dateTime);
-                tempDateTime.push(temp);
-            });
-
-            session.fullDateTimeTextCombined = tempDateTime.join(', ');
-            session.availableSeat = Number(session.capacity) - Number(session.enrolledCount);
-            session.willStartInDegradated = session.willStartIn;
-        });
-
-        this.agent = setInterval(() => {
-            this.pageData.sessions.map((session) => {
-                session.willStartInDegradated--;
-            });
-        }, 1000);
-    }
-
-
-
-
-    refreshCourse(loading: any, success: any, failed: any): void
-    {
-        // get new course data
-        this.CH.callCustomApi('local_classroom_training_view', {course_id: this.pageParams.courseId})
-        .then((response) => {
-            let newData = this.CH.toJson(response);
-            this.CH.log('new data result', newData);
-            this.handleCourseData(newData);
-            loading.dismiss();
-            success();
-        })
-        .catch(() => {
-            loading.dismiss();
-            failed();
-        });
-    }
 
     connectSession(purpose: string, sessionId: number): void
     {
+        this.loading = true;
         this.CH.loading('Please wait...', (loading) => {
-            // sign up
-            this.CH.callCustomApi('local_classroom_training_' + purpose, {session_id: sessionId})
-            .then((response) => {
-                let signUpData = this.CH.toJson(response);
-                this.CH.log('sign up result', signUpData);
+            const params: any = {
+                class: 'CqCourseLib',
+                function: purpose + '_classroom_training',
+                session_id: sessionId,
+            };
+            this.CH.callApi(params)
+            .then((data) => {
+                data = this.CH.toJson(data);
+                this.CH.log('sign up result', data);
 
-                // user enrolment > 0 means the status has changed, either it is success or not
-                // and that requires new data from server
-                if ((purpose == 'sign_up' && Number(signUpData.user_enrolment)) || (purpose == 'withdraw' && !Number(signUpData.user_enrolment)))
+                // sign up or withdraw is successfull
+                if ((purpose == 'sign_up' && Number(data.userEnrolment)) || (purpose == 'withdraw' && !Number(data.userEnrolment)))
                 {
-                    this.refreshCourse(loading, () => {
+                    this.pageForceReferesh(() => {
+                        this.loading = false;
+                        loading.dismiss();
+
                         // success to enrol and gather new data
-                        if (signUpData.success == 1) this.CH.alert('Success!', signUpData.message);
+                        if (data.success == 1) this.CH.alert('Success!', data.message);
 
                         // failed to enrol but success to gather new data
-                        else this.CH.alert('Ups!', signUpData.message);
-                    }, () => {
-                        // for whatever the result is, failed to gather new data
-                        this.CH.alert('Notice!', signUpData.message + '. Please refresh (pull down) the page.');
+                        else this.CH.alert('Ups!', data.message);
                     });
                 }
 
-                // failed to enrol
+                // sign up or withdraw is failed
                 else
                 {
+                    this.loading = false;
                     loading.dismiss();
-                    this.CH.alert('Ups!', signUpData.message)
+                    this.CH.alert('Ups!', data.message)
                 }
             })
             .catch(() => {
+                this.loading = false;
                 loading.dismiss();
                 
                 // cannot sign up because server is unreachable
@@ -242,6 +160,20 @@ export class CqOfflineCourse extends CqPage implements OnInit
         });
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     scanQRCodeEngine(latitude?: number, longitude?: number): void
     {
         CoreUtils.scanQR().then((QRCodeData: any) => {
@@ -257,6 +189,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
             };
 
             this.CH.loading('Please wait...', (loading) => {
+                /* *a/
                 this.CH.callCustomApi('local_classroom_training_checklog', params)
                 .then((response) => {
                     let result = this.CH.toJson(response);
@@ -286,6 +219,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 })
                 .finally(() => {
                 });
+                /* */
             });
         });
     }

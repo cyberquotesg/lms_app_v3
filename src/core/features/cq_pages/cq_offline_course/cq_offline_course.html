@@ -8,11 +8,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
-        <div class="base-background">
-
-
-
-
+        <div class="base-background pb-5">
 
         <div *ngIf="isAvailable(pageData.course)">
             <ion-card>
@@ -101,8 +97,11 @@
                                             </div>
                                             <div class="card-item-text">
                                                 <div>Sign Up to Course</div>
-                                                <div class="mt-cs">
-                                                    <button *ngIf="session.unavailableMessage == ''" (click)="takeSession(session.id)" class="button button-small background-cqd color-white" style="width: 100%;">Sign Up</button>
+                                                <div class="mt-cst">
+                                                    <button *ngIf="session.unavailableMessage == ''" (click)="takeSession(session.id)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
+                                                        <span *ngIf="!loading">Sign Up</span>
+                                                        <ion-spinner *ngIf="loading"></ion-spinner>
+                                                    </button>
                                                     <div *ngIf="session.unavailableMessage != ''" class="no-break text-left pl-0 pr-0 pb-0">
                                                         {{ session.unavailableMessage }}
                                                     </div>
@@ -157,13 +156,13 @@
                                                     </div>
                                                     <div class="card-item-text">
                                                         <div>{{ session.venue }}</div>
-                                                        <div *ngIf="session.userEnrolment == '2' && session.latitude && session.longitude" class="mt-cs">
-                                                            <button *ngIf="!pageData.isIos" class="button-small ml-4 mr-4 mb-8 background-light-grey" (click)="openInBrowser('https://www.google.com/maps/search/?api=1&query=' + session.latitude + ',' + session.longitude)">
+                                                        <div *ngIf="session.userEnrolment == '2' && session.latitude && session.longitude" class="mt-cst">
+                                                            <button *ngIf="!pageData.isIos" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser('https://www.google.com/maps/search/?api=1&query=' + session.latitude + ',' + session.longitude)">
                                                                 <img src="assets/img/icons/google_map.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                 <span style="vertical-align: middle; margin-left: 2px;">View in Map</span>
                                                             </button>
 
-                                                            <button *ngIf="pageData.isIos" class="button-small ml-4 mr-4 mb-8 background-light-grey" (click)="openInBrowser('http://maps.apple.com/?sll=' + session.latitude + ',' + session.longitude + '&z=10')">
+                                                            <button *ngIf="pageData.isIos" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser('http://maps.apple.com/?sll=' + session.latitude + ',' + session.longitude + '&z=10')">
                                                                 <img src="assets/img/icons/apple_map.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                 <span style="vertical-align: middle; margin-left: 2px;">View in Map</span>
                                                             </button>
@@ -184,18 +183,18 @@
                                                     </div>
                                                     <div class="card-item-text">
                                                         <div>Zoom Meeting</div>
-                                                        <div *ngIf="session.userEnrolment == '2'" class="mt-cs">
+                                                        <div *ngIf="session.userEnrolment == '2'" class="mt-cst">
                                                             <ng-container *ngFor="let date of session.dates">
                                                                 <ng-container *ngIf="date.dateHasNextTime">
 
                                                                     <!-- date has started, meaning the button can be fully working -->
-                                                                    <button *ngIf="date.dateHasStarted" class="button-small ml-4 mr-4 mb-8 background-light-grey" (click)="openInBrowser(date.zoomRegistrationUrl)">
+                                                                    <button *ngIf="date.dateHasStarted" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser(date.zoomRegistrationUrl)">
                                                                         <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                         <span style="vertical-align: middle; margin-left: 2px;">Join</span>
                                                                     </button>
 
                                                                     <!-- date hasn't started, give fake button -->
-                                                                    <button *ngIf="!date.dateHasStarted" class="button-small ml-4 mr-4 mb-8 background-light-grey" (click)="alertZoomNotStarted(date)">
+                                                                    <button *ngIf="!date.dateHasStarted" class="button-small ml-4 mr-4 mb-8" (click)="alertZoomNotStarted(date)">
                                                                         <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                         <span style="vertical-align: middle; margin-left: 2px;">{{ date.dateText }} {{ time24To12(timeRemoveSeconds(date.startTime)) }}</span>
                                                                     </button>
@@ -212,16 +211,16 @@
                                                     </div>
                                                     <div class="card-item-text">
                                                         <div>Save to Calendar</div>
-                                                        <div *ngIf="session.calendarButtons.google || session.calendarButtons.outlook || (pageData.isIos && session.calendarButtons.outlook)" class="mt-cs">
-                                                            <button *ngIf="session.calendarButtons.google" class="button-small ml-4 mr-4 mb-8 background-light-grey" (click)="openInBrowser(session.calendarButtons.google)">
+                                                        <div *ngIf="session.calendarButtons.google || session.calendarButtons.outlook || (pageData.isIos && session.calendarButtons.apple)" class="mt-cst">
+                                                            <button *ngIf="session.calendarButtons.google" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser(session.calendarButtons.google)">
                                                                 <img src="assets/img/icons/google_calendar.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                 <span style="vertical-align: middle; margin-left: 2px;">Google</span>
                                                             </button>
-                                                            <button *ngIf="session.calendarButtons.outlook" class="button-small ml-4 mr-4 mb-8 background-light-grey" (click)="openInBrowser(session.calendarButtons.outlook)">
+                                                            <button *ngIf="session.calendarButtons.outlook" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser(session.calendarButtons.outlook)">
                                                                 <img src="assets/img/icons/outlook.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                 <span style="vertical-align: middle; margin-left: 2px;">Outlook</span>
                                                             </button>
-                                                            <button *ngIf="pageData.isIos && session.calendarButtons.outlook" class="button-small ml-4 mr-4 mb-8 background-light-grey" (click)="openInBrowser(session.calendarButtons.outlook)">
+                                                            <button *ngIf="pageData.isIos && session.calendarButtons.apple" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser(session.calendarButtons.apple)">
                                                                 <img src="assets/img/icons/apple_calendar.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                 <span style="vertical-align: middle; margin-left: 2px;">Apple</span>
                                                             </button>
@@ -235,8 +234,11 @@
                                                     </div>
                                                     <div class="card-item-text">
                                                         <div>Withdraw from Course</div>
-                                                        <div class="mt-cs">
-                                                            <button *ngIf="session.unavailableMessage == ''" (click)="leaveSession(session.id)" class="button button-small background-red color-white" style="width: 100%;">Withdraw</button>
+                                                        <div class="mt-cst">
+                                                            <button *ngIf="session.unavailableMessage == ''" (click)="leaveSession(session.id)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
+                                                                <span *ngIf="!loading">Withdraw</span>
+                                                                <ion-spinner *ngIf="loading"></ion-spinner>
+                                                            </button>
                                                             <div *ngIf="session.unavailableMessage != ''" class="no-break text-left pl-0 pr-0 pb-0">
                                                                 {{ session.unavailableMessage }}
                                                             </div>
@@ -309,10 +311,6 @@
         </div>
 
         <cq_empty [empty]="isEmpty(pageData.course)"></cq_empty>
-
-
-
-
 
         </div>
     </core-loading>

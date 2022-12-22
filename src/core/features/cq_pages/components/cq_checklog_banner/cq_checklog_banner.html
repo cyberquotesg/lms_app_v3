@@ -1,0 +1,29 @@
+<ion-header>
+    <ion-toolbar hideBackButton>
+        <ion-buttons slot="start">
+            <ion-back-button [text]="'core.back' | translate"></ion-back-button>
+        </ion-buttons>
+        <ion-buttons slot="end">
+            <div class="drawer-button" (click)="close()">
+                <ion-icon name="close"></ion-icon>
+            </div>
+        </ion-buttons>
+
+        <ion-title>
+            <h1 class="color-white text-center">{{ toTitle(code) }}</h1>
+        </ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="cq_checklog_banner">
+    <div style="display: flex; flex-direction: column; justify-content: space-evenly; text-align: center; position: fixed; background: white; left: 0px; top: 0px; right: 0px; bottom: 0px;">
+        <div style="font-size: 28px;">{{ name }}</div>
+        <div class="second-font" style="text-align: center; font-size: 18px;">
+            <img *ngIf="type == 'in'" src="assets/img/icons/CheckIn.svg" style="width:250px; height:250px; margin-right: 52px;" />
+            <img *ngIf="type == 'out'" src="assets/img/icons/CheckOut.svg" style="width:250px; height:250px; margin-left: 52px;" />
+            <div style="text-transform: uppercase;">clock {{ type }}</div>
+            at <span style="font-size: 32px;">{{ timeHI }}</span> {{ timeA }}
+        </div>
+        <div class="pl-cs pr-cs" style="font-size: 28px;">{{ message }}</div>
+    </div>
+</ion-content>

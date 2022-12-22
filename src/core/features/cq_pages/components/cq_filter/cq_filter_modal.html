@@ -20,7 +20,7 @@
         <button (click)="applyFilter(true)" class="button button-small button-apply-filter" style="width: 100%">Apply Filter</button>
     </div>
 
-    <div *ngIf="isAvailable(filterMultipleInternal)" class="base-background" style="padding-bottom: 84px;">
+    <div *ngIf="isAvailable(filterMultipleInternal)" class="base-background" style="min-height: 100%; padding-bottom: 84px;">
         <div *ngFor="let filter of filterMultipleInternal" class="ml-cs mr-cs pb-cs">
             <div class="pt-cs" style="font-size: 16px; display: flex;">
                 <div style="flex-grow: 1; display: flex; justify-content: center; flex-direction: column;">{{ toTitle(filter.identifier) }}</div>

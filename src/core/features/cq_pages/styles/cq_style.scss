@@ -1003,6 +1003,58 @@ body
 		    pointer-events: none;
 		}
 	}
+	ion-back-button
+	{
+		position: absolute;
+
+		&.button
+		{
+			&:not(.bar-button):not(.tab-button):not(.alert-button):not(.action-sheet-button):not(.excluded-button)
+			{
+			    background: transparent !important;
+		        box-shadow: none !important;
+		        border-radius: 0px !important;
+		        width: 44px !important;
+		        height: 44px !important;
+		        padding: 0px !important;
+		        font-size: 18px !important;
+
+		        &::part(native)
+		        {
+		        	background: transparent !important;
+		        	color: white !important;
+				}
+			}
+        }
+	}
+	ion-title
+	{
+		margin-left: 44px;
+		color: white;
+
+		*
+		{
+			text-align: center !important;
+		}
+	}
+	ion-button
+	{
+		&.button-clear
+		{
+			&.in-toolbar
+			{
+				background: transparent !important;
+				box-shadow: none !important;
+
+		        &::part(native)
+		        {
+		        	background: transparent !important;
+		        	padding: 0px !important;
+		        	color: white !important;
+		        }
+			}
+		}
+	}
 	.checkbox
 	{
 		.checkbox-icon

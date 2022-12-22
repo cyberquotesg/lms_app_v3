@@ -5,13 +5,12 @@ import { IonSlides, Platform } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
+import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
-import { ChartData } from 'chart.js';
 
 @Component({
     selector: 'cq_offline_course',
     templateUrl: './cq_offline_course.html',
-    styles: ['./cq_offline_course.scss'],
 })
 export class CqOfflineCourse extends CqPage implements OnInit
 {
@@ -160,19 +159,18 @@ export class CqOfflineCourse extends CqPage implements OnInit
         });
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    alertZoomNotStarted(date: any): void
+    {
+        this.CH.alert(
+            'Ups!',
+            'Zoom meeting hasn\'t started. ' +
+            'It will be available at ' + 
+            date.date_text + ' ' + 
+            this.CH.time24To12(
+                this.CH.timeRemoveSeconds(date.start_time)
+            ) + '.'
+        );
+    }
 
     scanQRCodeEngine(latitude?: number, longitude?: number): void
     {
@@ -180,35 +178,32 @@ export class CqOfflineCourse extends CqPage implements OnInit
             if (this.CH.isEmpty(QRCodeData)) return;
             
             let data = this.CH.readQRCode(QRCodeData);
-            let params = {
-                identifier: data[0],
-                type: data[1],
-                course_id: this.pageData.course.id,
-                latitude: (latitude ? latitude : '[empty]'),
-                longitude: (longitude ? longitude : '[empty]'),
-            };
-
             this.CH.loading('Please wait...', (loading) => {
-                /* *a/
-                this.CH.callCustomApi('local_classroom_training_checklog', params)
-                .then((response) => {
-                    let result = this.CH.toJson(response);
+                const params: any = {
+                    class: 'CqCourseLib',
+                    function: 'checklog_classroom_training',
+                    identifier: data[0],
+                    type: data[1],
+                    course_id: this.pageData.course.id,
+                    session_id: this.pageData.session.id,
+                    latitude: (latitude ? latitude : '[empty]'),
+                    longitude: (longitude ? longitude : '[empty]'),
+                };
+                this.CH.callApi(params)
+                .then((data) => {
+                    data = this.CH.toJson(data);
 
-                    if (result.success)
+                    if (data.success)
                     {
-                        this.refreshCourse(loading, () => {
-                            // warning! must be using beautiful dedicated page
-                            // this.CH.alert('Success!', 'You have checked ' + result.type);
-                            
-                            this.showChecklogBanner(result);
-                        }, () => {
-                            this.CH.alert('Notice!', 'You have checked ' + result.type + ', please refresh (pull down) the page.');
+                        this.pageForceReferesh(() => {
+                            loading.dismiss();
+                            this.showChecklogBanner(data);
                         });
                     }
                     else
                     {
                         loading.dismiss();
-                        this.CH.alert('Ups!', result.message);
+                        this.CH.alert('Ups!', data.message);
                     }
                 })
                 .catch((e) => {
@@ -219,7 +214,6 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 })
                 .finally(() => {
                 });
-                /* */
             });
         });
     }
@@ -239,6 +233,16 @@ export class CqOfflineCourse extends CqPage implements OnInit
         }
         else this.scanQRCodeEngine();
     }
+    showChecklogBanner(data: any): void
+    {
+        this.CH.modal(CqChecklogBannerComponent, {
+            code: data.code,
+            type: data.type,
+            time: data.time,
+            name: data.name,
+            message: data.message,
+        });
+    }
 
     /* for testing purpose */
     showChecklogBannerTemp(type: number): void
@@ -251,10 +255,10 @@ export class CqOfflineCourse extends CqPage implements OnInit
             data = {
                 success: true,
                 code: 'checked_in',
-                message: 'You have successfully checked in',
                 type: 'in',
                 time: '9.12 am',
-                name: 'course name',
+                name: 'my course name',
+                message: 'You have successfully checked in',
             };
         }
         else if (type == 2)
@@ -262,40 +266,14 @@ export class CqOfflineCourse extends CqPage implements OnInit
             data = {
                 success: true,
                 code: 'checked_out',
-                message: 'You have successfully checked out',
                 type: 'out',
                 time: '9.52 am',
-                name: 'course name',
+                name: 'my course name',
+                message: 'You have successfully checked out',
             };
         }
 
         this.CH.log('having data', data);
         this.showChecklogBanner(data);
-    }
-    /* for testing purpose */
-    
-    showChecklogBanner(data: any): void
-    {
-        const stateParams: any = {
-            data: JSON.stringify(data),
-        };
-        CoreNavigator.navigateToSitePath('/CqOfflineCourse/banner', {
-            params: stateParams,
-            siteId: this.CH.getSiteId(),
-            preferCurrentTab: false,
-        });
-    }
-
-    alertZoomNotStarted(date: any): void
-    {
-        this.CH.alert(
-            'Ups!',
-            'Zoom meeting hasn\'t started. ' +
-            'It will be available at ' + 
-            date.date_text + ' ' + 
-            this.CH.time24To12(
-                this.CH.timeRemoveSeconds(date.start_time)
-            ) + '.'
-        );
     }
 }

@@ -7,20 +7,12 @@ import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/comp
 import { CqComponentsModule } from '../components/cq_components.module';
 import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
-
 import { CqOfflineCourse } from './cq_offline_course';
 
 const routes: Routes = [
     {
         path: '',
         component: CqOfflineCourse,
-        // children: conditionalRoutes([
-        //     {
-        //         path: ':id',
-        //         loadChildren: () => import('../../pages/notification/notification.module')
-        //             .then(m => m.AddonNotificationsNotificationPageModule),
-        //     },
-        // ], () => CoreScreen.isTablet),
     },
 ];
 

@@ -1,5 +1,5 @@
 <ion-header>
-    <cq_header [title]="'Offline Course'" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
+    <cq_header [title]="pageData.course.name" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
 </ion-header>
 
 <ion-content class="cq_offline_course">

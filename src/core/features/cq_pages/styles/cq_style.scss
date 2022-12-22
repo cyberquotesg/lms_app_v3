@@ -1037,6 +1037,19 @@ body
 			text-align: center !important;
 		}
 	}
+	cq_dashboard
+	{
+		ion-title
+		{
+			margin-left: 0px;
+			text-align: left !important;
+
+			*
+			{
+				text-align: left !important;
+			}
+		}
+	}
 	ion-button
 	{
 		&.button-clear

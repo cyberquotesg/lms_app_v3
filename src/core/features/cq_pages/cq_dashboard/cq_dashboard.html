@@ -1,5 +1,6 @@
 <ion-header>
-    <cq_header [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
+    <!-- warning! ini harus per organisasi -->
+    <cq_header [title]="'CyberQuote LMS'" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" (onToggleDrawer)="toggleDrawer()" (onGoToNotificationsList)="goToNotificationsList()"></cq_header>
 </ion-header>
 
 <ion-content class="cq_dashboard">
@@ -52,7 +53,7 @@
                             </h2>
 
                             <div class="pt-4 pb-8 mt-cs">
-                                <cq_will_start_in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn"></cq_will_start_in>
+                                <cq_will_start_in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn" [animation]="true"></cq_will_start_in>
                                 <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font">
                                     Starting
                                 </div>

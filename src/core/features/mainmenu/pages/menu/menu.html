@@ -17,6 +17,7 @@
             </span>
         </ion-tab-button>
 
+        <!-- 
         <ion-tab-button (keydown)="tabAction.keyDown($event)" (keyup)="tabAction.keyUp(morePageName, $event)" [hidden]="!loaded"
             [tab]="morePageName" layout="label-hide" [tabindex]="selectedTab == morePageName ? 0 : -1" [attr.aria-controls]="morePageName">
             <ion-icon class="core-tab-icon" name="ellipsis-horizontal" aria-hidden="true"></ion-icon>
@@ -24,21 +25,7 @@
             <span class="sr-only">{{ 'core.more' | translate }}</span>
             <ion-icon *ngIf="moreBadge" class="core-tab-badge" name="fas-circle" aria-hidden="true"></ion-icon>
         </ion-tab-button>
-
-        <svg width="110" height="48" style="position: absolute; left: 50%; transform: translateX(-50%); user-select: none;">
-          <polygon style="stroke-width:0;" points="
-            0,48
-                  0,0
-                  25,0
-                25,20
-              40,40
-              70,40
-                85,20
-                  85,0
-                  110,0
-            110,48
-          "/>
-        </svg>
+         -->
     </ion-tab-bar>
 </ion-tabs>
 <div class="core-network-message" [hidden]="!showTabs">

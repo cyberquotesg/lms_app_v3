@@ -27,6 +27,8 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
         if (this.displayNotification)
         {
             this.notificationCount = this.shortenNotificationCount(this.CH.getNotificationCount());
+            
+            // warning! events sudah ga ada, terus gimana cara barunya?
             // this.events.subscribe('newNotificationCount', (notificationCount) => {
             //   this.notificationCount = this.shortenNotificationCount(notificationCount);
             // });
@@ -40,6 +42,7 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     {
         if (this.displayNotification)
         {
+            // warning! events sudah ga ada, terus gimana cara barunya?
             // this.events.unsubscribe('newNotificationCount');
         }
     }

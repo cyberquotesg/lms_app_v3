@@ -26,7 +26,7 @@ export class AddonCalendarMainMenuHandlerService implements CoreMainMenuHandler 
     static readonly PAGE_NAME = 'calendar';
 
     name = 'AddonCalendar';
-    priority = 550;
+    priority = 2000;
 
     /**
      * Check if the handler is enabled on a site level.
@@ -44,7 +44,7 @@ export class AddonCalendarMainMenuHandlerService implements CoreMainMenuHandler 
      */
     getDisplayData(): CoreMainMenuHandlerData {
         return {
-            icon: 'far-calendar',
+            icon: 'calendar',
             title: 'addon.calendar.calendar',
             page: AddonCalendarMainMenuHandlerService.PAGE_NAME,
             class: 'addon-calendar-handler',

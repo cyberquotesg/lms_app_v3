@@ -1,6 +1,3 @@
-// warning! not ready yet, especially on opening course
-// warning! CoreNavigator.navigate is still having wrong param
-
 import { Renderer2 } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
@@ -309,24 +306,20 @@ export class CqPage extends CqGeneral
         return { mode, page, length };
     }
 
-    toggleDrawer(): void
-    {
-        this.CH.toggleDrawer();
-    }
-    goToNotificationsList(): void
-    {
-        this.CH.goToNotificationsList();
-    }
-
     openCourse(course: any): void
     {
         if (course.media == 'online')
         {
             if (course.isUserEnrolled) CoreCourseHelper.openCourse(course);
-            else CoreNavigator.navigateToSitePath(
-                `/course/${course.id}/summary`,
-                { params: { course: course } },
-            );
+            else
+            {
+                const stateParams: any = {
+                    course,
+                };
+                CoreNavigator.navigateToSitePath(`/course/${course.id}/summary`, {
+                    params: stateParams,
+                });
+            }
         }
         else if (course.media == 'offline')
         {
@@ -336,7 +329,6 @@ export class CqPage extends CqGeneral
             };
             CoreNavigator.navigateToSitePath('/CqOfflineCourse/index', {
                 params: stateParams,
-                siteId: this.CH.getSiteId(),
                 preferCurrentTab: false,
             });
         }

@@ -15,17 +15,11 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     @Input() displayUserMenu: boolean = false;
     @Input() displayProgress: boolean = false;
 
-    @Output() onToggleDrawer: EventEmitter<number>;
-    @Output() onGoToNotificationsList: EventEmitter<number>;
-
     notificationCount = '';
 
     constructor(CH: CqHelper)
     {
         super(CH);
-
-        this.onToggleDrawer = new EventEmitter();
-        this.onGoToNotificationsList = new EventEmitter();
     }
 
     ngOnInit(): void
@@ -80,14 +74,5 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
             count = Math.floor(count / 1000000);
             return String(count) + 'M';
         }
-    }
-
-    toggleDrawer(): void
-    {
-        this.onToggleDrawer.emit();
-    }
-    goToNotificationsList(): void
-    {
-        // this.onGoToNotificationsList.emit();
     }
 }

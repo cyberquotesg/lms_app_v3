@@ -990,13 +990,4 @@ export class CqHelper
         
         return courses;
     }
-
-    toggleDrawer(): void {
-    	// warning! events is removed from ionic 5
-        // this.events.publish('toggleDrawer');
-    }
-    goToNotificationsList(): void {
-    	// warning! events is removed from ionic 5
-        // this.events.publish('goToNotificationsList');
-    }
 }

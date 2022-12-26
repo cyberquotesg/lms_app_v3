@@ -2,6 +2,7 @@
 
 import { CqGeneral } from './cq_general';
 import { CqHelper } from '../services/cq_helper';
+import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 
 export class CqComponent extends CqGeneral
 {
@@ -19,5 +20,10 @@ export class CqComponent extends CqGeneral
                 this[varName] = changes[varName].currentValue;
             }
         }
+    }
+
+    goToNotificationsList(): void
+    {
+        CoreNavigator.navigateToSitePath(`notifications/list`, {});
     }
 }

@@ -8,6 +8,11 @@ export class CqGeneral
     {
     }
 
+    asIf(result?: boolean): boolean
+    {
+        return !!result;
+    }
+
     toTitle(text: string): string
     {
         text = text.replace(/\-/g, ' ').replace(/_/g, ' ');

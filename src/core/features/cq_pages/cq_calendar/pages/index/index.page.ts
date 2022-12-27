@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -35,6 +35,9 @@ import { CoreLocalNotifications } from '@services/local-notifications';
 import { CoreConstants } from '@/core/constants';
 import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
+
 /**
  * Page that displays the calendar events.
  */
@@ -42,7 +45,8 @@ import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-lin
     selector: 'page-addon-calendar-index',
     templateUrl: 'index.html',
 })
-export class AddonCalendarIndexPage implements OnInit, OnDestroy {
+export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy {
+
 
     @ViewChild(AddonCalendarCalendarComponent) calendarComponent?: AddonCalendarCalendarComponent;
     @ViewChild(AddonCalendarUpcomingEventsComponent) upcomingEventsComponent?: AddonCalendarUpcomingEventsComponent;
@@ -82,9 +86,14 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
         category: true,
     };
 
+    mode: string = "calendar";
+
     constructor(
         protected route: ActivatedRoute,
+        renderer: Renderer2, CH: CqHelper
     ) {
+        super(renderer, CH);
+
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
         // Listen for events added. When an event is added, reload the data.
@@ -290,11 +299,14 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
         promises.push(AddonCalendar.invalidateAllowedEventTypes());
 
         // Refresh the sub-component.
-        if (this.showCalendar && this.calendarComponent) {
-            promises.push(this.calendarComponent.refreshData(afterChange));
-        } else if (!this.showCalendar && this.upcomingEventsComponent) {
-            promises.push(this.upcomingEventsComponent.refreshData());
-        }
+        // if (this.showCalendar && this.calendarComponent) {
+        //     promises.push(this.calendarComponent.refreshData(afterChange));
+        // } else if (!this.showCalendar && this.upcomingEventsComponent) {
+        //     promises.push(this.upcomingEventsComponent.refreshData());
+        // }
+
+        if (this.calendarComponent) promises.push(this.calendarComponent.refreshData(afterChange));
+        if (this.upcomingEventsComponent) promises.push(this.upcomingEventsComponent.refreshData());
 
         await Promise.all(promises).finally(() => this.fetchData(sync, showErrors));
     }
@@ -305,7 +317,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
      * @param eventId Event to load.
      */
     gotoEvent(eventId: number): void {
-        CoreNavigator.navigateToSitePath(`/calendar/event/${eventId}`);
+        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`);
     }
 
     /**
@@ -324,7 +336,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
             params[key] = this.filter[key];
         });
 
-        CoreNavigator.navigateToSitePath('/calendar/day', { params });
+        CoreNavigator.navigateToSitePath('/CqCalendar/day', { params });
     }
 
     /**
@@ -353,14 +365,14 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
             params.courseId = this.filter.courseId;
         }
 
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${eventId}`, { params });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${eventId}`, { params });
     }
 
     /**
      * Open calendar events settings.
      */
     openSettings(): void {
-        CoreNavigator.navigateToSitePath('/calendar/calendar-settings');
+        CoreNavigator.navigateToSitePath('/CqCalendar/calendar-settings');
     }
 
     /**
@@ -389,4 +401,9 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
         this.onlineObserver?.unsubscribe();
     }
 
+    selectMode(mode): void
+    {
+        this.mode = mode;
+        this.adjustScreenHeight(".cq-slide");
+    }
 }

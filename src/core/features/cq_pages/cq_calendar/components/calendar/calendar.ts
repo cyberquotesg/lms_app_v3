@@ -50,6 +50,9 @@ import {
 import { CoreSwipeSlidesDynamicItemsManager } from '@classes/items-management/swipe-slides-dynamic-items-manager';
 import moment from 'moment-timezone';
 
+import { CqHelper } from '../../../services/cq_helper';
+import { CqComponent } from '../../../classes/cq_component';
+
 /**
  * Component that displays a calendar.
  */
@@ -58,7 +61,7 @@ import moment from 'moment-timezone';
     templateUrl: 'addon-calendar-calendar.html',
     styleUrls: ['calendar.scss'],
 })
-export class AddonCalendarCalendarComponent implements OnInit, DoCheck, OnDestroy {
+export class AddonCalendarCalendarComponent extends CqComponent implements OnInit, DoCheck, OnDestroy {
 
     @ViewChild(CoreSwipeSlidesComponent) slides?: CoreSwipeSlidesComponent<PreloadedMonth>;
 
@@ -82,7 +85,9 @@ export class AddonCalendarCalendarComponent implements OnInit, DoCheck, OnDestro
     protected undeleteEventObserver: CoreEventObserver;
     protected managerUnsubscribe?: () => void;
 
-    constructor(differs: KeyValueDiffers) {
+    constructor(differs: KeyValueDiffers, CH: CqHelper) {
+        super(CH);
+
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
         // Listen for events "undeleted" (offline).
@@ -193,7 +198,7 @@ export class AddonCalendarCalendarComponent implements OnInit, DoCheck, OnDestro
         this.periodName = CoreTimeUtils.userDate(
             month.moment.unix() * 1000,
             'core.strftimemonthyear',
-        );
+        ).split(' ').map((item, index) => index ? item : item.substr(0, 3)).join(' ');
     }
 
     /**

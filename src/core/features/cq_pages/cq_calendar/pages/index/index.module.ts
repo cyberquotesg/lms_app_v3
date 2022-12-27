@@ -20,6 +20,7 @@ import { AddonCalendarComponentsModule } from '../../components/components.modul
 
 import { AddonCalendarIndexPage } from './index.page';
 import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
+import { CqComponentsModule } from '../../../components/cq_components.module';
 
 const routes: Routes = [
     {
@@ -34,6 +35,7 @@ const routes: Routes = [
         CoreSharedModule,
         AddonCalendarComponentsModule,
         CoreMainMenuComponentsModule,
+        CqComponentsModule,
     ],
     declarations: [
         AddonCalendarIndexPage,

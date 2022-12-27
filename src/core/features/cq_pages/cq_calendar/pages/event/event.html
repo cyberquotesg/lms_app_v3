@@ -1,140 +1,95 @@
-<ion-header collapsible>
-    <ion-toolbar>
-        <ion-buttons slot="start">
-            <ion-back-button [text]="'core.back' | translate"></ion-back-button>
-        </ion-buttons>
-        <ion-title>
-            <h1 *ngIf="event">
-                <core-format-text [text]="event.name" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId">
-                </core-format-text>
-            </h1>
-        </ion-title>
-        <ion-buttons slot="end">
-            <core-context-menu>
-                <core-context-menu-item [hidden]="!eventLoaded || (!hasOffline && event && !event.deleted) || !isOnline" [priority]="400"
-                    [content]="'core.settings.synchronizenow' | translate" (action)="doRefresh(undefined, $event, true)"
-                    [iconAction]="syncIcon" [closeOnClick]="false">
-                </core-context-menu-item>
-                <core-context-menu-item [hidden]="!event || !event.canedit || event.deleted || (!canEdit && event.id > 0)" [priority]="300"
-                    [content]="'core.edit' | translate" (action)="openEdit()" iconAction="fas-edit">
-                </core-context-menu-item>
-                <core-context-menu-item [hidden]="!event || !event.candelete || event.deleted" [priority]="200"
-                    [content]="'core.delete' | translate" (action)="deleteEvent()" iconAction="fas-trash"></core-context-menu-item>
-                <core-context-menu-item [hidden]="!event || !event.deleted" [priority]="200" [content]="'core.restore' | translate"
-                    (action)="undoDelete()" iconAction="fas-undo-alt"></core-context-menu-item>
-            </core-context-menu>
-        </ion-buttons>
-    </ion-toolbar>
+<ion-header>
+    <cq_header [title]="event ? event.name : ''" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading"></cq_header>
 </ion-header>
+
 <ion-content [core-swipe-navigation]="events">
     <ion-refresher slot="fixed" [disabled]="!eventLoaded" (ionRefresh)="doRefresh($event.target)">
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
     </ion-refresher>
     <core-loading [hideUntil]="eventLoaded">
         <!-- There is data to be synchronized -->
-        <ion-card class="core-warning-card" *ngIf="hasOffline || (event && event.deleted)">
-            <ion-item>
+        <ion-card *ngIf="hasOffline || (event && event.deleted)" class="core-warning-card mb-cs">
+            <div style="font-size: 16px; line-height: 1.5em" class="">
                 <ion-icon name="fas-exclamation-triangle" slot="start" aria-hidden="true"></ion-icon>
                 <ion-label>{{ 'core.hasdatatosync' | translate:{$a: 'addon.calendar.calendarevent' | translate} }}</ion-label>
-            </ion-item>
+            </div>
         </ion-card>
 
-        <ion-list *ngIf="event">
-            <ion-item class="ion-text-wrap addon-calendar-event" collapsible [ngClass]="['addon-calendar-eventtype-'+event.eventtype]">
-                <core-mod-icon *ngIf="event.moduleIcon" [modicon]="event.moduleIcon" [showAlt]="false" [modname]="event.modulename"
-                    [componentId]="event.instance" slot="start" [purpose]="event.purpose"></core-mod-icon>
-                <ion-icon *ngIf=" event.eventIcon && !event.moduleIcon" [name]="event.eventIcon" aria-hidden="true" slot="start">
-                </ion-icon>
+        <ion-card *ngIf="event">
+            <div style="font-size: 16px; line-height: 1.5em" class="ion-text-wrap addon-calendar-event" collapsible [ngClass]="['addon-calendar-eventtype-'+event.eventtype]">
                 <ion-label>
                     <!-- Add the icon title so accessibility tools read it. -->
                     <span class="sr-only">
                         {{ 'addon.calendar.type' + event.formattedType | translate }}
                         <span class="sr-only" *ngIf="event.moduleIcon && event.iconTitle">{{ event.iconTitle }}</span>
                     </span>
-                    <h1>
-                        <core-format-text [text]="event.name" [contextLevel]="event.contextLevel"
-                            [contextInstanceId]="event.contextInstanceId">
-                        </core-format-text>
+                    <h1 class="mt-0 mb-0">
+                        <core-format-text style="line-height: 1.5em" [text]="event.name" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                     </h1>
                 </ion-label>
-            </ion-item>
-            <ion-item>
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs">
                 <ion-label>
                     <h2>{{ 'addon.calendar.when' | translate }}</h2>
-                    <core-format-text [text]="event.formattedtime" [contextLevel]="event.contextLevel"
-                        [contextInstanceId]="event.contextInstanceId"></core-format-text>
+                    <core-format-text style="font-size: 16px; line-height: 1.5em" [text]="event.formattedtime" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                 </ion-label>
                 <ion-note slot="end" *ngIf="event.deleted">
                     <ion-icon name="fas-trash" aria-hidden="true"></ion-icon> {{ 'core.deletedoffline' | translate }}
                 </ion-note>
-            </ion-item>
-            <ion-item>
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs">
                 <ion-label>
                     <h2>{{ 'addon.calendar.eventtype' | translate }}</h2>
-                    <p>{{ 'addon.calendar.type' + event.formattedType | translate }}</p>
+                    <core-format-text style="font-size: 16px; line-height: 1.5em" [text]="'addon.calendar.type' + event.formattedType | translate" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                 </ion-label>
-            </ion-item>
-            <ion-item class="ion-text-wrap" *ngIf="courseName" [href]="courseUrl" core-link capture="true">
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs ion-text-wrap" *ngIf="courseName" [href]="courseUrl" core-link capture="true">
                 <ion-label>
                     <h2>{{ 'core.course' | translate}}</h2>
-                    <p>
-                        <core-format-text [text]="courseName" contextLevel="course" [contextInstanceId]="courseId">
-                        </core-format-text>
-                    </p>
+                    <core-format-text style="font-size: 16px; line-height: 1.5em" [text]="courseName" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                 </ion-label>
-            </ion-item>
-            <ion-item class="ion-text-wrap core-groupname" *ngIf="groupName">
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs ion-text-wrap core-groupname" *ngIf="groupName">
                 <ion-label>
                     <h2>{{ 'core.group' | translate}}</h2>
-                    <p>{{ groupName }}</p>
+                    <core-format-text style="font-size: 16px; line-height: 1.5em" [text]="groupName" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                 </ion-label>
-            </ion-item>
-            <ion-item class="ion-text-wrap" *ngIf="categoryPath">
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs ion-text-wrap" *ngIf="categoryPath">
                 <ion-label>
                     <h2>{{ 'core.category' | translate}}</h2>
-                    <p>
-                        <core-format-text [text]="categoryPath" contextLevel="coursecat" [contextInstanceId]="event.categoryid">
-                        </core-format-text>
-                    </p>
+                    <core-format-text style="font-size: 16px; line-height: 1.5em" [text]="categoryPath" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                 </ion-label>
-            </ion-item>
-            <ion-item class="ion-text-wrap" *ngIf="event.description">
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs ion-text-wrap" *ngIf="event.description">
                 <ion-label>
                     <h2>{{ 'core.description' | translate}}</h2>
-                    <p>
-                        <core-format-text [text]="event.description" [contextLevel]="event.contextLevel"
-                            [contextInstanceId]="event.contextInstanceId"></core-format-text>
-                    </p>
+                    <core-format-text style="font-size: 16px; line-height: 1.5em" [text]="event.description" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                 </ion-label>
-            </ion-item>
-            <ion-item class="ion-text-wrap" *ngIf="event.location">
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs ion-text-wrap" *ngIf="event.location">
                 <ion-label>
                     <h2>{{ 'core.location' | translate}}</h2>
-                    <p>
-                        <a [href]="event.encodedLocation" core-link auto-login="no">
-                            <core-format-text [text]="event.location" [contextLevel]="event.contextLevel"
-                                [contextInstanceId]="event.contextInstanceId"></core-format-text>
-                        </a>
-                    </p>
+                    <core-format-text style="font-size: 16px; line-height: 1.5em" [text]="event.location" [contextLevel]="event.contextLevel" [contextInstanceId]="event.contextInstanceId"></core-format-text>
                 </ion-label>
-            </ion-item>
-            <ion-item *ngIf="moduleUrl">
+            </div>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs" *ngIf="moduleUrl">
                 <ion-label>
                     <ion-button expand="block" [href]="moduleUrl" core-link capture="true">
                         {{ 'addon.calendar.gotoactivity' | translate }}
                     </ion-button>
                 </ion-label>
-            </ion-item>
-        </ion-list>
+            </div>
+        </ion-card>
 
         <ion-card *ngIf="notificationsEnabled && event">
-            <ion-item>
+            <div style="font-size: 16px; line-height: 1.5em" class="mt-cs">
                 <ion-label>
                     <h2>{{ 'addon.calendar.reminders' | translate }}</h2>
                 </ion-label>
-            </ion-item>
+            </div>
             <ng-container *ngFor="let reminder of reminders">
-                <ion-item *ngIf="reminder.timestamp > 0" class="ion-text-wrap" [class.item-dimmed]="reminder.timestamp <= currentTime">
+                <div style="font-size: 16px; line-height: 1.5em" class="mt-cs ion-text-wrap" *ngIf="reminder.timestamp > 0" [class.item-dimmed]="reminder.timestamp <= currentTime">
                     <ion-label>
                         <p class="item-heading">{{ reminder.label }}</p>
                         <p *ngIf="reminder.sublabel">{{ reminder.sublabel }}</p>
@@ -143,18 +98,40 @@
                         slot="end">
                         <ion-icon name="fas-trash" color="danger" slot="icon-only" aria-hidden="true"></ion-icon>
                     </ion-button>
-                </ion-item>
+                </div>
             </ng-container>
 
             <ng-container *ngIf="event.timestart > currentTime">
-                <ion-item>
+                <div style="font-size: 16px; line-height: 1.5em" class="mt-cs">
                     <ion-label>
                         <ion-button expand="block" (click)="addReminder()">
                             {{ 'addon.calendar.setnewreminder' | translate }}
                         </ion-button>
                     </ion-label>
-                </ion-item>
+                </div>
             </ng-container>
         </ion-card>
+
+        <ion-fab slot="fixed" core-fab vertical="bottom" horizontal="end">
+            <ion-fab-button *ngIf="!(!eventLoaded || (!hasOffline && event && !event.deleted) || !isOnline)" (click)="doRefresh()" [attr.aria-label]="'core.settings.synchronizenow' | translate" class="mb-cst" size="small" fill="clear">
+                <ion-icon name="sync" aria-hidden="true" style="color: white; font-size: 24px;"></ion-icon>
+                <span class="sr-only">{{ 'core.settings.synchronizenow' | translate }}</span>
+            </ion-fab-button>
+
+            <ion-fab-button *ngIf="!(!event || !event.canedit || event.deleted || (!canEdit && event.id > 0))" (click)="openEdit()" [attr.aria-label]="'core.edit' | translate" size="small" fill="clear">
+                <ion-icon name="fas-edit" aria-hidden="true" style="color: white; font-size: 16px;"></ion-icon>
+                <span class="sr-only">{{ 'core.edit' | translate }}</span>
+            </ion-fab-button>
+
+            <ion-fab-button *ngIf="!(!event || !event.candelete || event.deleted)" (click)="deleteEvent()" [attr.aria-label]="'core.delete' | translate" size="small" fill="clear">
+                <ion-icon name="fas-trash" aria-hidden="true" style="color: white; font-size: 16px;"></ion-icon>
+                <span class="sr-only">{{ 'core.delete' | translate }}</span>
+            </ion-fab-button>
+
+            <ion-fab-button *ngIf="!(!event || !event.deleted)" (click)="undoDelete()" [attr.aria-label]="'core.restore' | translate" size="small" fill="clear">
+                <ion-icon name="fas-undo-alt" aria-hidden="true" style="color: white; font-size: 16px;"></ion-icon>
+                <span class="sr-only">{{ 'core.restore' | translate }}</span>
+            </ion-fab-button>
+        </ion-fab>
     </core-loading>
 </ion-content>

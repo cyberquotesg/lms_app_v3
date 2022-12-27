@@ -59,7 +59,7 @@ export class AddonCalendarViewLinkHandlerService extends CoreContentLinksHandler
                     stateParams.year = momentInstance.year();
                     stateParams.month = momentInstance.month() + 1;
 
-                    CoreNavigator.navigateToSitePath('/calendar/index', {
+                    CoreNavigator.navigateToSitePath('/CqCalendar/index', {
                         params: stateParams,
                         siteId,
                         preferCurrentTab: false,
@@ -77,7 +77,7 @@ export class AddonCalendarViewLinkHandlerService extends CoreContentLinksHandler
                     stateParams.month = momentInstance.month() + 1;
                     stateParams.day = momentInstance.date();
 
-                    CoreNavigator.navigateToSitePath('/calendar/day', { params: stateParams, siteId });
+                    CoreNavigator.navigateToSitePath('/CqCalendar/day', { params: stateParams, siteId });
 
                 } else if (params.view == 'upcoming' || params.view == 'upcoming_mini') {
                     // Upcoming view, open the calendar tab.
@@ -86,7 +86,7 @@ export class AddonCalendarViewLinkHandlerService extends CoreContentLinksHandler
                         upcoming: true,
                     };
 
-                    CoreNavigator.navigateToSitePath('/calendar/index', {
+                    CoreNavigator.navigateToSitePath('/CqCalendar/index', {
                         params: stateParams,
                         siteId,
                         preferCurrentTab: false,

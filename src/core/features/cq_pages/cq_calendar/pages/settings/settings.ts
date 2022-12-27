@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Renderer2 } from '@angular/core';
 import {
     AddonCalendar,
     AddonCalendarProvider,
@@ -24,6 +24,9 @@ import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { AddonCalendarReminderTimeModalComponent } from '@features/cq_pages/cq_calendar/components/reminder-time-modal/reminder-time-modal';
 
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
+
 /**
  * Page that displays the calendar settings.
  */
@@ -31,7 +34,7 @@ import { AddonCalendarReminderTimeModalComponent } from '@features/cq_pages/cq_c
     selector: 'page-addon-calendar-settings',
     templateUrl: 'settings.html',
 })
-export class AddonCalendarSettingsPage implements OnInit {
+export class AddonCalendarSettingsPage extends CqPage implements OnInit {
 
     defaultTimeLabel = '';
 
@@ -39,6 +42,12 @@ export class AddonCalendarSettingsPage implements OnInit {
         value: 0,
         unit: AddonCalendarReminderUnits.MINUTE,
     };
+
+    constructor(
+        renderer: Renderer2, CH: CqHelper
+    ) {
+        super(renderer, CH);
+    }
 
     /**
      * View loaded.

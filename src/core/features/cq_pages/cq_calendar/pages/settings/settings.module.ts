@@ -17,6 +17,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AddonCalendarSettingsPage } from './settings';
 import { CoreSharedModule } from '@/core/shared.module';
+import { CqComponentsModule } from '../../../components/cq_components.module';
 
 const routes: Routes = [
     {
@@ -29,6 +30,7 @@ const routes: Routes = [
     imports: [
         RouterModule.forChild(routes),
         CoreSharedModule,
+        CqComponentsModule,
     ],
     declarations: [
         AddonCalendarSettingsPage,

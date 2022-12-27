@@ -1,27 +1,7 @@
 <ion-header>
-    <ion-toolbar>
-        <ion-buttons slot="start">
-            <ion-back-button [text]="'core.back' | translate"></ion-back-button>
-        </ion-buttons>
-        <ion-title>
-            <h1>{{ 'addon.calendar.calendarevents' | translate }}</h1>
-        </ion-title>
-        <ion-buttons slot="end">
-            <ion-button fill="clear" (click)="openFilter()" [attr.aria-label]="'core.filter' | translate">
-                <ion-icon slot="icon-only" name="fas-filter" aria-hidden="true"></ion-icon>
-            </ion-button>
-            <core-context-menu>
-                <core-context-menu-item *ngIf="!selectedDayIsCurrent()" [priority]="900" [content]="'addon.calendar.today' | translate"
-                    iconAction="fas-calendar-day" (action)="goToCurrentDay()">
-                </core-context-menu-item>
-                <core-context-menu-item [hidden]="!loaded || !selectedDayHasOffline() || !isOnline" [priority]="400"
-                    [content]="'core.settings.synchronizenow' | translate" (action)="doRefresh(undefined, $event)" [iconAction]="syncIcon"
-                    [closeOnClick]="false">
-                </core-context-menu-item>
-            </core-context-menu>
-        </ion-buttons>
-    </ion-toolbar>
+    <cq_header [title]="'addon.calendar.calendarevents' | translate" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading"></cq_header>
 </ion-header>
+
 <ion-content>
     <ion-refresher slot="fixed" [disabled]="!loaded" (ionRefresh)="doRefresh($event.target)">
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
@@ -106,10 +86,19 @@
         </div>
     </core-loading>
 
-    <!-- Create a calendar event. -->
-    <ion-fab slot="fixed" core-fab vertical="bottom" horizontal="end" *ngIf="canCreate && loaded">
-        <ion-fab-button (click)="openEdit()" [attr.aria-label]="'addon.calendar.newevent' | translate">
-            <ion-icon name="fas-plus" aria-hidden="true"></ion-icon>
+    <ion-fab slot="fixed" core-fab vertical="bottom" horizontal="end">
+        <ion-fab-button *ngIf="loaded && selectedDayHasOffline() && isOnline" (click)="doRefresh()" [attr.aria-label]="'core.settings.synchronizenow' | translate" class="mb-cst" size="small" fill="clear">
+            <ion-icon name="sync" aria-hidden="true" style="color: white; font-size: 24px;"></ion-icon>
+            <span class="sr-only">{{ 'core.settings.synchronizenow' | translate }}</span>
+        </ion-fab-button>
+
+        <ion-fab-button (click)="openFilter()" [attr.aria-label]="'core.filter' | translate" class="mb-cst" size="small" fill="clear">
+            <ion-icon name="fas-filter" aria-hidden="true" style="color: white; font-size: 16px;"></ion-icon>
+            <span class="sr-only">{{ 'core.filter' | translate }}</span>
+        </ion-fab-button>
+
+        <ion-fab-button *ngIf="canCreate" (click)="openEdit()" [attr.aria-label]="'addon.calendar.newevent' | translate" size="small" fill="clear">
+            <ion-icon name="fas-plus" aria-hidden="true" style="color: white; font-size: 16px;"></ion-icon>
             <span class="sr-only">{{ 'addon.calendar.newevent' | translate }}</span>
         </ion-fab-button>
     </ion-fab>

@@ -19,6 +19,7 @@ import { CoreSharedModule } from '@/core/shared.module';
 import { AddonCalendarComponentsModule } from '../../components/components.module';
 
 import { AddonCalendarDayPage } from './day.page';
+import { CqComponentsModule } from '../../../components/cq_components.module';
 
 const routes: Routes = [
     {
@@ -32,6 +33,7 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         CoreSharedModule,
         AddonCalendarComponentsModule,
+        CqComponentsModule,
     ],
     declarations: [
         AddonCalendarDayPage,

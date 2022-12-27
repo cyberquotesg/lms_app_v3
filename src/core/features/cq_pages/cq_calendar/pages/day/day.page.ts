@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -48,6 +48,9 @@ import {
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
+
 /**
  * Page that displays the calendar events for a certain day.
  */
@@ -56,7 +59,7 @@ import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classe
     templateUrl: 'day.html',
     styleUrls: ['../../calendar-common.scss', 'day.scss'],
 })
-export class AddonCalendarDayPage implements OnInit, OnDestroy {
+export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreSwipeSlidesComponent) slides?: CoreSwipeSlidesComponent<PreloadedDay>;
 
@@ -90,7 +93,9 @@ export class AddonCalendarDayPage implements OnInit, OnDestroy {
         category: true,
     };
 
-    constructor() {
+    constructor(renderer: Renderer2, CH: CqHelper) {
+        super(renderer, CH);
+
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
         // Listen for events added. When an event is added, reload the data.
@@ -347,7 +352,7 @@ export class AddonCalendarDayPage implements OnInit, OnDestroy {
      * @param day Day.
      */
     gotoEvent(eventId: number, day: PreloadedDay): void {
-        CoreNavigator.navigateToSitePath(`/calendar/event/${eventId}`, { params: { date: day.moment.format('MMDDY') } });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`, { params: { date: day.moment.format('MMDDY') } });
     }
 
     /**
@@ -387,7 +392,7 @@ export class AddonCalendarDayPage implements OnInit, OnDestroy {
             params.courseId = this.filter.courseId;
         }
 
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${eventId}`, { params });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${eventId}`, { params });
     }
 
     /**

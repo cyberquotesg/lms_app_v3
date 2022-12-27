@@ -20,6 +20,7 @@ import { CoreEditorComponentsModule } from '@features/editor/components/componen
 
 import { AddonCalendarEditEventPage } from './edit-event.page';
 import { CanLeaveGuard } from '@guards/can-leave';
+import { CqComponentsModule } from '../../../components/cq_components.module';
 
 const routes: Routes = [
     {
@@ -34,6 +35,7 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         CoreSharedModule,
         CoreEditorComponentsModule,
+        CqComponentsModule,
     ],
     declarations: [
         AddonCalendarEditEventPage,

@@ -331,6 +331,10 @@ body
 		}
 	}
 
+	core-empty-box
+	{
+		min-height: 60vh;
+	}
 	ion-tabs, ion-modal
 	{
 		// background: $base_background_no_image;

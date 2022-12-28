@@ -269,7 +269,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
         this.periodName = CoreTimeUtils.userDate(
             day.moment.unix() * 1000,
             'core.strftimedaydate',
-        );
+        ).split(' ').map((item, index) => index != 2 ? item : item.substr(0, 3)).join(' ');
     }
 
     /**

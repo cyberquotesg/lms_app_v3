@@ -267,7 +267,7 @@
 
                                 <ion-card>
                                     <ion-card-content>
-                                        <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pb-cs">
+                                        <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pt-cs pb-cs mb-cs">
                                             <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true"></cq_will_start_in>
                                         </div>
 

@@ -79,7 +79,7 @@
                     <span *ngIf="mediaList == 'eLearningList'">E-Learning You May Like</span>
                     <span *ngIf="mediaList == 'classroomTrainingList'">Classroom Training You May Like</span>
                 </div>
-                <ion-slides class="pl-24 pr-24" [options]="pageData.slideOptions">
+                <ion-slides class="pl-24 pr-24" [options]="pageData.sliderOptions">
                     <ion-slide *ngFor="let course of pageData[mediaList]" class="mb-24">
                        <cq_tile [items]="course" (onSelectItem)="openCourse($event)"></cq_tile>
                     </ion-slide>

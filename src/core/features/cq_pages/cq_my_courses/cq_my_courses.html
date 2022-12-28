@@ -13,7 +13,11 @@
         <div class="ml-20 mt-20 mr-20">
             <cq_filter [filterMultipleTitle]="'Course Filter'" [filterMultiple]="pageData.filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
             <cq_tile [items]="pageData.courses" (onSelectItem)="openCourse($event)"></cq_tile>
-            <core-infinite-loading *ngIf="isAvailable(pageData.courses)" [enabled]="!reachedEndOfList" (action)="pageLoadMore($event)" [error]="loadMoreError"></core-infinite-loading>
+
+            <button *ngIf="isAvailable(pageData.courses)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="reachedEndOfList">
+                <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>
+                <ion-spinner *ngIf="pageIsLoading"></ion-spinner>
+            </button>
         </div>
 
         </div>

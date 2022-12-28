@@ -38,7 +38,7 @@ export class CqDashboard extends CqPage implements OnInit
         this.pageData.year = new Date().getFullYear();
 
         // setup slide options
-        this.pageData.slideOptions = {
+        this.pageData.sliderOptions = {
             initialSlide: 0,
             speed: 400,
             centerInsufficientSlides: false,
@@ -49,7 +49,7 @@ export class CqDashboard extends CqPage implements OnInit
         let slidesPerView, widthIterator = 160, spaceBetween = 24;
         for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
         {
-            this.pageData.slideOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };
+            this.pageData.sliderOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };
         }
     }
 

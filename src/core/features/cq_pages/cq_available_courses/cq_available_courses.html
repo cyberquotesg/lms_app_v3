@@ -22,6 +22,7 @@
                 <div class="text-left ml-20 mr-20 pt-36 pb-36" style="width: 100%">
                     <cq_filter [filterMultipleTitle]="media == 'online' ? 'E-Learning Filter' : 'Classroom Training Filter'" [filterMultiple]="pageData[media].filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
                     <cq_tile [items]="pageData[media].courses" (onSelectItem)="openCourse($event)"></cq_tile>
+                    
                     <button *ngIf="isAvailable(pageData[media].courses)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="pageData[media].reachedEndOfList">
                         <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>
                         <ion-spinner *ngIf="pageIsLoading"></ion-spinner>

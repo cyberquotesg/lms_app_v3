@@ -18,6 +18,7 @@ export class CqMyCourses extends CqPage implements OnInit
         courses: [],
         filterAgent: null,
         filterText: "",
+        reachedEndOfList: false,
     };
     pageJob: any = {
         filterMultiple: {
@@ -64,8 +65,8 @@ export class CqMyCourses extends CqPage implements OnInit
         const params: any = {
             class: "CqCourseLib",
             function: "get_my_courses_list",
-            page: 1,
-            length: 5,
+            page: this.page,
+            length: this.length,
             search: this.pageData.filterText ? this.pageData.filterText : null,
         };
         this.pageData.filterMultiple.forEach((item) => {
@@ -77,11 +78,13 @@ export class CqMyCourses extends CqPage implements OnInit
         });
 
         this.pageJobExecuter(jobName, params, (data) => {
-            let result = this.CH.toArray(this.CH.toJson(data));
-            this.reachedEndOfList = this.CH.isEmpty(result) || this.CH.getLength(result) < modeData.length;
+            let courses = this.CH.toArray(this.CH.toJson(data));
+            this.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < modeData.length;
 
-            if (modeData.mode != 'loadmore') this.pageData.courses = result;
-            else this.pageData.courses = this.pageData.courses.concat(result);
+            if (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') this.pageData.courses = courses;
+            else this.pageData.courses = this.pageData.courses.concat(courses);
+
+            if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
     }
 

@@ -72,7 +72,7 @@
                                 </div>
                         
                                 <!-- warning! masih pake warna purle -->
-                                <ion-card *ngFor="let course of pageData[availableYear].perCourseType[courseType.jsIdentifier].courses">
+                                <ion-card *ngFor="let course of pageData[availableYear].perCourseType[courseType.jsIdentifier].courses" class="button pl-cs pt-cs pr-cs pb-cs" (click)="openCourse(course)">
                                     <ion-card-content>
                                         <div class="card-single-list has-left">
                                             <div class="csl-left">

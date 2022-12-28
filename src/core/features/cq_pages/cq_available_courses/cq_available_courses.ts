@@ -1,6 +1,7 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Router, Event, NavigationStart, NavigationEnd, NavigationError} from '@angular/router';
 import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
@@ -21,6 +22,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
         medias: ["online", "offline"],
         online: {
             initiated: false,
+            reachedEndOfList: false,
             courses: [],
             filterMultiple: [],
             filterAgent: null,
@@ -30,6 +32,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
         },
         offline: {
             initiated: false,
+            reachedEndOfList: false,
             courses: [],
             filterMultiple: [],
             filterAgent: null,
@@ -53,16 +56,37 @@ export class CqAvailableCourses extends CqPage implements OnInit
         courses: 0,
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper, private router: Router)
     {
         super(renderer, CH);
+
+        this.router.events.subscribe((event: Event) => {
+            if (event instanceof NavigationStart || event instanceof NavigationEnd)
+            {
+                this.CH.log("navigation change", event);
+                let url = event.url.split("?");
+
+                // is this for CqAvailableCourses?
+                if (url[0].indexOf("/CqAvailableCourses/") == -1) return;
+
+                // does it have query?
+                if (!url[1]) return;
+
+                // is the query media?
+                let query = url[1].split("=");
+                if (query[0] != "media") return;
+
+                // seems fine, use it
+                this.selectMedia(query[1]);
+            }
+        });
     }
 
     ngOnInit(): void
     {
         this.usuallyOnInit(() => {
             this.pageData.media = this.pageParams.media;
-            this.pageData.pageSliderOptions = {
+            this.pageData.sliderOptions = {
                 initialSlide: this.pageParams.media == "online" ? 0 : 1,
                 speed: 400,
                 centerInsufficientSlides: true,

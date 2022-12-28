@@ -170,14 +170,14 @@
                                                     </div>
                                                 </div>
                                                 
-                                                <div class="card-item">
+                                                <div *ngIf="!session.sessionHasEnded" class="card-item">
                                                     <div class="card-item-icon">
                                                         <ion-icon name="people"></ion-icon>
                                                     </div>
                                                     <div class="card-item-text">{{ session.availableSeat }} Seat{{ s(session.availableSeat) }} Available</div>
                                                 </div>
 
-                                                <div *ngIf="session.zoomMeeting == 1" class="card-item">
+                                                <div *ngIf="!session.sessionHasEnded && session.zoomMeeting == 1" class="card-item">
                                                     <div class="card-item-icon">
                                                         <ion-icon name="desktop"></ion-icon>
                                                     </div>
@@ -205,7 +205,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div *ngIf="session.userEnrolment == '2' && (session.calendarButtons.google || session.calendarButtons.outlook)" class="card-item">
+                                                <div *ngIf="!session.sessionHasEnded && session.userEnrolment == '2' && (session.calendarButtons.google || session.calendarButtons.outlook)" class="card-item">
                                                     <div class="card-item-icon">
                                                         <ion-icon name="calendar-number"></ion-icon>
                                                     </div>
@@ -228,7 +228,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="card-item">
+                                                <div *ngIf="!session.sessionHasEnded" class="card-item">
                                                     <div class="card-item-icon">
                                                         <ion-icon name="log-out"></ion-icon>
                                                     </div>
@@ -267,18 +267,18 @@
 
                                 <ion-card>
                                     <ion-card-content>
-                                        <div class="pb-cs">
-                                            <cq_will_start_in *ngIf="session.willStartInDegradated > 0" [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true"></cq_will_start_in>
+                                        <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pb-cs">
+                                            <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true"></cq_will_start_in>
                                         </div>
 
-                                        <div *ngIf="session.willStartInDegradated <= 3600" class="qr-scanner-button">
+                                        <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated <= 3600" class="qr-scanner-button mb-cs">
                                             <div class="button">
                                                 <ion-icon class="button-big pl-10 pr-10" name='scan-outline' (click)="scanQRCode(session.venueCheck)"></ion-icon>
                                                 <ion-icon class="button-small" name='qr-code-outline'></ion-icon>
                                             </div>
                                         </div>
 
-                                        <div class="session-checklog mt-cs">
+                                        <div class="session-checklog">
                                             <div class="sc-row first-row">
                                                 <div class="sc-col">IN/OUT</div>
                                                 <div class="sc-col">Time</div>

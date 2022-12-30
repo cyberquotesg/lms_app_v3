@@ -2,6 +2,7 @@
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
 import { Router, Event, NavigationStart, NavigationEnd, NavigationError} from '@angular/router';
+import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
@@ -234,7 +235,6 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageData.media = media;
             let mediaIndex = this.pageData.medias.indexOf(this.pageData.media);
             this.pageSlider.slideTo(mediaIndex);
-            if (!this.pageData[this.pageData.media].initiated) this.pageForceReferesh();
         }
     }
     pageSliderChange(): void
@@ -243,6 +243,14 @@ export class CqAvailableCourses extends CqPage implements OnInit
         {
             this.pageSlider.getActiveIndex().then((index) => {
                 this.pageData.media = this.pageData.medias[index];
+                const stateParams: any = {
+                    media: this.pageData.media,
+                };
+                CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
+                    params: stateParams,
+                    preferCurrentTab: false,
+                });
+
                 if (!this.pageData[this.pageData.media].initiated) this.pageForceReferesh();
                 else
                 {

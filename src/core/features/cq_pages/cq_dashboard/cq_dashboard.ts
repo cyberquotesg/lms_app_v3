@@ -119,7 +119,6 @@ export class CqDashboard extends CqPage implements OnInit
 
     goToAvailableCourses(mediaList): void
     {
-        // warning! harus bisa membedakan tab online dan offline
         const stateParams: any = {
             media: mediaList == "eLearningList" ? "online" : "offline",
         };

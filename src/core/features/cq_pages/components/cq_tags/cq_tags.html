@@ -7,25 +7,13 @@
     </ng-container>
 
     <ng-container *ngIf="!userStatus">
-        <ng-container *ngIf="item.media == 'offline'">
-            <ng-container *ngIf="item.detailedUserStatusInSession && item.detailedUserStatusInSession != 'unenrolled' && item.detailedUserStatusInSession != 'withdrawn'">
-                <span data-id="detailedUserStatusInSession" *ngIf="item.detailedUserStatusInSession != 'enrolled' && item.detailedUserStatusInSession != 'accredited'" class="cq-tag">{{ item.detailedUserStatusInSessionText }}</span>
-                <span data-id="accredited" *ngIf="item.detailedUserStatusInSession == 'enrolled' || item.detailedUserStatusInSession == 'accredited'" class="cq-tag green">
-                    <ion-icon *ngIf="item.detailedUserStatusInSession == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-                    {{ item.detailedUserStatusInSessionText }}
-                </span>
-            </ng-container>
-        </ng-container>
-
-        <ng-container *ngIf="item.media == 'online'">
-            <span *ngIf="item.isUserEnrolled && !item.isUserFinished" class="cq-tag green">
-                <span>Enrolled</span>
-            </span>
-            <span *ngIf="item.isUserEnrolled && item.isUserFinished" class="cq-tag green">
-                <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-                <span>Finished</span>
-            </span>
-        </ng-container>
+        <span *ngIf="item.isUserEnrolled && !item.isUserFinished" class="cq-tag green">
+            <span>Enrolled</span>
+        </span>
+        <span *ngIf="item.isUserEnrolled && item.isUserFinished" class="cq-tag green">
+            <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+            <span>Finished</span>
+        </span>
     </ng-container>
 
     <ng-container *ngIf="!compulsory">

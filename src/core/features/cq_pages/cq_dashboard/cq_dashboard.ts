@@ -15,15 +15,18 @@ export class CqDashboard extends CqPage implements OnInit
     pageParams: any = {
     };
     pageDefaults: any = {
+        filterMultiple: [],
         userFullName: '',
         dashHours: '00',
         dashMinutes: '00',
     };
     pageJob: any = {
-        getAllData: 0,
-    };
-    pageJobLoadMore: any = {
-        myCoursesList: 0,
+        filterMultiple: {
+            value: 0,
+            next: {
+                getAllData: 0,
+            }
+        },
     };
 
     constructor(renderer: Renderer2, CH: CqHelper)
@@ -58,6 +61,21 @@ export class CqDashboard extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+
+    filterMultiple(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
+    {
+        const params: any = {
+            class: 'CqLib',
+            function: 'get_filter_multiple',
+            page: 'dashboard',
+        };
+
+        this.pageJobExecuter(jobName, params, (data) => {
+            this.pageData.filterMultiple = this.CH.toJson(data);
+
+            if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
+        }, moreloader, refresher, finalCallback);
+    }
 
     getAllData(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -94,6 +112,20 @@ export class CqDashboard extends CqPage implements OnInit
                 },
             },
         };
+
+        // because dashboard calls APIs which need filter multiple, but doesn't have button to select the filter items
+        // so system should auto select them all
+        this.pageData.filterMultiple.forEach((item) => {
+            let bucket: any[] = [];
+            item.options.forEach((option) => {
+                bucket.push(option.value);
+            });
+            let bucketTexted = bucket.join(",");
+
+            params.calls.myCourses[item.plural] = bucketTexted;
+            params.calls.eLearningList[item.plural] = bucketTexted;
+            params.calls.classroomTrainingList[item.plural] = bucketTexted;
+        });
 
         this.pageJobExecuter(jobName, params, (data) => {
             let allData = this.CH.toJson(data);

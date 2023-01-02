@@ -50,12 +50,6 @@ export class CqAvailableCourses extends CqPage implements OnInit
             },
         },
     };
-    pageJobLoadMore: any = {
-        courses: 0,
-    };
-    pageJobRefresh: any = {
-        courses: 0,
-    };
 
     constructor(renderer: Renderer2, CH: CqHelper, private router: Router)
     {

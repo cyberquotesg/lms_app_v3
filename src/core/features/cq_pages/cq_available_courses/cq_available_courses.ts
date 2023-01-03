@@ -56,23 +56,37 @@ export class CqAvailableCourses extends CqPage implements OnInit
         super(renderer, CH);
 
         this.router.events.subscribe((event: Event) => {
-            if (event instanceof NavigationStart || event instanceof NavigationEnd)
+            // if (event instanceof NavigationStart || event instanceof NavigationEnd)
+            if (event instanceof NavigationEnd)
             {
                 this.CH.log("navigation change", event);
                 let url = event.url.split("?");
 
                 // is this for CqAvailableCourses?
-                if (url[0].indexOf("/CqAvailableCourses/") == -1) return;
+                if (url[0].indexOf("/CqAvailableCourses/") == -1)
+                {
+                    this.CH.log("rejected -> this is not for CqAvailableCourses", url);
+                    return;
+                }
 
                 // does it have query?
-                if (!url[1]) return;
+                if (!url[1])
+                {
+                    this.CH.log("rejected -> doesn't have query", url);
+                    return;
+                }
 
                 // is the query media?
                 let query = url[1].split("=");
-                if (query[0] != "media") return;
+                if (query[0] != "media")
+                {
+                    this.CH.log("rejected -> the query is not media", query);
+                    return;
+                }
 
                 // seems fine, use it
-                this.selectMedia(query[1]);
+                this.CH.log("navigation change accepted", query[1]);
+                this.selectMedia(query[1], true);
             }
         });
     }
@@ -222,20 +236,34 @@ export class CqAvailableCourses extends CqPage implements OnInit
         }
     }
 
-    selectMedia(media): void
+    selectMedia(media: string, forceRefresh?: boolean): void
     {
         if (this.pageData.media != media)
         {
             this.pageData.media = media;
             let mediaIndex = this.pageData.medias.indexOf(this.pageData.media);
+            this.CH.log('select media is accepted, sliding to', mediaIndex);
             this.pageSlider.slideTo(mediaIndex);
+
+            if (forceRefresh && !this.pageData[this.pageData.media].initiated)
+            {
+                this.CH.log("forcing refresh after sliding");
+                this.pageForceReferesh();
+            }
+        }
+        else
+        {
+            this.CH.log('select media is rejected, they are same', this.pageData.media + " vs " + media);
         }
     }
     pageSliderChange(): void
     {
         if (this.pageStatus)
         {
+            this.CH.log('slider change and reacting for it');
             this.pageSlider.getActiveIndex().then((index) => {
+                this.CH.log('have done reacting the slider change');
+
                 this.pageData.media = this.pageData.medias[index];
                 const stateParams: any = {
                     media: this.pageData.media,
@@ -245,9 +273,14 @@ export class CqAvailableCourses extends CqPage implements OnInit
                     preferCurrentTab: false,
                 });
 
-                if (!this.pageData[this.pageData.media].initiated) this.pageForceReferesh();
+                if (!this.pageData[this.pageData.media].initiated)
+                {
+                    this.CH.log("haven't initiated yet, force refresh");
+                    this.pageForceReferesh();
+                }
                 else
                 {
+                    this.CH.log("have initiated, no need to force refresh");
                     this.adjustScreenHeight(".page-slider-cqac");
                     this.CH.log('final data', this.pageData);
                 }
@@ -255,6 +288,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
         }
         else
         {
+            this.CH.log('slider change but pageStatus is not ready', this.pageStatus);
             this.adjustScreenHeight(".page-slider-cqac");
         }
     }

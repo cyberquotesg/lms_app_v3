@@ -52,7 +52,7 @@
 
                     <div *ngIf="!isEmpty(pageData[availableYear].coursesFiltered)">
                         <div *ngFor="let courseType of pageData.courseTypes.array">
-                            <div *ngIf="isAvailable(pageData[availableYear].perCourseType[courseType.jsIdentifier].courses)">
+                            <div *ngIf="isAvailable(pageData[availableYear].perCourseType[courseType.jsIdentifier]) && isAvailable(pageData[availableYear].perCourseType[courseType.jsIdentifier].courses)">
                                 <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                                     {{ courseType.name }}
 

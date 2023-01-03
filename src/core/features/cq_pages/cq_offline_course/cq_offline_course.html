@@ -156,7 +156,7 @@
                                                     </div>
                                                     <div class="card-item-text">
                                                         <div>{{ session.venue }}</div>
-                                                        <div *ngIf="session.userEnrolment == '2' && session.latitude && session.longitude" class="mt-cst">
+                                                        <div *ngIf="session.userEnrolment == '2' && session.latitude && session.longitude && session.latitude != '0' && session.longitude != '0'" class="mt-cst">
                                                             <button *ngIf="!pageData.isIos" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser('https://www.google.com/maps/search/?api=1&query=' + session.latitude + ',' + session.longitude)">
                                                                 <img src="assets/img/icons/google_map.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                                 <span style="vertical-align: middle; margin-left: 2px;">View in Map</span>

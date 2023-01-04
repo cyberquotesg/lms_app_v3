@@ -16,10 +16,6 @@ filterMultiple: [
                 selected: false,
             },
         ],
-
-        // if true, system make sure that options has additional option with empty value
-        // default is false or not set (optional)
-        includeEmptyOption: false,
     },
 ]
 */
@@ -37,7 +33,6 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
     @Input() placeholder?: string;
     @Input() filterMultiple?: any[];
     @Input() filterMultipleTitle?: string;
-    @Input() includeEmptyOptionForAll?: boolean;
     @Output() onFilterChange: EventEmitter<any>;
 
     private filterText = '';
@@ -73,18 +68,6 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
         {
             let filterMultipleInternal: any[] = [];
             filterMultiple.forEach((filter) => {
-                if (filter.includeEmptyOption || this.includeEmptyOptionForAll) 
-                {
-                    if (!this.CH.isItemFoundByCriteria(filter.options, "value", -1))
-                    {
-                        filter.options.splice(0, 0, {
-                            title: 'Not Set',
-                            value: -1,
-                            selected: true,
-                        });
-                    }
-                }
-
                 filterMultipleInternal.push(filter);
             });
 

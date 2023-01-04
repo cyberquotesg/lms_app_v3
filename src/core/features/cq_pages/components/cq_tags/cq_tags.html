@@ -21,7 +21,7 @@
     </ng-container>
     
     <ng-container *ngIf="!courseType">
-        <span data-id="courseTypeText" *ngIf="item.typeText || item.courseTypeText" class="cq-tag dark-grey">{{ item.typeText || item.courseTypeText }}</span>
+        <span data-id="courseTypeText" *ngIf="item.typeText || item.finalCourseTypeText || item.courseTypeText" class="cq-tag dark-grey">{{ item.typeText || item.finalCourseTypeText || item.courseTypeText }}</span>
     </ng-container>
     
     <ng-container *ngIf="!categoryName">

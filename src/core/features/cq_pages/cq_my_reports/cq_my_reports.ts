@@ -161,9 +161,12 @@ export class CqMyReports extends CqPage implements OnInit
             for (let courseType of this.pageData.courseTypes.array)
             {
                 if (!thisYearData.perCourseType[courseType.jsIdentifier]) continue;
-                thisYearData.perCourseType[courseType.jsIdentifier].courses = thisYearData.coursesFiltered.filter((course) => {
+                if (!thisYearData.perCourseType[courseType.jsIdentifier].courses) thisYearData.perCourseType[courseType.jsIdentifier].courses = [];
+                let temp = thisYearData.coursesFiltered.filter((course) => {
                     return (course.type && course.type == courseType.id) || (course.courseType && course.courseType == courseType.id);
                 });
+
+                thisYearData.perCourseType[courseType.jsIdentifier].courses = thisYearData.perCourseType[courseType.jsIdentifier].courses.concat(temp);
             }
 
             // compile data for chart

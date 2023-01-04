@@ -6,7 +6,7 @@
         </ng-container>
     </ng-container>
 
-    <ng-container *ngIf="!userStatus">
+    <ng-container *ngIf="!hideUserStatus">
         <span *ngIf="item.isUserEnrolled && !item.isUserFinished" class="cq-tag green">
             <span>Enrolled</span>
         </span>
@@ -16,15 +16,15 @@
         </span>
     </ng-container>
 
-    <ng-container *ngIf="!compulsory">
+    <ng-container *ngIf="!hideCompulsory">
         <span data-id="compulsory" *ngIf="item.compulsory === true || item.compulsory === 1 || item.compulsory === '1'" class="cq-tag orange">Compulsory</span>
     </ng-container>
     
-    <ng-container *ngIf="!courseType">
-        <span data-id="courseTypeText" *ngIf="item.typeText || item.finalCourseTypeText || item.courseTypeText" class="cq-tag dark-grey">{{ item.typeText || item.finalCourseTypeText || item.courseTypeText }}</span>
+    <ng-container *ngIf="!hideCourseType">
+        <span data-id="courseTypeText" *ngIf="item.typeText || item.finalCourseTypeText || item.courseTypeText" class="cq-tag dark-grey">Type: {{ item.typeText || item.finalCourseTypeText || item.courseTypeText }}</span>
     </ng-container>
     
-    <ng-container *ngIf="!categoryName">
-        <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">{{ item.categoryname || item.categoryName }}</span>
+    <ng-container *ngIf="!hideCategoryName">
+        <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">Category: {{ item.categoryname || item.categoryName }}</span>
     </ng-container>
 </div>

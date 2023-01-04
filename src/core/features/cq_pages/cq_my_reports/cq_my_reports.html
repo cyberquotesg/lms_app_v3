@@ -93,7 +93,7 @@
                         </div>
                     </div>
 
-                    <cq_empty [empty]="isEmpty(pageData[availableYear].coursesFiltered)"></cq_empty>
+                    <cq_empty [empty]="isEmpty(pageData[availableYear].coursesFiltered)" [emptyText]="'No Course'"></cq_empty>
                 </div>
 
                 <div *ngIf="!pageData[availableYear]">

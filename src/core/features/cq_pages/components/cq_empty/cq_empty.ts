@@ -10,6 +10,7 @@ import { CqComponent } from '../../classes/cq_component';
 })
 export class CqEmptyComponent extends CqComponent implements OnInit, OnChanges {
     @Input() empty: boolean = false;
+    @Input() emptyText: string = "No data";
 
     constructor(CH: CqHelper)
     {

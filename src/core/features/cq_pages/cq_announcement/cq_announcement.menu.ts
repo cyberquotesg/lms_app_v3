@@ -13,7 +13,7 @@ export class CqAnnouncementMenuService implements CoreMainMenuHandler
     getDisplayData(): CoreMainMenuHandlerData
     {
         return {
-            icon: 'bar-chart',
+            icon: 'megaphone',
             title: 'cq_announcement',
             page: 'CqAnnouncement',
             class: 'cq_announcement'

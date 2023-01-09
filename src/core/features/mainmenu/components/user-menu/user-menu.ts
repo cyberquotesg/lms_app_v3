@@ -50,7 +50,9 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     handlers: CoreUserProfileHandlerData[] = [];
     handlersLoaded = false;
     user?: CoreUserProfile;
-    displaySwitchAccount = true;
+    // change by rachmad
+    // displaySwitchAccount = true;
+    displaySwitchAccount = false;
     removeAccountOnLogout = false;
 
     protected subscription!: Subscription;
@@ -64,7 +66,9 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         this.siteInfo = currentSite.getInfo();
         this.siteName = currentSite.getSiteName();
         this.siteUrl = currentSite.getURL();
-        this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
+        // change by rachmad
+        // this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
+        this.displaySwitchAccount = false;
         this.removeAccountOnLogout = !!CoreConstants.CONFIG.removeaccountonlogout;
 
         this.loadSiteLogo(currentSite);
@@ -262,4 +266,14 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         this.subscription?.unsubscribe();
     }
 
+    // by rachmad
+    goToAnnouncement(): void
+    {
+        const stateParams: any = {
+        };
+        CoreNavigator.navigateToSitePath('/CqAnnouncement/index', {
+            params: stateParams,
+            preferCurrentTab: false,
+        });
+    }
 }

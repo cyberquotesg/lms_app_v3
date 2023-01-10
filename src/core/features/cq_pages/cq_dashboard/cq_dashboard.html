@@ -5,7 +5,6 @@
 
 <ion-content class="cq_dashboard">
     <ion-refresher slot="fixed" [disabled]="!pageStatus" (ionRefresh)="pageRefresh($event.target)">
-        <div class="dashboard-colorizer"></div>
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
     </ion-refresher>
 

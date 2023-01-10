@@ -56,18 +56,6 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
             this.pageData.course = data.ctData;
             this.pageData.course.venue = this.pageData.course.venue ? this.pageData.course.venue : '-';
-
-            if (this.pageData.course.isUserFinished && this.pageData.course.isUserFinished == '1')
-            {
-                this.pageData.course.showEnrolled = false;
-                this.pageData.course.showFinished = true;
-            }
-            else
-            {
-                this.pageData.course.showEnrolled = this.pageData.course.isUserEnrolled && this.pageData.course.isUserEnrolled == '1';
-                this.pageData.course.showFinished = false;
-            }
-
             this.pageData.sessions = this.CH.toArray(data.ctSessionData);
             this.pageData.sessions.map((session) => {
                 let tempDateTime: string[] = [];
@@ -172,57 +160,52 @@ export class CqOfflineCourse extends CqPage implements OnInit
         );
     }
 
-    scanQRCodeEngine(latitude?: number, longitude?: number): void
+    QRCodeScanner(session: any, latitude?: number, longitude?: number): void
     {
         CoreUtils.scanQR().then((QRCodeData: any) => {
-            if (this.CH.isEmpty(QRCodeData)) return;
-            
-            let data = this.CH.readQRCode(QRCodeData);
-            this.CH.loading('Please wait...', (loading) => {
-                const params: any = {
-                    class: 'CqCourseLib',
-                    function: 'checklog_classroom_training',
-                    identifier: data[0],
-                    type: data[1],
-                    course_id: this.pageData.course.id,
-                    session_id: this.pageData.session.id,
-                    latitude: (latitude ? latitude : '[empty]'),
-                    longitude: (longitude ? longitude : '[empty]'),
-                };
-                this.CH.callApi(params)
-                .then((data) => {
-                    data = this.CH.toJson(data);
+            if (!this.CH.isEmpty(QRCodeData)) this.QRCodeSender(session, QRCodeData, latitude, longitude);
+        });
+    }
+    QRCodeSender(session: any, QRCodeData: string, latitude?: number, longitude?: number)
+    {
+        let data = this.CH.readQRCode(QRCodeData);
+        this.CH.loading('Please wait...', (loading) => {
+            const params: any = {
+                class: 'CqCourseLib',
+                function: 'checklog_classroom_training',
+                identifier: data[0],
+                type: data[1],
+                course_id: this.pageData.course.id,
+                session_id: session.id,
+                latitude: (latitude ? latitude : '[empty]'),
+                longitude: (longitude ? longitude : '[empty]'),
+            };
+            this.CH.callApi(params)
+            .then((data) => {
+                data = this.CH.toJson(data);
 
-                    if (data.success)
-                    {
-                        this.pageForceReferesh(() => {
-                            loading.dismiss();
-                            this.showChecklogBanner(data);
-                        });
-                    }
-                    else
-                    {
-                        loading.dismiss();
-                        this.CH.alert('Ups!', data.message);
-                    }
-                })
-                .catch((e) => {
+                this.pageForceReferesh(() => {
                     loading.dismiss();
-                    
-                    // cannot sign up because server is unreachable
-                    this.CH.alert('Ups!', 'Server is unreachable, please check your internet connection');
-                })
-                .finally(() => {
+                    if (data.success) this.showChecklogBanner(data);
+                    else this.CH.alert('Ups!', data.message);
                 });
+            })
+            .catch((e) => {
+                loading.dismiss();
+                
+                // cannot sign up because server is unreachable
+                this.CH.alert('Ups!', 'Server is unreachable, please check your internet connection');
+            })
+            .finally(() => {
             });
         });
     }
-    scanQRCode(venueCheck: number): void
+    scanQRCode(session: any): void
     {
-        if (venueCheck == 1)
+        if (session.venueCheck == 1)
         {
             navigator.geolocation.getCurrentPosition((position) => {
-                this.scanQRCodeEngine(position.coords.latitude, position.coords.longitude);
+                this.QRCodeScanner(session, position.coords.latitude, position.coords.longitude);
             }, (e) => {
                 this.CH.alert('Ups!', 'Cannot get location data, make sure your GPS is turned on and try again');
             }, {
@@ -231,7 +214,25 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 timeout: 10000,
             });
         }
-        else this.scanQRCodeEngine();
+        else this.QRCodeScanner(session);
+    }
+    fakeQRCode(session: any): void
+    {
+        let fakeQRCodeData = "date_1664359036556_5711206634|date_in";
+
+        if (session.venueCheck == 1)
+        {
+            navigator.geolocation.getCurrentPosition((position) => {
+                this.QRCodeSender(session, fakeQRCodeData, position.coords.latitude, position.coords.longitude)
+            }, (e) => {
+                this.CH.alert('Ups!', 'Cannot get location data, make sure your GPS is turned on and try again');
+            }, {
+                enableHighAccuracy: true, 
+                maximumAge: 11000, 
+                timeout: 10000,
+            });
+        }
+        else this.QRCodeSender(session, fakeQRCodeData);
     }
     showChecklogBanner(data: any): void
     {

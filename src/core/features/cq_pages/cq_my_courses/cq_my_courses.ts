@@ -28,6 +28,9 @@ export class CqMyCourses extends CqPage implements OnInit
             }
         },
     };
+    pageJobRefresh: any = {
+        myCoursesList: 0,
+    };
 
     constructor(renderer: Renderer2, CH: CqHelper)
     {

@@ -273,9 +273,14 @@
 
                                         <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated <= 3600" class="qr-scanner-button mb-cs">
                                             <div class="button">
-                                                <ion-icon class="button-big pl-10 pr-10" name='scan-outline' (click)="scanQRCode(session.venueCheck)"></ion-icon>
+                                                <ion-icon class="button-big pl-10 pr-10" name='scan-outline' (click)="scanQRCode(session)"></ion-icon>
                                                 <ion-icon class="button-small" name='qr-code-outline'></ion-icon>
                                             </div>
+                                            <!-- 
+                                            <button class="button ml-cs mt-cs mr-cs mb-cs" (click)="fakeQRCode(session)">
+                                                Fake QR Code
+                                            </button>
+                                             -->
                                         </div>
 
                                         <div class="session-checklog">

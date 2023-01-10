@@ -7,12 +7,15 @@
     </ng-container>
 
     <ng-container *ngIf="!hideUserStatus">
-        <span *ngIf="item.isUserEnrolled && !item.isUserFinished" class="cq-tag green">
+        <span *ngIf="item.isUserEnrolled && !item.isUserFinished && !item.isUserAccredited" class="cq-tag green">
             <span>Enrolled</span>
         </span>
-        <span *ngIf="item.isUserEnrolled && item.isUserFinished" class="cq-tag green">
-            <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+        <span *ngIf="item.isUserEnrolled && item.isUserFinished && !item.isUserAccredited" class="cq-tag green">
             <span>Finished</span>
+        </span>
+        <span *ngIf="item.isUserEnrolled && item.isUserFinished && item.isUserAccredited" class="cq-tag green">
+            <ion-icon name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+            <span>Accredited</span>
         </span>
     </ng-container>
 

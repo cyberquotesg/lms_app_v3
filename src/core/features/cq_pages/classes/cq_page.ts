@@ -47,14 +47,15 @@ export class CqPage extends CqGeneral
     usuallyOnInit(beforePageLoad?: any): void
     {
         const isLoggedIn = this.CH.isLoggedIn();
-        const data = this.CH.getCountryOrganizationData();
+        // const data = this.CH.getCountryOrganizationData();
 
-        if (isLoggedIn && data.result)
+        // if (isLoggedIn && data.result)
+        if (isLoggedIn)
         {
-            this.cqCountry = data.cqCountry;
-            this.cqOrganization = data.cqOrganization;
+            // this.cqCountry = data.cqCountry;
+            // this.cqOrganization = data.cqOrganization;
             this.renderer.addClass(this.CH.getBody(), 'logged-in');
-            this.renderer.setProperty(this.CH.getBody(), 'style', data.cssVars.join(';'));
+            // this.renderer.setProperty(this.CH.getBody(), 'style', data.cssVars.join(';'));
 
             this.consumePageParams();
             this.consumePageDefault();

@@ -154,6 +154,7 @@ body
 	*
 	{
 		font-family: "mainfont";
+		color: #222222;
 	}
 
 	// ============================================================================================= helper
@@ -413,6 +414,11 @@ body
     		flex-basis: 48px;
     		color: white;
     		background: transparent;
+
+    		ion-icon
+    		{
+	    		color: white;
+    		}
 		}
 		svg
 		{
@@ -1155,15 +1161,27 @@ body
     		}
 		}
 	}
-
-	.dashboard-colorizer
+	ion-refresher
 	{
-		position: absolute;
-		left: 0px;
-	    top: 0px;
-	    right: 0px;
+	    display: flex;
+	    justify-content: center;
+	    align-items: flex-start;
 	    height: 50vh;
-		background: $gradient_background;
+
+		ion-refresher-content
+		{
+		    flex-direction: row;
+		    align-items: flex-start;
+		    padding-top: 16px;
+		}
+	}
+	.cq_dashboard
+	{
+		ion-refresher
+		{
+			// not sure, this makes view good on browser, but worst on mobile app
+			// background: $gradient_background;
+		}
 	}
 
 	// ============================================================================================= cyberquote component
@@ -1185,6 +1203,11 @@ body
 		height: 44px;
 		font-size: 25px;
 	    color: white;
+
+	    ion-icon
+	    {
+		    color: white;
+	    }
 
 		/* *a/
 	    position: absolute;
@@ -1407,6 +1430,7 @@ body
 				}
 				.type
 				{
+					color: white;
 					margin-top: 3px;
 				}
 			}
@@ -1471,6 +1495,7 @@ body
 			.db-title
 			{
 				font-weight: 900;
+				color: white;
 				text-align: center;
 				margin: 0px 0px 44px;
 			}
@@ -1485,11 +1510,13 @@ body
 				    margin: 0px 0px 10px;
 				    font-size: 48px;
 				    font-weight: 700;
+					color: white;
 				    line-height: 1em;
 				}
 				.db-label
 				{
 				    font-size: 16px;
+					color: white;
 				}
 			}
 	    }
@@ -1893,6 +1920,11 @@ body
 
 	    	@include elevation2;
 
+			*
+			{
+				color: white;
+			}
+
 		    &.cq { background-color: $cq_purple }
 		    &.cqd { background-color: $cq_purple_dark }
 			&.red { background-color: $red }
@@ -1912,6 +1944,11 @@ body
 			&.white
 			{
 				color: black;
+
+				*
+				{
+					color: black;
+				}
 			}
 	    }
     }

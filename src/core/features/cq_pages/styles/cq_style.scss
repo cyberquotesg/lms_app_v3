@@ -487,6 +487,7 @@ body
 			ion-card-title
 			{
 				display: flex;
+				flex-wrap: wrap;
 				justify-content: center;
 				align-items: center;
 				text-align: center;
@@ -496,13 +497,21 @@ body
 				line-height: 1.2em;
 				overflow: hidden;
 
-				.card-title-inner
+				.card-title-inner,
+				.card-sub-title-inner
 				{
 					display: flex;
 					justify-content: center;
 					align-items: flex-start;
+					flex-shrink: 0;
+					width: 100%;
 					height: auto;
 					max-height: 100%;
+				}
+				.card-sub-title-inner
+				{
+					font-size: 14px;
+					margin-top: 8px
 				}
 			}
 		}
@@ -562,7 +571,8 @@ body
 					justify-content: flex-start;
 					text-align: left;
 
-					.card-title-inner
+					.card-title-inner,
+					.card-sub-title-inner
 					{
 						justify-content: flex-start;
 					}

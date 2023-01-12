@@ -11,6 +11,7 @@ import { CqComponent } from '../../classes/cq_component';
 export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() items: any | any[] = [];
     @Input() type: string = "tile";
+    @Input() hideTags: boolean = false;
     @Output() onSelectItem: EventEmitter<number>;
 
     private showFakeItems: boolean = false;

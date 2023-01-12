@@ -30,6 +30,9 @@ import { AddonCalendarViewLinkHandler } from './cq_calendar/services/handlers/vi
 import { CqAnnouncementsMenuHandler, CqAnnouncementsMenuService } from './cq_announcements/cq_announcements.menu';
 import { CqAnnouncementsViewHandler } from './cq_announcements/cq_announcements.view';
 
+import { CqAnnouncementMenuHandler, CqAnnouncementMenuService } from './cq_announcement/cq_announcement.menu';
+import { CqAnnouncementViewHandler } from './cq_announcement/cq_announcement.view';
+
 const routes: Routes = [
     {
         path: '',
@@ -63,6 +66,10 @@ const routes: Routes = [
     {
         path: CqAnnouncementsMenuService.PAGE_NAME,
         loadChildren: () => import('./cq_announcements/cq_announcements.lazy_module').then(m => m.CqAnnouncementsLazyModule),
+    },
+    {
+        path: CqAnnouncementMenuService.PAGE_NAME,
+        loadChildren: () => import('./cq_announcement/cq_announcement.lazy_module').then(m => m.CqAnnouncementLazyModule),
     },
 ];
 @NgModule({
@@ -98,6 +105,9 @@ const routes: Routes = [
                 
                 CoreMainMenuDelegate.registerHandler(CqAnnouncementsMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqAnnouncementsViewHandler.instance);
+                
+                CoreMainMenuDelegate.registerHandler(CqAnnouncementMenuHandler.instance);
+                CoreContentLinksDelegate.registerHandler(CqAnnouncementViewHandler.instance);
             },
         },
     ],

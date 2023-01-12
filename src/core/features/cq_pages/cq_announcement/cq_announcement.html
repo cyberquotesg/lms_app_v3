@@ -1,0 +1,25 @@
+<ion-header>
+    <cq_header [title]="'Announcement'" [displayMenu]="true" [displayAnnouncement]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading"></cq_header>
+</ion-header>
+
+<ion-content class="cq_announcement">
+    <ion-refresher slot="fixed" [disabled]="!pageStatus" (ionRefresh)="pageRefresh($event.target)">
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+    </ion-refresher>
+
+    <core-loading [hideUntil]="pageStatus">
+        <div class="base-background pb-5">
+
+        <div class="ml-20 mt-36 mr-20 pb-36">
+            <cq_filter (onFilterChange)="onFilterChange($event)"></cq_filter>
+            <cq_items type="list" [hideTags]="true" [items]="pageData.announcements" (onSelectItem)="openCourse($event)"></cq_items>
+
+            <button *ngIf="isAvailable(pageData.announcements)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="reachedEndOfList">
+                <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>
+                <ion-spinner *ngIf="pageIsLoading"></ion-spinner>
+            </button>
+        </div>
+
+        </div>
+    </core-loading>
+</ion-content>

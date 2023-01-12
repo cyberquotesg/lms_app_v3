@@ -10,7 +10,15 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background pb-5">
 
-        announcement page
+        <div class="ml-20 mt-36 mr-20 pb-36">
+            <cq_filter (onFilterChange)="onFilterChange($event)"></cq_filter>
+            <cq_items type="list" [items]="pageData.announcements" (onSelectItem)="openCourse($event)"></cq_items>
+
+            <button *ngIf="isAvailable(pageData.announcements)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="reachedEndOfList">
+                <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>
+                <ion-spinner *ngIf="pageIsLoading"></ion-spinner>
+            </button>
+        </div>
 
         </div>
     </core-loading>

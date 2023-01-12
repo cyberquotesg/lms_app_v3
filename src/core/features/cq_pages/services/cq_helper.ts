@@ -686,7 +686,7 @@ export class CqHelper
     }
     getLetter(text: string): string
     {
-    	return text.substr(0, 1);
+    	return text.trim().substr(0, 1);
     }
     isEmpty(data: any): boolean
     {

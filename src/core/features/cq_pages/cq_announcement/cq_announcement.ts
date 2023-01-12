@@ -89,12 +89,16 @@ export class CqAnnouncement extends CqPage implements OnInit
 
     openAnnouncement(item: any): void
     {
-        this.pageData.announcements.map((announcement) => {
-            if (announcement.id == item.id) item.read = 1;
-        });
+        for (let announcement of this.pageData.announcements)
+        {
+            if (announcement.id == item.id)
+            {
+                item.read = true;
+                break;
+            }
+        }
 
-        /* *a/
-        this.nav.push('CqAnnouncementPage', {
+        const stateParams: any = {
             discussion: item.id,
             subject: item.subject,
             message: item.message,
@@ -102,8 +106,11 @@ export class CqAnnouncement extends CqPage implements OnInit
             thumbnail: item.thumbnail,
             attachments: item.attachments,
             user_fullname: item.user_fullname,
+        };
+        CoreNavigator.navigateToSitePath('/CqAnnouncement/index', {
+            params: stateParams,
+            preferCurrentTab: false,
         });
-        /* */
     }
 
     onFilterChange(data: any): void

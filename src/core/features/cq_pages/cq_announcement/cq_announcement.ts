@@ -8,6 +8,8 @@ import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
 import { FileTransfer, FileTransferObject } from '@ionic-native/file-transfer/ngx';
+import { FileOpener } from '@ionic-native/file-opener/ngx';
+import { File } from '@ionic-native/file/ngx';
 
 @Component({
     selector: 'cq_announcement',
@@ -28,7 +30,10 @@ export class CqAnnouncement extends CqPage implements OnInit
     private agent: any;
     private loading: any = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
+    constructor(renderer: Renderer2, CH: CqHelper, platform: Platform,
+        private transfer: FileTransfer,
+        private file: File,
+        private fileOpener: FileOpener)
     {
         super(renderer, CH);
     }
@@ -47,7 +52,7 @@ export class CqAnnouncement extends CqPage implements OnInit
             discussion_id: this.pageParams.discussion_id,
         };
         this.pageJobExecuter(jobName, params, (data) => {
-            this.pageData.announcement = this.CH.toArray(this.CH.toJson(data));
+            this.pageData.announcement = this.CH.toJson(data);
             this.pageData.announcement.messageArray = this.handleMessage(this.pageData.announcement.message);
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
@@ -56,7 +61,7 @@ export class CqAnnouncement extends CqPage implements OnInit
 
     handleMessage(message: string): string[]
     {
-        let messageArray = [];
+        let messageArray: any[] = [];
         message
             .replace(/\&gt;/g, '>')
             .replace(/\&lt;/g, '<')

@@ -1,5 +1,5 @@
 <ion-header>
-    <cq_header [title]="pageData.announcement.subject" [displayMenu]="true" [displayAnnouncement]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading"></cq_header>
+    <cq_header [title]="pageData.announcement.subject" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading"></cq_header>
 </ion-header>
 
 <ion-content class="cq_announcement">
@@ -19,11 +19,11 @@
 
                 <ion-card-header>
                     <ion-card-title class="text-center">{{ pageData.announcement.subject }}</ion-card-title>
-                    <div *ngIf="pageData.announcement.user_fullname" style="font-size: 13px; text-align: center; margin-top: 5px;">by {{ pageData.announcement.user_fullname }}</div>
+                    <div *ngIf="pageData.announcement.userFullname" style="font-size: 13px; text-align: center; margin-top: 5px;">by {{ pageData.announcement.userFullname }}</div>
                 </ion-card-header>
 
                 <ion-card-content>
-                    <ng-container *ngFor="let message of pageData.messageArray">
+                    <ng-container *ngFor="let message of pageData.announcement.messageArray">
                         <div *ngIf="message.type == 'text'" [innerHTML]="message.content"></div>
                         <a *ngIf="message.type == 'link'" (click)="openInBrowser(message.content)">{{ message.content2 }}</a>
                         <core-iframe *ngIf="message.type == 'youtube'" [src]="message.content" iframeHeight="auto" [allowFullscreen]="true"></core-iframe>

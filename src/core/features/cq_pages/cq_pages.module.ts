@@ -27,8 +27,8 @@ import { CqOfflineCourseViewHandler } from './cq_offline_course/cq_offline_cours
 import { AddonCalendarMainMenuHandler, AddonCalendarMainMenuHandlerService } from './cq_calendar/services/handlers/mainmenu';
 import { AddonCalendarViewLinkHandler } from './cq_calendar/services/handlers/view-link';
 
-import { CqAnnouncementMenuHandler, CqAnnouncementMenuService } from './cq_announcement/cq_announcement.menu';
-import { CqAnnouncementViewHandler } from './cq_announcement/cq_announcement.view';
+import { CqAnnouncementsMenuHandler, CqAnnouncementsMenuService } from './cq_announcements/cq_announcements.menu';
+import { CqAnnouncementsViewHandler } from './cq_announcements/cq_announcements.view';
 
 const routes: Routes = [
     {
@@ -61,8 +61,8 @@ const routes: Routes = [
         loadChildren: () => import('./cq_calendar/calendar-lazy.module').then(m => m.AddonCalendarLazyModule),
     },
     {
-        path: CqAnnouncementMenuService.PAGE_NAME,
-        loadChildren: () => import('./cq_announcement/cq_announcement.lazy_module').then(m => m.CqAnnouncementLazyModule),
+        path: CqAnnouncementsMenuService.PAGE_NAME,
+        loadChildren: () => import('./cq_announcements/cq_announcements.lazy_module').then(m => m.CqAnnouncementsLazyModule),
     },
 ];
 @NgModule({
@@ -96,8 +96,8 @@ const routes: Routes = [
                 CoreMainMenuDelegate.registerHandler(AddonCalendarMainMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(AddonCalendarViewLinkHandler.instance);
                 
-                CoreMainMenuDelegate.registerHandler(CqAnnouncementMenuHandler.instance);
-                CoreContentLinksDelegate.registerHandler(CqAnnouncementViewHandler.instance);
+                CoreMainMenuDelegate.registerHandler(CqAnnouncementsMenuHandler.instance);
+                CoreContentLinksDelegate.registerHandler(CqAnnouncementsViewHandler.instance);
             },
         },
     ],

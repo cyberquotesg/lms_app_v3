@@ -3,20 +3,20 @@ import { makeSingleton } from '@singletons';
 import { CoreMainMenuHandler, CoreMainMenuHandlerData } from '@features/mainmenu/services/mainmenu-delegate';
 
 @Injectable({ providedIn: 'root' })
-export class CqAnnouncementMenuService implements CoreMainMenuHandler
+export class CqAnnouncementsMenuService implements CoreMainMenuHandler
 {
-    static readonly PAGE_NAME = 'CqAnnouncement';
+    static readonly PAGE_NAME = 'CqAnnouncements';
 
-    name = 'CqAnnouncementMenuHandler';
+    name = 'CqAnnouncementsMenuHandler';
     priority = 2000;
 
     getDisplayData(): CoreMainMenuHandlerData
     {
         return {
             icon: 'megaphone',
-            title: 'cq_announcement',
-            page: 'CqAnnouncement',
-            class: 'cq_announcement'
+            title: 'cq_announcements',
+            page: 'CqAnnouncements',
+            class: 'cq_announcements'
         };
     }
 
@@ -26,4 +26,4 @@ export class CqAnnouncementMenuService implements CoreMainMenuHandler
     }
 }
 
-export const CqAnnouncementMenuHandler = makeSingleton(CqAnnouncementMenuService);
+export const CqAnnouncementsMenuHandler = makeSingleton(CqAnnouncementsMenuService);

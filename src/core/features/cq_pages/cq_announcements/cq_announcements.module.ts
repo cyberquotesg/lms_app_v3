@@ -7,12 +7,12 @@ import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/comp
 import { CqComponentsModule } from '../components/cq_components.module';
 import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
-import { CqAnnouncement } from './cq_announcement';
+import { CqAnnouncements } from './cq_announcements';
 
 const routes: Routes = [
     {
         path: '',
-        component: CqAnnouncement,
+        component: CqAnnouncements,
     },
 ];
 
@@ -24,8 +24,8 @@ const routes: Routes = [
         CqComponentsModule,
     ],
     declarations: [
-        CqAnnouncement,
+        CqAnnouncements,
     ],
     exports: [RouterModule],
 })
-export class CqAnnouncementModule {}
+export class CqAnnouncementsModule {}

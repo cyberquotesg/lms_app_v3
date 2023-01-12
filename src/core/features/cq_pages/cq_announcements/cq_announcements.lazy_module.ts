@@ -19,21 +19,21 @@ import { RouterModule, ROUTES, Routes } from '@angular/router';
 import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CoreScreen } from '@services/screen';
 
-import { CqAnnouncementMenuService } from './cq_announcement.menu';
+import { CqAnnouncementsMenuService } from './cq_announcements.menu';
 
 function buildRoutes(injector: Injector): Routes {
     return [
         {
             path: 'index',
             data: {
-                mainMenuTabRoot: CqAnnouncementMenuService.PAGE_NAME,
+                mainMenuTabRoot: CqAnnouncementsMenuService.PAGE_NAME,
             },
-            loadChildren: () => import('./cq_announcement.module').then(m => m.CqAnnouncementModule),
+            loadChildren: () => import('./cq_announcements.module').then(m => m.CqAnnouncementsModule),
         },
         // ...conditionalRoutes([
         //     {
         //         path: 'list/:id',
-        //         loadChildren: () => import('./pages/announcement/announcement.module').then(m => m.AddonAnnouncementsAnnouncementPageModule),
+        //         loadChildren: () => import('./pages/announcements/announcements.module').then(m => m.AddonAnnouncementsAnnouncementsPageModule),
         //     },
         // ], () => CoreScreen.isMobile),
         ...buildTabMainRoutes(injector, {
@@ -54,4 +54,4 @@ function buildRoutes(injector: Injector): Routes {
         },
     ],
 })
-export class CqAnnouncementLazyModule {}
+export class CqAnnouncementsLazyModule {}

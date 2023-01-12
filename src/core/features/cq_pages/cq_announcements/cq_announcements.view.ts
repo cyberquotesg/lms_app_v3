@@ -7,17 +7,17 @@ import { CoreNavigator } from '@services/navigator';
 import { makeSingleton } from '@singletons';
 
 @Injectable({ providedIn: 'root' })
-export class CqAnnouncementViewService extends CoreContentLinksHandlerBase
+export class CqAnnouncementsViewService extends CoreContentLinksHandlerBase
 {
-    name = 'CqAnnouncementViewHandler';
-    pattern = /\/cq_announcement\/view\.php/;
+    name = 'CqAnnouncementsViewHandler';
+    pattern = /\/cq_announcements\/view\.php/;
 
     getActions(siteIds: string[], url: string, params: any): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]>
     {
         return [{
             action: (siteId, navCtrl?): void => {
                 const stateParams: any = {};
-                CoreNavigator.navigateToSitePath('/CqAnnouncement/index', {
+                CoreNavigator.navigateToSitePath('/CqAnnouncements/index', {
                     params: stateParams,
                     siteId,
                     preferCurrentTab: false,
@@ -32,4 +32,4 @@ export class CqAnnouncementViewService extends CoreContentLinksHandlerBase
     }
 }
 
-export const CqAnnouncementViewHandler = makeSingleton(CqAnnouncementViewService);
+export const CqAnnouncementsViewHandler = makeSingleton(CqAnnouncementsViewService);

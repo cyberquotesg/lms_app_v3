@@ -9,10 +9,10 @@ import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_c
 import { CoreUtils } from '@services/utils/utils';
 
 @Component({
-    selector: 'cq_announcement',
-    templateUrl: './cq_announcement.html',
+    selector: 'cq_announcements',
+    templateUrl: './cq_announcements.html',
 })
-export class CqAnnouncement extends CqPage implements OnInit
+export class CqAnnouncements extends CqPage implements OnInit
 {
     pageParams: any = {
     };

@@ -1,5 +1,5 @@
 <ion-header>
-    <cq_header [title]="'Announcement'" [displayMenu]="true" [displayAnnouncement]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading"></cq_header>
+    <cq_header [title]="pageData.announcement.subject" [displayMenu]="true" [displayAnnouncement]="true" [displayUserMenu]="true" [displayProgress]="pageIsLoading"></cq_header>
 </ion-header>
 
 <ion-content class="cq_announcement">
@@ -10,15 +10,38 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background pb-5">
 
-        <div class="ml-20 mt-36 mr-20 pb-36">
-            <cq_filter (onFilterChange)="onFilterChange($event)"></cq_filter>
-            <cq_items type="list" [hideTags]="true" [items]="pageData.announcements" (onSelectItem)="openCourse($event)"></cq_items>
+        <div *ngIf="isAvailable(pageData.announcement.message)">
+            <ion-card>
+                <div class="card-image">
+                    <div *ngIf="pageData.announcement.thumbnail" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + pageData.announcement.thumbnail + ')'}"></div>
+                    <span *ngIf="!pageData.announcement.thumbnail" class="card-image-letter">{{ getLetter(pageData.announcement.subject) }}</span>
+                </div>
 
-            <button *ngIf="isAvailable(pageData.announcements)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="reachedEndOfList">
-                <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>
-                <ion-spinner *ngIf="pageIsLoading"></ion-spinner>
-            </button>
+                <ion-card-header>
+                    <ion-card-title class="text-center">{{ pageData.announcement.subject }}</ion-card-title>
+                    <div *ngIf="pageData.announcement.user_fullname" style="font-size: 13px; text-align: center; margin-top: 5px;">by {{ pageData.announcement.user_fullname }}</div>
+                </ion-card-header>
+
+                <ion-card-content>
+                    <ng-container *ngFor="let message of pageData.messageArray">
+                        <div *ngIf="message.type == 'text'" [innerHTML]="message.content"></div>
+                        <a *ngIf="message.type == 'link'" (click)="openInBrowser(message.content)">{{ message.content2 }}</a>
+                        <core-iframe *ngIf="message.type == 'youtube'" [src]="message.content" iframeHeight="auto" [allowFullscreen]="true"></core-iframe>
+                    </ng-container>
+                </ion-card-content>
+
+                <ion-card-content *ngIf="isAvailable(pageData.announcement.attachments)" style="border-top: 1px solid #e1e1e1">
+                    <div>Downloadable:</div>
+                    <div class="mt-4 mr--4 ml--4">
+                        <button *ngFor="let attachment of pageData.announcement.attachments" (click)="downloadAttachment(attachment.name, attachment.link)" class="button button-small mt-4 mb-4 ml-4 mr-4">
+                            {{ attachment.name }}
+                        </button>
+                    </div>
+                </ion-card-content>
+            </ion-card>
         </div>
+
+        <cq_empty [empty]="isEmpty(pageData.announcement.message)"></cq_empty>
 
         </div>
     </core-loading>

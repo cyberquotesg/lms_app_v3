@@ -99,13 +99,7 @@ export class CqAnnouncements extends CqPage implements OnInit
         }
 
         const stateParams: any = {
-            discussion: item.id,
-            subject: item.subject,
-            message: item.message,
-            messageStripped: item.message_stripped,
-            thumbnail: item.thumbnail,
-            attachments: item.attachments,
-            user_fullname: item.user_fullname,
+            discussion_id: item.id,
         };
         CoreNavigator.navigateToSitePath('/CqAnnouncement/index', {
             params: stateParams,

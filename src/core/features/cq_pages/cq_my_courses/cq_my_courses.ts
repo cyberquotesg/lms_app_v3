@@ -19,6 +19,8 @@ export class CqMyCourses extends CqPage implements OnInit
         filterAgent: null,
         filterText: "",
         reachedEndOfList: false,
+        page: this.page,
+        length: this.length,
     };
     pageJob: any = {
         filterMultiple: {
@@ -59,11 +61,36 @@ export class CqMyCourses extends CqPage implements OnInit
     }
     myCoursesList(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
+        // don't use modeData.mode, but use it's own duplicated functionality
+        let page, length;
+        if (modeData.mode == 'firstload' || modeData.mode == 'forced-firstload')
+        {
+            this.pageData.page = 1;
+            page = this.pageData.page;
+            length = this.pageData.length;
+        }
+        else if (modeData.mode == 'loadmore' || modeData.mode == 'forced-loadmore')
+        {
+            this.pageData.page++;
+            page = this.pageData.page;
+            length = this.pageData.length;
+        }
+        else if (modeData.mode == 'refresh' || modeData.mode == 'forced-refresh')
+        {
+            page = 1;
+            length = this.pageData.page * this.pageData.length;
+        }
+        else
+        {
+            page = this.pageData.page;
+            length = this.pageData.length;
+        }
+
         const params: any = {
             class: "CqCourseLib",
             function: "get_my_courses_list",
-            page: this.page,
-            length: this.length,
+            page: page,
+            length: length,
             search: this.pageData.filterText ? this.pageData.filterText : null,
         };
         this.pageData.filterMultiple.forEach((item) => {

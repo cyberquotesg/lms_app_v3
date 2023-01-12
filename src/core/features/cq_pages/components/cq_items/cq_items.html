@@ -1,0 +1,58 @@
+<div class="items-wrapper">
+    <ng-container *ngIf="isAvailable(items) && type == 'tile'">
+        <div *ngFor="let item of items" class="tile" data-id="{{ item.id }}">
+            <ion-card class="thin" (click)="selectItem(item)">
+                <div class="card-image">
+                    <div *ngIf="item.course_image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.course_image + ')'}"></div>
+                    <span *ngIf="!item.course_image" class="card-image-letter">{{ item.letter }}</span>
+                    
+                    <div class="card-image-tags">
+                        <cq_tags [item]="item"></cq_tags>
+                    </div>
+                </div>
+
+                <ion-card-header>
+                    <ion-card-title>
+                        <div class="card-title-inner">
+                            {{ item.title }} 
+                        </div>
+                    </ion-card-title>
+                </ion-card-header>
+            </ion-card>
+        </div>
+
+        <ng-container *ngIf="showFakeItems">
+            <div class="tile fake"></div>
+            <div class="tile fake"></div>
+            <div class="tile fake"></div>
+            <div class="tile fake"></div>
+            <div class="tile fake"></div>
+            <div class="tile fake"></div>
+            <div class="tile fake"></div>
+            <div class="tile fake"></div>
+        </ng-container>
+    </ng-container>
+
+    <ng-container *ngIf="isAvailable(items) && type == 'list'">
+        <div *ngFor="let item of items" class="list" data-id="{{ item.id }}">
+            <ion-card class="thin inline" (click)="selectItem(item)">
+                <div class="card-image">
+                    <div *ngIf="item.image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.image + ')'}"></div>
+                    <span *ngIf="!item.image" class="card-image-letter">{{ item.letter }}</span>
+                </div>
+                <ion-card-header>
+                    <ion-card-title>
+                        <div class="card-title-inner">
+                            {{ item.title }} 
+                        </div>
+                    </ion-card-title>
+                    <div class="card-tags">
+                        <cq_tags [item]="item"></cq_tags>
+                    </div>
+                </ion-card-header>
+            </ion-card>
+        </div>
+    </ng-container>
+
+    <cq_empty [empty]="isEmpty(items)" [emptyText]="'No Course'"></cq_empty>
+</div>

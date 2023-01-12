@@ -471,7 +471,7 @@ body
 			    left: 4px;
 			    top: 4px;
 			    right: 4px;
-			    bottom: 4px;
+			    bottom: 0px;
 			    overflow: hidden;
 			    text-align: right;
 			}
@@ -482,10 +482,28 @@ body
 			padding-top: 0px !important;
 			padding-right: 0px !important;
 			padding-bottom: 0px !important;
+	    	text-align: center;
 
 			ion-card-title
 			{
-				font-weight: 900;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				text-align: center;
+				font-weight: 400;
+				font-size: 16px;
+				height: 56px;
+				line-height: 1.2em;
+				overflow: hidden;
+
+				.card-title-inner
+				{
+					display: flex;
+					justify-content: center;
+					align-items: flex-start;
+					height: auto;
+					max-height: 100%;
+				}
 			}
 		}
 		ion-card-content
@@ -521,12 +539,50 @@ body
 			}
 		}
 
-		*
+		&.inline
 		{
-			+ ion-card-header,
-			+ ion-card-content
+			.card-image
 			{
-				margin-top: $component_spacing;
+				position: absolute;
+				left: $component_spacing;
+				top: $component_spacing;
+				bottom: 0px;
+				width: 72px;
+				height: auto;
+			}
+			ion-card-header
+			{
+				min-height: 36px;
+				padding-top: 8px !important;
+				margin-left: 72px;
+
+				ion-card-title
+				{
+					height: auto;
+					justify-content: flex-start;
+					text-align: left;
+
+					.card-title-inner
+					{
+						justify-content: flex-start;
+					}
+				}
+				.card-tags
+				{
+					margin-top: $component_spacing;
+				}
+			}
+		}
+
+		&:not(.inline)
+		{
+			*
+			{
+				+ ion-card-header,
+				+ ion-card-content
+				{
+					margin-top: $component_spacing;
+				}
 			}
 		}
 
@@ -537,13 +593,35 @@ body
 
 			.card-image
 			{
-				position: relative;
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				height: 150px;
-				background: #bbb;
 				margin: #{$component_spacing_thin * -1} #{$component_spacing_thin * -1} 0px;
+			}
+
+			&.inline
+			{
+				.card-image
+				{
+					left: $component_spacing_thin;
+					top: $component_spacing_thin;
+				}
+				ion-card-header
+				{
+					.card-tags
+					{
+						margin-top: $component_spacing_thin;
+					}
+				}
+			}
+
+			&:not(.inline)
+			{
+				*
+				{
+					+ ion-card-header,
+					+ ion-card-content
+					{
+						margin-top: $component_spacing_thin;
+					}
+				}
 			}
 		}
 	}
@@ -609,62 +687,43 @@ body
 		}
 	}
 
-    // for tile card
-    cq_tile
+    cq_items
     {
     	width: 100%;
 
-	    .tile-wrapper
+	    .items-wrapper
 	    {
-		    .tile-card
-		    {
-		    	display: flex;
-		    	flex-wrap: wrap;
-		    	margin: $component_spacing / -2;
+	    	display: flex;
+	    	flex-wrap: wrap;
+	    	margin: $component_spacing / -2;
 
-		    	.tc-item
+	    	.tile
+	    	{
+	    		flex-basis: 170px;
+	    		flex-grow: 1;
+	    		padding: $component_spacing / 2;
+
+	    		ion-card
+	    		{
+	    			height: 100%;
+	    			margin: 0px !important;
+	    		}
+
+		    	&.fake
 		    	{
-		    		flex-basis: 170px;
-		    		flex-grow: 1;
-		    		padding: $component_spacing / 2;
-
-		    		ion-card
-		    		{
-		    			height: 100%;
-		    			margin: 0px !important;
-
-		    			ion-card-header
-		    			{
-		    				text-align: center;
-
-		    				.card-title
-		    				{
-		    					display: flex;
-		    					justify-content: center;
-		    					align-items: center;
-		    					text-align: center;
-		    					height: 50px;
-		    					line-height: 1.2em;
-		    					overflow: hidden;
-
-		    					.card-title-inner
-		    					{
-		    						display: flex;
-		    						justify-content: center;
-		    						align-items: flex-start;
-		    						height: auto;
-		    						max-height: 100%;
-		    					}
-		    				}
-		    			}
-		    		}
-
-			    	&.fake
-			    	{
-			    		padding: 0px !important;
-			    	}
+		    		padding: 0px !important;
 		    	}
-		    }
+	    	}
+	    	.list
+	    	{
+	    		width: 100%;
+	    		padding: $component_spacing / 2;
+
+	    		ion-card
+	    		{
+	    			margin: 0px !important;
+	    		}
+	    	}
 	    }
     }
 
@@ -1183,6 +1242,20 @@ body
 			// background: $gradient_background;
 		}
 	}
+	.calendar-navigation-button
+	{
+	    display: inline-flex;
+	    align-items: center;
+	    justify-content: center;
+		min-height: 0px;
+	    height: 40px;
+	    margin: 0px !important;
+
+	    + .calendar-navigation-button
+	    {
+	    	margin-left: $component_spacing !important;
+	    }
+	}
 
 	// ============================================================================================= cyberquote component
 	.cq-empty
@@ -1571,7 +1644,6 @@ body
 	    text-align: center;
 	    font-size: 16px;
 	    font-weight: 700;
-	    color: initial;
 	    line-height: 1em;
 
 	    .start-number

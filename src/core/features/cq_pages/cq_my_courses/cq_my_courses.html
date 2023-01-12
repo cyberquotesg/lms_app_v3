@@ -10,9 +10,9 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background pb-5">
 
-        <div class="ml-20 mt-20 mr-20">
+        <div class="ml-20 mt-36 mr-20">
             <cq_filter [filterMultipleTitle]="'Course Filter'" [filterMultiple]="pageData.filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
-            <cq_tile [items]="pageData.courses" (onSelectItem)="openCourse($event)"></cq_tile>
+            <cq_items [items]="pageData.courses" (onSelectItem)="openCourse($event)"></cq_items>
 
             <button *ngIf="isAvailable(pageData.courses)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="reachedEndOfList">
                 <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>

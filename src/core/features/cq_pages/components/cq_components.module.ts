@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
-import { CqTileComponent } from './cq_tile/cq_tile';
+import { CqItemsComponent } from './cq_items/cq_items';
 import { CqHeaderComponent } from './cq_header/cq_header';
 import { CqEmptyComponent } from './cq_empty/cq_empty';
 import { CqFilterComponent } from './cq_filter/cq_filter';
@@ -13,7 +13,7 @@ import { CqChecklogBannerComponent } from './cq_checklog_banner/cq_checklog_bann
 
 @NgModule({
     declarations: [
-        CqTileComponent,
+        CqItemsComponent,
         CqHeaderComponent,
         CqEmptyComponent,
         CqFilterComponent,
@@ -28,7 +28,7 @@ import { CqChecklogBannerComponent } from './cq_checklog_banner/cq_checklog_bann
         CoreMainMenuComponentsModule,
     ],
     exports: [
-        CqTileComponent,
+        CqItemsComponent,
         CqHeaderComponent,
         CqEmptyComponent,
         CqFilterComponent,

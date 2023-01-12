@@ -2,22 +2,22 @@
     <div class="core-swipe-slides-container">
         <!-- Period name and arrows to navigate. -->
         <ion-grid class="addon-calendar-navigation pt-0 pl-cs pr-cs pb-cs" style="display: flex; justify-content: space-between;">
-            <ion-button fill="clear" (click)="loadPrevious()" [attr.aria-label]="'core.previous' | translate" [disabled]="!canNavigate" class="ml-0 mt-0 mr-0 mb-0" size="small">
+            <button fill="clear" (click)="loadPrevious()" [attr.aria-label]="'core.previous' | translate" [disabled]="!canNavigate" class="calendar-navigation-button" size="small">
                 <ion-icon name="fas-chevron-left" slot="icon-only" aria-hidden="true" style="font-size: 16px;"></ion-icon>
-            </ion-button>
+            </button>
 
             <h5 id="addon-calendar-monthname">
                 <b>{{ periodName }}</b>
             </h5>
 
             <div>
-                <ion-button fill="clear" (click)="goToCurrentMonth()" [attr.aria-label]="'addon.calendar.currentmonth' | translate" [disabled]="!canNavigate || selectedMonthIsCurrent()" class="ml-0 mt-0 mr-cs mb-0" size="small">
+                <button fill="clear" (click)="goToCurrentMonth()" [attr.aria-label]="'addon.calendar.currentmonth' | translate" [disabled]="!canNavigate || selectedMonthIsCurrent()" class="calendar-navigation-button" size="small">
                     <ion-icon name="fas-calendar-day" slot="icon-only" aria-hidden="true" style="font-size: 16px;"></ion-icon>
-                </ion-button>
+                </button>
 
-                <ion-button fill="clear" (click)="loadNext()" [attr.aria-label]="'core.next' | translate" [disabled]="!canNavigate" class="ml-0 mt-0 mr-0 mb-0" size="small">
+                <button fill="clear" (click)="loadNext()" [attr.aria-label]="'core.next' | translate" [disabled]="!canNavigate" class="calendar-navigation-button" size="small">
                     <ion-icon name="fas-chevron-right" slot="icon-only" aria-hidden="true" style="font-size: 16px;"></ion-icon>
-                </ion-button>
+                </button>
             </div>
         </ion-grid>
 

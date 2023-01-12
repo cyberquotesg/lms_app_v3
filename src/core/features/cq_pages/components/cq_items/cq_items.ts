@@ -5,11 +5,12 @@ import { CqHelper } from '../../services/cq_helper';
 import { CqComponent } from '../../classes/cq_component';
 
 @Component({
-    selector: 'cq_tile',
-    templateUrl: 'cq_tile.html'
+    selector: 'cq_items',
+    templateUrl: 'cq_items.html'
 })
-export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
+export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() items: any | any[] = [];
+    @Input() type: string = "tile";
     @Output() onSelectItem: EventEmitter<number>;
 
     private showFakeItems: boolean = false;
@@ -54,7 +55,7 @@ export class CqTileComponent extends CqComponent implements OnInit, OnChanges {
             item.title = item.title || item.subject || item.name || item.displayname || item.fullname_trimmed|| item.fullname || item.shortname;
             item.letter = this.CH.getLetter(item.title);
             item.description = item.description || item.summary || item.smallmessage;
-            item.course_image = item.course_image || item.course_image_full;
+            item.image = item.image || item.course_image || item.course_image_full || null;
 
             if (item.is_user_finished && item.is_user_finished == '1')
             {

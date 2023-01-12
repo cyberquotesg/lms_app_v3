@@ -80,7 +80,7 @@
                 </div>
                 <ion-slides class="pl-24 pr-24" [options]="pageData.sliderOptions">
                     <ion-slide *ngFor="let course of pageData[mediaList]" class="mb-24">
-                       <cq_tile [items]="course" (onSelectItem)="openCourse($event)"></cq_tile>
+                       <cq_items [items]="course" (onSelectItem)="openCourse($event)"></cq_items>
                     </ion-slide>
 
                     <ion-slide class="mb-24">

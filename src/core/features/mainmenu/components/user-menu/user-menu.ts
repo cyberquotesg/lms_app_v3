@@ -271,7 +271,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     {
         const stateParams: any = {
         };
-        CoreNavigator.navigateToSitePath('/CqAnnouncement/index', {
+        CoreNavigator.navigateToSitePath('/CqAnnouncements/index', {
             params: stateParams,
             preferCurrentTab: false,
         });

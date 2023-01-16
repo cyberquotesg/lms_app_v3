@@ -30,6 +30,7 @@ export class CqAnnouncements extends CqPage implements OnInit
 
     private agent: any;
     private loading: any = false;
+    private showItems: boolean = true;
 
     constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
     {
@@ -37,7 +38,11 @@ export class CqAnnouncements extends CqPage implements OnInit
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }
-    ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
+    ionViewWillEnter(): void {
+        setTimeout(() => this.showItems = false);
+        setTimeout(() => this.showItems = true);
+        this.usuallyOnViewWillEnter();
+    }
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
@@ -94,6 +99,7 @@ export class CqAnnouncements extends CqPage implements OnInit
             if (announcement.id == item.id)
             {
                 item.read = true;
+                item.tags = [];
                 break;
             }
         }

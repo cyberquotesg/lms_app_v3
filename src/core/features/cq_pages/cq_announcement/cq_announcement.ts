@@ -47,12 +47,23 @@ export class CqAnnouncement extends CqPage implements OnInit
     announcement(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: "CqLib",
-            function: "get_announcement",
-            discussion_id: this.pageParams.discussion_id,
+            calls: {
+                announcement: {
+                    class: "CqLib",
+                    function: "get_announcement",
+                    discussion_id: this.pageParams.discussion_id,
+                },
+                setRead: {
+                    class: "CqLib",
+                    function: "read_announcement",
+                    discussion_id: this.pageParams.discussion_id,
+                },
+            },
         };
         this.pageJobExecuter(jobName, params, (data) => {
-            this.pageData.announcement = this.CH.toJson(data);
+            let allData = this.CH.toJson(data);
+
+            this.pageData.announcement = allData.announcement;
             this.pageData.announcement.messageArray = this.handleMessage(this.pageData.announcement.message);
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
@@ -155,21 +166,11 @@ export class CqAnnouncement extends CqPage implements OnInit
         this.CH.log('messageArray', messageArray);
         return messageArray;
     }
-    setRead(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
-    {
-        this.pageJobExecuter(jobName, 'moodle', 'local_cq_api_read_announcement', {
-            iduser: this.CH.getUserId(),
-            discussionid: this.pageParams.discussion,
-        }, (data) => {
-            let result = this.CH.toJson(data);
-            this.CH.log('result', result);
-        }, moreloader, refresher, finalCallback);
-    }
     downloadAttachment(name: string, url: string): void
     {
         this.CH.loading('Downloading', (loading) => {
             const fileTransfer: FileTransferObject = this.transfer.create();
-            fileTransfer.download(url, this.file.dataDirectory + name)
+            fileTransfer.download(this.CH.config().siteurl + url, this.file.dataDirectory + name)
             .then((entry) => {
                 this.fileOpener.open(entry.toURL(), this.CH.getMimeTypeByName(name))
                 .then(() => {

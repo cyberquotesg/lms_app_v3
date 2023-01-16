@@ -59,6 +59,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     removeAccountOnLogout = false;
 
     // by rachmad
+    announcementAgent: any;
     announcementCount: number = 0;
 
     protected subscription!: Subscription;
@@ -66,7 +67,6 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     // by rachmad
     constructor(protected CH: CqHelper)
     {
-        this.announcementCount = CH.announcementCount;
     }
 
     /**
@@ -116,6 +116,16 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                 });
 
         }
+
+        // by rachmad
+        const params: any = {
+            class: "CqLib",
+            function: "ping_announcements",
+        };
+        this.CH.callApi(params).then((counting) => this.announcementCount = counting);
+        this.announcementAgent = setInterval(() => {
+            this.CH.callApi(params).then((counting) => this.announcementCount = counting);
+        }, 10 * 1000);
     }
 
     /**
@@ -276,6 +286,9 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
      */
     ngOnDestroy(): void {
         this.subscription?.unsubscribe();
+
+        // by rachmad
+        clearInterval(this.announcementAgent);
     }
 
     // by rachmad

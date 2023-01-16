@@ -31,6 +31,9 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { ModalController, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Component to display a user menu.
  */
@@ -55,7 +58,16 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     displaySwitchAccount = false;
     removeAccountOnLogout = false;
 
+    // by rachmad
+    announcementCount: number = 0;
+
     protected subscription!: Subscription;
+
+    // by rachmad
+    constructor(protected CH: CqHelper)
+    {
+        this.announcementCount = CH.announcementCount;
+    }
 
     /**
      * @inheritdoc

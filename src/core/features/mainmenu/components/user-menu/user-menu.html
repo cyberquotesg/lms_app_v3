@@ -65,8 +65,8 @@
                 <ion-label>
                     <p class="item-heading">Annoucement</p>
                 </ion-label>
-                <ion-badge slot="end" aria-hidden="true">
-                    12
+                <ion-badge *ngIf="announcementCount > 0" slot="end" aria-hidden="true">
+                    {{ announcementCount }}
                 </ion-badge>
             </ion-item>
             <!-- / by rachmad -->

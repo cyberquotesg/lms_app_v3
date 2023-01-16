@@ -17,6 +17,7 @@ import { CoreConstants } from '@/core/constants';
 export class CqHelper
 {
     notificationCount: number = 0;
+    announcementCount: number = 0;
 
 	constructor(
 	    @Inject(DOCUMENT) public document: Document,
@@ -857,6 +858,15 @@ export class CqHelper
     getNotificationCount(): number
     {
         return this.notificationCount;
+    }
+
+    setAnnouncementCount(value: number): void
+    {
+        this.announcementCount = value;
+    }
+    getAnnouncementCount(): number
+    {
+        return this.announcementCount;
     }
 
     getSite(): any

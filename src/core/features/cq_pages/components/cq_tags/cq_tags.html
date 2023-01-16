@@ -1,4 +1,4 @@
-<div class="cq-tag-wrapper">
+<div *ngIf="finalShow " class="cq-tag-wrapper">
     <ng-container *ngIf="!hideMedia">
         <ng-container *ngIf="item.media">
             <span data-id="online" *ngIf="item.media == 'online'" class="cq-tag">E-Learning</span>
@@ -29,5 +29,9 @@
     
     <ng-container *ngIf="!hideCategoryName">
         <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">Category: {{ item.categoryname || item.categoryName }}</span>
+    </ng-container>
+    
+    <ng-container *ngIf="hasTags">
+        <span data-id="tag" *ngFor="let tag of tags" class="cq-tag">{{ tag }}</span>
     </ng-container>
 </div>

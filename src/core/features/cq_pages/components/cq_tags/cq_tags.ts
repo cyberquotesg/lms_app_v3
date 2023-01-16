@@ -17,11 +17,18 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
     private hideCompulsory: boolean;
     private hideCourseType: boolean;
     private hideCategoryName: boolean;
+    private tags: string[] = [];
+    private hasTags: boolean;
+
+    private finalShow: boolean;
 
     constructor(CH: CqHelper)
     {
         super(CH);
+    }
 
+    ngOnInit(): void
+    {
         let hideList: string[];
         if (Array.isArray(this.hideList)) hideList = this.hideList;
         else hideList = this.hideList.trim().replace(/ /g, "").split(",");
@@ -31,10 +38,15 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
         this.hideCompulsory = hideList.includes("compulsory");
         this.hideCourseType = hideList.includes("courseType");
         this.hideCategoryName = hideList.includes("categoryName");
-    }
 
-    ngOnInit(): void
-    {
+        if (this.item.tags)
+        {
+            if (Array.isArray(this.item.tags)) this.tags = this.item.tags;
+            else this.tags = this.item.tags.trim().replace(/ /g, "").split(",");
+        }
+        this.hasTags = this.tags.length > 0;
+
+        this.finalShow = !this.hideMedia && !this.hideUserStatus && !this.hideCompulsory && !this.hideCourseType && !this.hideCategoryName && this.hasTags;
     }
     ngOnChanges(changes: SimpleChanges): void
     {

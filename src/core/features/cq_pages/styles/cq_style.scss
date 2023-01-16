@@ -578,7 +578,11 @@ body
 				}
 				.card-tags
 				{
-					margin-top: $component_spacing;
+					.cq-tag-wrapper
+					{
+						text-align: left;
+						margin-top: $component_spacing;
+					}
 				}
 			}
 		}
@@ -616,7 +620,10 @@ body
 				{
 					.card-tags
 					{
-						margin-top: $component_spacing_thin;
+						.cq-tag-wrapper
+						{
+							margin-top: $component_spacing_thin;
+						}
 					}
 				}
 			}

@@ -21,13 +21,13 @@ $header_height: 50px;
 $footer_height: 50px;
 $tab_height: 40px;
 
-$neumorphism_shadow: 6px 6px 12px #d1d1d1, -4px -4px 12px #ffffff;
-$neumorphism_shadow_inset: inset 6px 6px 12px #d1d1d1, inset -4px -4px 12px #ffffff;
-$normal_shadow: 0px 0px 25px -2px #d1d1d1;
-$normal_shadow_inset: inset 0px 0px 25px -2px #d1d1d1;
-$base_background_no_image: #f6f6f6;
+$neumorphism_shadow: 6px 6px 12px #cecece, -4px -4px 12px #ffffff;
+$neumorphism_shadow_inset: inset 6px 6px 12px #cecece, inset -4px -4px 12px #ffffff;
+$normal_shadow: 0px 0px 25px -2px #cecece;
+$normal_shadow_inset: inset 0px 0px 25px -2px #cecece;
+$base_background_no_image: #f2f2f2;
 $base_background: #{$base_background_no_image} url("../images/pattern/geometry.png");
-$component_background: #f6f6f6;
+$component_background: #f2f2f2;
 
 // var(--headerBackgroundColor, $cq_purple_dark)
 // warning! belum pake warna organisasi
@@ -462,7 +462,7 @@ body
 			}
 			.card-image-letter
 			{
-				font-size: 40px;
+				font-size: 32px;
 				color: white;
 			}
 			.card-image-tags
@@ -562,7 +562,6 @@ body
 			ion-card-header
 			{
 				min-height: 36px;
-				padding-top: 8px !important;
 				margin-left: 72px;
 
 				ion-card-title

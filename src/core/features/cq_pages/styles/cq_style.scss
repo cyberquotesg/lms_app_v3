@@ -729,6 +729,10 @@ body
 		}
 	}
 
+	cq_empty
+	{
+		width: 100%;
+	}
     cq_items
     {
     	width: 100%;
@@ -768,7 +772,6 @@ body
 	    	}
 	    }
     }
-
     cq_filter
     {
 	    .cq-filter-wrapper

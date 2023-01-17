@@ -1331,11 +1331,11 @@ body
 	#profile-top
 	{
 		position: relative;
-		padding-bottom: $photo_size / 2 + 10px + $component_spacing_thin + 44px;
+		padding-bottom: $photo_size / 2 + 10px;
 
 		#background
 		{
-			height: 150px;
+			height: 90px;
 			background: $base_background;
 		}
 		#content
@@ -1355,7 +1355,6 @@ body
 		    	{
 		    		width: $photo_size + 10px * 2;
 		    		height: $photo_size + 10px * 2;
-		    		margin-bottom: $component_spacing_thin;
 		    		border: 10px solid white;
 		    		border-radius: 50%;
 		    		box-shadow: $normal_shadow;

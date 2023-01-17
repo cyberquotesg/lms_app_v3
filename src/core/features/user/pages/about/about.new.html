@@ -1,0 +1,120 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start">
+            <ion-back-button [text]="'core.back' | translate"></ion-back-button>
+        </ion-buttons>
+        <ion-title>
+            <h1>{{ 'core.user.profile' | translate }}</h1>
+        </ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="limited-width">
+    <ion-refresher slot="fixed" [disabled]="!userLoaded" (ionRefresh)="refreshUser($event.target)">
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+    </ion-refresher>
+    <core-loading [hideUntil]="userLoaded">
+        <div *ngIf="user">
+            <div id="profile-top">
+                <div id="background"></div>
+                <div id="content">
+                    <div id="left-content">
+                        <core-user-avatar *ngIf="canChangeProfilePicture" [user]="user" [userId]="user.id" [linkProfile]="false" [checkOnline]="!canChangeProfilePicture" (click)="changeProfilePicture()"></core-user-avatar>
+                        <core-user-avatar *ngIf="!canChangeProfilePicture" [user]="user" [userId]="user.id" [linkProfile]="false" [checkOnline]="!canChangeProfilePicture"></core-user-avatar>
+                    </div>
+
+                    <div id="right-content">
+                        <h2>{{ user.fullname }}</h2>
+                        <div *ngIf="hasReps" class="cq-tag-wrapper pt-cst">
+                            <span *ngFor="let rep of reps" class="cq-tag">{{ rep.name }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- about -->
+            <ng-container *ngIf="hasAbout">
+                <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                    About
+                    <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                </div>
+
+                <ion-card class="">
+                    <ion-card-content>
+
+                        <div *ngIf="user.email" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="mail"></ion-icon></div>
+                            <div class="card-item-text"><a href="mailto:{{user.email}}" core-link auto-login="no" [showBrowserWarning]="false">{{ user.email }}</a></div>
+                        </div>
+
+                        <div *ngIf="formattedAddress" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="home"></ion-icon></div>
+                            <div class="card-item-text"><a [href]="encodedAddress" core-link auto-login="no" [showBrowserWarning]="false">{{ formattedAddress }}</a></div>
+                        </div>
+
+                        <div *ngIf="user.country_text" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="earth"></ion-icon></div>
+                            <div class="card-item-text">{{ user.country_text }}</div>
+                        </div>
+
+                        <div *ngIf="user.organization_text" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="business"></ion-icon></div>
+                            <div class="card-item-text">{{ user.organization_text }}</div>
+                        </div>
+
+                        <div *ngIf="user.department_text" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="people"></ion-icon></div>
+                            <div class="card-item-text">{{ user.department_text }}</div>
+                        </div>
+
+                        <div *ngIf="user.branch_text" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="share-social"></ion-icon></div>
+                            <div class="card-item-text">{{ user.branch_text }}</div>
+                        </div>
+
+                        <div *ngIf="licenseType" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="newspaper"></ion-icon></div>
+                            <div class="card-item-text">{{ licenseType }}</div>
+                        </div>
+
+                        <div *ngIf="licenseCode" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="newspaper"></ion-icon></div>
+                            <div class="card-item-text">{{ licenseCode }}</div>
+                        </div>
+
+                        <div *ngIf="interests" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="thumbs-up"></ion-icon></div>
+                            <div class="card-item-text">
+                                <div class="cq-tag-wrapper" style="margin-top: -4px;">
+                                    <span *ngFor="let interest of interests" class="cq-tag">{{ interest }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </ion-card-content>
+                </ion-card>
+            </ng-container>
+
+            <!-- description -->
+            <ng-container *ngIf="user.description">
+                <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                    {{ 'core.user.description' | translate}}
+                    <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                </div>
+
+                <ion-card class="">
+                    <ion-card-content>
+                        <p>
+                            <core-format-text [text]="user.description" contextLevel="user" [contextInstanceId]="user.id">
+                            </core-format-text>
+                        </p>
+                    </ion-card-content>
+                </ion-card>
+            </ng-container>
+        </div>
+
+        <core-empty-box *ngIf="!user || (!hasAbout && !user.description)" icon="fas-user"
+            [message]=" 'core.user.detailsnotavailable' | translate">
+        </core-empty-box>
+    </core-loading>
+</ion-content>

@@ -1327,6 +1327,66 @@ body
 	    color: #989898;
 	}
 
+	$photo_size: 100px;
+	#profile-top
+	{
+		position: relative;
+		padding-bottom: $photo_size / 2 + 10px + $component_spacing_thin + 44px;
+
+		#background
+		{
+			height: 150px;
+			background: $base_background;
+		}
+		#content
+		{
+			position: absolute;
+		    left: $component_spacing;
+		    right: $component_spacing;
+		    bottom: 0px;
+
+		    #left-content
+		    {
+		    	width: $photo_size + 10px * 2;
+		    	text-align: center;
+		    	float: left;
+
+		    	core-user-avatar
+		    	{
+		    		width: $photo_size + 10px * 2;
+		    		height: $photo_size + 10px * 2;
+		    		margin-bottom: $component_spacing_thin;
+		    		border: 10px solid white;
+		    		border-radius: 50%;
+		    		box-shadow: $normal_shadow;
+
+		    		img
+		    		{
+		    			width: #{$photo_size} !important;
+		    			height: #{$photo_size} !important;
+		    			max-width: none;
+		    			max-height: none;
+		    			margin: 0px !important;
+		    		}
+		    	}
+		    }
+		    #right-content
+		    {
+		    	position: relative;
+		    	padding-top: 60px;
+		    	padding-left: $component_spacing;
+		    	margin-left: $photo_size + 10px * 2;
+
+		    	h2
+		    	{
+		    		position: absolute;
+		    		bottom: calc(100% - 48px);
+		    		margin: 0px !important;
+		    	}
+		    }
+		}
+	}
+
 	// this is used by more than one component
 	.drawer-button
 	{

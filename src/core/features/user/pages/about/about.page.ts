@@ -35,7 +35,9 @@ import { Translate } from '@singletons';
  */
 @Component({
     selector: 'page-core-user-about',
-    templateUrl: 'about.html',
+    // by rachmad
+    templateUrl: 'about.new.html',
+    // by rachmad
     styleUrls: ['about.scss'],
 })
 export class CoreUserAboutPage implements OnInit, OnDestroy {
@@ -50,6 +52,13 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
     encodedAddress?: SafeUrl;
     canChangeProfilePicture = false;
     interests?: string[];
+
+    // by rachmad
+    reps = [];
+    hasReps: boolean = false;
+    hasAbout: boolean = false;
+    licenseType = "";
+    licenseCode = "";
 
     protected userId!: number;
     protected site!: CoreSite;
@@ -119,6 +128,36 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             this.title = user.fullname;
 
             this.user.address = CoreUserHelper.formatAddress('', user.city, user.country);
+
+            // by rachmad
+            // console.log("user", user);
+
+            if (user.customfields) user.customfields.forEach((field) => {
+                // reps
+                if (["fa", "tr", "fm"].includes(field.shortname))
+                {
+                    if (field.value == "1") this.reps.push(field);
+                }
+
+                // license
+                else if (field.shortname == "license_type")
+                {
+                    this.licenseType = field.value;
+                }
+                else if (field.shortname == "license_code")
+                {
+                    this.licenseCode = field.value;
+                }
+            });
+
+            this.hasReps = this.reps.length > 0;
+            this.hasAbout = !!(
+                user.email || formattedAddress ||
+                user.country_text || user.organization_text || user.department_text || user.branch_text ||
+                this.licenseType || this.licenseCode ||
+                this.interests
+            );
+            // by rachmad
 
             await this.checkUserImageUpdated();
         } catch (error) {

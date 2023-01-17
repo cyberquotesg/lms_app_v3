@@ -7,7 +7,10 @@
         </ion-title>
         <ion-buttons slot="end">
             <ion-button fill="clear" (click)="close($event)" [attr.aria-label]="'core.close' | translate">
-                <ion-icon name="fas-times" slot="icon-only" aria-hidden="true"></ion-icon>
+                <!-- by rachmad -->
+                <!-- <ion-icon name="fas-times" slot="icon-only" aria-hidden="true"></ion-icon> -->
+                <ion-icon name="close" slot="icon-only" aria-hidden="true"></ion-icon>
+                <!-- / by rachmad -->
             </ion-button>
         </ion-buttons>
     </ion-toolbar>
@@ -25,7 +28,9 @@
                         <core-format-text [text]="siteName" contextLevel="system" [contextInstanceId]="0" [wsNotFiltered]="true">
                         </core-format-text>
                     </p>
-                    <a [href]="siteUrl" core-link auto-login="yes" class="core-usermenu-siteurl">{{ siteUrl }}</a>
+                    <!-- by rachmad -->
+                    <!-- <a [href]="siteUrl" core-link auto-login="yes" class="core-usermenu-siteurl">{{ siteUrl }}</a> -->
+                    <!-- / by rachmad -->
                 </ion-label>
             </ion-item>
             <ion-item button class="core-usermenu-handler ion-text-wrap" *ngIf="siteInfo" lines="full" (click)="openUserProfile($event)"

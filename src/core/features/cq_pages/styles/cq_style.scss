@@ -361,6 +361,24 @@ body
 	    	    	position: relative;
 	    	    	z-index: 2;
 	    	    }
+
+	    	    ion-buttons
+	    	    {
+	    	    	ion-button
+	    	    	{
+	    	    		background: transparent !important;
+
+		    			&::part(native)
+		    			{
+		    	    		background: transparent !important;
+		    			}
+		    			ion-icon
+		    			{
+		    				color: white;
+		    				font-size: 25px !important;
+		    			}
+	    	    	}
+	    	    }
 			}
 		}
 		ion-content
@@ -397,6 +415,14 @@ body
 		ion-footer
 		{
 		    background: $base_background_no_image;
+
+		    ion-button
+		    {
+		    	ion-icon
+		    	{
+		    		color: white;
+		    	}
+		    }
 		}
 	}
 	ion-tab-bar
@@ -1181,6 +1207,7 @@ body
 			}
         }
 	}
+
 	ion-title
 	{
 		margin-left: 44px;
@@ -1189,18 +1216,33 @@ body
 		*
 		{
 			text-align: center !important;
+			font-size: 17px;
+			color: white;
+			opacity: 1 !important;
+		}
+	}
+	cq_header
+	{
+		ion-title
+		{
+			*
+			{
+			}
 		}
 	}
 	cq_dashboard
 	{
-		ion-title
+		cq_header
 		{
-			margin-left: 0px;
-			text-align: left !important;
-
-			*
+			ion-title
 			{
+				margin-left: 0px;
 				text-align: left !important;
+
+				*
+				{
+					text-align: left !important;
+				}
 			}
 		}
 	}

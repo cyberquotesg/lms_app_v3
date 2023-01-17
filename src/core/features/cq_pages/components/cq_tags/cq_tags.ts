@@ -46,7 +46,7 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
         }
         this.hasTags = this.tags.length > 0;
 
-        this.finalShow = !this.hideMedia && !this.hideUserStatus && !this.hideCompulsory && !this.hideCourseType && !this.hideCategoryName && this.hasTags;
+        this.finalShow = !this.hideMedia || !this.hideUserStatus || !this.hideCompulsory || !this.hideCourseType || !this.hideCategoryName || this.hasTags;
     }
     ngOnChanges(changes: SimpleChanges): void
     {

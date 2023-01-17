@@ -103,7 +103,16 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                     }
 
                     const newHandlers = handlers
-                        .filter((handler) => handler.type === CoreUserDelegateService.TYPE_NEW_PAGE)
+                        // by rachmad
+                        // .filter((handler) => handler.type === CoreUserDelegateService.TYPE_NEW_PAGE)
+                        .filter((handler) => {
+                            return handler.type === CoreUserDelegateService.TYPE_NEW_PAGE && (
+                                handler.name.indexOf("CoreGrades") > -1
+                                ||
+                                handler.name.indexOf("AddonBadges") > -1
+                            )
+                        })
+                        // by rachmad
                         .map((handler) => handler.data);
 
                     // Only update handlers if they have changed, to prevent a blink effect.

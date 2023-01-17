@@ -18,8 +18,8 @@
                 </div>
 
                 <ion-card-header>
-                    <ion-card-title class="text-center">{{ pageData.announcement.subject }}</ion-card-title>
-                    <div *ngIf="pageData.announcement.userFullname" style="font-size: 13px; text-align: center; margin-top: 5px;">by {{ pageData.announcement.userFullname }}</div>
+                    <ion-card-title class="text-center" style="height: auto;">{{ pageData.announcement.subject }}</ion-card-title>
+                    <div *ngIf="pageData.announcement.userFullname" class="text-center mt-8">by {{ pageData.announcement.userFullname }}</div>
                 </ion-card-header>
 
                 <ion-card-content>

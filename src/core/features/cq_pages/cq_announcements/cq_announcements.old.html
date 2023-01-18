@@ -40,7 +40,13 @@
                             [wsNotFiltered]="true">
                         </core-format-text>
                     </div>
-                    <div style="margin-left: 50px;" class="pl-cst">{{ announcement.subTitle }} <span *ngIf="announcement.userFullname">by {{ announcement.userFullname }}</span></div>
+                    <div style="margin-left: 50px;" class="pl-cst">
+                        {{ announcement.subTitle }} <span *ngIf="announcement.userFullname">by {{ announcement.userFullname }}</span>
+
+                        <div *ngIf="!announcement.read" class="cq-tag-wrapper mt-4">
+                            <span class="cq-tag">New</span>
+                        </div>
+                    </div>
                 </div>
             </ion-item>
         </ng-container>

@@ -132,6 +132,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             // by rachmad
             // console.log("user", user);
 
+            this.reps = [];
             if (user.customfields) user.customfields.forEach((field) => {
                 // reps
                 if (["fa", "tr", "fm"].includes(field.shortname))

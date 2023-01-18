@@ -26,12 +26,9 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     {
         if (this.displayNotification)
         {
-            this.notificationCount = this.shortenNotificationCount(this.CH.getNotificationCount());
-            
-            // warning! events sudah ga ada, terus gimana cara barunya?
-            // this.events.subscribe('newNotificationCount', (notificationCount) => {
-            //   this.notificationCount = this.shortenNotificationCount(notificationCount);
-            // });
+            this.CH.getNotificationCount((value) => {
+                this.notificationCount = this.shortenNotificationCount(value);
+            });
         }
     }
     ngOnChanges(changes: SimpleChanges): void
@@ -44,6 +41,7 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
         {
             // warning! events sudah ga ada, terus gimana cara barunya?
             // this.events.unsubscribe('newNotificationCount');
+            // no need to unsubscribe in the new app because notification count is displayed on component that always be displayed
         }
     }
 

@@ -59,7 +59,6 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     removeAccountOnLogout = false;
 
     // by rachmad
-    announcementAgent: any;
     announcementCount: number = 0;
 
     protected subscription!: Subscription;
@@ -67,6 +66,9 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     // by rachmad
     constructor(protected CH: CqHelper)
     {
+        this.CH.getAnnouncementCount((value) => {
+            this.announcementCount = value;
+        });
     }
 
     /**
@@ -106,7 +108,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                         // by rachmad
                         // .filter((handler) => handler.type === CoreUserDelegateService.TYPE_NEW_PAGE)
                         .filter((handler) => {
-                            return handler.type === CoreUserDelegateService.TYPE_NEW_PAGE && (
+                            return handler.type === CoreUserDelegateService.TYPE_NEW_PAGE && handler.name && (
                                 handler.name.indexOf("CoreGrades") > -1
                                 ||
                                 handler.name.indexOf("AddonBadges") > -1
@@ -125,16 +127,6 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                 });
 
         }
-
-        // by rachmad
-        const params: any = {
-            class: "CqLib",
-            function: "ping_announcements",
-        };
-        this.CH.callApi(params).then((counting) => this.announcementCount = counting);
-        this.announcementAgent = setInterval(() => {
-            this.CH.callApi(params).then((counting) => this.announcementCount = counting);
-        }, 10 * 1000);
     }
 
     /**
@@ -295,9 +287,6 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
      */
     ngOnDestroy(): void {
         this.subscription?.unsubscribe();
-
-        // by rachmad
-        clearInterval(this.announcementAgent);
     }
 
     // by rachmad

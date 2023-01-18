@@ -12,12 +12,13 @@ import { CoreDomUtilsProvider } from '@services/utils/dom';
 import { CoreUtilsProvider } from '@services/utils/utils';
 import { CoreSiteBasicInfo, CoreSites } from '@services/sites';
 import { CoreConstants } from '@/core/constants';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class CqHelper
 {
-    notificationCount: number = 0;
-    announcementCount: number = 0;
+    notificationCount: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+    announcementCount: BehaviorSubject<number> = new BehaviorSubject<number>(0);
 
 	constructor(
 	    @Inject(DOCUMENT) public document: Document,
@@ -853,20 +854,20 @@ export class CqHelper
 
     setNotificationCount(value: number): void
     {
-        this.notificationCount = value;
+        this.notificationCount.next(value);
     }
-    getNotificationCount(): number
+    getNotificationCount(callback): void
     {
-        return this.notificationCount;
+    	this.notificationCount.asObservable().subscribe(callback);
     }
 
     setAnnouncementCount(value: number): void
     {
-        this.announcementCount = value;
+        this.announcementCount.next(value);
     }
-    getAnnouncementCount(): number
+    getAnnouncementCount(callback): void
     {
-        return this.announcementCount;
+    	this.announcementCount.asObservable().subscribe(callback);
     }
 
     getSite(): any

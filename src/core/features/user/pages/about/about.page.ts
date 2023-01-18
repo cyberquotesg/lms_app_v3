@@ -54,7 +54,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
     interests?: string[];
 
     // by rachmad
-    reps = [];
+    reps: any[] = [];
     hasReps: boolean = false;
     hasAbout: boolean = false;
     licenseType = "";
@@ -130,8 +130,6 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             this.user.address = CoreUserHelper.formatAddress('', user.city, user.country);
 
             // by rachmad
-            // console.log("user", user);
-
             this.reps = [];
             if (user.customfields) user.customfields.forEach((field) => {
                 // reps
@@ -151,10 +149,11 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
                 }
             });
 
+            let clonedUser = JSON.parse(JSON.stringify(user));
             this.hasReps = this.reps.length > 0;
             this.hasAbout = !!(
-                user.email || formattedAddress ||
-                user.country_text || user.organization_text || user.department_text || user.branch_text ||
+                clonedUser.email || this.formattedAddress ||
+                clonedUser.country_text || clonedUser.organization_text || clonedUser.departmentid_text || clonedUser.branch_text ||
                 this.licenseType || this.licenseCode ||
                 this.interests
             );

@@ -35,6 +35,9 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreDom } from '@singletons/dom';
 import { CorePlatform } from '@services/platform';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 const MOODLE_VERSION_PREFIX = 'version-';
 const MOODLEAPP_VERSION_PREFIX = 'moodleapp-';
 
@@ -47,6 +50,11 @@ export class AppComponent implements OnInit, AfterViewInit {
     @ViewChild(IonRouterOutlet) outlet?: IonRouterOutlet;
 
     protected lastInAppUrl?: string;
+
+    // by rachmad
+    constructor(protected CH: CqHelper)
+    {
+    }
 
     /**
      * Component being initialized.
@@ -231,6 +239,16 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         // @todo: Pause Youtube videos in Android when app is put in background or screen is locked?
         // See: https://github.com/moodlehq/moodleapp/blob/ionic3/src/app/app.component.ts#L312
+
+        // by rachmad
+        const params: any = {
+            class: "CqLib",
+            function: "ping_announcements",
+        };
+        this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
+        setInterval(() => {
+            this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
+        }, 10 * 1000);
     }
 
     /**

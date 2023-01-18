@@ -4,7 +4,7 @@
 </core-user-avatar>
 
 <!-- by rachmad -->
-<ion-badge *ngIf="avatarCounter" slot="end" aria-hidden="true" style="position: absolute; top: 4px; right: 0px; pointer-events: none;">
+<ion-badge *ngIf="(alwaysShow || isMainScreen) && siteInfo && avatarCounter != 0" slot="end" aria-hidden="true" style="position: absolute; top: 4px; right: 0px; pointer-events: none;">
     {{ avatarCounter }}
 </ion-badge>
 <!-- by rachmad -->

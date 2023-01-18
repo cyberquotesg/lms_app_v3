@@ -12,14 +12,13 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() item: any = {};
     @Input() hideList: string | string[] = "";
 
-    private hideMedia: boolean;
-    private hideUserStatus: boolean;
-    private hideCompulsory: boolean;
-    private hideCourseType: boolean;
-    private hideCategoryName: boolean;
+    private showMedia: boolean;
+    private showUserStatus: boolean;
+    private showCompulsory: boolean;
+    private showCourseType: boolean;
+    private showCategoryName: boolean;
     private tags: string[] = [];
-    private hasTags: boolean;
-
+    private showTags: boolean;
     private finalShow: boolean;
 
     constructor(CH: CqHelper)
@@ -33,20 +32,20 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
         if (Array.isArray(this.hideList)) hideList = this.hideList;
         else hideList = this.hideList.trim().replace(/ /g, "").split(",");
 
-        this.hideMedia = hideList.includes("media");
-        this.hideUserStatus = hideList.includes("userStatus");
-        this.hideCompulsory = hideList.includes("compulsory");
-        this.hideCourseType = hideList.includes("courseType");
-        this.hideCategoryName = hideList.includes("categoryName");
-
-        if (this.item.tags)
+        let item = this.item;
+        this.showMedia = !hideList.includes("media") && typeof item.media != "undefined";
+        this.showUserStatus = !hideList.includes("userStatus") && typeof item.isUserEnrolled != "undefined" && typeof item.isUserFinished != "undefined" && typeof item.isUserAccredited != "undefined";
+        this.showCompulsory = !hideList.includes("compulsory") && (item.compulsory === true || item.compulsory === 1 || item.compulsory === '1');
+        this.showCourseType = !hideList.includes("courseType") && (item.typeText || item.finalCourseTypeText || item.courseTypeText);
+        this.showCategoryName = !hideList.includes("categoryName") && (item.categoryname || item.categoryName);
+        if (item.tags)
         {
-            if (Array.isArray(this.item.tags)) this.tags = this.item.tags;
-            else this.tags = this.item.tags.trim().replace(/ /g, "").split(",");
+            if (Array.isArray(item.tags)) this.tags = item.tags;
+            else this.tags = item.tags.trim().replace(/ /g, "").split(",");
         }
-        this.hasTags = this.tags.length > 0;
+        this.showTags = this.tags.length > 0;
 
-        this.finalShow = !this.hideMedia || !this.hideUserStatus || !this.hideCompulsory || !this.hideCourseType || !this.hideCategoryName || this.hasTags;
+        this.finalShow = this.showMedia || this.showUserStatus || this.showCompulsory || this.showCourseType || this.showCategoryName || this.showTags;
     }
     ngOnChanges(changes: SimpleChanges): void
     {

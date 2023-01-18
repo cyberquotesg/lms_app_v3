@@ -1,12 +1,10 @@
 <div *ngIf="finalShow " class="cq-tag-wrapper">
-    <ng-container *ngIf="!hideMedia">
-        <ng-container *ngIf="item.media">
-            <span data-id="online" *ngIf="item.media == 'online'" class="cq-tag">E-Learning</span>
-            <span data-id="offline" *ngIf="item.media == 'offline'" class="cq-tag">Classroom Training</span>
-        </ng-container>
+    <ng-container *ngIf="showMedia">
+        <span data-id="online" *ngIf="item.media == 'online'" class="cq-tag">E-Learning</span>
+        <span data-id="offline" *ngIf="item.media == 'offline'" class="cq-tag">Classroom Training</span>
     </ng-container>
 
-    <ng-container *ngIf="!hideUserStatus">
+    <ng-container *ngIf="showUserStatus">
         <span *ngIf="item.isUserEnrolled && !item.isUserFinished && !item.isUserAccredited" class="cq-tag green">
             <span>Enrolled</span>
         </span>
@@ -19,19 +17,19 @@
         </span>
     </ng-container>
 
-    <ng-container *ngIf="!hideCompulsory">
+    <ng-container *ngIf="showCompulsory">
         <span data-id="compulsory" *ngIf="item.compulsory === true || item.compulsory === 1 || item.compulsory === '1'" class="cq-tag orange">Compulsory</span>
     </ng-container>
     
-    <ng-container *ngIf="!hideCourseType">
+    <ng-container *ngIf="showCourseType">
         <span data-id="courseTypeText" *ngIf="item.typeText || item.finalCourseTypeText || item.courseTypeText" class="cq-tag dark-grey">Type: {{ item.typeText || item.finalCourseTypeText || item.courseTypeText }}</span>
     </ng-container>
     
-    <ng-container *ngIf="!hideCategoryName">
+    <ng-container *ngIf="showCategoryName">
         <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">Category: {{ item.categoryname || item.categoryName }}</span>
     </ng-container>
     
-    <ng-container *ngIf="hasTags">
+    <ng-container *ngIf="showTags">
         <span data-id="tag" *ngFor="let tag of tags" class="cq-tag">{{ tag }}</span>
     </ng-container>
 </div>

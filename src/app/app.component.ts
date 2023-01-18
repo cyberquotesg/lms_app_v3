@@ -18,6 +18,7 @@ import { BackButtonEvent, ScrollDetail } from '@ionic/core';
 
 import { CoreLang } from '@services/lang';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
+import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
 import { CoreEvents } from '@singletons/events';
 import { NgZone, SplashScreen, Translate } from '@singletons';
 import { CoreNetwork } from '@services/network';
@@ -52,6 +53,10 @@ export class AppComponent implements OnInit, AfterViewInit {
     protected lastInAppUrl?: string;
 
     // by rachmad
+    notificationCountAgent: any;
+    announcementCountAgent: any;
+
+    // by rachmad
     constructor(protected CH: CqHelper)
     {
     }
@@ -79,6 +84,9 @@ export class AppComponent implements OnInit, AfterViewInit {
                 // Temporary fix. Reload the page to unload all plugins.
                 window.location.reload();
             }
+
+            clearInterval(this.notificationCountAgent);
+            clearInterval(this.announcementCountAgent);
         });
 
         // Listen to scroll to add style when scroll is not 0.
@@ -185,6 +193,21 @@ export class AppComponent implements OnInit, AfterViewInit {
             }
 
             this.loadCustomStrings();
+
+            // by rachmad
+            clearInterval(this.notificationCountAgent);
+            clearInterval(this.announcementCountAgent);
+
+            CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+            this.notificationCountAgent = setInterval(() => {
+                CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+            }, 10 * 1000);
+
+            const params: any = { class: "CqLib", function: "ping_announcements" };
+            this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
+            this.announcementCountAgent = setInterval(() => {
+                this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
+            }, 10 * 1000);
         });
 
         CoreEvents.on(CoreEvents.SITE_UPDATED, (data) => {
@@ -240,15 +263,19 @@ export class AppComponent implements OnInit, AfterViewInit {
         // @todo: Pause Youtube videos in Android when app is put in background or screen is locked?
         // See: https://github.com/moodlehq/moodleapp/blob/ionic3/src/app/app.component.ts#L312
 
-        // by rachmad
-        const params: any = {
-            class: "CqLib",
-            function: "ping_announcements",
-        };
-        this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-        setInterval(() => {
+        if (!CoreLoginHelper.isSiteLoggedOut())
+        {
+            CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+            this.notificationCountAgent = setInterval(() => {
+                CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+            }, 10 * 1000);
+
+            const params: any = { class: "CqLib", function: "ping_announcements" };
             this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-        }, 10 * 1000);
+            this.announcementCountAgent = setInterval(() => {
+                this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
+            }, 10 * 1000);
+        }
     }
 
     /**

@@ -13,7 +13,7 @@ import { File } from '@ionic-native/file/ngx';
 
 @Component({
     selector: 'cq_announcement',
-    templateUrl: './cq_announcement.html',
+    templateUrl: './cq_announcement.old.html',
 })
 export class CqAnnouncement extends CqPage implements OnInit
 {

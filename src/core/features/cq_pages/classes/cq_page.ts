@@ -1,3 +1,4 @@
+import { Renderer2 } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CqGeneral } from './cq_general';
@@ -38,7 +39,7 @@ export class CqPage extends CqGeneral
     cqCountry: any;
     cqOrganization: any;
 
-    constructor(CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper)
     {
         super(CH);
     }

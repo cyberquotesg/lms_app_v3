@@ -15,7 +15,7 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     @Input() displayUserMenu: boolean = false;
     @Input() displayProgress: boolean = false;
 
-    notificationCount = 0;
+    notificationCount = "0";
 
     constructor(CH: CqHelper)
     {

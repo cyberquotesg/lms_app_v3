@@ -69,7 +69,7 @@ export class AppComponent implements OnInit, AfterViewInit {
      */
     ngOnInit(): void {
         // by rachmad
-        if (this.CH.isLoggedIn) this.ifLoggedIn();
+        if (this.CH.isLoggedIn()) this.ifLoggedIn();
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = <any> window;
@@ -350,8 +350,8 @@ export class AppComponent implements OnInit, AfterViewInit {
         clearInterval(this.notificationCountAgent);
         clearInterval(this.announcementCountAgent);
 
-        this.renderer.removeClass(this.CL.getBody(), 'logged-in');
-        this.renderer.setProperty(this.CL.getBody(), 'style', '');
+        this.renderer.removeClass(this.CH.getBody(), 'logged-in');
+        this.renderer.setProperty(this.CH.getBody(), 'style', '');
     }
 
     /**

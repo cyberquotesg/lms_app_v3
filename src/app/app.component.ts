@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+// by rachmad
+// import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, Renderer2 } from '@angular/core';
+
 import { IonRouterOutlet } from '@ionic/angular';
 import { BackButtonEvent, ScrollDetail } from '@ionic/core';
 
@@ -57,7 +60,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     announcementCountAgent: any;
 
     // by rachmad
-    constructor(protected CH: CqHelper)
+    constructor(protected renderer: Renderer2, protected CH: CqHelper)
     {
     }
 
@@ -65,6 +68,9 @@ export class AppComponent implements OnInit, AfterViewInit {
      * Component being initialized.
      */
     ngOnInit(): void {
+        // by rachmad
+        if (this.CH.isLoggedIn) this.ifLoggedIn();
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = <any> window;
         CoreDomUtils.toggleModeClass('ionic5', true);
@@ -85,8 +91,8 @@ export class AppComponent implements OnInit, AfterViewInit {
                 window.location.reload();
             }
 
-            clearInterval(this.notificationCountAgent);
-            clearInterval(this.announcementCountAgent);
+            // by rachmad
+            this.ifLoggedOut();
         });
 
         // Listen to scroll to add style when scroll is not 0.
@@ -195,19 +201,8 @@ export class AppComponent implements OnInit, AfterViewInit {
             this.loadCustomStrings();
 
             // by rachmad
-            clearInterval(this.notificationCountAgent);
-            clearInterval(this.announcementCountAgent);
-
-            CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
-            this.notificationCountAgent = setInterval(() => {
-                CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
-            }, 10 * 1000);
-
-            const params: any = { class: "CqLib", function: "ping_announcements" };
-            this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-            this.announcementCountAgent = setInterval(() => {
-                this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-            }, 10 * 1000);
+            this.ifLoggedOut();
+            this.ifLoggedIn();
         });
 
         CoreEvents.on(CoreEvents.SITE_UPDATED, (data) => {
@@ -262,20 +257,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         // @todo: Pause Youtube videos in Android when app is put in background or screen is locked?
         // See: https://github.com/moodlehq/moodleapp/blob/ionic3/src/app/app.component.ts#L312
-
-        if (!CoreLoginHelper.isSiteLoggedOut())
-        {
-            CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
-            this.notificationCountAgent = setInterval(() => {
-                CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
-            }, 10 * 1000);
-
-            const params: any = { class: "CqLib", function: "ping_announcements" };
-            this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-            this.announcementCountAgent = setInterval(() => {
-                this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-            }, 10 * 1000);
-        }
     }
 
     /**
@@ -287,6 +268,90 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
 
         CoreSubscriptions.once(this.outlet.activateEvents, () => SplashScreen.hide());
+    }
+
+    ifLoggedIn(): void {
+        CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+        this.notificationCountAgent = setInterval(() => {
+            CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+        }, 10 * 1000);
+
+        const params: any = { class: "CqLib", function: "ping_announcements" };
+        this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
+        this.announcementCountAgent = setInterval(() => {
+            this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
+        }, 10 * 1000);
+
+        const institutionParams: any = {
+            calls: {
+                country: {
+                    class: "CqInstitutionLib",
+                    function: "get_country_by_user",
+                },
+                organization: {
+                    class: "CqInstitutionLib",
+                    function: "get_organization_by_user",
+                },
+            },
+        };
+        this.CH.callApi(institutionParams).then((data) => {
+            let allData = this.CH.toJson(data);
+            this.CH.log("country data", allData.country);
+            this.CH.log("organization data", allData.organization);
+
+            let country = allData.country ? JSON.stringify(allData.country) : "{}";
+            let organization = allData.organization ? JSON.stringify(allData.organization) : "{}";
+
+            localStorage.setItem('cqCountry', country);
+            localStorage.setItem('cqOrganization', organization);
+
+            // Set cssVars
+            if (allData.organization)
+            {
+                const properties = [
+                    'headerBackgroundColor',
+                    'headerTextColor',
+                    'footerBackgroundColor',
+                    'footerTextColor',
+                    'menuBackgroundColor',
+                    'menuTextColor',
+                    'selectedMenuBackgroundColor',
+                    'selectedMenuTextColor',
+                    'selectedMenuHoverBackgroundColor',
+                    'selectedMenuHoverTextColor',
+                    'buttonColor',
+                    'buttonBorderColor',
+                    'buttonTextColor',
+                    'buttonHoverColor',
+                    'buttonHoverBorderColor',
+                    'buttonHoverTextColor',
+                    'mobileBackgroundColor',
+                    'mobileBackgroundImage',
+                ];
+                let cssVars: string[] = [];
+                properties.forEach((property) => {
+                    if (this.CH.isEmpty(allData.organization[property]) || allData.organization[property] == 'null') return;
+
+                    let cssVar = '';
+
+                    if (property != 'mobileBackgroundImage') cssVar = '--' + property + ': #' + allData.organization[property];
+                    else cssVar = '--' + property + ': url(\'/assets/img/background/' + allData.organization[property] + '\')';
+
+                    // this.log('cssVar', cssVar);
+                    cssVars.push(cssVar);
+                });
+
+                this.renderer.addClass(this.CH.getBody(), 'logged-in');
+                this.renderer.setProperty(this.CH.getBody(), 'style', cssVars.join(';'));
+            }
+        });
+    }
+    ifLoggedOut(): void {
+        clearInterval(this.notificationCountAgent);
+        clearInterval(this.announcementCountAgent);
+
+        this.renderer.removeClass(this.CL.getBody(), 'logged-in');
+        this.renderer.setProperty(this.CL.getBody(), 'style', '');
     }
 
     /**

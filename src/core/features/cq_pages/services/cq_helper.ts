@@ -922,68 +922,6 @@ export class CqHelper
         return this.document.body;
     }
 
-    getCountryOrganizationData(): any
-    {
-        const tempC = localStorage.getItem('cqCountry');
-        const tempO = localStorage.getItem('cqOrganization');
-        const cssVars: string[] = [];
-
-        if (tempC == null || tempO == null)
-        {
-            return {
-                result: false,
-                cqCountry: tempC != null,
-                cqOrganization: tempO != null,
-                cssVars,
-            };
-        }
-        else
-        {
-            const cqCountry = JSON.parse(tempC);
-            const cqOrganization = JSON.parse(tempO);
-
-            // Set cssVars
-            const properties = [
-                'headerBackgroundColor',
-                'headerTextColor',
-                'footerBackgroundColor',
-                'footerTextColor',
-                'menuBackgroundColor',
-                'menuTextColor',
-                'selectedMenuBackgroundColor',
-                'selectedMenuTextColor',
-                'selectedMenuHoverBackgroundColor',
-                'selectedMenuHoverTextColor',
-                'buttonColor',
-                'buttonBorderColor',
-                'buttonTextColor',
-                'buttonHoverColor',
-                'buttonHoverBorderColor',
-                'buttonHoverTextColor',
-                'mobileBackgroundColor',
-                'mobileBackgroundImage',
-            ];
-            properties.forEach((property) => {
-                if (this.isEmpty(cqOrganization[property]) || cqOrganization[property] == 'null') return;
-
-                let cssVar = '';
-
-                if (property != 'mobileBackgroundImage') cssVar = '--' + property + ': #' + cqOrganization[property];
-                else cssVar = '--' + property + ': url(\'/assets/img/background/' + cqOrganization[property] + '\')';
-
-                // this.log('cssVar', cssVar);
-                cssVars.push(cssVar);
-            });
-
-            return {
-                result: true,
-                cqCountry: cqCountry,
-                cqOrganization: cqOrganization,
-                cssVars,
-            };
-        }
-    }
-
     sortCoursesByStartDateTime(courses: any[]): any[]
     {
         courses.sort((c1, c2) => {

@@ -1,4 +1,3 @@
-import { Renderer2 } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CqGeneral } from './cq_general';
@@ -39,24 +38,15 @@ export class CqPage extends CqGeneral
     cqCountry: any;
     cqOrganization: any;
 
-    constructor(public renderer: Renderer2, CH: CqHelper)
+    constructor(CH: CqHelper)
     {
         super(CH);
     }
 
     usuallyOnInit(beforePageLoad?: any): void
     {
-        const isLoggedIn = this.CH.isLoggedIn();
-        // const data = this.CH.getCountryOrganizationData();
-
-        // if (isLoggedIn && data.result)
-        if (isLoggedIn)
+        if (this.CH.isLoggedIn())
         {
-            // this.cqCountry = data.cqCountry;
-            // this.cqOrganization = data.cqOrganization;
-            this.renderer.addClass(this.CH.getBody(), 'logged-in');
-            // this.renderer.setProperty(this.CH.getBody(), 'style', data.cssVars.join(';'));
-
             this.consumePageParams();
             this.consumePageDefault();
             if (typeof beforePageLoad == "function") beforePageLoad();

@@ -1569,18 +1569,6 @@ body
         border: 20px solid $base_background_no_image;
         box-shadow: $neumorphism_shadow;
 
-        /* masking */
-        &:after
-        {
-        	content: "";
-        	position: absolute;
-        	left: 0px;
-        	top: 0px;
-        	right: 0px;
-        	bottom: 0px;
-        	background-image: linear-gradient(135deg, #fff3, #0000);
-        }
-
         &.plain
         {
         	background: #c0c0c0 !important;

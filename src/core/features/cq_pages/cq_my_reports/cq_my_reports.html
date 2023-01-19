@@ -68,15 +68,13 @@
 
                                     <small *ngIf="courseType.includetocpdhours != 1" style="display: block;">Excluded from CPD Hours</small>
 
-                                    <div style="background: purple;height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                                    <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
                                 </div>
                         
-                                <!-- warning! masih pake warna purle -->
                                 <ion-card *ngFor="let course of pageData[availableYear].perCourseType[courseType.jsIdentifier].courses" class="button pl-cs pt-cs pr-cs pb-cs" (click)="openCourse(course)">
                                     <ion-card-content>
                                         <div class="card-single-list has-left">
                                             <div class="csl-left">
-                                                <!-- warning! masih belum pakai beautiful number -->
                                                 <span class="dot small d-block elevation-1 {{ !course.isUserAccredited || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
                                             </div>
                                             <div class="csl-center text-left">

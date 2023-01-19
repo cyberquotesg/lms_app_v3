@@ -39,9 +39,8 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     {
         if (this.displayNotification)
         {
-            // warning! events sudah ga ada, terus gimana cara barunya?
-            // this.events.unsubscribe('newNotificationCount');
             // no need to unsubscribe in the new app because notification count is displayed on component that always be displayed
+            // this.events.unsubscribe('newNotificationCount');
         }
     }
 

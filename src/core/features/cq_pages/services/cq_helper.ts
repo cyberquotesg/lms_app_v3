@@ -917,11 +917,6 @@ export class CqHelper
     {
     	return CoreSites.logout();
     }
-    // warning! deprecated
-    getSites(): Promise<CoreSiteBasicInfo[]>
-    {
-        return CoreSites.getSites();
-    }
 
     getSiteId(): string
     {

@@ -41,6 +41,7 @@ import { CorePlatform } from '@services/platform';
 
 // by rachmad
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { Zoom } from '@awesome-cordova-plugins/zoom';
 import Color from 'color';
 
 const MOODLE_VERSION_PREFIX = 'version-';
@@ -63,6 +64,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     // by rachmad
     constructor(protected renderer: Renderer2, protected CH: CqHelper)
     {
+        this.CH.zoom = Zoom;
     }
 
     /**
@@ -362,6 +364,16 @@ export class AppComponent implements OnInit, AfterViewInit {
                 this.renderer.setProperty(this.CH.getBody(), 'style', cssVars.join(';'));
             }
         });
+
+        // zoom
+        const zoomKeysParams = {
+            class: "",
+            function: "",
+        };
+        this.CH.callApi(institutionParams).then((data) => {
+            let jsonData = this.CH.toJson(data);
+            if (jsonData.result) this.CH.initiateZoom(jsonData.apiKey, jsonData.apiSecret);
+        });
     }
     ifLoggedOut(): void {
         clearInterval(this.notificationCountAgent);
@@ -369,6 +381,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         this.renderer.removeClass(this.CH.getBody(), 'logged-in');
         this.renderer.setProperty(this.CH.getBody(), 'style', '');
+
+        this.CH.zoomInitiated = false;
     }
 
     /**

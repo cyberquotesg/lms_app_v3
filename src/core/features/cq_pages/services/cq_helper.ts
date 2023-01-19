@@ -19,6 +19,8 @@ export class CqHelper
 {
     notificationCount: BehaviorSubject<number> = new BehaviorSubject<number>(0);
     announcementCount: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+    zoom: any;
+    zoomInitiated: boolean = false;
 
 	constructor(
 	    @Inject(DOCUMENT) public document: Document,
@@ -968,5 +970,18 @@ export class CqHelper
         });
         
         return courses;
+    }
+
+    initiateZoom(apiKey: string, apiSecret: string, callback?: any): void
+    {
+    	this.zoom.initialize(apiKey, apiSecret)
+    	.then((success: any) => {
+    	    this.zoomInitiated = true;
+    	    if (callback) callback();
+    	})
+    	.catch((error: any) => {
+    	    this.zoomInitiated = false;
+    	    this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection.");
+    	});
     }
 }

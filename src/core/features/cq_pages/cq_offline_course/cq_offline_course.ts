@@ -277,4 +277,44 @@ export class CqOfflineCourse extends CqPage implements OnInit
         this.CH.log('having data', data);
         this.showChecklogBanner(data);
     }
+
+    async joinMeetingZoom(meetingNumber, meetingPassword): void {
+        let userFullname = await this.CH.getUser().getUserFullNameWithDefault();
+
+        if (this.CH.zoomInitiated) this.joinMeetingZoomEngine(meetingNumber, meetingPassword);
+        else
+        {
+            const zoomKeysParams = {
+                class: "",
+                function: "",
+            };
+            this.CH.callApi(institutionParams).then((data) => {
+                let jsonData = this.CH.toJson(data);
+                if (jsonData.result) this.CH.initiateZoom(jsonData.apiKey, jsonData.apiSecret, () => {
+                    this.joinMeetingZoomEngine(meetingNumber, meetingPassword);
+                });
+            });
+        }
+    }
+    joinMeetingZoomEngine(meetingNumber, meetingPassword): void {
+        this.CH.zoom.joinMeeting(meetingNumber, meetingPassword, userFullname, {
+            "no_driving_mode":true,
+            "no_invite":true,
+            "no_meeting_end_message":true,
+            "no_titlebar":false,
+            "no_bottom_toolbar":false,
+            "no_dial_in_via_phone":true,
+            "no_dial_out_to_phone":true,
+            "no_disconnect_audio":true,
+            "no_share":true,
+            "no_audio":true,
+            "no_video":true,
+            "no_meeting_error_message":true
+        })
+        .then((success: any) => {
+        })
+        .catch((error: any) => {
+            this.CH.alert("Oops!", "Cannot start Zoom meeting, please check your internet connection or contact your course administrator.");
+        });
+    }
 }

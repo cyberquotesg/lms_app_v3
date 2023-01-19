@@ -41,6 +41,7 @@ import { CorePlatform } from '@services/platform';
 
 // by rachmad
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import Color from 'color';
 
 const MOODLE_VERSION_PREFIX = 'version-';
 const MOODLEAPP_VERSION_PREFIX = 'moodleapp-';
@@ -334,8 +335,24 @@ export class AppComponent implements OnInit, AfterViewInit {
 
                     let cssVar = '';
 
-                    if (property != 'mobileBackgroundImage') cssVar = '--' + property + ': #' + allData.organization[property];
-                    else cssVar = '--' + property + ': url(\'/assets/img/background/' + allData.organization[property] + '\')';
+                    // color
+                    if (property.toLowerCase().indexOf("color") > -1)
+                    {
+                        cssVar = '--' + property + ': #' + allData.organization[property] + ";";
+                        cssVar += '--' + property.replace("Color", "LightenColor") + ': ' + Color('#' + allData.organization[property]).lighten(0.4).hex() + ";";
+                        cssVar += '--' + property.replace("Color", "DarkenColor") + ': ' + Color('#' + allData.organization[property]).darken(0.4).hex() + ";";
+                        cssVar += '--' + property.replace("Color", "LeftenColor") + ': ' + Color('#' + allData.organization[property]).rotate(-15).hex() + ";";
+                        cssVar += '--' + property.replace("Color", "RightenColor") + ': ' + Color('#' + allData.organization[property]).rotate(15).hex();
+                    }
+
+                    // image
+                    else if (property == 'mobileBackgroundImage')
+                    {
+                        cssVar = '--' + property + ': url(\'/assets/img/background/' + allData.organization[property] + '\')';
+                    }
+
+                    // anything else
+                    else cssVar = '--' + property + ': ' + allData.organization[property];
 
                     // this.log('cssVar', cssVar);
                     cssVars.push(cssVar);

@@ -19,6 +19,7 @@ export class CqDashboard extends CqPage implements OnInit
         userFullName: '',
         dashHours: '00',
         dashMinutes: '00',
+        title: '',
     };
     pageJob: any = {
         filterMultiple: {
@@ -32,31 +33,35 @@ export class CqDashboard extends CqPage implements OnInit
     constructor(renderer: Renderer2, CH: CqHelper)
     {
         super(renderer, CH);
-
-        let userId = this.CH.getUserId();
-        this.CH.getUser().getUserFullNameWithDefault(userId).then((userFullName) => {
-            this.pageData.userFullName = userFullName;
-        });
-
-        this.pageData.year = new Date().getFullYear();
-
-        // setup slide options
-        this.pageData.sliderOptions = {
-            initialSlide: 0,
-            speed: 400,
-            centerInsufficientSlides: false,
-            centeredSlides: false,
-            centeredSlidesBounds: false,
-            breakpoints: {},
-        };
-        let slidesPerView, widthIterator = 160, spaceBetween = 24;
-        for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
-        {
-            this.pageData.sliderOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };
-        }
     }
 
-    ngOnInit(): void { this.usuallyOnInit(); }
+    ngOnInit(): void {
+        this.usuallyOnInit(() => {
+            let userId = this.CH.getUserId();
+            this.CH.getUser().getUserFullNameWithDefault(userId).then((userFullName) => {
+                this.pageData.userFullName = userFullName;
+            });
+
+            this.pageData.year = new Date().getFullYear();
+
+            // setup slide options
+            this.pageData.sliderOptions = {
+                initialSlide: 0,
+                speed: 400,
+                centerInsufficientSlides: false,
+                centeredSlides: false,
+                centeredSlidesBounds: false,
+                breakpoints: {},
+            };
+            let slidesPerView, widthIterator = 160, spaceBetween = 24;
+            for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
+            {
+                this.pageData.sliderOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };
+            }
+
+            this.pageData.title = this.CH.getOrganization("name");
+        });
+    }
     ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }

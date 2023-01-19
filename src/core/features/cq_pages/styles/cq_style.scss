@@ -29,9 +29,7 @@ $base_background_no_image: #f2f2f2;
 $base_background: #{$base_background_no_image} url("../images/pattern/geometry.png");
 $component_background: #f2f2f2;
 
-// var(--headerBackgroundColor, $cq_purple_dark)
-// warning! belum pake warna organisasi
-$gradient_background: linear-gradient(270deg, #7d2a81 20%, #4f2a81 80%);
+$gradient_background: linear-gradient(90deg, var(--headerBackgroundRightenColor) 0%, var(--headerBackgroundColor) 50%, var(--headerBackgroundLightenColor) 100%);
 $bar_background: $gradient_background;
 
 @mixin padding_margin
@@ -427,7 +425,6 @@ body
 	}
 	ion-tab-bar
 	{
-		// warning! masih belum pake warna organisasi
 		background: $gradient_background !important;
 		border: 0px;
 		box-shadow: $neumorphism_shadow;
@@ -1637,8 +1634,6 @@ body
 		width: 300%;
 		transform: translate(-50%, -100%);
 		border-radius: 50%;
-		// background: var(--headerBackgroundColor, $cq_purple_dark);
-		// warning! ini ga mencerminkan organization
 		background: $gradient_background;
 		z-index: 1;
 

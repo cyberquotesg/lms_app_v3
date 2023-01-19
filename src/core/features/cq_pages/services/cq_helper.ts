@@ -732,6 +732,41 @@ export class CqHelper
         return colors[realIndex];
     }
 
+    getCountry(what?: string): any
+    {
+    	let data = localStorage.getItem('cqCountry');
+
+    	if (data)
+    	{
+    		let parsedData = JSON.parse(data);
+
+    		if (parsedData)
+    		{
+	    		if (what) return parsedData[what];
+	    		else return parsedData;
+    		}
+    		else return {};
+    	}
+    	else return {};
+    }
+    getOrganization(what?: string): any
+    {
+    	let data = localStorage.getItem('cqOrganization');
+
+    	if (data)
+    	{
+    		let parsedData = JSON.parse(data);
+
+    		if (parsedData)
+    		{
+	    		if (what) return parsedData[what];
+	    		else return parsedData;
+    		}
+    		else return {};
+    	}
+    	else return {};
+    }
+
     /* ============================================================================================= api related helpers
     */
 

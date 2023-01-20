@@ -162,7 +162,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
     timeHasCome(data: any, index: number): void
     {
-        this.pageData.sessions[i].willStartInDegradated = 0;
+        this.pageData.sessions[index].willStartInDegradated = 0;
     }
 
     QRCodeScanner(session: any, latitude?: number, longitude?: number): void
@@ -283,8 +283,9 @@ export class CqOfflineCourse extends CqPage implements OnInit
         this.showChecklogBanner(data);
     }
 
-    async joinMeetingZoom(meetingNumber, meetingPassword): void {
-        let userFullname = await this.CH.getUser().getUserFullNameWithDefault();
+    async joinMeetingZoom(meetingNumber, meetingPassword): Promise<void> {
+        let userId = this.CH.getUserId();
+        let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
 
         if (this.CH.zoomInitiated) this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
         else

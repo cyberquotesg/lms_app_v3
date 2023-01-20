@@ -274,9 +274,10 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     ifLoggedIn(): void {
-        CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+        let siteId = this.CH.getSiteId();
+        CorePushNotifications.getSiteCounter(siteId).then((value) => { this.CH.setNotificationCount(value) });
         this.notificationCountAgent = setInterval(() => {
-            CorePushNotifications.getAddonBadge().then((value) => { this.CH.setNotificationCount(value) });
+            CorePushNotifications.getSiteCounter(siteId).then((value) => { this.CH.setNotificationCount(value) });
         }, 10 * 1000);
 
         const params: any = { class: "CqLib", function: "ping_announcements" };

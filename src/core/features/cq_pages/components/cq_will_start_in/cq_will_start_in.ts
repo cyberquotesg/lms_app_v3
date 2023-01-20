@@ -12,6 +12,7 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
     @Input() unixtimestamp: number;
     @Input() animation: boolean;
     @Input() big: boolean;
+    @Output() onZero: EventEmitter<any>;
 
     private agent: any;
     private startInDays: number;
@@ -26,6 +27,8 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
     constructor(CH: CqHelper)
     {
         super(CH);
+
+        this.onZero = new EventEmitter();
     }
 
     ngOnInit(): void
@@ -38,6 +41,17 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
         if (this.animation) this.agent = setInterval(() => {
             this.unixtimestamp--;
             this.translateTime(this.unixtimestamp);
+
+            if (this.unixtimestamp == 0)
+            {
+                let emitData: any = {
+                    date: new Date(),
+                };
+                this.CH.log('emit data', emitData);
+                this.onZero.emit(emitData);
+
+                clearInterval(this.agent);
+            }
         }, 1000);
     }
     ngOnChanges(changes: SimpleChanges): void

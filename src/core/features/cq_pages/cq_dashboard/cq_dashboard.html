@@ -42,7 +42,7 @@
         <ion-card class="mt-0">
             <ion-card-content>
                 <div *ngIf="isAvailable(pageData.myCourses)" class="dashboard-content">
-                    <div class="item" *ngFor="let course of pageData.myCourses">
+                    <div class="item" *ngFor="let course of pageData.myCourses; let i = index">
 
                         <div class="item-link" (click)="openCourse(course)">
                             <h2 class="item-title text-center">
@@ -51,7 +51,7 @@
                             </h2>
 
                             <div class="pt-4 pb-8 mt-cs">
-                                <cq_will_start_in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn" [animation]="true"></cq_will_start_in>
+                                <cq_will_start_in *ngIf="course.willStartIn > 0" [unixtimestamp]="course.willStartIn" [animation]="true" (onZero)="timeHasCome($event, i)"></cq_will_start_in>
                                 <div *ngIf="course.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font">
                                     Starting
                                 </div>

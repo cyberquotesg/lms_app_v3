@@ -153,11 +153,16 @@ export class CqOfflineCourse extends CqPage implements OnInit
             'Ups!',
             'Zoom meeting hasn\'t started. ' +
             'It will be available at ' + 
-            date.date_text + ' ' + 
+            date.dateText + ' ' + 
             this.CH.time24To12(
-                this.CH.timeRemoveSeconds(date.start_time)
+                this.CH.timeRemoveSeconds(date.startTime)
             ) + '.'
         );
+    }
+
+    timeHasCome(data: any, index: number): void
+    {
+        this.pageData.sessions[i].willStartInDegradated = 0;
     }
 
     QRCodeScanner(session: any, latitude?: number, longitude?: number): void
@@ -281,40 +286,19 @@ export class CqOfflineCourse extends CqPage implements OnInit
     async joinMeetingZoom(meetingNumber, meetingPassword): void {
         let userFullname = await this.CH.getUser().getUserFullNameWithDefault();
 
-        if (this.CH.zoomInitiated) this.joinMeetingZoomEngine(meetingNumber, meetingPassword);
+        if (this.CH.zoomInitiated) this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
         else
         {
             const zoomKeysParams = {
-                class: "",
-                function: "",
+                class: "CqLib",
+                function: "get_zoom_key",
             };
-            this.CH.callApi(institutionParams).then((data) => {
+            this.CH.callApi(zoomKeysParams).then((data) => {
                 let jsonData = this.CH.toJson(data);
-                if (jsonData.result) this.CH.initiateZoom(jsonData.apiKey, jsonData.apiSecret, () => {
-                    this.joinMeetingZoomEngine(meetingNumber, meetingPassword);
+                if (jsonData.success) this.CH.initiateZoom(jsonData.apiKey, jsonData.secretKey, () => {
+                    this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
                 });
             });
         }
-    }
-    joinMeetingZoomEngine(meetingNumber, meetingPassword): void {
-        this.CH.zoom.joinMeeting(meetingNumber, meetingPassword, userFullname, {
-            "no_driving_mode":true,
-            "no_invite":true,
-            "no_meeting_end_message":true,
-            "no_titlebar":false,
-            "no_bottom_toolbar":false,
-            "no_dial_in_via_phone":true,
-            "no_dial_out_to_phone":true,
-            "no_disconnect_audio":true,
-            "no_share":true,
-            "no_audio":true,
-            "no_video":true,
-            "no_meeting_error_message":true
-        })
-        .then((success: any) => {
-        })
-        .catch((error: any) => {
-            this.CH.alert("Oops!", "Cannot start Zoom meeting, please check your internet connection or contact your course administrator.");
-        });
     }
 }

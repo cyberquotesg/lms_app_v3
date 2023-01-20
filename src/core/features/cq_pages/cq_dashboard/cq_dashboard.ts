@@ -175,4 +175,9 @@ export class CqDashboard extends CqPage implements OnInit
             preferCurrentTab: false,
         });
     }
+
+    timeHasCome(data: any, index: number): void
+    {
+        this.pageData.myCourses[index].willStartIn = -1;
+    }
 }

@@ -11,6 +11,7 @@ import { CoreCourseHelperProvider } from '@features/course/services/course-helpe
 import { CoreDomUtilsProvider } from '@services/utils/dom';
 import { CoreUtilsProvider } from '@services/utils/utils';
 import { CoreSiteBasicInfo, CoreSites } from '@services/sites';
+import { CorePlatform } from '@services/platform';
 import { CoreConstants } from '@/core/constants';
 import { BehaviorSubject } from 'rxjs';
 
@@ -974,14 +975,54 @@ export class CqHelper
 
     initiateZoom(apiKey: string, apiSecret: string, callback?: any): void
     {
+    	this.log("try to initiate zoom, apiKey", apiKey);
+    	this.log("try to initiate zoom, apiSecret", apiSecret);
+
+    	if (!CorePlatform.is('cordova'))
+    	{
+	    	this.log("cancel initiate zoom", "this is not cordova");
+	    	return;
+    	}
+
     	this.zoom.initialize(apiKey, apiSecret)
     	.then((success: any) => {
+    		this.log("init zoom ok", success);
     	    this.zoomInitiated = true;
     	    if (callback) callback();
     	})
     	.catch((error: any) => {
+    		this.log("init zoom error", error);
     	    this.zoomInitiated = false;
     	    this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection.");
     	});
+    }
+    joinMeetingZoom(meetingNumber, meetingPassword, userFullname): void {
+    	if (!CorePlatform.is('cordova'))
+    	{
+	    	this.log("cancel join meeting zoom", "this is not cordova");
+	    	return;
+    	}
+
+        this.zoom.joinMeeting(meetingNumber, meetingPassword, userFullname, {
+            "no_driving_mode":true,
+            "no_invite":true,
+            "no_meeting_end_message":true,
+            "no_titlebar":false,
+            "no_bottom_toolbar":false,
+            "no_dial_in_via_phone":true,
+            "no_dial_out_to_phone":true,
+            "no_disconnect_audio":true,
+            "no_share":true,
+            "no_audio":true,
+            "no_video":true,
+            "no_meeting_error_message":true
+        })
+        .then((success: any) => {
+    		this.log("join meeting zoom ok", success);
+        })
+        .catch((error: any) => {
+    		this.log("join meeting zoom error", error);
+            this.alert("Oops!", "Cannot start Zoom meeting, please check your internet connection or contact your course administrator.");
+        });
     }
 }

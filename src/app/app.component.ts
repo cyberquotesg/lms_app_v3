@@ -367,12 +367,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         // zoom
         const zoomKeysParams = {
-            class: "",
-            function: "",
+            class: "CqLib",
+            function: "get_zoom_key",
         };
-        this.CH.callApi(institutionParams).then((data) => {
+        this.CH.callApi(zoomKeysParams).then((data) => {
             let jsonData = this.CH.toJson(data);
-            if (jsonData.result) this.CH.initiateZoom(jsonData.apiKey, jsonData.apiSecret);
+            if (jsonData.success) this.CH.initiateZoom(jsonData.apiKey, jsonData.secretKey);
         });
     }
     ifLoggedOut(): void {

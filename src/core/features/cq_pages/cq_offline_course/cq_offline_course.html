@@ -117,7 +117,7 @@
 
                 <!-- enrolled -->
                 <ng-container *ngIf="pageData.course.hasOneBatchEnrolled == '1'">
-                    <ng-container *ngFor="let session of pageData.sessions">
+                    <ng-container *ngFor="let session of pageData.sessions; let i = index">
 
                         <!-- loop is only for session which user is enrolled in or in waiting list -->
                         <ng-container *ngIf="session.userEnrolment == '1' || session.userEnrolment == '2'">
@@ -187,18 +187,26 @@
                                                             <ng-container *ngFor="let date of session.dates">
                                                                 <ng-container *ngIf="date.dateHasNextTime">
 
-                                                                    <!-- date has started, meaning the button can be fully working -->
-                                                                    <button *ngIf="date.dateHasStarted" class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser(date.zoomRegistrationUrl)">
-                                                                        <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                                        <span style="vertical-align: middle; margin-left: 2px;">Join</span>
-                                                                    </button>
-
                                                                     <!-- date hasn't started, give fake button -->
-                                                                    <button *ngIf="!date.dateHasStarted" class="button-small ml-4 mr-4 mb-8" (click)="alertZoomNotStarted(date)">
-                                                                        <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                                        <span style="vertical-align: middle; margin-left: 2px;">{{ date.dateText }} {{ time24To12(timeRemoveSeconds(date.startTime)) }}</span>
-                                                                    </button>
+                                                                    <ng-container *ngIf="!date.dateHasStarted">
+                                                                        <button class="button-small ml-4 mr-4 mb-8" (click)="alertZoomNotStarted(date)">
+                                                                            <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
+                                                                            <span style="vertical-align: middle; margin-left: 2px;">{{ date.dateText }} {{ time24To12(timeRemoveSeconds(date.startTime)) }}</span>
+                                                                        </button>
+                                                                    </ng-container>
 
+                                                                    <!-- date has started, meaning the button can be fully working -->
+                                                                    <ng-container *ngIf="date.dateHasStarted">
+                                                                        <button class="button-small ml-4 mr-4 mb-8" (click)="joinMeetingZoom(date.zoomMeetingid, date.zoomMeetingPassword)">
+                                                                            <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
+                                                                            <span style="vertical-align: middle; margin-left: 2px;">Join In App</span>
+                                                                        </button>
+
+                                                                        <button class="button-small ml-4 mr-4 mb-8" (click)="openInBrowser(date.zoomRegistrationUrl)">
+                                                                            <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
+                                                                            <span style="vertical-align: middle; margin-left: 2px;">Join In Browser</span>
+                                                                        </button>
+                                                                    </ng-container>
                                                                 </ng-container>
                                                             </ng-container>
                                                         </div>
@@ -268,7 +276,7 @@
                                 <ion-card>
                                     <ion-card-content>
                                         <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pt-cs pb-cs mb-cs">
-                                            <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true"></cq_will_start_in>
+                                            <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true" (onZero)="timeHasCome($event, i)"></cq_will_start_in>
                                         </div>
 
                                         <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated <= 3600" class="qr-scanner-button mb-cs">

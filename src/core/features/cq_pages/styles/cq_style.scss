@@ -1137,7 +1137,9 @@ body
 			}
 			&.load-more-button
 			{
-				display: block;
+				display: flex;
+			    justify-content: center;
+			    align-items: center;
 				width: 50px !important;
 				height: 50px !important;
 				padding: 0px !important;
@@ -1575,9 +1577,11 @@ body
         }
         &.small
         {
+        	display: flex;
+        	justify-content: center;
+        	flex-direction: column;
             height: 60px;
             width: 60px;
-            padding-top: 12px;
             line-height: 1.2em;
             font-size: 15px;
         }

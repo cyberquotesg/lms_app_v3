@@ -75,7 +75,7 @@
                                     <ion-card-content>
                                         <div class="card-single-list has-left">
                                             <div class="csl-left">
-                                                <span class="dot small d-block elevation-1 {{ !course.isUserAccredited || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
+                                                <span class="dot small elevation-1 {{ !course.isUserAccredited || courseType.includetocpdhours != 1 ? 'plain' : '' }}">{{course.brokendownCpdHours.hours}}{{ 'core.cqShortHoursSymbol' | translate }}<br />{{course.brokendownCpdHours.minutes}}{{ 'core.cqShortMinutesSymbol' | translate }}</span>
                                             </div>
                                             <div class="csl-center text-left">
                                                 <h2 class="mt-4 mb-5">{{course.name || course.coursename || course.fullname}}</h2>

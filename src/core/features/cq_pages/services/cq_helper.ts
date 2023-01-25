@@ -52,6 +52,29 @@ export class CqHelper
     	if (typeof data2 == 'undefined') console.log('cq - ' + data1);
     	else console.log('cq - ' + data1, data2);
     }
+    errorLog(data1: any, data2?: any): void
+    {
+    	if (!this.config().isProduction)
+    	{
+	    	if (typeof data2 == 'undefined') console.error('cq - ' + data1);
+	    	else console.error('cq - ' + data1, data2);
+    	}
+
+		if (this.config().sendErrorLog)
+		{
+			this.callApi({
+				class: "CqLib",
+				function: "mobile_error_log",
+				data: {
+					platform: CorePlatform.platforms(),
+					config: this.config(),
+					data1, data2,
+					country: this.getCountry(),
+					organization: this.getOrganization(),
+				}
+			});
+		}
+    }
 
     async loading(message: string, callback?: (any) => void): Promise<any>
     {
@@ -691,7 +714,14 @@ export class CqHelper
     }
     getLetter(text: string): string
     {
-    	return text.trim().substr(0, 1);
+    	let targets = [" ", "/", "\\", ",", ".", "|", "~", "`", "?", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "=", "+", "-", "[", "]", "{", "}", ";", ":", "'", '"', "<", ">"];
+
+    	targets.forEach((target) => {
+    	    text = text.split(target).join("");
+    	});
+    	text = text.substr(0, 1).toUpperCase();
+    	
+    	return text;
     }
     isEmpty(data: any): boolean
     {
@@ -991,7 +1021,7 @@ export class CqHelper
     	    if (callback) callback();
     	})
     	.catch((error: any) => {
-    		this.log("init zoom error", error);
+    		this.errorLog("init zoom error", error);
     	    this.zoomInitiated = false;
     	    this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection.");
     	});
@@ -1021,7 +1051,7 @@ export class CqHelper
     		this.log("join meeting zoom ok", success);
         })
         .catch((error: any) => {
-    		this.log("join meeting zoom error", error);
+    		this.errorLog("join meeting zoom error", error);
             this.alert("Oops!", "Cannot start Zoom meeting, please check your internet connection or contact your course administrator.");
         });
     }

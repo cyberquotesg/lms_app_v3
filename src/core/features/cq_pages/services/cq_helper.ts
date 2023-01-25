@@ -1003,7 +1003,7 @@ export class CqHelper
         return courses;
     }
 
-    initiateZoom(apiKey: string, apiSecret: string): void
+    initiateZoom(apiKey: string, apiSecret: string): Promise<boolean>
     {
     	this.log("try to initiate zoom, apiKey", apiKey);
     	this.log("try to initiate zoom, apiSecret", apiSecret);
@@ -1011,10 +1011,12 @@ export class CqHelper
     	if (!CorePlatform.is('cordova'))
     	{
 	    	this.log("cancel initiate zoom", "this is not cordova");
-	    	return;
+	    	return new Promise((resolve, reject) => {
+	    		resolve(true);
+	    	});
     	}
 
-    	this.zoom.initialize(apiKey, apiSecret)
+    	return this.zoom.initialize(apiKey, apiSecret)
     	.then((success: any) => {
     		this.log("init zoom ok", success);
     	    this.zoomInitiated = true;

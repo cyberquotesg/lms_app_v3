@@ -300,7 +300,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 if (jsonData.success)
                 {
                     let initiated = false;
-                    for (let key of jsonData.success.list)
+                    for (let key of jsonData.list)
                     {
                         initiated = await this.CH.initiateZoom(key.apiKey, key.secretKey);
                         if (initiated) break;
@@ -308,7 +308,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
                     if (!initiated)
                     {
-                        this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection or contact your course administrator.");
+                        this.CH.alert("Oops!", "Connection to Zoom was failed, please check your internet connection or contact your course administrator.");
                     }
                     else
                     {
@@ -317,7 +317,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 }
                 else
                 {
-                    this.alert("Oops!", "Your organization is not connected to zoom, please contact your course administrator.");
+                    this.CH.alert("Oops!", "Your organization is not connected to zoom, please contact your course administrator.");
                 }
             });
         }

@@ -1304,6 +1304,12 @@ export class CoreSitesProvider {
             await CoreSites.deleteSite(siteId);
         }
 
+        // by rachmad
+        // always delete all sites
+        let siteIds = await this.getSitesIds();
+        for (let id of siteIds) await CoreSites.deleteSite(id);
+        // by rachmad
+
         CoreEvents.trigger(CoreEvents.LOGOUT, {}, siteId);
     }
 

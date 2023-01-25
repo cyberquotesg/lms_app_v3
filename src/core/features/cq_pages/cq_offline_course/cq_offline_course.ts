@@ -292,13 +292,33 @@ export class CqOfflineCourse extends CqPage implements OnInit
         {
             const zoomKeysParams = {
                 class: "CqLib",
-                function: "get_zoom_key",
+                function: "get_zoom_keys",
             };
-            this.CH.callApi(zoomKeysParams).then((data) => {
+
+            this.CH.callApi(zoomKeysParams).then(async (data) => {
                 let jsonData = this.CH.toJson(data);
-                if (jsonData.success) this.CH.initiateZoom(jsonData.apiKey, jsonData.secretKey, () => {
-                    this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
-                });
+                if (jsonData.success)
+                {
+                    let initiated = false;
+                    for (let key of jsonData.success.list)
+                    {
+                        initiated = await this.CH.initiateZoom(key.apiKey, key.secretKey);
+                        if (initiated) break;
+                    }
+
+                    if (!initiated)
+                    {
+                        this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection or contact your course administrator.");
+                    }
+                    else
+                    {
+                        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
+                    }
+                }
+                else
+                {
+                    this.alert("Oops!", "Your organization is not connected to zoom, please contact your course administrator.");
+                }
             });
         }
     }

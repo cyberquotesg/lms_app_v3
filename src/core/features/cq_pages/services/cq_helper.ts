@@ -66,11 +66,11 @@ export class CqHelper
 				class: "CqLib",
 				function: "mobile_error_log",
 				data: {
-					platform: CorePlatform.platforms(),
-					config: this.config(),
 					data1, data2,
 					country: this.getCountry(),
 					organization: this.getOrganization(),
+					platform: CorePlatform.platforms(),
+					config: this.config(),
 				}
 			});
 		}
@@ -1003,7 +1003,7 @@ export class CqHelper
         return courses;
     }
 
-    initiateZoom(apiKey: string, apiSecret: string, callback?: any): void
+    initiateZoom(apiKey: string, apiSecret: string): void
     {
     	this.log("try to initiate zoom, apiKey", apiKey);
     	this.log("try to initiate zoom, apiSecret", apiSecret);
@@ -1018,12 +1018,14 @@ export class CqHelper
     	.then((success: any) => {
     		this.log("init zoom ok", success);
     	    this.zoomInitiated = true;
-    	    if (callback) callback();
+    	    
+    	    return true;
     	})
     	.catch((error: any) => {
-    		this.errorLog("init zoom error", error);
+    		this.errorLog("init zoom error", {apiKey, apiSecret, error});
     	    this.zoomInitiated = false;
-    	    this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection.");
+
+    	    return false;
     	});
     }
     joinMeetingZoom(meetingNumber, meetingPassword, userFullname): void {
@@ -1051,7 +1053,7 @@ export class CqHelper
     		this.log("join meeting zoom ok", success);
         })
         .catch((error: any) => {
-    		this.errorLog("join meeting zoom error", error);
+    		this.errorLog("join meeting zoom error", {meetingNumber, meetingPassword, userFullname, error});
             this.alert("Oops!", "Cannot start Zoom meeting, please check your internet connection or contact your course administrator.");
         });
     }

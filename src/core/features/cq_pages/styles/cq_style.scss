@@ -180,6 +180,15 @@ body
 		background-image: $gradient_background !important;
 	}
 
+	.neumorphism-shadow
+	{
+		box-shadow: $neumorphism_shadow;
+	}
+	.neumorphism-shadow-inset
+	{
+		box-shadow: $neumorphism_shadow_inset;
+	}
+
     .elevation-1 { @include elevation1; }
     .elevation-2 { @include elevation2; }
     .elevation-3 { @include elevation3; }

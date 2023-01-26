@@ -14,7 +14,7 @@
          -->
         <div *ngIf="displayNotification" class="drawer-button notifications" (click)="goToNotificationsList()">
             <ion-icon name="notifications"></ion-icon>
-            <ion-badge *ngIf="isAvailable(notificationCount)" item-end="" class="badge background-grey">{{ notificationCount }}</ion-badge>
+            <ion-badge *ngIf="isAvailable(notificationCount)" item-end="" class="badge">{{ notificationCount }}</ion-badge>
         </div>
         <core-user-menu-button *ngIf="displayUserMenu" [alwaysShow]="true"></core-user-menu-button>
     </ion-buttons>

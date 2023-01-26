@@ -43,6 +43,7 @@ import { CorePlatform } from '@services/platform';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
 import { Zoom } from '@awesome-cordova-plugins/zoom';
 import Color from 'color';
+import { AddonNotifications } from '@addons/notifications/services/notifications';
 
 const MOODLE_VERSION_PREFIX = 'version-';
 const MOODLEAPP_VERSION_PREFIX = 'moodleapp-';
@@ -275,9 +276,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     ifLoggedIn(): void {
         let siteId = this.CH.getSiteId();
-        CorePushNotifications.getSiteCounter(siteId).then((value) => { this.CH.setNotificationCount(value) });
+        AddonNotifications.getUnreadNotificationsCount(undefined, siteId).then((unreadCountData) => this.CH.setNotificationCount(unreadCountData.count));
         this.notificationCountAgent = setInterval(() => {
-            CorePushNotifications.getSiteCounter(siteId).then((value) => { this.CH.setNotificationCount(value) });
+            AddonNotifications.getUnreadNotificationsCount(undefined, siteId).then((unreadCountData) => this.CH.setNotificationCount(unreadCountData.count));
         }, 10 * 1000);
 
         const params: any = { class: "CqLib", function: "ping_announcements" };

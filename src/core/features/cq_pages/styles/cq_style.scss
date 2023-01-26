@@ -872,6 +872,26 @@ body
     	max-width: 100vw;
 		background: $base_background_no_image !important;
     }
+    .login-inset-field
+    {
+    	position: relative;
+    	box-shadow: $neumorphism_shadow_inset;
+    	font-size: 14px;
+    	border-radius: 12px;
+
+    	input
+    	{
+	    	height: 44px !important;
+	    	text-align: center !important;
+	    	padding: 0px 12px !important;
+    	}
+    	ion-button
+    	{
+    		position: absolute !important;
+		    right: 5px !important;
+		    top: 4px !important;
+    	}
+    }
 
 	// remove shadows
 	.header-md::after,

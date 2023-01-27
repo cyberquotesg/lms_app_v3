@@ -59,8 +59,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     protected lastInAppUrl?: string;
 
     // by rachmad
-    notificationCountAgent: any;
-    announcementCountAgent: any;
+    notificationAnnouncementCountAgent: any;
 
     // by rachmad
     constructor(protected renderer: Renderer2, protected CH: CqHelper)
@@ -275,17 +274,8 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     ifLoggedIn(): void {
-        let siteId = this.CH.getSiteId();
-        AddonNotifications.getUnreadNotificationsCount(undefined, siteId).then((unreadCountData) => this.CH.setNotificationCount(unreadCountData.count));
-        this.notificationCountAgent = setInterval(() => {
-            AddonNotifications.getUnreadNotificationsCount(undefined, siteId).then((unreadCountData) => this.CH.setNotificationCount(unreadCountData.count));
-        }, 10 * 1000);
-
-        const params: any = { class: "CqLib", function: "ping_announcements" };
-        this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-        this.announcementCountAgent = setInterval(() => {
-            this.CH.callApi(params).then((counting) => this.CH.setAnnouncementCount(counting));
-        }, 10 * 1000);
+        this.CH.updateNotificationAnnouncementCount();
+        this.notificationAnnouncementCountAgent = setInterval(() => { this.CH.updateNotificationAnnouncementCount() }, 10 * 1000);
 
         const institutionParams: any = {
             calls: {
@@ -395,8 +385,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         });
     }
     ifLoggedOut(): void {
-        clearInterval(this.notificationCountAgent);
-        clearInterval(this.announcementCountAgent);
+        clearInterval(this.notificationAnnouncementCountAgent);
 
         this.renderer.removeClass(this.CH.getBody(), 'logged-in');
         this.renderer.setProperty(this.CH.getBody(), 'style', '');

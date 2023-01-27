@@ -938,6 +938,28 @@ export class CqHelper
     	this.announcementCount.asObservable().subscribe(callback);
     }
 
+    updateNotificationAnnouncementCount(): void
+    {
+    	const params: any = {
+    	    calls: {
+    	        notification: {
+    	            class: "CqLib",
+    	            function: "ping_notifications",
+    	        },
+    	        announcement: {
+    	            class: "CqLib",
+    	            function: "ping_announcements",
+    	        },
+    	    },
+    	};
+
+    	this.callApi(params).then((data) => {
+    	    let allData = this.toJson(data);
+    	    this.setNotificationCount(allData.notification)
+    	    this.setAnnouncementCount(allData.announcement)
+    	});
+    }
+
     getSite(): any
     {
         return CoreSites.getCurrentSite();

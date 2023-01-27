@@ -28,6 +28,8 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
 /**
  * Page to render a notification.
  */
@@ -54,6 +56,12 @@ export class AddonNotificationsNotificationPage implements OnInit, OnDestroy {
     contextUrl?: string;
     courseId?: number;
     actionsData?: Record<string, unknown>; // Extra data to handle the URL.
+
+    // by rachmad
+    constructor(CH: CqHelper)
+    {
+        CH.updateCount("notification");
+    }
 
     /**
      * @inheritdoc

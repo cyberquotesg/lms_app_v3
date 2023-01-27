@@ -938,25 +938,19 @@ export class CqHelper
     	this.announcementCount.asObservable().subscribe(callback);
     }
 
-    updateNotificationAnnouncementCount(): void
+    updateCount(target: string | string[]): void
     {
-    	const params: any = {
-    	    calls: {
-    	        notification: {
-    	            class: "CqLib",
-    	            function: "ping_notifications",
-    	        },
-    	        announcement: {
-    	            class: "CqLib",
-    	            function: "ping_announcements",
-    	        },
-    	    },
-    	};
+    	let targets = this.toArray(target);
+    	let params: any = { calls: {} };
+
+    	if (targets.includes("notification")) params.calls.notification = { class: "CqLib", function: "ping_notifications" };
+    	if (targets.includes("announcement")) params.calls.announcement = { class: "CqLib", function: "ping_announcements" };
 
     	this.callApi(params).then((data) => {
     	    let allData = this.toJson(data);
-    	    this.setNotificationCount(allData.notification)
-    	    this.setAnnouncementCount(allData.announcement)
+    	    
+    	    if (typeof allData.notification != "undefined") this.setNotificationCount(allData.notification)
+    	    if (typeof allData.announcement != "undefined") this.setAnnouncementCount(allData.announcement)
     	});
     }
 

@@ -36,6 +36,8 @@ export class CqAnnouncement extends CqPage implements OnInit
         private fileOpener: FileOpener)
     {
         super(renderer, CH);
+
+        this.CH.updateCount("announcement");
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }

@@ -274,8 +274,8 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     ifLoggedIn(): void {
-        this.CH.updateNotificationAnnouncementCount();
-        this.notificationAnnouncementCountAgent = setInterval(() => { this.CH.updateNotificationAnnouncementCount() }, 10 * 1000);
+        this.CH.updateCount("notification, announcement");
+        this.notificationAnnouncementCountAgent = setInterval(() => { this.CH.updateCount("notification, announcement") }, 10 * 1000);
 
         const institutionParams: any = {
             calls: {

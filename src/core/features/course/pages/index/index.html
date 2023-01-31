@@ -16,3 +16,70 @@
         </ion-buttons>
     </ion-toolbar>
 </ion-header>
+
+<ion-content>
+    <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event.target)">
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+    </ion-refresher>
+
+    <core-loading [hideUntil]="loaded">
+        <ion-card>
+            <div class="card-image">
+                <div *ngIf="course.courseImage" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + course.courseImage + ')'}"></div>
+                <span *ngIf="!course.courseImage" class="card-image-letter">{{ getLetter(course.fullname) }}</span>
+
+                <div style="position: absolute; top: 5px; right: 5px; text-align: right;">
+                    <!-- <cq_tags [item]="pageData.course"></cq_tags> -->
+                </div>
+            </div>
+
+            <ion-card-header>
+                <ion-card-title class="text-center">{{ course.fullname }}</ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content>
+                <p><b>Description</b></p>
+                <p class="no-break">{{ course.summary ? sanitizeHTML(course.summary) : '-' }}</p>
+
+                <p class="mt-13"><b>CPD Hours</b></p>
+                <p class="no-break">{{ course.trainingHours }} CPD Hour{{ s(course.trainingHours) }}</p>
+            </ion-card-content>
+        </ion-card>
+
+        <ng-container *ngFor="let section of sections">
+            <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                {{ section.name }}
+
+                <!-- 
+                <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
+                    <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : '' }}">
+                        <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+                        {{ session.userAttendanceText }}
+                    </div>
+                </div>
+                 -->
+
+                <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+            </div>
+
+            <ion-card>
+                <ion-card-content>
+                    
+                    <div class="sessions">
+                        <div *ngFor="let module of section.modules" class="session">
+                            <div class="session-info">
+                                <div class="card-item">
+                                    <div class="card-item-icon">
+                                        <img src="{{ module.modicon }}">
+                                    </div>
+                                    <div class="card-item-text">{{ module.name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </ion-card-content>
+            </ion-card>
+        </ng-container>
+    </core-loading>
+</ion-content>

@@ -30,6 +30,12 @@ import { CoreCoursesHelper, CoreCourseWithImageAndColor } from '@features/course
 import { CoreColors } from '@singletons/colors';
 import { CoreText } from '@singletons/text';
 
+// by rachmad
+import { IonRefresher } from '@ionic/angular';
+import { Renderer2 } from '@angular/core';
+import { CqPage } from '@features/cq_pages/classes/cq_page';
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Page that displays the list of courses the user is enrolled in.
  */
@@ -38,7 +44,10 @@ import { CoreText } from '@singletons/text';
     templateUrl: 'index.html',
     styleUrls: ['index.scss'],
 })
-export class CoreCourseIndexPage implements OnInit, OnDestroy {
+
+// by rachmad
+// export class CoreCourseIndexPage implements OnInit, OnDestroy {
+export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreTabsOutletComponent) tabsComponent?: CoreTabsOutletComponent;
     @ViewChild('courseThumb') courseThumb?: ElementRef;
@@ -65,7 +74,11 @@ export class CoreCourseIndexPage implements OnInit, OnDestroy {
         pageParams: {},
     };
 
-    constructor(private route: ActivatedRoute) {
+    // by rachmad
+    // constructor(private route: ActivatedRoute) {
+    constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper) {
+        super(renderer, CH);
+
         this.selectTabObserver = CoreEvents.on(CoreEvents.SELECT_COURSE_TAB, (data) => {
             if (!data.name) {
                 // If needed, set sectionId and sectionNumber. They'll only be used if the content tabs hasn't been loaded yet.
@@ -335,6 +348,23 @@ export class CoreCourseIndexPage implements OnInit, OnDestroy {
         }
     }
 
+    // by rachmad
+    async doRefresh(refresher?: IonRefresher): Promise<void> {
+        if (this.course)
+        {
+            const params: any = {
+                class: 'CqCourseLib',
+                function: 'view_e_learning',
+                course_id: this.course.id,
+            };
+
+            let temp = await this.CH.callApi(params);
+            this.course = this.CH.toJson(temp);
+            await this.loadBasinInfo();
+        }
+
+        refresher?.complete();
+    }
 }
 
 type CourseTab = CoreTabsOutletTab & {

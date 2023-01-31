@@ -1,0 +1,8 @@
+<ion-content>
+    <ion-refresher slot="fixed" [disabled]="!dataLoaded || updatingData || !displayRefresher" (ionRefresh)="doRefresh($event.target)">
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+    </ion-refresher>
+
+    <core-loading [hideUntil]="dataLoaded && !updatingData">
+    </core-loading>
+</ion-content>

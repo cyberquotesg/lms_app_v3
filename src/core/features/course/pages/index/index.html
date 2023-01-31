@@ -1,0 +1,18 @@
+<ion-header [collapsible]="tabsComponent?.selectedIndex == 0 || tabsComponent?.selectedIndex === undefined">
+    <ion-toolbar>
+        <ion-buttons slot="start">
+            <ion-back-button [text]="'core.back' | translate"></ion-back-button>
+        </ion-buttons>
+        <ion-title>
+            <h1>
+                <core-format-text [text]="title" contextLevel="course" [contextInstanceId]="course?.id"></core-format-text>
+            </h1>
+        </ion-title>
+
+        <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="openCourseSummary()" [attr.aria-label]="'core.course.coursesummary' | translate">
+                <ion-icon name="fas-info-circle" slot="icon-only" aria-hidden="true"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+</ion-header>

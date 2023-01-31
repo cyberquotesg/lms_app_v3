@@ -403,7 +403,7 @@ body
 		    	background: $base_background_no_image;
 		    }
 
-		    core-loading
+		    > core-loading
 		    {
 	    	    &::before
 	    	    {
@@ -1814,11 +1814,8 @@ body
 	.additional-content
 	{
 		font-size: 14px;
-        border-radius: 15px;
         overflow: hidden;
         border: 0px;
-        padding: 15px 0px 0px;
-        background: white;
 
         &.with-pb
         {

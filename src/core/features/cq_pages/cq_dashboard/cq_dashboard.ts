@@ -150,7 +150,8 @@ export class CqDashboard extends CqPage implements OnInit
             this.pageData.eLearningList = this.CH.toArray(allData.eLearningList);
 
             // additionalContents
-            this.pageData.additionalContents = allData.additionalContents;
+            this.pageData.additionalContents = this.CH.toArray(allData.additionalContents);
+            this.pageData.hasAdditionalContents = this.pageData.additionalContents.length > 0;
         }, moreloader, refresher, finalCallback);
     }
 

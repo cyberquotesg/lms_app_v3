@@ -94,10 +94,12 @@
             </div>
         </div>
 
-        <div *ngFor="let additionalContent of pageData.additionalContents">
-            <br />
-            <div [innerHtml]="additionalContent.mobileContent"></div>
-        </div>
+        <div *ngIf="pageData.hasAdditionalContents" class="pt-cs"></div>
+        <ion-card *ngFor="let additionalContent of pageData.additionalContents" class="mt-cs">
+            <ion-card-content>
+                <div [innerHtml]="additionalContent.mobileContent"></div>
+            </ion-card-content>
+        </ion-card>
 
         </div>
     </core-loading>

@@ -29,7 +29,7 @@
                 <span *ngIf="!course.courseImage" class="card-image-letter">{{ getLetter(course.fullname) }}</span>
 
                 <div style="position: absolute; top: 5px; right: 5px; text-align: right;">
-                    <!-- <cq_tags [item]="pageData.course"></cq_tags> -->
+                    <cq_tags [item]="course"></cq_tags>
                 </div>
             </div>
 
@@ -43,11 +43,40 @@
 
                 <p class="mt-13"><b>CPD Hours</b></p>
                 <p class="no-break">{{ course.trainingHours }} CPD Hour{{ s(course.trainingHours) }}</p>
+
+                <p class="mt-13"><b>Start Date</b></p>
+                <p class="no-break">{{ course.startDateTimeText }}</p>
+
+                <p class="mt-13"><b>End Date</b></p>
+                <p class="no-break">{{ course.endDateTimeText || "This course doesn't have time limit" }}</p>
             </ion-card-content>
         </ion-card>
 
-        <ng-container *ngFor="let section of sections">
+        <div class="pl-cs pr-cs mt-cst">
+            <ng-container *ngIf="!course.isUserEnrolled">
+                <button *ngIf="course.isSelfEnrol" (click)="takeCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
+                    <span *ngIf="!cqLoading">Enrol</span>
+                    <ion-spinner *ngIf="cqLoading"></ion-spinner>
+                </button>
+                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 4px;">
+                    This course is not open for self enrolment
+                </div>
+            </ng-container>
+
+            <ng-container *ngIf="course.isUserEnrolled">
+                <button *ngIf="course.isSelfEnrol" (click)="leaveCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
+                    <span *ngIf="!cqLoading">Withdraw</span>
+                    <ion-spinner *ngIf="cqLoading"></ion-spinner>
+                </button>
+                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 4px;">
+                    This course is not open for self withdrawal
+                </div>
+            </ng-container>
+        </div>
+
+        <ng-container *ngFor="let section of sections; let i = index">
             <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                <small class="d-block mb-4">Section {{ i + 1 }}</small>
                 {{ section.name }}
 
                 <!-- 
@@ -64,7 +93,6 @@
 
             <ion-card>
                 <ion-card-content>
-                    
                     <div class="sessions">
                         <div *ngFor="let module of section.modules" class="session">
                             <div class="session-info">
@@ -77,7 +105,6 @@
                             </div>
                         </div>
                     </div>
-
                 </ion-card-content>
             </ion-card>
         </ng-container>

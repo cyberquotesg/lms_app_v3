@@ -1153,6 +1153,7 @@ body
 			transition: all ease 0.2s;
 			background: $component_background;
 			box-shadow: $neumorphism_shadow;
+		    font-size: 14px;
 
 			&.active,
 			&:active

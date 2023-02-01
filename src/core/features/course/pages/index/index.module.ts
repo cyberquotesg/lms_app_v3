@@ -21,6 +21,9 @@ import { CoreCourseIndexPage } from '.';
 import { COURSE_INDEX_ROUTES } from './index-routing.module';
 import { CoreCoursePreviewPageComponentModule } from '../course-summary/course-summary.module';
 
+// by rachmad
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 function buildRoutes(injector: Injector): Routes {
     const routes = resolveModuleRoutes(injector, COURSE_INDEX_ROUTES);
 
@@ -44,6 +47,9 @@ function buildRoutes(injector: Injector): Routes {
     imports: [
         CoreSharedModule,
         CoreCoursePreviewPageComponentModule,
+
+        // by rachmad
+        CqComponentsModule,
     ],
     declarations: [
         CoreCourseIndexPage,

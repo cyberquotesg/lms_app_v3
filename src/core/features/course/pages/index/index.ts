@@ -59,6 +59,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     loaded = false;
     progress?: number;
 
+    // by rachmad
+    cqLoading: boolean = false;
+
     protected currentPagePath = '';
     protected selectTabObserver: CoreEventObserver;
     protected completionObserver: CoreEventObserver;
@@ -177,6 +180,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 this.contentsTab.pageParams.sectionId = this.module.section;
             }
         }
+
+        // by rachmad
+        await this.prepareCourseData("additionals");
 
         this.tabs.push(this.contentsTab);
         this.loaded = true;
@@ -350,20 +356,81 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     // by rachmad
     async doRefresh(refresher?: IonRefresher): Promise<void> {
-        if (this.course)
+        await this.prepareCourseData("course, additionals");
+        await this.loadBasinInfo();
+
+        refresher?.complete();
+    }
+    /**
+     * mode can be: course, additionals, string containing both values
+    */
+    async prepareCourseData(mode: string): Promise<any>
+    {
+        if (!this.course) return {};
+
+        let modeArray = this.CH.toArray(mode);
+        let params: any = {calls: {}};
+        if (modeArray.includes("course"))
         {
-            const params: any = {
+            params.calls.course = {
                 class: 'CqCourseLib',
                 function: 'view_e_learning',
                 course_id: this.course.id,
             };
+        }
+        if (modeArray.includes("additionals"))
+        {
+            params.calls.additionals = {
+                class: 'CqCourseLib',
+                function: 'additionals_e_learning',
+                course_id: this.course.id,
+            };
+        }
+        let temp = await this.CH.callApi(params);
+        let data = this.CH.toJson(temp);
+        let course: any;
 
-            let temp = await this.CH.callApi(params);
-            this.course = this.CH.toJson(temp);
-            await this.loadBasinInfo();
+        if (modeArray.includes("course")) course = this.CH.cloneJson(data.course);
+        else course = this.CH.cloneJson(this.course);
+
+        if (modeArray.includes("additionals"))
+        {
+            for (let name in data.additionals)
+            {
+                course[name] = data.additionals[name];
+            }
         }
 
-        refresher?.complete();
+        this.course = course;
+        this.CH.log("final data", {
+            course: this.course,
+            sections: this.sections,
+        });
+    }
+    takeCourse(): void
+    {
+        this.cqLoading = true;
+        setTimeout(() => {
+            this.cqLoading = false;
+        }, 1000);
+    }
+    leaveCourse(): void
+    {
+        this.CH.alert('Confirm!', 'Are you sure to withdraw from this course?', {
+            text: 'Sure',
+            role: 'sure',
+            handler: (): void => {
+                this.cqLoading = true;
+                setTimeout(() => {
+                    this.cqLoading = false;
+                }, 1000);
+            }
+        }, {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: (): void => {
+            }
+        });
     }
 }
 

@@ -948,7 +948,7 @@ export class CqHelper
 
     	this.callApi(params).then((data) => {
     	    let allData = this.toJson(data);
-    	    
+
     	    if (typeof allData.notification != "undefined") this.setNotificationCount(allData.notification)
     	    if (typeof allData.announcement != "undefined") this.setAnnouncementCount(allData.announcement)
     	});

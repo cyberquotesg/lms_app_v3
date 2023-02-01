@@ -302,16 +302,7 @@ export class CqPage extends CqGeneral
     {
         if (course.media == 'online')
         {
-            if (course.isUserEnrolled) CoreCourseHelper.openCourse(course);
-            else
-            {
-                const stateParams: any = {
-                    course,
-                };
-                CoreNavigator.navigateToSitePath(`/course/${course.id}/summary`, {
-                    params: stateParams,
-                });
-            }
+            CoreCourseHelper.openCourse(course);
         }
         else if (course.media == 'offline')
         {

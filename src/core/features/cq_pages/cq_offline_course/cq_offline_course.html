@@ -96,10 +96,10 @@
                                                 <ion-icon name="log-in"></ion-icon>
                                             </div>
                                             <div class="card-item-text">
-                                                <div>Sign Up to Course</div>
+                                                <div>Enrol to Course</div>
                                                 <div class="mt-cst">
                                                     <button *ngIf="session.unavailableMessage == ''" (click)="takeSession(session.id)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
-                                                        <span *ngIf="!loading">Sign Up</span>
+                                                        <span *ngIf="!loading">Enrol</span>
                                                         <ion-spinner *ngIf="loading"></ion-spinner>
                                                     </button>
                                                     <div *ngIf="session.unavailableMessage != ''" class="no-break text-left pl-0 pr-0 pb-0">

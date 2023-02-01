@@ -5,8 +5,9 @@
     </ng-container>
 
     <ng-container *ngIf="showUserStatus">
-        <span *ngIf="item.isUserEnrolled && !item.isUserFinished && !item.isUserAccredited" class="cq-tag green">
-            <span>Enrolled</span>
+        <span *ngIf="item.isUserEnrolled && !item.isUserFinished && !item.isUserAccredited" class="cq-tag {{ !item.isCourseEnded ? 'green' : 'red'}}">
+            <span *ngIf="!item.isCourseEnded">Enrolled</span>
+            <span *ngIf="item.isCourseEnded">Failed</span>
         </span>
         <span *ngIf="item.isUserEnrolled && item.isUserFinished && !item.isUserAccredited" class="cq-tag green">
             <span>Finished</span>

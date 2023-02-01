@@ -52,7 +52,7 @@
             </ion-card-content>
         </ion-card>
 
-        <div class="pl-cs pr-cs mt-cst">
+        <div *ngIf="!course.hasEnded" class="pl-cs pr-cs mt-cst">
             <ng-container *ngIf="!course.isUserEnrolled">
                 <button *ngIf="course.isSelfEnrol" (click)="takeCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
                     <span *ngIf="!cqLoading">Enrol</span>

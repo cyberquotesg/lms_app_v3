@@ -48,7 +48,7 @@
                 <p class="no-break">{{ course.startDateTimeText }}</p>
 
                 <p class="mt-13"><b>End Date</b></p>
-                <p class="no-break">{{ course.endDateTimeText || "This course doesn't have time limit" }}</p>
+                <p class="no-break">{{ course.endDateTimeText || "-" }}</p>
             </ion-card-content>
         </ion-card>
 
@@ -94,7 +94,7 @@
             <ion-card>
                 <ion-card-content>
                     <div class="sessions">
-                        <div *ngFor="let module of section.modules" class="session">
+                        <div *ngFor="let module of section.modules" class="session" (click)="moduleClicked($event, module)">
                             <div class="session-info">
                                 <div class="card-item">
                                     <div class="card-item-icon">

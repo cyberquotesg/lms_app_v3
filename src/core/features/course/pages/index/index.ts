@@ -33,6 +33,8 @@ import { CoreText } from '@singletons/text';
 // by rachmad
 import { IonRefresher } from '@ionic/angular';
 import { Renderer2 } from '@angular/core';
+import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
+import { CoreCourseCompletionActivityStatus } from '@features/course/services/course';
 import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
 
@@ -191,6 +193,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             this.loadCourseHandlers(),
             this.loadBasinInfo(),
         ]);
+
+        // by rachmad
+        await this.prepareSections();
     }
 
     /**
@@ -358,6 +363,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     async doRefresh(refresher?: IonRefresher): Promise<void> {
         await this.prepareCourseData("course, additionals");
         await this.loadBasinInfo();
+        await this.prepareSections(true);
 
         refresher?.complete();
     }
@@ -407,6 +413,48 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             sections: this.sections,
         });
     }
+    async prepareSections(refresh?: boolean): Promise<void> {
+        const sections = this.sections;
+
+        if (refresh) {
+            // Invalidate the recently downloaded module list. To ensure info can be prefetched.
+            const modules = CoreCourse.getSectionsModules(sections);
+
+            await CoreCourseModulePrefetchDelegate.invalidateModules(modules, this.course.id);
+        }
+
+        let completionStatus: Record<string, CoreCourseCompletionActivityStatus> = {};
+
+        // Get the completion status.
+        if (this.course.enablecompletion !== false) {
+            const sectionWithModules = sections.find((section) => section.modules.length > 0);
+
+            if (sectionWithModules && sectionWithModules.modules[0].completion !== undefined) {
+                // The module already has completion (3.6 onwards). Load the offline completion.
+                this.modulesHaveCompletion = true;
+
+                await CoreUtils.ignoreErrors(CoreCourseHelper.loadOfflineCompletion(this.course.id, sections));
+            } else {
+                const fetchedData = await CoreUtils.ignoreErrors(
+                    CoreCourse.getActivitiesCompletionStatus(this.course.id),
+                );
+
+                completionStatus = fetchedData || completionStatus;
+            }
+        }
+
+        // Add handlers
+        const result = await CoreCourseHelper.addHandlerDataForModules(
+            sections,
+            this.course.id,
+            completionStatus,
+            this.course.fullname,
+            true,
+        );
+
+        this.sections = result.sections;
+    }
+
     takeCourse(): void
     {
         this.cqLoading = true;
@@ -431,6 +479,12 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             handler: (): void => {
             }
         });
+    }
+    moduleClicked(event: Event, courseModule: any): void
+    {
+        if (CoreCourseHelper.canUserViewModule(courseModule, this.section) && courseModule.handlerData?.action) {
+            courseModule.handlerData.action(event, courseModule, courseModule.course);
+        }
     }
 }
 

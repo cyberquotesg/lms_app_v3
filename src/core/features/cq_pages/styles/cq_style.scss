@@ -62,7 +62,9 @@ $bar_background: $gradient_background;
     $directions: l, t, r, b;
     $spacings: cs, cst;
     $sizes: full, half;
-    $dictionary: ("p": padding, "m": margin, "l": left, "t": top, "r": right, "b": bottom);
+	$types: positive, negative;
+    $dictionary: ("p": padding, "m": margin, "l": left, "t": top, "r": right, "b": bottom, "positive": "", "negative": "-");
+    $dictionary_mlpr: ("positive": 1, "negative": -1);
 
     @each $property in $properties
     {
@@ -74,28 +76,33 @@ $bar_background: $gradient_background;
             {
 	            @each $size in $sizes
 	            {
-	            	@if $spacing == cs
-	            	{
-	            		@if $size == full
-	            		{
-		            		.#{$property + $direction}-#{$spacing} { #{$p}-#{$d}: #{$component_spacing} !important }
-	            		}
-	            		@else
-	            		{
-		            		.#{$property + $direction}-#{$spacing}-half { #{$p}-#{$d}: #{$component_spacing / 2} !important }
-	            		}
-	            	}
-	            	@else
-	            	{
-	            		@if $size == full
-	            		{
-		            		.#{$property + $direction}-#{$spacing} { #{$p}-#{$d}: #{$component_spacing_thin} !important }
-	            		}
-	            		@else
-	            		{
-		            		.#{$property + $direction}-#{$spacing}-half { #{$p}-#{$d}: #{$component_spacing_thin / 2} !important }
-	            		}
-	            	}
+				    @each $type in $types
+				    {
+				        $t: map-get($dictionary, $type);
+				        $mlpr: map-get($dictionary_mlpr, $type);
+    	            	@if $spacing == cs
+    	            	{
+    	            		@if $size == full
+    	            		{
+    		            		.#{$property + $direction}-#{$t}#{$spacing} { #{$p}-#{$d}: #{$component_spacing * $mlpr} !important }
+    	            		}
+    	            		@else
+    	            		{
+    		            		.#{$property + $direction}-#{$t}#{$spacing}-half { #{$p}-#{$d}: #{$component_spacing / 2 * $mlpr} !important }
+    	            		}
+    	            	}
+    	            	@else
+    	            	{
+    	            		@if $size == full
+    	            		{
+    		            		.#{$property + $direction}-#{$t}#{$spacing} { #{$p}-#{$d}: #{$component_spacing_thin * $mlpr} !important }
+    	            		}
+    	            		@else
+    	            		{
+    		            		.#{$property + $direction}-#{$t}#{$spacing}-half { #{$p}-#{$d}: #{$component_spacing_thin / 2 * $mlpr} !important }
+    	            		}
+    	            	}
+				    }
 	            }
             }
         }
@@ -582,6 +589,25 @@ body
 					margin-top: $component_spacing;
 				}
 			}
+
+		    .sessions
+		    {
+		    	margin: -20px;
+
+		    	.session
+		    	{
+		    		padding: 20px;
+
+		    		.session-info
+		    		{
+		    		}
+
+		    		+ .session
+		    		{
+		    			border-top: 1px solid $line_color;
+		    		}
+		    	}
+		    }
 		}
 
 		&.inline
@@ -2161,23 +2187,6 @@ body
 	    		display: block !important;
 	    	}
 	    }
-    }
-
-    .sessions
-    {
-    	.session
-    	{
-    		.session-info
-    		{
-    		}
-
-    		+ .session
-    		{
-    			padding-top: $component_spacing;
-    			margin-top: $component_spacing;
-    			border-top: 1px solid $line_color;
-    		}
-    	}
     }
 
     .session-checklog

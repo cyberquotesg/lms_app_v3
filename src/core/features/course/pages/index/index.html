@@ -39,7 +39,7 @@
 
             <ion-card-content>
                 <p><b>Description</b></p>
-                <p class="no-break">{{ course.summary ? sanitizeHTML(course.summary) : '-' }}</p>
+                <p class="no-break" [innerHTML]="course.summaryHTML"></p>
 
                 <p class="mt-13"><b>CPD Hours</b></p>
                 <p class="no-break">{{ course.trainingHours }} CPD Hour{{ s(course.trainingHours) }}</p>
@@ -75,7 +75,7 @@
         </div>
 
         <ng-container *ngFor="let section of sections; let i = index">
-            <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+            <div *ngIf="section.uservisible && section.visible == 1" class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                 <small class="d-block mb-4">Section {{ i + 1 }}</small>
                 {{ section.name }}
 
@@ -94,16 +94,32 @@
             <ion-card>
                 <ion-card-content>
                     <div class="sessions">
-                        <div *ngFor="let module of section.modules" class="session" (click)="moduleClicked($event, module)">
-                            <div class="session-info">
-                                <div class="card-item">
-                                    <div class="card-item-icon">
-                                        <img src="{{ module.modicon }}">
+                        <ng-container *ngFor="let module of section.modules">
+
+                            <div *ngIf="module.uservisible && module.visible == 1" class="session {{ getModuleClass(module) }}" (click)="moduleClicked($event, section, module)">
+                                <div class="session-info">
+                                    <div class="card-item">
+                                        <div class="card-item-icon">
+                                            <img src="{{ module.modicon }}">
+                                        </div>
+                                        <div class="card-item-text">
+                                            <ng-container *ngIf="module.completion != 0">
+                                                <ion-icon *ngIf="module.completiondata && module.completiondata.state" name="checkbox-outline" style="float: right; font-size: 30px;"></ion-icon>
+                                                <ion-icon *ngIf="!(module.completiondata && module.completiondata.state)" name="square-outline" style="float: right; font-size: 30px;"></ion-icon>
+                                            </ng-container>
+
+                                            <div>
+                                                {{ module.name }}
+                                                <small class="d-block mt-4">{{ module.modname }}</small>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="card-item-text">{{ module.name }}</div>
                                 </div>
+
+                                <div *ngIf="isModuleDisabled(module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                             </div>
-                        </div>
+
+                        </ng-container>
                     </div>
                 </ion-card-content>
             </ion-card>

@@ -35,6 +35,7 @@ import { IonRefresher } from '@ionic/angular';
 import { Renderer2 } from '@angular/core';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import { CoreCourseCompletionActivityStatus } from '@features/course/services/course';
+import { CoreCourses } from '@features/courses/services/courses';
 import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
 
@@ -185,6 +186,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         // by rachmad
         await this.prepareCourseData("additionals");
+        this.course.summaryHTML = this.course.summary ? this.course.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
 
         this.tabs.push(this.contentsTab);
         this.loaded = true;
@@ -408,12 +410,15 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
 
         this.course = course;
+        this.course.summaryHTML = this.course.summary ? this.course.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
         this.CH.log("final data", {
             course: this.course,
             sections: this.sections,
         });
     }
     async prepareSections(refresh?: boolean): Promise<void> {
+        if (!this.course) return;
+
         const sections = this.sections;
 
         if (refresh) {
@@ -430,9 +435,6 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             const sectionWithModules = sections.find((section) => section.modules.length > 0);
 
             if (sectionWithModules && sectionWithModules.modules[0].completion !== undefined) {
-                // The module already has completion (3.6 onwards). Load the offline completion.
-                this.modulesHaveCompletion = true;
-
                 await CoreUtils.ignoreErrors(CoreCourseHelper.loadOfflineCompletion(this.course.id, sections));
             } else {
                 const fetchedData = await CoreUtils.ignoreErrors(
@@ -455,23 +457,48 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         this.sections = result.sections;
     }
 
-    takeCourse(): void
+    async takeCourse(): Promise<void>
     {
         this.cqLoading = true;
-        setTimeout(() => {
+        try
+        {
+            await CoreCourses.selfEnrol(this.course.id, "", this.course.selfEnrolId);
+            await this.doRefresh();
             this.cqLoading = false;
-        }, 1000);
+            this.CH.alert("Yay!", "You are now enrolled to this course");
+        }
+        catch(error)
+        {
+            this.cqLoading = false;
+            this.CH.log("enrol error", error);
+            this.CH.alert("Ups!", "Cannot enrol to the course, please contact course administrator");
+        }
     }
     leaveCourse(): void
     {
         this.CH.alert('Confirm!', 'Are you sure to withdraw from this course?', {
             text: 'Sure',
             role: 'sure',
-            handler: (): void => {
+            handler: async (): void => {
                 this.cqLoading = true;
-                setTimeout(() => {
+                try
+                {
+                    const params = {
+                        class: 'CqCourseLib',
+                        function: 'unenrol_e_learning',
+                        course_id: this.course.id,
+                    };
+                    await this.CH.callApi(params);
+                    await this.doRefresh();
                     this.cqLoading = false;
-                }, 1000);
+                    this.CH.alert("Yay!", "You are now withdrawn from this course");
+                }
+                catch(error)
+                {
+                    this.cqLoading = false;
+                    this.CH.log("unenrol error", error);
+                    this.CH.alert("Ups!", "Cannot withdraw from the course, please contact course administrator");
+                }
             }
         }, {
             text: 'Cancel',
@@ -480,10 +507,27 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             }
         });
     }
-    moduleClicked(event: Event, courseModule: any): void
+    isModuleDisabled(courseModule: any): boolean
     {
-        if (CoreCourseHelper.canUserViewModule(courseModule, this.section) && courseModule.handlerData?.action) {
+        return !!courseModule.availabilityinfo;
+    }
+    getModuleClass(courseModule: any): string
+    {
+        return this.isModuleDisabled(courseModule) ? "disabled" : "";
+    }
+    moduleClicked(event: Event, courseSection: any, courseModule: any): void
+    {
+        if (this.isModuleDisabled(courseModule))
+        {
+            this.CH.alert('Ups!', courseModule.availabilityinfo);
+        }
+        else if (CoreCourseHelper.canUserViewModule(courseModule, courseSection) && courseModule.handlerData?.action)
+        {
             courseModule.handlerData.action(event, courseModule, courseModule.course);
+        }
+        else
+        {
+            this.CH.alert('Ups!', "Cannot open this course module, please contact course administrator");
         }
     }
 }

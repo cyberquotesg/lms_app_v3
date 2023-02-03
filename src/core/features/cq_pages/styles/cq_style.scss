@@ -155,11 +155,12 @@ $bar_background: $gradient_background;
 body
 {
 	font-family: "mainfont";
+	color: #222222;
 
 	*
 	{
-		font-family: "mainfont";
-		color: #222222;
+		font-family: inherit;
+		color: inherit;
 	}
 
 	// ============================================================================================= helper
@@ -582,6 +583,7 @@ body
 				{
 					display: block;
 					width: calc(100% - #{$icon_width});
+					font-size: 16px;
 					padding-left: 7px;
 				}
 				+ .card-item
@@ -606,6 +608,14 @@ body
 		    		{
 		    			border-top: 1px solid $line_color;
 		    		}
+
+			    	&.disabled
+			    	{
+			    		.session-info
+			    		{
+			    			opacity: 0.5;
+			    		}
+			    	}
 		    	}
 		    }
 		}

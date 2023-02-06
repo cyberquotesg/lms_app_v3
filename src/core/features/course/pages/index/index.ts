@@ -38,6 +38,8 @@ import { CoreCourseCompletionActivityStatus } from '@features/course/services/co
 import { CoreCourses } from '@features/courses/services/courses';
 import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { CoreCourseSync, CoreCourseSyncProvider } from '@features/course/services/sync';
+import { CoreSiteWSPreSets, CoreSite, WSObservable } from '@classes/site';
 
 /**
  * Page that displays the list of courses the user is enrolled in.
@@ -57,7 +59,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {summaryHTML, selfEnrolId};
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {selfEnrolId};
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
@@ -186,7 +188,6 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         // by rachmad
         await this.prepareCourseData("additionals");
-        this.course!.summaryHTML = this.course!.summary ? this.course!.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
 
         this.tabs.push(this.contentsTab);
         this.loaded = true;
@@ -273,8 +274,16 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         this.updateProgress();
 
+        // by rachmad
+        let presets: CoreSiteWSPreSets = {
+            getFromCache: false,
+            saveToCache: true,
+            emergencyCache: true,
+        };
+        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+
         // Load sections.
-        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
+        // this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
 
         if (!this.sections) {
             return;
@@ -363,6 +372,16 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     // by rachmad
     async doRefresh(refresher?: IonRefresher): Promise<void> {
+        // Try to synchronize the course data.
+        // For now we don't allow manual syncing, so ignore errors.
+        const result = await CoreUtils.ignoreErrors(CoreCourseSync.syncCourse(
+            this.course.id,
+            this.course.displayname || this.course.fullname,
+        ));
+        if (result?.warnings?.length) {
+            CoreDomUtils.showErrorModal(result.warnings[0]);
+        }
+
         await this.prepareCourseData("course, additionals");
         await this.loadBasinInfo();
         await this.prepareSections(true);
@@ -410,7 +429,6 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
 
         this.course = course;
-        this.course!.summaryHTML = this.course!.summary ? this.course!.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
         this.CH.log("final data", {
             course: this.course,
             sections: this.sections,
@@ -419,6 +437,12 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     async prepareSections(refresh?: boolean): Promise<void> {
         if (!this.course) return;
 
+        let presets: CoreSiteWSPreSets = {
+            getFromCache: false,
+            saveToCache: true,
+            emergencyCache: true,
+        };
+        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
         const sections = this.sections;
 
         if (refresh) {

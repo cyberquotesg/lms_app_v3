@@ -8,12 +8,6 @@
                 <core-format-text [text]="title" contextLevel="course" [contextInstanceId]="course?.id"></core-format-text>
             </h1>
         </ion-title>
-
-        <ion-buttons slot="end">
-            <ion-button fill="clear" (click)="openCourseSummary()" [attr.aria-label]="'core.course.coursesummary' | translate">
-                <ion-icon name="fas-info-circle" slot="icon-only" aria-hidden="true"></ion-icon>
-            </ion-button>
-        </ion-buttons>
     </ion-toolbar>
 </ion-header>
 
@@ -28,7 +22,7 @@
                 <div *ngIf="course.courseImage" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + course.courseImage + ')'}"></div>
                 <span *ngIf="!course.courseImage" class="card-image-letter">{{ getLetter(course.fullname) }}</span>
 
-                <div style="position: absolute; top: 5px; right: 5px; text-align: right;">
+                <div style="position: absolute; left: 4px; top: 4px; right: 4px;">
                     <cq_tags [item]="course"></cq_tags>
                 </div>
             </div>
@@ -38,17 +32,10 @@
             </ion-card-header>
 
             <ion-card-content>
-                <p><b>Description</b></p>
-                <p class="no-break" [innerHTML]="course.summaryHTML"></p>
-
-                <p class="mt-13"><b>CPD Hours</b></p>
-                <p class="no-break">{{ course.trainingHours }} CPD Hour{{ s(course.trainingHours) }}</p>
-
-                <p class="mt-13"><b>Start Date</b></p>
-                <p class="no-break">{{ course.startDateTimeText }}</p>
-
-                <p class="mt-13"><b>End Date</b></p>
-                <p class="no-break">{{ course.endDateTimeText || "-" }}</p>
+                <ng-container *ngFor="let info of course.basicInformation; let i = index">
+                    <p class="{{ i ? 'mt-12' : '' }}"><b>{{ info.text }}</b></p>
+                    <p class="no-break" [innerHTML]="info.value"></p>
+                </ng-container>
             </ion-card-content>
         </ion-card>
 

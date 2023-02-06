@@ -82,49 +82,42 @@ export class CqOfflineCourse extends CqPage implements OnInit
     connectSession(purpose: string, sessionId: number): void
     {
         this.loading = true;
-        this.CH.loading('Please wait...', (loading) => {
-            const params: any = {
-                class: 'CqCourseLib',
-                function: purpose + '_classroom_training',
-                session_id: sessionId,
-            };
-            this.CH.callApi(params)
-            .then((data) => {
-                data = this.CH.toJson(data);
-                this.CH.log('sign up result', data);
+        const params: any = {
+            class: 'CqCourseLib',
+            function: purpose + '_classroom_training',
+            session_id: sessionId,
+        };
+        this.CH.callApi(params)
+        .then((data) => {
+            data = this.CH.toJson(data);
+            this.CH.log('sign up result', data);
 
-                // sign up or withdraw is successfull
-                if ((purpose == 'sign_up' && Number(data.userEnrolment)) || (purpose == 'withdraw' && !Number(data.userEnrolment)))
-                {
-                    this.pageForceReferesh(() => {
-                        this.loading = false;
-                        loading.dismiss();
-
-                        // success to enrol and gather new data
-                        if (data.success == 1) this.CH.alert('Success!', data.message);
-
-                        // failed to enrol but success to gather new data
-                        else this.CH.alert('Ups!', data.message);
-                    });
-                }
-
-                // sign up or withdraw is failed
-                else
-                {
+            // sign up or withdraw is successfull
+            if ((purpose == 'sign_up' && Number(data.userEnrolment)) || (purpose == 'withdraw' && !Number(data.userEnrolment)))
+            {
+                this.pageForceReferesh(() => {
                     this.loading = false;
-                    loading.dismiss();
-                    this.CH.alert('Ups!', data.message)
-                }
-            })
-            .catch(() => {
+
+                    // success to enrol and gather new data
+                    if (data.success == 1) this.CH.alert('Success!', data.message);
+
+                    // failed to enrol but success to gather new data
+                    else this.CH.alert('Ups!', data.message);
+                });
+            }
+
+            // sign up or withdraw is failed
+            else
+            {
                 this.loading = false;
-                loading.dismiss();
-                
-                // cannot sign up because server is unreachable
-                this.CH.alert('Ups!', 'Server is unreachable, please check your internet connection');
-            })
-            .finally(() => {
-            });
+                this.CH.alert('Ups!', data.message)
+            }
+        })
+        .catch(() => {
+            this.loading = false;
+            
+            // cannot sign up because server is unreachable
+            this.CH.alert('Ups!', 'Server is unreachable, please check your internet connection');
         });
     }
     takeSession(sessionId: number): void

@@ -91,7 +91,7 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
             responsive: true,
             elements: {
                 line: {
-                    tension: 0.3
+                    tension: 0
                 }
             },
             maintainAspectRatio: false,

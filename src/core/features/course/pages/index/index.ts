@@ -467,7 +467,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             await CoreCourses.selfEnrol(this.course.id, "", this.course.selfEnrolId);
             await this.doRefresh();
             this.cqLoading = false;
-            this.CH.alert("Yay!", "You are now enrolled to this course");
+            this.CH.alert("Success!", "You have successfully signed up to " + this.course.fullname + " Course");
         }
         catch(error)
         {
@@ -495,7 +495,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                     await this.CH.callApi(params);
                     await this.doRefresh();
                     this.cqLoading = false;
-                    this.CH.alert("Yay!", "You are now withdrawn from this course");
+                    this.CH.alert("Success!", "You have successfully withdrawn from " + this.course.fullname + " Course");
                 }
                 catch(error)
                 {

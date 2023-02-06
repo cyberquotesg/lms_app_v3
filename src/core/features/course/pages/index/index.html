@@ -58,7 +58,7 @@
                     <span *ngIf="!cqLoading">Enrol</span>
                     <ion-spinner *ngIf="cqLoading"></ion-spinner>
                 </button>
-                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 4px;">
+                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 12px;">
                     This course is not open for self enrolment
                 </div>
             </ng-container>
@@ -68,7 +68,7 @@
                     <span *ngIf="!cqLoading">Withdraw</span>
                     <ion-spinner *ngIf="cqLoading"></ion-spinner>
                 </button>
-                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 4px;">
+                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 12px;">
                     This course is not open for self withdrawal
                 </div>
             </ng-container>

@@ -100,7 +100,7 @@
                                                     <div>Enrol to Course</div>
                                                     <div class="mt-cst">
                                                         <button (click)="takeSession(session.id)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
-                                                            <span *ngIf="!loading">Enrol</span>
+                                                            <span *ngIf="!loading"><b>Enrol</b></span>
                                                             <ion-spinner *ngIf="loading"></ion-spinner>
                                                         </button>
                                                     </div>
@@ -243,7 +243,7 @@
                                                         <div>Withdraw from Course</div>
                                                         <div class="mt-cst">
                                                             <button *ngIf="session.unavailableMessage == ''" (click)="leaveSession(session.id)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
-                                                                <span *ngIf="!loading">Withdraw</span>
+                                                                <span *ngIf="!loading"><b class="color-red">Withdraw</b></span>
                                                                 <ion-spinner *ngIf="loading"></ion-spinner>
                                                             </button>
                                                             <div *ngIf="session.unavailableMessage != ''" class="no-break text-left pl-0 pr-0 pb-0">

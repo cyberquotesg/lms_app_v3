@@ -42,7 +42,7 @@
         <div *ngIf="!course.hasEnded" class="pl-cs pr-cs mt-cst">
             <ng-container *ngIf="!course.isUserEnrolled">
                 <button *ngIf="course.isSelfEnrol" (click)="takeCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
-                    <span *ngIf="!cqLoading">Enrol</span>
+                    <span *ngIf="!cqLoading"><b>Enrol</b></span>
                     <ion-spinner *ngIf="cqLoading"></ion-spinner>
                 </button>
                 <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 12px;">
@@ -52,10 +52,10 @@
 
             <ng-container *ngIf="course.isUserEnrolled">
                 <button *ngIf="course.isSelfEnrol" (click)="leaveCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
-                    <span *ngIf="!cqLoading">Withdraw</span>
+                    <span *ngIf="!cqLoading"><b class="color-red">Withdraw</b></span>
                     <ion-spinner *ngIf="cqLoading"></ion-spinner>
                 </button>
-                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red" style="border-radius: 12px;">
+                <div *ngIf="!course.isSelfEnrol" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red color-white" style="border-radius: 12px;">
                     This course is not open for self withdrawal
                 </div>
             </ng-container>

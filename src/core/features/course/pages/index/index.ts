@@ -372,6 +372,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     // by rachmad
     async doRefresh(refresher?: IonRefresher): Promise<void> {
+        if (!this.course) return;
+        
         // Try to synchronize the course data.
         // For now we don't allow manual syncing, so ignore errors.
         const result = await CoreUtils.ignoreErrors(CoreCourseSync.syncCourse(

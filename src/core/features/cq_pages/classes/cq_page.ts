@@ -216,8 +216,8 @@ export class CqPage extends CqGeneral
             this.CH.log('failed to call api', jobName);
             this.CH.log(e);
 
-            if (e.message) this.CH.alert('Ups!', e.message);
-            else this.CH.alert('Ups!', 'We have trouble, please try again');
+            if (e.message) this.CH.alert('Oops!', e.message);
+            else this.CH.alert('Oops!', 'We have trouble, please try again');
         })
         .finally(() => {
             this.pageJobExecuterFinally(moreloader, refresher, finalCallback);

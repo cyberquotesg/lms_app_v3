@@ -180,11 +180,11 @@ export class CqAnnouncement extends CqPage implements OnInit
                 })
                 .catch(() => {
                     loading.dismiss();
-                    this.CH.alert('Ups!', 'Failed to open the file');
+                    this.CH.alert('Oops!', 'Failed to open the file');
                 });
             }, (error) => {
                 loading.dismiss();
-                this.CH.alert('Ups!', 'Failed to download the file');
+                this.CH.alert('Oops!', 'Failed to download the file');
             });
         });
     }

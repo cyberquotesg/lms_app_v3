@@ -102,7 +102,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
                     if (data.success == 1) this.CH.alert('Success!', data.message);
 
                     // failed to enrol but success to gather new data
-                    else this.CH.alert('Ups!', data.message);
+                    else this.CH.alert('Oops!', data.message);
                 });
             }
 
@@ -110,14 +110,14 @@ export class CqOfflineCourse extends CqPage implements OnInit
             else
             {
                 this.loading = false;
-                this.CH.alert('Ups!', data.message)
+                this.CH.alert('Oops!', data.message)
             }
         })
         .catch(() => {
             this.loading = false;
             
             // cannot sign up because server is unreachable
-            this.CH.alert('Ups!', 'Server is unreachable, please check your internet connection');
+            this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
         });
     }
     takeSession(sessionId: number): void
@@ -143,7 +143,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
     alertZoomNotStarted(date: any): void
     {
         this.CH.alert(
-            'Ups!',
+            'Oops!',
             'Zoom meeting hasn\'t started. ' +
             'It will be available at ' + 
             date.dateText + ' ' + 
@@ -185,14 +185,14 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 this.pageForceReferesh(() => {
                     loading.dismiss();
                     if (data.success) this.showChecklogBanner(data);
-                    else this.CH.alert('Ups!', data.message);
+                    else this.CH.alert('Oops!', data.message);
                 });
             })
             .catch((e) => {
                 loading.dismiss();
                 
                 // cannot sign up because server is unreachable
-                this.CH.alert('Ups!', 'Server is unreachable, please check your internet connection');
+                this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
             })
             .finally(() => {
             });
@@ -205,7 +205,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
             navigator.geolocation.getCurrentPosition((position) => {
                 this.QRCodeScanner(session, position.coords.latitude, position.coords.longitude);
             }, (e) => {
-                this.CH.alert('Ups!', 'Cannot get location data, make sure your GPS is turned on and try again');
+                this.CH.alert('Oops!', 'Cannot get location data, make sure your GPS is turned on and try again');
             }, {
                 enableHighAccuracy: true, 
                 maximumAge: 11000, 
@@ -223,7 +223,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
             navigator.geolocation.getCurrentPosition((position) => {
                 this.QRCodeSender(session, fakeQRCodeData, position.coords.latitude, position.coords.longitude)
             }, (e) => {
-                this.CH.alert('Ups!', 'Cannot get location data, make sure your GPS is turned on and try again');
+                this.CH.alert('Oops!', 'Cannot get location data, make sure your GPS is turned on and try again');
             }, {
                 enableHighAccuracy: true, 
                 maximumAge: 11000, 

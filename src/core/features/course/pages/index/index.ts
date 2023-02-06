@@ -473,7 +473,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         {
             this.cqLoading = false;
             this.CH.log("enrol error", error);
-            this.CH.alert("Ups!", "Cannot enrol to the course, please contact course administrator");
+            this.CH.alert("Oops!", "Cannot enrol to the course, please contact course administrator");
         }
     }
     leaveCourse(): void
@@ -501,7 +501,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 {
                     this.cqLoading = false;
                     this.CH.log("unenrol error", error);
-                    this.CH.alert("Ups!", "Cannot withdraw from the course, please contact course administrator");
+                    this.CH.alert("Oops!", "Cannot withdraw from the course, please contact course administrator");
                 }
             }
         }, {
@@ -523,7 +523,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     {
         if (this.isModuleDisabled(courseModule))
         {
-            this.CH.alert('Ups!', courseModule.availabilityinfo);
+            this.CH.alert('Oops!', courseModule.availabilityinfo);
         }
         else if (CoreCourseHelper.canUserViewModule(courseModule, courseSection) && courseModule.handlerData?.action)
         {
@@ -531,7 +531,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
         else
         {
-            this.CH.alert('Ups!', "Cannot open this course module, please contact course administrator");
+            this.CH.alert('Oops!', "Cannot open this course module, please contact course administrator");
         }
     }
 }

@@ -57,7 +57,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {summaryHTML, selfEnrolId};
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
@@ -186,7 +186,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         // by rachmad
         await this.prepareCourseData("additionals");
-        this.course.summaryHTML = this.course.summary ? this.course.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
+        this.course!.summaryHTML = this.course!.summary ? this.course!.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
 
         this.tabs.push(this.contentsTab);
         this.loaded = true;
@@ -410,7 +410,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
 
         this.course = course;
-        this.course.summaryHTML = this.course.summary ? this.course.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
+        this.course!.summaryHTML = this.course!.summary ? this.course!.summary.replace(/\&gt\;/g, '>').replace(/\&lt\;/g, '<') : "-";
         this.CH.log("final data", {
             course: this.course,
             sections: this.sections,
@@ -459,6 +459,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     async takeCourse(): Promise<void>
     {
+        if (!this.course) return;
+
         this.cqLoading = true;
         try
         {
@@ -479,7 +481,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         this.CH.alert('Confirm!', 'Are you sure to withdraw from this course?', {
             text: 'Sure',
             role: 'sure',
-            handler: async (): void => {
+            handler: async (): Promise<void> => {
+                if (!this.course) return;
+
                 this.cqLoading = true;
                 try
                 {

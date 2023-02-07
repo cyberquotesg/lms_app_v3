@@ -59,6 +59,8 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
     hasAbout: boolean = false;
     licenseType = "";
     licenseCode = "";
+    organizationCombined = "";
+    licenseCombined = "";
 
     protected userId!: number;
     protected site!: CoreSite;
@@ -157,6 +159,19 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
                 this.licenseType || this.licenseCode ||
                 this.interests
             );
+
+            let temp: string[];
+
+            temp = [];
+            if (clonedUser.organization_text) temp.push(clonedUser.organization_text);
+            if (clonedUser.departmentid_text) temp.push(clonedUser.departmentid_text);
+            if (clonedUser.branch_text) temp.push(clonedUser.branch_text);
+            this.organizationCombined = temp.join(", ");
+
+            temp = [];
+            if (this.licenseType) temp.push(this.licenseType);
+            if (this.licenseCode) temp.push(this.licenseCode);
+            this.licenseCombined = temp.join(", ");
             // by rachmad
 
             await this.checkUserImageUpdated();

@@ -57,29 +57,14 @@
                             <div class="card-item-text">{{ user.country_text }}</div>
                         </div>
 
-                        <div *ngIf="user.organization_text" class="card-item">
+                        <div *ngIf="organizationCombined" class="card-item">
                             <div class="card-item-icon"><ion-icon name="business"></ion-icon></div>
-                            <div class="card-item-text">{{ user.organization_text }}</div>
+                            <div class="card-item-text">{{ organizationCombined }}</div>
                         </div>
 
-                        <div *ngIf="user.departmentid_text" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="people"></ion-icon></div>
-                            <div class="card-item-text">{{ user.departmentid_text }}</div>
-                        </div>
-
-                        <div *ngIf="user.branch_text" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="share-social"></ion-icon></div>
-                            <div class="card-item-text">{{ user.branch_text }}</div>
-                        </div>
-
-                        <div *ngIf="licenseType" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="newspaper"></ion-icon></div>
-                            <div class="card-item-text">{{ licenseType }}</div>
-                        </div>
-
-                        <div *ngIf="licenseCode" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="newspaper"></ion-icon></div>
-                            <div class="card-item-text">{{ licenseCode }}</div>
+                        <div *ngIf="licenseCombined" class="card-item">
+                            <div class="card-item-icon"><ion-icon name="ribbon"></ion-icon></div>
+                            <div class="card-item-text">{{ licenseCombined }}</div>
                         </div>
 
                         <div *ngIf="interests" class="card-item">

@@ -40,6 +40,7 @@ import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
 import { CoreCourseSync, CoreCourseSyncProvider } from '@features/course/services/sync';
 import { CoreSiteWSPreSets, CoreSite, WSObservable } from '@classes/site';
+import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grades';
 
 /**
  * Page that displays the list of courses the user is enrolled in.
@@ -66,6 +67,10 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     // by rachmad
     cqLoading: boolean = false;
+    grades: any = {
+        onCourse: [],
+        onModule: {},
+    };
 
     protected currentPagePath = '';
     protected selectTabObserver: CoreEventObserver;
@@ -417,11 +422,10 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
         let temp = await this.CH.callApi(params);
         let data = this.CH.toJson(temp);
-        let course: any;
 
+        let course: any;
         if (modeArray.includes("course")) course = this.CH.cloneJson(data.course);
         else course = this.CH.cloneJson(this.course);
-
         if (modeArray.includes("additionals"))
         {
             for (let name in data.additionals)
@@ -429,11 +433,33 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 course[name] = data.additionals[name];
             }
         }
-
         this.course = course;
+
+        let tempGrades = await CoreGrades.getGradeItems(this.course.id, 0, 0, "", true),
+            grades = {onCourse: [], onModule: {}};
+        tempGrades.forEach((grade) => {
+            // has cmid, so it is onModule
+            if (grade.cmid)
+            {
+                grades.onModule[grade.cmid] = grade.gradeformatted;
+            }
+
+            // otherwise, it is onCourse
+            else
+            {
+                grades.onCourse.push({
+                    name: grade.itemname ? grade.itemname : grade.itemtype == "course" ? "Total Grade" : "-",
+                    value: grade.gradeformatted === "" ? "-" : grade.gradeformatted,
+                });
+            }
+        });
+        this.grades = grades;
+
         this.CH.log("final data", {
             course: this.course,
             sections: this.sections,
+            grades: this.grades,
+            tempGrades,
         });
     }
     async prepareSections(refresh?: boolean): Promise<void> {

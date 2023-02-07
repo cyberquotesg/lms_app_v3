@@ -34,7 +34,20 @@
             <ion-card-content>
                 <ng-container *ngFor="let info of course.basicInformation; let i = index">
                     <p class="{{ i ? 'mt-12' : '' }}"><b>{{ info.text }}</b></p>
-                    <p class="no-break" [innerHTML]="info.value"></p>
+                    <p class="no-break" [innerHTML]="info.value || '-'"></p>
+                </ng-container>
+            </ion-card-content>
+        </ion-card>
+
+        <ion-card *ngIf="course.isUserEnrolled && grades.onCourse.length > 0">
+            <ion-card-header>
+                <ion-card-title class="text-center">Grades</ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content>
+                <ng-container *ngFor="let grade of grades.onCourse; let i = index">
+                    <p class="{{ i ? 'mt-12' : '' }}"><b>{{ grade.name }}</b></p>
+                    <p class="no-break" [innerHTML]="grade.value"></p>
                 </ng-container>
             </ion-card-content>
         </ion-card>
@@ -90,20 +103,23 @@
                                             <img src="{{ module.modicon }}">
                                         </div>
                                         <div class="card-item-text">
-                                            <ng-container *ngIf="module.completion != 0">
+                                            <ng-container *ngIf="course.isUserEnrolled && module.completion != 0">
                                                 <ion-icon *ngIf="module.completiondata && module.completiondata.state" name="checkbox-outline" style="float: right; font-size: 30px;"></ion-icon>
                                                 <ion-icon *ngIf="!(module.completiondata && module.completiondata.state)" name="square-outline" style="float: right; font-size: 30px;"></ion-icon>
                                             </ng-container>
 
                                             <div>
                                                 {{ module.name }}
-                                                <small class="d-block mt-4">{{ module.modname }}</small>
+                                                <div class="cq-tag-wrapper mt-4">
+                                                    <span class="cq-tag dark-grey">{{ module.modplural }}</span>
+                                                    <span *ngIf="course.isUserEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
+                                                </div>
+
+                                                <div *ngIf="isModuleDisabled(module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div *ngIf="isModuleDisabled(module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                             </div>
 
                         </ng-container>

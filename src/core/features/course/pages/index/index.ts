@@ -444,14 +444,13 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 grades.onModule[grade.cmid] = grade.gradeformatted;
             }
 
-            // otherwise, it is onCourse
-            else
-            {
-                grades.onCourse.push({
-                    name: grade.itemname ? grade.itemname : grade.itemtype == "course" ? "Total Grade" : "-",
-                    value: grade.gradeformatted === "" ? "-" : grade.gradeformatted,
-                });
-            }
+            // always include to onCourse
+            grades.onCourse.push({
+                name: grade.itemname ? grade.itemname : grade.itemtype == "course" ? "Total Grade" : "-",
+                value: grade.gradeformatted === "" ? "-" : grade.gradeformatted,
+                range: grade.rangeformatted === "" ? "-" : grade.rangeformatted,
+                inPercent: grade.percentageformatted === "" ? "-" : grade.percentageformatted,
+            });
         });
         this.grades = grades;
 

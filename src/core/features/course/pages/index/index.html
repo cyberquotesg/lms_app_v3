@@ -45,10 +45,16 @@
             </ion-card-header>
 
             <ion-card-content>
-                <ng-container *ngFor="let grade of grades.onCourse; let i = index">
-                    <p class="{{ i ? 'mt-12' : '' }}"><b>{{ grade.name }}</b></p>
-                    <p class="no-break" [innerHTML]="grade.value"></p>
-                </ng-container>
+                <table style="width: 100%">
+                    <tr *ngFor="let grade of grades.onCourse; let i = index">
+                        <td class="{{ i ? 'pt-12' : '' }}">
+                            {{ grade.name }}<br />
+                            <small [innerHTML]="'Range ' + grade.range + ', Grade In Percent ' + grade.inPercent"></small>
+                        </td>
+                        <td class="pl-8 pr-8 text-center">:</td>
+                        <td class="text-right">{{ grade.value }}</td>
+                    </tr>
+                </table>
             </ion-card-content>
         </ion-card>
 

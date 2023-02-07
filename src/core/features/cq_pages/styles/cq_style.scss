@@ -523,11 +523,8 @@ body
 		ion-card-header
 		{
 			padding-left: 0px !important;
-			padding-top: 0px !important;
 			padding-right: 0px !important;
-			padding-bottom: 0px !important;
 	    	text-align: center;
-			border-bottom: 1px solid #{$medium_grey};
 
 			ion-card-title
 			{
@@ -538,7 +535,6 @@ body
 				text-align: center;
 				font-weight: 400;
 				font-size: 16px;
-				height: 56px;
 				line-height: 1.2em;
 				overflow: hidden;
 
@@ -635,11 +631,12 @@ body
 			ion-card-header
 			{
 				min-height: 36px;
+				padding-top: 0px !important;
+				padding-bottom: 0px !important;
 				margin-left: 72px;
 
 				ion-card-title
 				{
-					height: auto;
 					justify-content: flex-start;
 					text-align: left;
 
@@ -668,6 +665,18 @@ body
 				+ ion-card-content
 				{
 					margin-top: $component_spacing;
+				}
+			}
+
+			ion-card-header
+			{
+				padding-top: 8px !important;
+				padding-bottom: 8px !important;
+
+				+ ion-card-content
+				{
+					border-top: 1px solid #{$medium_grey};
+					padding-top: $component_spacing !important;
 				}
 			}
 		}
@@ -800,6 +809,17 @@ body
 	    		{
 	    			height: 100%;
 	    			margin: 0px !important;
+
+	    			ion-card-header
+	    			{
+	    				padding-top: 0px !important;
+	    				padding-bottom: 0px !important;
+	    				
+	    				ion-card-title
+	    				{
+	    					height: 56px;
+	    				}
+	    			}
 	    		}
 
 		    	&.fake

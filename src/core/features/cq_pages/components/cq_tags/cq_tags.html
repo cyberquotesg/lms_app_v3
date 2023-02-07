@@ -23,11 +23,11 @@
     </ng-container>
     
     <ng-container *ngIf="showCourseType">
-        <span data-id="courseTypeText" *ngIf="item.typeText || item.finalCourseTypeText || item.courseTypeText" class="cq-tag dark-grey">Type: {{ item.typeText || item.finalCourseTypeText || item.courseTypeText }}</span>
+        <span data-id="courseTypeText" *ngIf="item.typeText || item.finalCourseTypeText || item.courseTypeText" class="cq-tag dark-grey">{{ item.typeText || item.finalCourseTypeText || item.courseTypeText }}</span>
     </ng-container>
     
     <ng-container *ngIf="showCategoryName">
-        <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">Category: {{ item.categoryname || item.categoryName }}</span>
+        <span data-id="categoryName" *ngIf="item.categoryname || item.categoryName" class="cq-tag dark-grey">{{ item.categoryname || item.categoryName }}</span>
     </ng-container>
     
     <ng-container *ngIf="showTags">

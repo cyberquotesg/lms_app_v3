@@ -755,6 +755,17 @@ body
 			}
 		}
 	}
+	ion-list
+	{
+		ion-item
+		{
+			button
+			{
+				margin-top: 12px;
+				margin-bottom: 20px;
+			}
+		}
+	}
 	.cq-slide
 	{
 		width: 100vw;

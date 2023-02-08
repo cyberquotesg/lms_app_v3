@@ -22,7 +22,7 @@
                 <div *ngIf="course.courseImage" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + course.courseImage + ')'}"></div>
                 <span *ngIf="!course.courseImage" class="card-image-letter">{{ getLetter(course.fullname) }}</span>
 
-                <div style="position: absolute; left: 4px; top: 4px; right: 4px;">
+                <div class="text-right" style="position: absolute; left: 4px; top: 4px; right: 4px;">
                     <cq_tags [item]="course"></cq_tags>
                 </div>
             </div>
@@ -47,12 +47,12 @@
             <ion-card-content>
                 <table style="width: 100%">
                     <tr *ngFor="let grade of grades.onCourse; let i = index">
-                        <td class="{{ i ? 'pt-12' : '' }}">
+                        <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
                             {{ grade.name }}<br />
                             <small [innerHTML]="'Range ' + grade.range + ', Grade In Percent ' + grade.inPercent"></small>
                         </td>
-                        <td class="pl-8 pr-8 text-center">:</td>
-                        <td class="text-right">{{ grade.value }}</td>
+                        <td class="pl-8 pr-8 text-center" style="vertical-align: top;">:</td>
+                        <td class="text-right" style="vertical-align: top;">{{ grade.value }}</td>
                     </tr>
                 </table>
             </ion-card-content>
@@ -81,57 +81,59 @@
         </div>
 
         <ng-container *ngFor="let section of sections; let i = index">
-            <div *ngIf="section.uservisible && section.visible == 1" class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
-                <small class="d-block mb-4">Section {{ i + 1 }}</small>
-                {{ section.name }}
+            <ng-container *ngIf="section.uservisible && section.visible == 1">
+                <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                    <small class="d-block mb-4">Section {{ i + 1 }}</small>
+                    {{ section.name }}
 
-                <!-- 
-                <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
-                    <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : '' }}">
-                        <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-                        {{ session.userAttendanceText }}
+                    <!-- 
+                    <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
+                        <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : '' }}">
+                            <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+                            {{ session.userAttendanceText }}
+                        </div>
                     </div>
+                     -->
+
+                    <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
                 </div>
-                 -->
 
-                <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
-            </div>
+                <ion-card>
+                    <ion-card-content>
+                        <div class="sessions">
+                            <ng-container *ngFor="let module of section.modules">
 
-            <ion-card>
-                <ion-card-content>
-                    <div class="sessions">
-                        <ng-container *ngFor="let module of section.modules">
+                                <div *ngIf="module.uservisible && module.visible == 1" class="session {{ getModuleClass(module) }}" (click)="moduleClicked($event, section, module)">
+                                    <div class="session-info">
+                                        <div class="card-item">
+                                            <div class="card-item-icon">
+                                                <img src="{{ module.modicon }}">
+                                            </div>
+                                            <div class="card-item-text">
+                                                <ng-container *ngIf="course.isUserEnrolled && module.completion != 0">
+                                                    <ion-icon *ngIf="module.completiondata && module.completiondata.state" name="checkbox-outline" style="float: right; font-size: 30px;"></ion-icon>
+                                                    <ion-icon *ngIf="!(module.completiondata && module.completiondata.state)" name="square-outline" style="float: right; font-size: 30px;"></ion-icon>
+                                                </ng-container>
 
-                            <div *ngIf="module.uservisible && module.visible == 1" class="session {{ getModuleClass(module) }}" (click)="moduleClicked($event, section, module)">
-                                <div class="session-info">
-                                    <div class="card-item">
-                                        <div class="card-item-icon">
-                                            <img src="{{ module.modicon }}">
-                                        </div>
-                                        <div class="card-item-text">
-                                            <ng-container *ngIf="course.isUserEnrolled && module.completion != 0">
-                                                <ion-icon *ngIf="module.completiondata && module.completiondata.state" name="checkbox-outline" style="float: right; font-size: 30px;"></ion-icon>
-                                                <ion-icon *ngIf="!(module.completiondata && module.completiondata.state)" name="square-outline" style="float: right; font-size: 30px;"></ion-icon>
-                                            </ng-container>
+                                                <div>
+                                                    {{ module.name }}
+                                                    <div class="cq-tag-wrapper mt-4">
+                                                        <span class="cq-tag dark-grey">{{ module.modplural }}</span>
+                                                        <span *ngIf="course.isUserEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
+                                                    </div>
 
-                                            <div>
-                                                {{ module.name }}
-                                                <div class="cq-tag-wrapper mt-4">
-                                                    <span class="cq-tag dark-grey">{{ module.modplural }}</span>
-                                                    <span *ngIf="course.isUserEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
+                                                    <div *ngIf="isModuleDisabled(module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                                                 </div>
-
-                                                <div *ngIf="isModuleDisabled(module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                        </ng-container>
-                    </div>
-                </ion-card-content>
-            </ion-card>
+                            </ng-container>
+                        </div>
+                    </ion-card-content>
+                </ion-card>
+            </ng-container>
         </ng-container>
     </core-loading>
 </ion-content>

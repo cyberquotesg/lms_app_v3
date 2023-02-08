@@ -3,8 +3,8 @@
         <div *ngFor="let item of items" class="tile" data-id="{{ item.id }}">
             <ion-card class="thin" (click)="selectItem(item)">
                 <div class="card-image">
-                    <div *ngIf="item.course_image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.course_image + ')'}"></div>
-                    <span *ngIf="!item.course_image" class="card-image-letter">{{ item.letter }}</span>
+                    <div *ngIf="item.image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.image + ')'}"></div>
+                    <span *ngIf="!item.image" class="card-image-letter">{{ item.letter }}</span>
                     
                     <div class="card-image-tags">
                         <cq_tags [item]="item"></cq_tags>

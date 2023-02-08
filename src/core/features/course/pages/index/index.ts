@@ -192,10 +192,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
 
         // by rachmad
-        await this.prepareCourseData("additionals");
-
-        this.tabs.push(this.contentsTab);
-        this.loaded = true;
+        // this.tabs.push(this.contentsTab);
+        // this.loaded = true;
 
         await Promise.all([
             this.loadCourseHandlers(),
@@ -204,6 +202,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         // by rachmad
         await this.prepareSections();
+        await this.prepareCourseData("additionals");
+        this.tabs.push(this.contentsTab);
+        this.loaded = true;
     }
 
     /**
@@ -389,9 +390,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             CoreDomUtils.showErrorModal(result.warnings[0]);
         }
 
-        await this.prepareCourseData("course, additionals");
         await this.loadBasinInfo();
         await this.prepareSections(true);
+        await this.prepareCourseData("course, additionals");
 
         refresher?.complete();
     }
@@ -435,8 +436,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
         this.course = course;
 
-        let tempGrades = await CoreGrades.getGradeItems(this.course.id, 0, 0, "", true),
-            grades = {onCourse: [], onModule: {}};
+        let tempGrades = await CoreGrades.getGradeItems(this.course!.id, 0, 0, "", true),
+            grades: any = {onCourse: [], onModule: {}};
         tempGrades.forEach((grade) => {
             // has cmid, so it is onModule
             if (grade.cmid)
@@ -453,6 +454,16 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             });
         });
         this.grades = grades;
+
+        // remove link in availability info
+        this.sections.forEach((section) => {
+            section.modules.forEach((courseModule) => {
+                if (courseModule.availabilityinfo)
+                {
+                    courseModule.availabilityinfo = courseModule.availabilityinfo.replace(/\<a /g, "<b ").replace(/\<\/a\>/g, "</b>").replace(/ href/g, " data-href");
+                }
+            });
+        });
 
         this.CH.log("final data", {
             course: this.course,

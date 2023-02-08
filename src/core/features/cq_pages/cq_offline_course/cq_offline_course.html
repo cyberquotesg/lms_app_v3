@@ -16,7 +16,7 @@
                     <div *ngIf="pageData.course.courseImageFull" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + pageData.course.courseImageFull + ')'}"></div>
                     <span *ngIf="!pageData.course.courseImageFull" class="card-image-letter">{{ getLetter(pageData.course.name) }}</span>
 
-                    <div style="position: absolute; left: 4px; top: 4px; right: 4px;">
+                    <div class="text-right" style="position: absolute; left: 4px; top: 4px; right: 4px;">
                         <cq_tags [item]="pageData.course"></cq_tags>
                     </div>
                 </div>

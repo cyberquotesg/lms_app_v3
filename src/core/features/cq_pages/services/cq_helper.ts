@@ -1019,7 +1019,7 @@ export class CqHelper
         return courses;
     }
 
-    initiateZoom(apiKey: string, apiSecret: string): Promise<boolean>
+    initiateZoomEngine(apiKey: string, apiSecret: string): Promise<boolean>
     {
     	this.log("try to initiate zoom, apiKey", apiKey);
     	this.log("try to initiate zoom, apiSecret", apiSecret);
@@ -1035,18 +1035,51 @@ export class CqHelper
     	return this.zoom.initialize(apiKey, apiSecret)
     	.then((success: any) => {
     		this.log("init zoom ok", success);
-    	    this.zoomInitiated = true;
     	    
     	    return true;
     	})
     	.catch((error: any) => {
     		this.errorLog("init zoom error", {apiKey, apiSecret, error});
-    	    this.zoomInitiated = false;
 
     	    return false;
     	});
     }
-    joinMeetingZoom(meetingNumber, meetingPassword, userFullname): void {
+    async initiateZoom(): Promise<boolean>
+    {
+    	if (this.zoomInitiated) return true;
+
+    	const zoomKeysParams = {
+    	    class: "CqLib",
+    	    function: "get_zoom_keys",
+    	};
+    	let data = await this.callApi(zoomKeysParams);
+    	let jsonData = this.toJson(data);
+
+    	if (jsonData.success)
+    	{
+    	    let initiated = false;
+    	    for (let key of jsonData.list)
+    	    {
+    	        initiated = await this.initiateZoomEngine(key.apiKey, key.secretKey);
+    	        if (initiated)
+    	        {
+    	    		this.zoomInitiated = true;
+    	        	return true;
+    	        }
+    	    }
+
+			this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection or contact your course administrator.");
+    	}
+    	else
+    	{
+    	    this.alert("Oops!", "Your organization is not connected to zoom, please contact your course administrator.");
+    	}
+
+		this.zoomInitiated = false;
+    	return false;
+    }
+    joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname): void
+    {
     	if (!CorePlatform.is('cordova'))
     	{
 	    	this.log("cancel join meeting zoom", "this is not cordova");
@@ -1074,5 +1107,10 @@ export class CqHelper
     		this.errorLog("join meeting zoom error", {meetingNumber, meetingPassword, userFullname, error});
             this.alert("Oops!", "Cannot start Zoom meeting, please check your internet connection or contact your course administrator.");
         });
+    }
+    async joinMeetingZoom(meetingNumber, meetingPassword, userFullname): Promise<void> 
+    {
+    	await this.initiateZoom();
+    	if (this.zoomInitiated) this.joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname);
     }
 }

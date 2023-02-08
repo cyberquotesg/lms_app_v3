@@ -1,8 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="41000" id="com.moodle.cyberquote" ios-CFBundleVersion="4.1.0.0" version="4.1.0-dev" versionCode="41000" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Moodle</name>
-    <description>Moodle official app</description>
-    <author email="mobile@moodle.com" href="http://moodle.com">Moodle Mobile team</author>
+<widget
+    id="com.moodle.cyberquote"
+    version="3.0.000"
+    versionCode="30000"
+    android-versionCode="30000"
+    ios-CFBundleVersion="3.0.000"
+    xmlns="http://www.w3.org/ns/widgets"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:cdv="http://cordova.apache.org/ns/1.0"
+>
+    <name>CQ Academy</name>
+    <description>Official CyberQuote App</description>
+    <author email="rachmadherdiyanto@cyberquote.co.id" href="https://lms.cyberquote.com">CyberQuote</author>
     <content src="index.html" />
     <access origin="*" />
     <access launch-external="yes" origin="tel:*" />
@@ -251,7 +260,7 @@
             <true />
         </edit-config>
         <edit-config file="*-Info.plist" mode="merge" target="CFBundleShortVersionString">
-            <string>4.1.0</string>
+            <string>3.0.000</string>
         </edit-config>
         <edit-config file="*-Info.plist" mode="overwrite" target="CFBundleLocalizations">
             <array>

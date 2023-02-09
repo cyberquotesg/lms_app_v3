@@ -34,7 +34,7 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
 
         let item = this.item;
         this.showMedia = !hideList.includes("media") && typeof item.media != "undefined";
-        this.showUserStatus = !hideList.includes("userStatus") && typeof item.isUserEnrolled != "undefined" && typeof item.isUserFinished != "undefined" && typeof item.isUserAccredited != "undefined";
+        this.showUserStatus = !hideList.includes("userStatus");
         this.showCompulsory = !hideList.includes("compulsory") && (item.compulsory === true || item.compulsory === 1 || item.compulsory === '1');
         this.showCourseType = !hideList.includes("courseType") && (item.typeText || item.finalCourseTypeText || item.courseTypeText);
         this.showCategoryName = !hideList.includes("categoryName") && (item.categoryname || item.categoryName);

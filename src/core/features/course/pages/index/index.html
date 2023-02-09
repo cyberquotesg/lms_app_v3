@@ -39,7 +39,7 @@
             </ion-card-content>
         </ion-card>
 
-        <ion-card *ngIf="course.isUserEnrolled && grades.onCourse.length > 0">
+        <ion-card *ngIf="course.hasEnrolled && grades.onCourse.length > 0">
             <ion-card-header>
                 <ion-card-title class="text-center">Grades</ion-card-title>
             </ion-card-header>
@@ -59,7 +59,7 @@
         </ion-card>
 
         <div *ngIf="!course.hasEnded" class="pl-cs pr-cs mt-cst">
-            <ng-container *ngIf="!course.isUserEnrolled">
+            <ng-container *ngIf="!course.hasEnrolled">
                 <button *ngIf="course.isSelfEnrol" (click)="takeCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
                     <span *ngIf="!cqLoading"><b>Enrol</b></span>
                     <ion-spinner *ngIf="cqLoading"></ion-spinner>
@@ -69,7 +69,7 @@
                 </div>
             </ng-container>
 
-            <ng-container *ngIf="course.isUserEnrolled">
+            <ng-container *ngIf="course.hasEnrolled">
                 <button *ngIf="course.isSelfEnrol" (click)="leaveCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
                     <span *ngIf="!cqLoading"><b class="color-red">Withdraw</b></span>
                     <ion-spinner *ngIf="cqLoading"></ion-spinner>
@@ -117,7 +117,7 @@
                                                 <img src="{{ module.modicon }}">
                                             </div>
                                             <div class="card-item-text">
-                                                <ng-container *ngIf="course.isUserEnrolled && module.completion != 0">
+                                                <ng-container *ngIf="course.hasEnrolled && module.completion != 0">
                                                     <ion-icon *ngIf="module.completiondata && module.completiondata.state" name="checkbox-outline" style="float: right; font-size: 30px;"></ion-icon>
                                                     <ion-icon *ngIf="!(module.completiondata && module.completiondata.state)" name="square-outline" style="float: right; font-size: 30px;"></ion-icon>
                                                 </ng-container>
@@ -126,7 +126,7 @@
                                                     {{ module.name }}
                                                     <div class="cq-tag-wrapper mt-4">
                                                         <span class="cq-tag dark-grey">{{ module.modplural }}</span>
-                                                        <span *ngIf="course.isUserEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
+                                                        <span *ngIf="course.hasEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
                                                     </div>
 
                                                     <div *ngIf="isModuleDisabled(section, module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>

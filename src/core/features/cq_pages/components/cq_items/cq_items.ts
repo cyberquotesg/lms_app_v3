@@ -58,14 +58,14 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
             item.description = item.description || item.summary || item.smallmessage || "";
             item.image = item.image || item.course_image_full || item.courseImageFull || item.course_image || item.courseImage || null;
 
-            if (item.is_user_finished && item.is_user_finished == '1')
+            if (item.has_finished || item.hasFinished)
             {
                 item.show_enrolled = false;
                 item.show_finished = true;
             }
             else
             {
-                item.show_enrolled = item.is_user_enrolled && item.is_user_enrolled == '1';
+                item.show_enrolled = item.has_enrolled || item.hasEnrolled;
                 item.show_finished = false;
             }
         });

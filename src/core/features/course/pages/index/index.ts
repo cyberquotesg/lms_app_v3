@@ -573,19 +573,20 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             }
         });
     }
-    isModuleDisabled(courseModule: any): boolean
+    isModuleDisabled(courseSection: any, courseModule: any): boolean
     {
-        return !!courseModule.availabilityinfo;
+        return !courseSection.uservisible || !courseModule.uservisible || !!courseModule.availabilityinfo;
     }
-    getModuleClass(courseModule: any): string
+    getModuleClass(courseSection: any, courseModule: any): string
     {
-        return this.isModuleDisabled(courseModule) ? "disabled" : "";
+        return this.isModuleDisabled(courseSection, courseModule) ? "disabled" : "";
     }
     moduleClicked(event: Event, courseSection: any, courseModule: any): void
     {
-        if (this.isModuleDisabled(courseModule))
+        if (this.isModuleDisabled(courseSection, courseModule))
         {
-            this.CH.alert('Oops!', courseModule.availabilityinfo);
+            if (courseModule.availabilityinfo) this.CH.alert('Oops!', courseModule.availabilityinfo);
+            else this.CH.alert('Oops!', "This module is not available");
         }
         else if (CoreCourseHelper.canUserViewModule(courseModule, courseSection) && courseModule.handlerData?.action)
         {

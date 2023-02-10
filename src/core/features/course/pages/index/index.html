@@ -129,7 +129,7 @@
                                                         <span *ngIf="course.hasEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
                                                     </div>
 
-                                                    <div *ngIf="isModuleDisabled(section, module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
+                                                    <div *ngIf="course.hasEnrolled && isModuleDisabled(section, module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                                                 </div>
                                             </div>
                                         </div>

@@ -594,10 +594,12 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     }
     getModuleClass(courseSection: any, courseModule: any): string
     {
-        return this.isModuleDisabled(courseSection, courseModule) ? "disabled" : "";
+        return this.course.hasEnrolled && this.isModuleDisabled(courseSection, courseModule) ? "disabled" : "";
     }
     moduleClicked(event: Event, courseSection: any, courseModule: any): void
     {
+        if (!this.course.hasEnrolled) return;
+
         if (this.isModuleDisabled(courseSection, courseModule))
         {
             if (courseModule.availabilityinfo) this.CH.alert('Oops!', courseModule.availabilityinfo);

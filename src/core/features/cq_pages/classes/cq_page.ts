@@ -23,13 +23,14 @@ export class CqPage extends CqGeneral
     pageIsForcedFirstload = false;
     pageIsForcedLoadMore = false;
     pageIsForcedRefresh = false;
+    pageIsLoading = false;
+
     pageParams: any = {};
     pageDefaults: any = {};
     pageData: any = {};
     pageJob: any = {};
     pageJobLoadMore: any = {};
     pageJobRefresh: any = {};
-    pageIsLoading = false;
 
     page = 1;
     length = 36;
@@ -62,6 +63,11 @@ export class CqPage extends CqGeneral
     }
     usuallyOnViewWillEnter(): void
     {
+        if (this.pageStatus && !this.pageIsLoading)
+        {
+            this.CH.log("this is considered back, running pageForceReferesh() automatically");
+            this.pageForceReferesh();
+        }
     }
     usuallyOnViewDidEnter(): void
     {

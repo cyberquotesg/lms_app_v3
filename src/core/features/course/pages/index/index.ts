@@ -142,6 +142,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         });
     }
 
+    // by rachmad
+    ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
+
     /**
      * @inheritdoc
      */
@@ -205,6 +208,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         await this.prepareCourseData("additionals");
         this.tabs.push(this.contentsTab);
         this.loaded = true;
+        this.pageStatus = true;
     }
 
     /**
@@ -376,9 +380,18 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
     }
 
-    // by rachmad
+    // ====================================================================================================== by rachmad
+    // overwrite pageForceReferesh() function from parent class, because this class doesn't have approriate things to run it
+    pageForceReferesh(finalCallback?: any): void
+    {
+        this.doRefresh().then(() => {
+            if (typeof finalCallback == "function") finalCallback();
+        });
+    }
     async doRefresh(refresher?: IonRefresher): Promise<void> {
         if (!this.course) return;
+
+        this.pageIsLoading = true;
         
         // Try to synchronize the course data.
         // For now we don't allow manual syncing, so ignore errors.
@@ -393,6 +406,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         await this.loadBasinInfo();
         await this.prepareSections(true);
         await this.prepareCourseData("course, additionals");
+
+        this.pageIsLoading = false;
 
         refresher?.complete();
     }

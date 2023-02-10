@@ -795,6 +795,10 @@ body
 			}
 		}
 	}
+	small
+	{
+		font-size: 12px !important;
+	}
 
 	cq_empty
 	{
@@ -2229,37 +2233,6 @@ body
 	    		display: block !important;
 	    	}
 	    }
-    }
-
-    .session-checklog
-    {
-    	font-size: 14px;
-    	line-height: 1.6em;
-
-    	.sc-row
-    	{
-    		display: flex;
-    		padding: 2px 0px;
-
-    		&.first-row
-    		{
-    			padding-bottom: $component_spacing_thin;
-			    margin-bottom: $component_spacing_thin;
-			    border-bottom: 1px solid lightgrey;
-    		}
-
-    		.sc-col
-    		{
-    			flex-basis: calc(100% - 80px * 2);
-    			text-align: center;
-
-    			&:first-child,
-    			&:last-child
-    			{
-    				flex-basis: 80px;
-    			}
-    		}
-    	}
     }
 
     .full-screen-icon

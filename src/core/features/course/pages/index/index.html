@@ -33,28 +33,9 @@
 
             <ion-card-content>
                 <ng-container *ngFor="let info of course.basicInformation; let i = index">
-                    <p class="{{ i ? 'mt-12' : '' }}"><b>{{ info.text }}</b></p>
+                    <p class="{{ i ? 'mt-cs' : '' }}"><b>{{ info.text }}</b></p>
                     <p class="no-break" [innerHTML]="info.value || '-'"></p>
                 </ng-container>
-            </ion-card-content>
-        </ion-card>
-
-        <ion-card *ngIf="course.hasEnrolled && grades.onCourse.length > 0">
-            <ion-card-header>
-                <ion-card-title class="text-center">Grades</ion-card-title>
-            </ion-card-header>
-
-            <ion-card-content>
-                <table style="width: 100%">
-                    <tr *ngFor="let grade of grades.onCourse; let i = index">
-                        <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
-                            {{ grade.name }}<br />
-                            <small [innerHTML]="'Range ' + grade.range + ', Grade In Percent ' + grade.inPercent"></small>
-                        </td>
-                        <td class="pl-8 pr-8 text-center" style="vertical-align: top;">:</td>
-                        <td class="text-right" style="vertical-align: top;">{{ grade.value }}</td>
-                    </tr>
-                </table>
             </ion-card-content>
         </ion-card>
 
@@ -80,10 +61,31 @@
             </ng-container>
         </div>
 
+        <ng-container *ngIf="course.hasEnrolled && grades.onCourse.length > 0">
+            <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                Grades
+                <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+            </div>
+            <ion-card>
+                <ion-card-content>
+                    <table style="width: 100%">
+                        <tr *ngFor="let grade of grades.onCourse; let i = index">
+                            <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
+                                {{ grade.name }}<br />
+                                <small [innerHTML]="'Range ' + grade.range + ', Grade In Percent ' + grade.inPercent"></small>
+                            </td>
+                            <td class="pl-8 pr-8 text-center" style="vertical-align: top;">:</td>
+                            <td class="text-right" style="vertical-align: top;">{{ grade.value }}</td>
+                        </tr>
+                    </table>
+                </ion-card-content>
+            </ion-card>
+        </ng-container>
+
         <ng-container *ngFor="let section of sections; let i = index">
             <ng-container *ngIf="section.visible == 1">
                 <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
-                    <small class="d-block mb-4">Section {{ i + 1 }}</small>
+                    <small class="d-block mb-4">Course Section {{ i + 1 }}</small>
                     {{ section.name }}
 
                     <!-- 
@@ -129,7 +131,7 @@
                                                         <span *ngIf="course.hasEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
                                                     </div>
 
-                                                    <div *ngIf="course.hasEnrolled && isModuleDisabled(section, module)" class="session-bottom mt-12" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
+                                                    <div *ngIf="course.hasEnrolled && isModuleDisabled(section, module)" class="session-bottom mt-cs" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                                                 </div>
                                             </div>
                                         </div>

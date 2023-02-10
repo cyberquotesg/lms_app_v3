@@ -56,7 +56,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
             this.pageData.course = data.ctData;
             this.pageData.course.venue = this.pageData.course.venue ? this.pageData.course.venue : '-';
-            this.pageData.sessions = this.CH.toArray(data.ctSessionData);
+            this.pageData.sessions = this.CH.toArray(data.ctSessionData).reverse();
             this.pageData.sessions.map((session) => {
                 let tempDateTime: string[] = [];
                 session.fullDateTimeText.forEach((dateTime: any) => {
@@ -65,7 +65,6 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 });
 
                 session.fullDateTimeTextCombined = tempDateTime.join(', ');
-                session.availableSeat = Number(session.capacity) - Number(session.enrolledCount);
                 session.willStartInDegradated = session.willStartIn;
             });
 
@@ -274,6 +273,14 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
         this.CH.log('having data', data);
         this.showChecklogBanner(data);
+    }
+
+    openMap(session: any): void
+    {
+        let url = this.pageData.isIos ? "http://maps.apple.com/?z=10&sll=" : "https://www.google.com/maps/search/?api=1&query=";
+        url += session.latitude + "," + session.longitude;
+
+        this.openInBrowser(url);
     }
 
     async joinMeetingZoom(meetingNumber, meetingPassword): Promise<void> {

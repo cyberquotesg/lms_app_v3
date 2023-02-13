@@ -83,6 +83,10 @@
                                                     <span *ngIf="course.completionDate">{{course.completionDate}}</span>
                                                     <span *ngIf="!course.completionDate">-</span>
                                                 </p>
+                                                <p *ngIf="course.media == 'online'" class="no-break">
+                                                    Grade: {{ course.grade }}
+                                                    <span *ngIf="course.gradeInPercent">({{ course.gradeInPercent }})</span>
+                                                </p>
                                             </div>
                                             <div class="text-left pt-8" style="clear: both;">
                                                 <cq_tags [item]="course"></cq_tags>

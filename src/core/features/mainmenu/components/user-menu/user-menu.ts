@@ -108,11 +108,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                         // by rachmad
                         // .filter((handler) => handler.type === CoreUserDelegateService.TYPE_NEW_PAGE)
                         .filter((handler) => {
-                            return handler.type === CoreUserDelegateService.TYPE_NEW_PAGE && handler.name && (
-                                handler.name.indexOf("CoreGrades") > -1
-                                ||
-                                handler.name.indexOf("AddonBadges") > -1
-                            )
+                            return handler.type === CoreUserDelegateService.TYPE_NEW_PAGE && handler.name && handler.name.indexOf("AddonBadges") > -1
                         })
                         // by rachmad
                         .map((handler) => handler.data);

@@ -60,7 +60,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {selfEnrolId};
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {hasEnrolled, selfEnrolId};
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
@@ -594,11 +594,13 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     }
     getModuleClass(courseSection: any, courseModule: any): string
     {
+        if (!this.course) return "";
+
         return this.course.hasEnrolled && this.isModuleDisabled(courseSection, courseModule) ? "disabled" : "";
     }
     moduleClicked(event: Event, courseSection: any, courseModule: any): void
     {
-        if (!this.course.hasEnrolled) return;
+        if (!this.course) return;
 
         if (this.isModuleDisabled(courseSection, courseModule))
         {

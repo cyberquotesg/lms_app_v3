@@ -68,14 +68,14 @@
             </div>
             <ion-card>
                 <ion-card-content>
-                    <table style="width: 100%">
+                    <table style="max-width: 100%; margin: 0px auto">
                         <tr *ngFor="let grade of grades.onCourse; let i = index">
                             <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
                                 {{ grade.name }}<br />
                                 <small [innerHTML]="'Range ' + grade.range + ', Grade In Percent ' + grade.inPercent"></small>
                             </td>
-                            <td class="pl-8 pr-8 text-center" style="vertical-align: top;">:</td>
-                            <td class="text-right" style="vertical-align: top;">{{ grade.value }}</td>
+                            <td class="pl-20 pr-20 text-center {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">:</td>
+                            <td class="text-right {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">{{ grade.value }}</td>
                         </tr>
                     </table>
                 </ion-card-content>

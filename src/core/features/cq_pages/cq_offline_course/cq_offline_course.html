@@ -245,14 +245,14 @@
                                      -->
                                 </div>
 
-                                <table style="width: 100%">
+                                <table style="max-width: 100%; margin: 0px auto">
                                     <tr *ngFor="let checklog of session.checklogs; let i = index">
                                         <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
                                             CHECKLOG {{ checklog.inOut }}<br />
                                             <small>{{ checklog.date }} {{ time24To12(checklog.time) }}</small>
                                         </td>
-                                        <td class="pl-8 pr-8 text-center" style="vertical-align: top;">:</td>
-                                        <td class="text-right" style="vertical-align: top;">
+                                        <td class="pl-20 pr-20 text-center {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">:</td>
+                                        <td class="text-right {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
                                             <span *ngIf="checklog.status == '-1' && session.userAttendance != 'accredited'">{{checklog.statusText}}</span>
 
                                             <span *ngIf="checklog.status == '0' && session.userAttendance != 'accredited'">

@@ -66,6 +66,7 @@
                 Grades
                 <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
                     <div class="cq-tag {{ course.hasAccredited ? 'green' : '' }}">
+                        <ion-icon *ngIf="course.hasAccredited" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
                         {{ grades.summary }}
                     </div>
                 </div>

@@ -29,7 +29,34 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
     ngOnChanges(changes: SimpleChanges): void
     {
         this.implementChanges(changes);
-        if (this.inited) this.generateChart();
+
+        let chartDataIsSame = false;
+
+        // if this is working with data, do more check
+        if (changes.data)
+        {
+            let oldData: string = "";
+            if (changes.data.previousValue)
+            {
+                for (let dataset of changes.data.previousValue.datasets) if (dataset._meta) delete dataset._meta;
+                oldData = JSON.stringify(changes.data.previousValue.datasets);
+            }
+
+            let newData: string = "";
+            if (changes.data.currentValue)
+            {
+                for (let dataset of changes.data.currentValue.datasets) if (dataset._meta) delete dataset._meta;
+                newData = JSON.stringify(changes.data.currentValue.datasets);
+            }
+
+            chartDataIsSame = oldData === newData;
+        }
+
+        if (this.inited)
+        {
+            if (chartDataIsSame) this.CH.log("chartData is same, no need to regenerate chart");
+            else this.generateChart();
+        }
     }
 
     ngAfterViewInit(): void

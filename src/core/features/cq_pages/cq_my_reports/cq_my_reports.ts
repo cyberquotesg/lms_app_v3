@@ -147,8 +147,7 @@ export class CqMyReports extends CqPage implements OnInit
                 y: number,
             };
 
-            if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageData[this.pageData.selectedYear] = {};
-            let thisYearData = this.pageData[this.pageData.selectedYear];
+            let thisYearData: any = {};
 
             data = this.CH.toJson(data);
             thisYearData.perCourseType = data.hours.courseTypes;
@@ -219,6 +218,8 @@ export class CqMyReports extends CqPage implements OnInit
 
             chartData.datasets = datasets;
             thisYearData.chartData = chartData;
+
+            this.pageData[this.pageData.selectedYear] = thisYearData;
 
             this.adjustScreenHeight(".page-slider-cqmr");
         }, moreloader, refresher, finalCallback);

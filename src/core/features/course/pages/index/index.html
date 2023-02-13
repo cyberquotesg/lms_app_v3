@@ -64,6 +64,12 @@
         <ng-container *ngIf="course.hasEnrolled && grades.onCourse.length > 0">
             <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                 Grades
+                <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
+                    <div class="cq-tag {{ course.hasAccredited ? 'green' : '' }}">
+                        {{ grades.summary }}
+                    </div>
+                </div>
+
                 <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
             </div>
             <ion-card>
@@ -87,15 +93,6 @@
                 <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                     <small class="d-block mb-4">Course Section {{ i + 1 }}</small>
                     {{ section.name }}
-
-                    <!-- 
-                    <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
-                        <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : '' }}">
-                            <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-                            {{ session.userAttendanceText }}
-                        </div>
-                    </div>
-                     -->
 
                     <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
                 </div>

@@ -68,6 +68,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     // by rachmad
     cqLoading: boolean = false;
     grades: any = {
+        summary: "-",
         onCourse: [],
         onModule: {},
     };
@@ -452,7 +453,11 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         this.course = course;
 
         let tempGrades = await CoreGrades.getGradeItems(this.course!.id, 0, 0, "", true),
-            grades: any = {onCourse: [], onModule: {}};
+            grades: any = {
+                summary: "-",
+                onCourse: [],
+                onModule: {},
+            };
         tempGrades.forEach((grade) => {
             // has cmid, so it is onModule
             if (grade.cmid)
@@ -467,6 +472,13 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 range: grade.rangeformatted === "" ? "-" : grade.rangeformatted,
                 inPercent: grade.percentageformatted === "" ? "-" : grade.percentageformatted,
             });
+
+            // summary
+            if (grade.itemtype == "course")
+            {
+                grades.summary = grade.gradeformatted === "" ? "-" : grade.gradeformatted;
+                grades.summary += grade.percentageformatted != "" && grade.percentageformatted != "-" ? (" (" + grade.percentageformatted + ")") : "";
+            }
         });
         this.grades = grades;
 

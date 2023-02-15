@@ -65,7 +65,7 @@
             <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                 Grades
                 <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
-                    <div class="cq-tag {{ course.hasAccredited ? 'green' : '' }}">
+                    <div class="cq-tag {{ course.hasAccredited ? 'green' : 'dark-grey' }}">
                         <ion-icon *ngIf="course.hasAccredited" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
                         {{ grades.summary }}
                     </div>

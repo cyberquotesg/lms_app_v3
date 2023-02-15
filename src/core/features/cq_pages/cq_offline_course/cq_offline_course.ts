@@ -119,17 +119,37 @@ export class CqOfflineCourse extends CqPage implements OnInit
             this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
         });
     }
-    takeSession(sessionId: number): void
+    takeSession(session: any): void
     {
-        this.connectSession('sign_up', sessionId);
+        this.connectSession('sign_up', session.id);
     }
-    leaveSession(sessionId: number): void
+    leaveSession(session: any): void
     {
-        this.CH.alert('Confirm!', 'Are you sure to withdraw from this course?', {
+        let confirmationText = "";
+        let closeRegistrationTime = (new Date(session.closeRegistration)).getTime();
+        let currentTime = (new Date()).getTime();
+        let timeDifference = closeRegistrationTime - currentTime;
+
+        if (timeDifference <= 0)
+        {
+            confirmationText += "Registration Period has ended at " + session.closeRegistrationText + ". ";
+            confirmationText += "Once withdrawn, you will not be able to enrol to this course again.";
+            confirmationText += "<br /><br />";
+        }
+        else if (timeDifference <= (1000 * 60 * 60 * 24))
+        {
+            confirmationText += "Registration Period will end in less than one day. ";
+            confirmationText += "Once withdrawn, you will still be able to enrol to this course again until " + session.closeRegistrationText + ".";
+            confirmationText += "<br /><br />";
+        }
+
+        confirmationText += "Are you sure to withdraw from this course?";
+
+        this.CH.alert('Confirm!', confirmationText, {
             text: 'Sure',
             role: 'sure',
             handler: (): void => {
-                this.connectSession('withdraw', sessionId);
+                this.connectSession('withdraw', session.id);
             }
         }, {
             text: 'Cancel',

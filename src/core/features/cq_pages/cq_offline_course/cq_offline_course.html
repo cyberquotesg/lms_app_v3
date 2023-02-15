@@ -29,6 +29,12 @@
                     <p><b>Description</b></p>
                     <p class="no-break">{{ pageData.course.description ? sanitizeHTML(pageData.course.description) : '-' }}</p>
 
+                    <p class="mt-cs"><b>Organizer</b></p>
+                    <p class="no-break">{{ pageData.course.organizerText }}</p>
+
+                    <p class="mt-cs"><b>Product Group</b></p>
+                    <p class="no-break">{{ pageData.course.productGroupText }}</p>
+
                     <p class="mt-cs"><b>CPD Hours</b></p>
                     <p class="no-break">{{ pageData.course.cpdHours }} CPD Hour{{ s(pageData.course.cpdHours) }}</p>
 
@@ -36,12 +42,23 @@
                     <ng-container *ngIf="pageData.course.hasOneBatchEnrolled == '1'">
                         <ng-container *ngFor="let session of pageData.sessions; let i = index">
 
+                            <ng-container *ngIf="session.userEnrolment == '1'">
+                                <p class="mt-cs"><b>Enrolment Status</b></p>
+                                <p class="no-break">In Waiting List</p>
+                            </ng-container>
+
                             <ng-container *ngIf="session.userEnrolment == '1' || session.userEnrolment == '2'">
                                 <p class="mt-cs"><b>Course Batch</b></p>
                                 <p class="no-break">Batch - {{ session.startDateText }}</p>
 
                                 <p class="mt-cs"><b>Date &amp; Time</b></p>
                                 <p class="no-break">{{ session.fullDateTimeTextCombined }}</p>
+
+                                <p class="mt-cs"><b>Withdrawal Administrator</b></p>
+                                <p class="no-break">{{ session.withdrawalAdministratorText }}</p>
+
+                                <p class="mt-cs"><b>Withdrawal Deadline</b></p>
+                                <p class="no-break">{{ session.withdrawalDeadlineText }}</p>
 
                                 <ng-container *ngIf="session.zoomMeeting != 1">
                                     <p class="mt-cs"><b>Location</b></p>
@@ -54,11 +71,6 @@
                                         </button>
                                     </p>
                                 </ng-container>
-                            </ng-container>
-
-                            <ng-container *ngIf="session.userEnrolment == '1'">
-                                <p class="mt-cs"><b>Enrolment Status</b></p>
-                                <p class="no-break">In Waiting List</p>
                             </ng-container>
 
                             <!-- information for ongoing course -->
@@ -172,7 +184,7 @@
                                         </div>
 
                                         <div class="card-item">
-                                            <button *ngIf="session.unavailableMessage == ''" (click)="takeSession(session.id)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
+                                            <button *ngIf="session.unavailableMessage == ''" (click)="takeSession(session)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
                                                 <span *ngIf="!loading"><b>Enrol</b></span>
                                                 <ion-spinner *ngIf="loading"></ion-spinner>
                                             </button>
@@ -204,7 +216,7 @@
                     <ng-container *ngIf="session.userEnrolment == '2'">
                         <div *ngIf="!session.sessionHasEnded" class="pl-cs pr-cs mt-cst">
                             <p *ngIf="session.unavailableMessage == ''" class="mt-cs">
-                                <button (click)="leaveSession(session.id)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
+                                <button (click)="leaveSession(session)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
                                     <span *ngIf="!loading"><b class="color-red">Withdraw</b></span>
                                     <ion-spinner *ngIf="loading"></ion-spinner>
                                 </button>
@@ -218,7 +230,7 @@
                         <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                             Progress
                             <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
-                                <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : '' }}">
+                                <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : 'dark-grey' }}">
                                     <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
                                     {{ session.userAttendanceText }}
                                 </div>

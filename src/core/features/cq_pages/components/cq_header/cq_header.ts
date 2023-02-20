@@ -26,8 +26,11 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     {
         if (this.displayNotification)
         {
-            this.CH.getNotificationCount((value) => {
-                this.notificationCount = this.shortenNotificationCount(value);
+            this.CH.getNotificationCount((notificationCount) => {
+                this.CH.getAnnouncementCount((announcementCount) => {
+                    let value = Number(notificationCount) + Number(announcementCount);
+                    this.notificationCount = this.shortenNotificationCount(value);
+                });
             });
         }
     }

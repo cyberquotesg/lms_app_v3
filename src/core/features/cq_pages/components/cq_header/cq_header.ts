@@ -15,7 +15,7 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     @Input() displayUserMenu: boolean = false;
     @Input() displayProgress: boolean = false;
 
-    notificationCount = "0";
+    number = "0";
 
     constructor(CH: CqHelper)
     {
@@ -29,7 +29,7 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
             this.CH.getNotificationCount((notificationCount) => {
                 this.CH.getAnnouncementCount((announcementCount) => {
                     let value = Number(notificationCount) + Number(announcementCount);
-                    this.notificationCount = this.shortenNotificationCount(value);
+                    this.number = this.shortenNotificationCount(value);
                 });
             });
         }

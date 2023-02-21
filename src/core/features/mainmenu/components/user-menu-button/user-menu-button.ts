@@ -23,9 +23,6 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMainMenuUserMenuTourComponent } from '../user-menu-tour/user-menu-tour';
 import { CoreMainMenuUserMenuComponent } from '../user-menu/user-menu';
 
-// by rachmad
-import { CqHelper } from '@features/cq_pages/services/cq_helper';
-
 /**
  * Component to display an avatar on the header to open user menu.
  *
@@ -51,20 +48,10 @@ export class CoreMainMenuUserButtonComponent implements OnInit {
     // by rachmad
     avatarCounter: number = 0;
 
-    constructor(
-        // by rachmad
-        protected CH: CqHelper,
-        // by rachmad
-        protected routerOutlet: IonRouterOutlet
-    ) {
+    constructor(protected routerOutlet: IonRouterOutlet) {
         const currentSite = CoreSites.getRequiredCurrentSite();
 
         this.siteInfo = currentSite.getInfo();
-        
-        // by rachmad
-        this.CH.getAnnouncementCount((value) => {
-            this.avatarCounter = value;
-        });
     }
 
     /**

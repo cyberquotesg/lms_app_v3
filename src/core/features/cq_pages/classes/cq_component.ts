@@ -28,7 +28,7 @@ export class CqComponent extends CqGeneral
         
         const stateParams: any = {
         };
-        CoreNavigator.navigateToSitePath('/CqInfo/index', {
+        CoreNavigator.navigateToSitePath('/cq-notifications/list', {
             params: stateParams,
             siteId: this.CH.getSiteId(),
             preferCurrentTab: false,

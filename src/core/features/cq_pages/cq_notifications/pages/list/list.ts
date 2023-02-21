@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
@@ -34,6 +34,9 @@ import { CoreListItemsManager } from '@classes/items-management/list-items-manag
 import { AddonNotificationsNotificationToRender } from '@features/cq_pages/cq_notifications/services/notifications-helper';
 import { AddonLegacyNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/legacy-notifications-source';
 
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
+
 /**
  * Page that displays the list of notifications.
  */
@@ -42,13 +45,26 @@ import { AddonLegacyNotificationsNotificationsSource } from '@features/cq_pages/
     templateUrl: 'list.html',
     styleUrls: ['list.scss', '../../notifications.scss'],
 })
-export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
+export class AddonNotificationsListPage extends CqPage implements AfterViewInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
+    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
+
     notifications!: CoreListItemsManager<AddonNotificationsNotificationToRender, AddonNotificationsNotificationsSource>;
     fetchMoreNotificationsFailed = false;
     canMarkAllNotificationsAsRead = false;
     loadingMarkAllNotificationsAsRead = false;
+
+    subject: string = "Notification";
+    selectedOne: string = "notification";
+    pageSliderOptions: any = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: true,
+        centeredSlidesBounds: true,
+        slidesPerView: 1,
+    };
 
     protected isCurrentView?: boolean;
     protected cronObserver?: CoreEventObserver;
@@ -56,7 +72,9 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
     protected pushObserver?: Subscription;
     protected pendingRefresh = false;
 
-    constructor() {
+    constructor(renderer: Renderer2, CH: CqHelper) {
+        super(renderer, CH);
+
         try {
             const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(
                 CoreSites.getRequiredCurrentSite().isVersionGreaterEqualThan('4.0')
@@ -245,4 +263,21 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         this.notifications?.destroy();
     }
 
+    selectOne(target: string): void
+    {
+        if (this.selectedOne != target)
+        {
+            this.selectedOne = target;
+            this.subject = this.CH.capitalize(this.selectedOne);
+            let index = target == "notification" ? 0 : 1;
+            this.pageSlider.slideTo(index);
+        }
+    }
+    pageSliderChange(): void
+    {
+        this.pageSlider.getActiveIndex().then((index) => {
+            this.selectedOne = index ? "announcement" : "notification";
+            this.subject = this.CH.capitalize(this.selectedOne);
+        });
+    }
 }

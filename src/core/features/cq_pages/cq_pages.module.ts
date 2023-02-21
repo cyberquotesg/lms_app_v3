@@ -81,6 +81,10 @@ const routes: Routes = [
         path: CqInfoMenuService.PAGE_NAME,
         loadChildren: () => import('./cq_info/cq_info.lazy_module').then(m => m.CqInfoLazyModule),
     },
+    {
+        path: AddonNotificationsMainMenuHandlerService.PAGE_NAME,
+        loadChildren: () => import('./cq_notifications/notifications-lazy.module').then(m => m.AddonNotificationsLazyModule),
+    },
 ];
 @NgModule({
     imports: [

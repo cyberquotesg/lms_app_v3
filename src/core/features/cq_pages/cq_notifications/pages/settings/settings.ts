@@ -21,7 +21,7 @@ import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreUser } from '@features/user/services/user';
-import { AddonMessageOutputDelegate, AddonMessageOutputHandlerData } from '@addons/messageoutput/services/messageoutput-delegate';
+import { AddonMessageOutputDelegate, AddonMessageOutputHandlerData } from '@features/cq_pages/cq_messageoutput/services/messageoutput-delegate';
 import { CoreConstants } from '@/core/constants';
 import { CoreError } from '@classes/errors/error';
 import { CoreEvents } from '@singletons/events';
@@ -35,7 +35,7 @@ import {
     AddonNotificationsPreferencesFormatted,
     AddonNotificationsPreferencesNotificationFormatted,
     AddonNotificationsPreferencesProcessorFormatted,
-} from '@addons/notifications/services/notifications-helper';
+} from '@features/cq_pages/cq_notifications/services/notifications-helper';
 import { CoreNavigator } from '@services/navigator';
 
 /**

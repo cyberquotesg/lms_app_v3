@@ -16,8 +16,8 @@ import {
     AddonNotifications,
     AddonNotificationsGetReadType,
     AddonNotificationsProvider,
-} from '@addons/notifications/services/notifications';
-import { AddonNotificationsNotificationToRender } from '@addons/notifications/services/notifications-helper';
+} from '@features/cq_pages/cq_notifications/services/notifications';
+import { AddonNotificationsNotificationToRender } from '@features/cq_pages/cq_notifications/services/notifications-helper';
 import { CoreRoutedItemsManagerSource } from '@classes/items-management/routed-items-manager-source';
 
 /**

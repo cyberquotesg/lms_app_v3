@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AddonLegacyNotificationsNotificationsSource } from '@addons/notifications/classes/legacy-notifications-source';
-import { AddonNotificationsNotificationsSource } from '@addons/notifications/classes/notifications-source';
-import { AddonNotificationsNotificationData } from '@addons/notifications/services/handlers/push-click';
+import { AddonLegacyNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/legacy-notifications-source';
+import { AddonNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/notifications-source';
+import { AddonNotificationsNotificationData } from '@features/cq_pages/cq_notifications/services/handlers/push-click';
 import {
     AddonNotificationsHelper,
     AddonNotificationsNotificationToRender,
-} from '@addons/notifications/services/notifications-helper';
+} from '@features/cq_pages/cq_notifications/services/notifications-helper';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';

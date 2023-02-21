@@ -36,6 +36,9 @@ import { CqAnnouncementViewHandler } from './cq_announcement/cq_announcement.vie
 import { CqInfoMenuHandler, CqInfoMenuService } from './cq_info/cq_info.menu';
 import { CqInfoViewHandler } from './cq_info/cq_info.view';
 
+import { AddonNotificationsMainMenuHandler, AddonNotificationsMainMenuHandlerService } from './cq_notifications/services/handlers/mainmenu';
+import { AddonNotificationsViewLinkHandler } from './cq_notifications/services/handlers/view-link';
+
 const routes: Routes = [
     {
         path: '',
@@ -118,6 +121,9 @@ const routes: Routes = [
                 
                 CoreMainMenuDelegate.registerHandler(CqInfoMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqInfoViewHandler.instance);
+                
+                CoreMainMenuDelegate.registerHandler(AddonNotificationsMainMenuHandler.instance);
+                CoreContentLinksDelegate.registerHandler(AddonNotificationsViewLinkHandler.instance);
             },
         },
     ],

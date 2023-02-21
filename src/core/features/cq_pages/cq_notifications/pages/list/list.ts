@@ -29,10 +29,10 @@ import { CorePushNotificationsDelegate } from '@features/pushnotifications/servi
 import { CoreSites } from '@services/sites';
 import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 import { CoreTimeUtils } from '@services/utils/time';
-import { AddonNotificationsNotificationsSource } from '@addons/notifications/classes/notifications-source';
+import { AddonNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/notifications-source';
 import { CoreListItemsManager } from '@classes/items-management/list-items-manager';
-import { AddonNotificationsNotificationToRender } from '@addons/notifications/services/notifications-helper';
-import { AddonLegacyNotificationsNotificationsSource } from '@addons/notifications/classes/legacy-notifications-source';
+import { AddonNotificationsNotificationToRender } from '@features/cq_pages/cq_notifications/services/notifications-helper';
+import { AddonLegacyNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/legacy-notifications-source';
 
 /**
  * Page that displays the list of notifications.

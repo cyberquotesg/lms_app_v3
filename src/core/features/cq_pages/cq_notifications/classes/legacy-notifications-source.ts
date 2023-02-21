@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AddonNotificationsNotificationsSource } from '@addons/notifications/classes/notifications-source';
-import { AddonNotificationsGetReadType } from '@addons/notifications/services/notifications';
-import { AddonNotificationsNotificationToRender } from '@addons/notifications/services/notifications-helper';
+import { AddonNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/notifications-source';
+import { AddonNotificationsGetReadType } from '@features/cq_pages/cq_notifications/services/notifications';
+import { AddonNotificationsNotificationToRender } from '@features/cq_pages/cq_notifications/services/notifications-helper';
 
 /**
  * Provides a list of notifications using legacy web services.

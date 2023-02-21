@@ -33,6 +33,9 @@ import { CqAnnouncementsViewHandler } from './cq_announcements/cq_announcements.
 import { CqAnnouncementMenuHandler, CqAnnouncementMenuService } from './cq_announcement/cq_announcement.menu';
 import { CqAnnouncementViewHandler } from './cq_announcement/cq_announcement.view';
 
+import { CqInfoMenuHandler, CqInfoMenuService } from './cq_info/cq_info.menu';
+import { CqInfoViewHandler } from './cq_info/cq_info.view';
+
 const routes: Routes = [
     {
         path: '',
@@ -71,6 +74,10 @@ const routes: Routes = [
         path: CqAnnouncementMenuService.PAGE_NAME,
         loadChildren: () => import('./cq_announcement/cq_announcement.lazy_module').then(m => m.CqAnnouncementLazyModule),
     },
+    {
+        path: CqInfoMenuService.PAGE_NAME,
+        loadChildren: () => import('./cq_info/cq_info.lazy_module').then(m => m.CqInfoLazyModule),
+    },
 ];
 @NgModule({
     imports: [
@@ -108,6 +115,9 @@ const routes: Routes = [
                 
                 CoreMainMenuDelegate.registerHandler(CqAnnouncementMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqAnnouncementViewHandler.instance);
+                
+                CoreMainMenuDelegate.registerHandler(CqInfoMenuHandler.instance);
+                CoreContentLinksDelegate.registerHandler(CqInfoViewHandler.instance);
             },
         },
     ],

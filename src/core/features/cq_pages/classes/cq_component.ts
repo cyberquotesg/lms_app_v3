@@ -24,6 +24,14 @@ export class CqComponent extends CqGeneral
 
     goToNotificationsList(): void
     {
-        CoreNavigator.navigateToSitePath(`notifications/list`, {});
+        // CoreNavigator.navigateToSitePath(`notifications/list`, {});
+        
+        const stateParams: any = {
+        };
+        CoreNavigator.navigateToSitePath('/CqInfo/index', {
+            params: stateParams,
+            siteId: this.CH.getSiteId(),
+            preferCurrentTab: false,
+        });
     }
 }

@@ -154,10 +154,10 @@ export class CqPage extends CqGeneral
                 }
             }
 
-            // if this is not dependant call and pageJob is empty, then pageJobExecuterFinally
+            // if this is not dependant call and pageJob is empty, then pageJobFinally
             if (!isDependantCall && this.CH.isEmpty(pageJob))
             {
-                this.pageJobExecuterFinally(moreloader, refresher, finalCallback);
+                this.pageJobFinally(moreloader, refresher, finalCallback);
             }
         }
     }
@@ -186,29 +186,9 @@ export class CqPage extends CqGeneral
         this.pageLoad(null, null, this.pageJobRefresh, false, finalCallback);
     }
 
-    /* execute job of a page that has been defined
-     * 
-     * jobName is a job this executer related to, or the function name
-     * params is params to be sent to server
-     * moreloader is object for loading more contents
-     * refresher is object for refreshing the page
-     * callback is additional function
-     * finalCallback is additional function that must be set from pageLoad, pageForcedFirstload, or pageForceReferesh function
-    */
-    pageJobExecuter(jobName: string, params: any, callback: any, moreloader?: any, refresher?: any, finalCallback?: any): void
+    pageJobEngine(agent: Promise<any>, jobName: string, params: any, callback: any, moreloader?: any, refresher?: any, finalCallback?: any): void
     {
-        // if this is first load and a param value exist, then use it, don't call job
-        if (!this.pageStatus && typeof this.pageParams[jobName] != 'undefined')
-        {
-            this.CH.setPageJobNumbers(this.pageJob, jobName, 1);
-            this.CH.log('successfully run ' + jobName + ' with type of response: parameter');
-            callback(this.pageParams[jobName]);
-            this.pageJobExecuterFinally(moreloader, refresher, finalCallback);
-
-            return;
-        }
-
-        this.CH.callApi(params)
+        agent
         .then((response) => {
             this.CH.setPageJobNumbers(this.pageJob, jobName, 1);
             this.CH.log('success to run api', jobName);
@@ -226,10 +206,40 @@ export class CqPage extends CqGeneral
             else this.CH.alert('Oops!', 'We have trouble, please try again');
         })
         .finally(() => {
-            this.pageJobExecuterFinally(moreloader, refresher, finalCallback);
+            this.pageJobFinally(moreloader, refresher, finalCallback);
         });
     }
-    pageJobExecuterFinally(moreloader?: any, refresher?: any, finalCallback?: any): void
+    /* execute job of a page that has been defined
+     * 
+     * jobName is a job this executer related to, or the function name
+     * params is params to be sent to server
+     * moreloader is object for loading more contents
+     * refresher is object for refreshing the page
+     * callback is additional function
+     * finalCallback is additional function that must be set from pageLoad, pageForcedFirstload, or pageForceReferesh function
+    */
+    pageJobExecuter(jobName: string, params: any, callback: any, moreloader?: any, refresher?: any, finalCallback?: any): void
+    {
+        // if this is first load and a param value exist, then use it, don't call job
+        if (!this.pageStatus && typeof this.pageParams[jobName] != 'undefined')
+        {
+            this.CH.setPageJobNumbers(this.pageJob, jobName, 1);
+            this.CH.log('successfully run ' + jobName + ' with type of response: parameter');
+            callback(this.pageParams[jobName]);
+            this.pageJobFinally(moreloader, refresher, finalCallback);
+
+            return;
+        }
+
+        var agent = this.CH.callApi(params);
+        this.pageJobEngine(agent, jobName, params, callback, moreloader, refresher, finalCallback);
+    }
+    pageJobImitator(jobName: string, params: any, callback: any, moreloader?: any, refresher?: any, finalCallback?: any): void
+    {
+        var agent = this.CH.callNoApi(params);
+        this.pageJobEngine(agent, jobName, params, callback, moreloader, refresher, finalCallback);
+    }
+    pageJobFinally(moreloader?: any, refresher?: any, finalCallback?: any): void
     {
         var numbers = this.CH.getPageJobNumbers(this.pageJob);
         this.CH.log('numbers', numbers);

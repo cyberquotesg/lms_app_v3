@@ -807,10 +807,10 @@ export class CqHelper
      * executer: no
      * apiName and data can be anything, both are not really used
     */
-    callNoApi(apiName: string, data?: any): Promise<any>
+    callNoApi(anything?: any): Promise<any>
     {
     	return new Promise((ok, ko) => {
-    		ok(data);
+    		ok(anything);
     	});
     }
     callApi(params: any): Promise<any>

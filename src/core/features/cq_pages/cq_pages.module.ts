@@ -78,10 +78,6 @@ const routes: Routes = [
         loadChildren: () => import('./cq_announcement/cq_announcement.lazy_module').then(m => m.CqAnnouncementLazyModule),
     },
     {
-        path: CqInfoMenuService.PAGE_NAME,
-        loadChildren: () => import('./cq_info/cq_info.lazy_module').then(m => m.CqInfoLazyModule),
-    },
-    {
         path: AddonNotificationsMainMenuHandlerService.PAGE_NAME,
         loadChildren: () => import('./cq_notifications/notifications-lazy.module').then(m => m.AddonNotificationsLazyModule),
     },
@@ -122,9 +118,6 @@ const routes: Routes = [
                 
                 CoreMainMenuDelegate.registerHandler(CqAnnouncementMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqAnnouncementViewHandler.instance);
-                
-                CoreMainMenuDelegate.registerHandler(CqInfoMenuHandler.instance);
-                CoreContentLinksDelegate.registerHandler(CqInfoViewHandler.instance);
                 
                 CoreMainMenuDelegate.registerHandler(AddonNotificationsMainMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(AddonNotificationsViewLinkHandler.instance);

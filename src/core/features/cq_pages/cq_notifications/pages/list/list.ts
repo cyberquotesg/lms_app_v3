@@ -35,7 +35,6 @@ import { AddonNotificationsNotificationToRender } from '@features/cq_pages/cq_no
 import { AddonLegacyNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/legacy-notifications-source';
 
 import { CqHelper } from '../../../services/cq_helper';
-import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays the list of notifications.
@@ -45,7 +44,7 @@ import { CqPage } from '../../../classes/cq_page';
     templateUrl: 'list.html',
     styleUrls: ['list.scss', '../../notifications.scss'],
 })
-export class AddonNotificationsListPage extends CqPage implements AfterViewInit, OnDestroy {
+export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
@@ -65,6 +64,12 @@ export class AddonNotificationsListPage extends CqPage implements AfterViewInit,
         centeredSlidesBounds: true,
         slidesPerView: 1,
     };
+    announcementPage = 1;
+    announcementLoaded = false;
+    announcementList: any[] = [];
+    announcementIsLoading = false;
+    announcementReachedEndOfList = false;
+    announcementMarkingAllAsRead = false;
 
     protected isCurrentView?: boolean;
     protected cronObserver?: CoreEventObserver;
@@ -72,9 +77,7 @@ export class AddonNotificationsListPage extends CqPage implements AfterViewInit,
     protected pushObserver?: Subscription;
     protected pendingRefresh = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper) {
-        super(renderer, CH);
-
+    constructor(protected CH: CqHelper) {
         try {
             const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(
                 CoreSites.getRequiredCurrentSite().isVersionGreaterEqualThan('4.0')
@@ -88,6 +91,8 @@ export class AddonNotificationsListPage extends CqPage implements AfterViewInit,
             CoreDomUtils.showErrorModal(error);
             CoreNavigator.back();
         }
+
+        this.loadAnnouncements();
     }
 
     /**
@@ -279,5 +284,55 @@ export class AddonNotificationsListPage extends CqPage implements AfterViewInit,
             this.selectedOne = index ? "announcement" : "notification";
             this.subject = this.CH.capitalize(this.selectedOne);
         });
+    }
+    isAvailable(data: any): boolean
+    {
+        return this.CH.isAvailable(data);
+    }
+
+    // =========================================================================================================== announcement
+    loadAnnouncements(mode?: string): void
+    {
+        this.announcementIsLoading = true;
+        const params: any = {
+            class: "CqLib",
+            function: "get_announcements",
+            page: this.announcementPage,
+            length: mode && mode == "refresh" ? ((this.announcementPage - 1) * 30) : 30,
+        };
+        this.CH.callApi(params)
+        .then((data) => {
+            let announcements = this.CH.toArray(this.CH.toJson(data));
+            this.announcementReachedEndOfList = this.CH.isEmpty(announcements) || this.CH.getLength(announcements) < 30;
+
+            if (mode && mode == "load_more") this.announcementList.concat(announcements);
+            else this.announcementList = announcements;
+
+            if (mode && mode == "refresh") {}
+            else this.announcementPage++;
+
+            this.announcementLoaded = true;
+            this.announcementIsLoading = false;
+        })
+        .catch(() => {
+            this.announcementIsLoading = false;
+            
+            // cannot sign up because server is unreachable
+            this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
+        });
+    }
+    loadMoreAnnouncements(): void
+    {
+        this.loadAnnouncements("load_more");
+    }
+    refreshAnnouncements(): void
+    {
+        this.loadAnnouncements("refresh");
+    }
+    openAnnouncement(): void
+    {
+    }
+    markAllAnnouncementsAsRead(): void
+    {
     }
 }

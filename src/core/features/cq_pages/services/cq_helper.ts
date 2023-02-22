@@ -1113,4 +1113,234 @@ export class CqHelper
     	await this.initiateZoom();
     	if (this.zoomInitiated) this.joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname);
     }
+
+    /* ============================================================================================= date time
+    */
+	goodDecimal(value?: any): string
+	{
+		if (typeof value == "undefined") return "00";
+		else if (typeof value != "number") value = parseInt(value);
+		return value < 10 ? "0" + value : value;
+	}
+    getDayName(day: number): string
+    {
+    	day++;
+    	
+    	if (day == 1) return "Sun";
+    	if (day == 2) return "Mon";
+    	if (day == 3) return "Tue";
+    	if (day == 4) return "Wed";
+    	if (day == 5) return "Thu";
+    	if (day == 6) return "Fri";
+    	if (day == 7) return "Sat";
+    }
+    getMonthName(month: number): string
+    {
+    	month++;
+    	
+    	if (month == 1) return "Jan";
+    	if (month == 2) return "Feb";
+    	if (month == 3) return "Mar";
+
+    	if (month == 4) return "Apr";
+    	if (month == 5) return "May";
+    	if (month == 6) return "Jun";
+    	
+    	if (month == 7) return "Jul";
+    	if (month == 8) return "Aug";
+    	if (month == 9) return "Sep";
+    	
+    	if (month == 10) return "Oct";
+    	if (month == 11) return "Nov";
+    	if (month == 12) return "Dec";
+    }
+    getMonthNumber(month: string): number
+    {
+    	month = month.toLowerCase();
+
+    	if (month == "jan") return 1;
+    	else if (month == "feb") return 2;
+    	else if (month == "mar") return 3;
+
+    	else if (month == "apr") return 4;
+    	else if (month == "may") return 5;
+    	else if (month == "jun") return 6;
+
+    	else if (month == "jul") return 7;
+    	else if (month == "aug") return 8;
+    	else if (month == "sep") return 9;
+
+    	else if (month == "oct") return 10;
+    	else if (month == "nov") return 11;
+    	else if (month == "dec") return 12;
+    }
+    /* converts time like 06:40:35 to seconds
+     * the seconds should not have miliseconds
+    */
+    timeToSecond(time: string): number
+    {
+    	time = time.split(":");
+    	var hours = (time[0] ? Number(time[0]) : 0) * 60 * 60;
+    	var minutes = (time[1] ? Number(time[1]) : 1) * 60;
+    	var seconds = (time[2] ? Number(time[2]) : 2);
+
+    	return hours + minutes + seconds;
+    }
+
+    getTimeDifference(time_1: string|number|Date, time_2: string|number|Date, humanTime?: boolean): number
+    {
+    	if (typeof time_1 == "string" || typeof time_1 == "number") time_1 = new Date(time_1);
+    	if (typeof time_2 == "string" || typeof time_2 == "number") time_2 = new Date(time_2);
+
+    	var difference = (time_2.getTime() - time_1.getTime()) / 1000;
+
+    	if (humanTime) this.getUnixTimeToHumanTime(difference);
+    	else return difference;
+    }
+    getDayDifference(day_1: string|number|Date, day_2: string|number|Date, inclusive?: boolean, absolute?: boolean): number
+    {
+    	if (typeof day_1 == "string" || typeof day_1 == "number") day_1 = new Date(day_1);
+    	day_1 = new Date(day_1.toDateString());
+
+    	if (typeof day_2 == "string" || typeof day_2 == "number") day_2 = new Date(day_2);
+    	day_2 = new Date(day_2.toDateString());
+
+    	difference = (day_2.getTime() - day_1.getTime()) / 24 / 60 / 60 / 1000;
+
+    	if (inclusive) difference++;
+    	if (absolute) difference = Math.abs(difference);
+
+    	return difference;
+    }
+    getDayDifferenceInclusive(day_1: string|number|Date, day_2: string|number|Date, absolute?: boolean): number
+    {
+    	return this.getDayDifference(day_1, day_2, true, absolute);
+    }
+    /*
+     * warning!
+     * this function doesn't work well if the difference is inclusive
+    */
+    getDayDifferenceTranslated(difference: number, humanize?: boolean): string
+    {
+    	if (!difference)
+    	{
+    		if (humanize) return "same day";
+    		else return "0 day";
+    	}
+    	else if (Math.abs(difference) == 1) return difference + " day";
+    	else return difference + " days";
+    }
+
+    getSystemDate(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return the_date.getFullYear() + "-" + (the_date.getMonth() + 1) + "-" + the_date.getDate();
+    }
+    getSystemDateTime(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.getSystemDate(the_date) + " " + 
+    			this.goodDecimal(the_date.getHours()) + ":" + 
+    			this.goodDecimal(the_date.getMinutes());
+    }
+    getHumanDay(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return this.getDayName(the_date.getDay());
+    }
+    getHumanDate(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.goodDecimal(the_date.getDate()) + "-" + 
+    			this.goodDecimal(the_date.getMonth() + 1) + "-" + 
+    			the_date.getFullYear();
+    }
+    getHumanTime(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.goodDecimal(the_date.getHours()) + ":" + 
+    			this.goodDecimal(the_date.getMinutes());
+    }
+    getHumanTimeFromString(the_time: string|number|Date): string
+    {
+    	if (typeof the_time == "undefined") return "";
+    	else return the_time.substr(0, 5);
+    }
+
+    getHumanDayDate(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.getHumanDay(the_date) + " " +
+    			this.getHumanDate(the_date);
+    }
+    getHumanDateTime(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.getHumanDate(the_date) + " " + 
+    			this.getHumanTime(the_date);
+    }
+
+    getHumanDayDateTime(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.getHumanDayDate(the_date) + " " + 
+    			this.getHumanTime(the_date);
+    }
+
+    getHumanDateWithName(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.goodDecimal(the_date.getDate()) + " " + 
+    			this.getMonthName(the_date.getMonth()) + " " + 
+    			the_date.getFullYear();
+    }
+    getHumanDayDateWithName(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.getHumanDay(the_date) + " " +
+    			this.getHumanDateWithName(the_date);
+    }
+    getHumanDateTimeWithName(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.getHumanDateWithName(the_date) + " " + 
+    			this.getHumanTime(the_date);
+    }
+    getHumanDayDateTimeWithName(the_date: string|number|Date): string
+    {
+    	if (typeof the_date == "string" || typeof the_date == "number") the_date = new Date(the_date);
+    	return 	this.getHumanDayDateWithName(the_date) + " " + 
+    			this.getHumanTime(the_date);
+    }
+    /*
+     * unixTime is timestamp WITHOUT miliseconds
+    */
+    getUnixTimeToHumanTime(unixTime: number): string
+    {
+    	var seconds = unixTime % 60;
+    	unixTime = Math.floor(unixTime / 60);
+
+    	var minutes = unixTime % 60;
+    	var hours = Math.floor(unixTime / 60);
+
+    	return this.goodDecimal(hours) + ":" + this.goodDecimal(minutes) + ":" + this.goodDecimal(seconds);
+    }
+    /*
+     * unixTime is timestamp WITHOUT miliseconds
+    */
+    getUnixTimeToHours(unixTime: number): string
+    {
+    	return unixTime / 60 / 60;
+    }
+    /*
+     * unixTime is timestamp WITHOUT miliseconds
+    */
+    getUnixTimeToDays(unixTime: number): string
+    {
+    	return this.getUnixTimeToHours(unixTime) / 24;
+    }
+    getOneDayInMs(): number
+    {
+    	return 1000 * 60 * 60 * 24;
+    }
 }

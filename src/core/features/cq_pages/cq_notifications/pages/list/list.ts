@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { AfterViewInit, Component, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
+import { IonRefresher, IonSlides, Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
 import { CoreDomUtils } from '@services/utils/dom';

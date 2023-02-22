@@ -22,8 +22,6 @@ import { makeSingleton } from '@singletons';
 import { AddonNotifications } from '../notifications';
 import moment from 'moment-timezone';
 
-const SUPPORTED_VIEWS = ['month', 'mini', 'minithree', 'day', 'upcoming', 'upcoming_mini'];
-
 /**
  * Content links handler for notifications view page.
  */
@@ -48,51 +46,12 @@ export class AddonNotificationsViewLinkHandlerService extends CoreContentLinksHa
     ): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]> {
         return [{
             action: (siteId?: string): void => {
-                if (!params.view || params.view == 'month' || params.view == 'mini' || params.view == 'minithree') {
-                    // Monthly view, open the notifications tab.
-                    const stateParams: Params = {
-                        courseId: params.course,
-                    };
-                    const timestamp = params.time ? Number(params.time) * 1000 : Date.now();
-
-                    const momentInstance = moment(timestamp);
-                    stateParams.year = momentInstance.year();
-                    stateParams.month = momentInstance.month() + 1;
-
-                    CoreNavigator.navigateToSitePath('/CqNotifications/index', {
-                        params: stateParams,
-                        siteId,
-                        preferCurrentTab: false,
-                    });
-
-                } else if (params.view == 'day') {
-                    // Daily view, open the page.
-                    const stateParams: Params = {
-                        courseId: params.course,
-                    };
-                    const timestamp = params.time ? Number(params.time) * 1000 : Date.now();
-
-                    const momentInstance = moment(timestamp);
-                    stateParams.year = momentInstance.year();
-                    stateParams.month = momentInstance.month() + 1;
-                    stateParams.day = momentInstance.date();
-
-                    CoreNavigator.navigateToSitePath('/CqNotifications/day', { params: stateParams, siteId });
-
-                } else if (params.view == 'upcoming' || params.view == 'upcoming_mini') {
-                    // Upcoming view, open the notifications tab.
-                    const stateParams: Params = {
-                        courseId: params.course,
-                        upcoming: true,
-                    };
-
-                    CoreNavigator.navigateToSitePath('/CqNotifications/index', {
-                        params: stateParams,
-                        siteId,
-                        preferCurrentTab: false,
-                    });
-
-                }
+                const stateParams: any = {};
+                CoreNavigator.navigateToSitePath('/CqNotifications/list', {
+                    params: stateParams,
+                    siteId,
+                    preferCurrentTab: false,
+                });
             },
         }];
     }
@@ -107,16 +66,8 @@ export class AddonNotificationsViewLinkHandlerService extends CoreContentLinksHa
      * @return Whether the handler is enabled for the URL and site.
      */
     async isEnabled(siteId: string, url: string, params: Record<string, string>): Promise<boolean> {
-        if (params.view && SUPPORTED_VIEWS.indexOf(params.view) == -1) {
-            // This type of view isn't supported in the app.
-            return false;
-        }
-
-        const disabled = await AddonNotifications.isDisabled(siteId);
-
-        return !disabled;
+        return true;
     }
-
 }
 
 export const AddonNotificationsViewLinkHandler = makeSingleton(AddonNotificationsViewLinkHandlerService);

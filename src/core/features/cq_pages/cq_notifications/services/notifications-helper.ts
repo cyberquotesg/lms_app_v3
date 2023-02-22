@@ -16,7 +16,7 @@ import { Injectable } from '@angular/core';
 
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
-import { AddonMessageOutputDelegate } from '@features/cq_pages/cq_messageoutput/services/messageoutput-delegate';
+import { AddonMessageOutputDelegate } from '@addons/messageoutput/services/messageoutput-delegate';
 import {
     AddonNotifications,
     AddonNotificationsNotificationMessageFormatted,

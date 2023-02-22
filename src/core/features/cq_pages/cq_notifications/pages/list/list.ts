@@ -64,12 +64,16 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         centeredSlidesBounds: true,
         slidesPerView: 1,
     };
+
+    notificationList: any[] = [];
+    notificationIsLoading = false;
+
     announcementPage = 1;
     announcementLoaded = false;
     announcementList: any[] = [];
     announcementIsLoading = false;
     announcementReachedEndOfList = false;
-    announcementMarkingAllAsRead = false;
+    announcementMarkingAllAsReadLoading = false;
 
     protected isCurrentView?: boolean;
     protected cronObserver?: CoreEventObserver;
@@ -151,12 +155,23 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
      * @param reload Whether to reload the list or load the next page.
      */
     protected async fetchNotifications(reload: boolean): Promise<void> {
+        this.notificationIsLoading = true;
+
         reload
             ? await this.notifications.reload()
             : await this.notifications.load();
 
         this.fetchMoreNotificationsFailed = false;
         this.loadMarkAllAsReadButton();
+
+        this.notificationIsLoading = false;
+        this.notificationList = [];
+        this.notifications.items.forEach((item) => {
+            let newItem = this.CH.cloneJson(item);
+            newItem.subTitle = this.CH.getHumanDayDateTimeWithName(newItem.timecreated * 1000);
+
+            this.notificationList.push(newItem);
+        })
     }
 
     /**
@@ -290,6 +305,17 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         return this.CH.isAvailable(data);
     }
 
+    async loadMoreNotifications(): Promise<void>
+    {
+        try {
+            await this.fetchNotifications(false);
+        } catch (error) {
+            CoreDomUtils.showErrorModalDefault(error, 'Error loading more notifications');
+
+            this.fetchMoreNotificationsFailed = true;
+        }
+    }
+
     // =========================================================================================================== announcement
     loadAnnouncements(mode?: string): void
     {
@@ -304,6 +330,11 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         .then((data) => {
             let announcements = this.CH.toArray(this.CH.toJson(data));
             this.announcementReachedEndOfList = this.CH.isEmpty(announcements) || this.CH.getLength(announcements) < 30;
+
+            announcements.map((announcement) => {
+                announcement.subTitle = this.CH.getHumanDayDateTimeWithName(announcement.subTitle);
+                return announcement;
+            });
 
             if (mode && mode == "load_more") this.announcementList.concat(announcements);
             else this.announcementList = announcements;
@@ -329,8 +360,25 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
     {
         this.loadAnnouncements("refresh");
     }
-    openAnnouncement(): void
+    openAnnouncement(item): void
     {
+        for (let announcement of this.announcementList)
+        {
+            if (announcement.id == item.id)
+            {
+                item.read = true;
+                item.tags = [];
+                break;
+            }
+        }
+
+        const stateParams: any = {
+            discussion_id: item.id,
+        };
+        CoreNavigator.navigateToSitePath('/CqAnnouncement/index', {
+            params: stateParams,
+            preferCurrentTab: false,
+        });
     }
     markAllAnnouncementsAsRead(): void
     {

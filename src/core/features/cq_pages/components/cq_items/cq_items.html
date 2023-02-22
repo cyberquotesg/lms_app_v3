@@ -17,7 +17,7 @@
                             {{ item.title }} 
                         </div>
                         <div *ngIf="item.subTitle" class="card-sub-title-inner">
-                            {{ item.subTitle }} 
+                            <div [innerHtml]="item.subTitle"></div>
                         </div>
                     </ion-card-title>
                 </ion-card-header>
@@ -50,7 +50,7 @@
                         </div>
 
                         <div *ngIf="item.subTitle" class="card-sub-title-inner">
-                            {{ item.subTitle }} 
+                            <div [innerHtml]="item.subTitle"></div>
                         </div>
                     </ion-card-title>
                     <div *ngIf="!hideTags" class="card-tags">

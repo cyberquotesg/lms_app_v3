@@ -10,7 +10,7 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background pb-5">
 
-        <div class="ml-20 mt-36 mr-20">
+        <div class="pl-cs pr-cs pt-36">
             <cq_filter [filterMultipleTitle]="'Course Filter'" [filterMultiple]="pageData.filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
             <cq_items [items]="pageData.courses" (onSelectItem)="openCourse($event)"></cq_items>
 

@@ -12,14 +12,7 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() item: any = {};
     @Input() hideList: string | string[] = "";
 
-    private showMedia: boolean;
-    private showUserStatus: boolean;
-    private showCompulsory: boolean;
-    private showCourseType: boolean;
-    private showCategoryName: boolean;
-    private tags: string[] = [];
-    private showTags: boolean;
-    private finalShow: boolean;
+    private finalTags: any[] = [];
 
     constructor(CH: CqHelper)
     {
@@ -32,20 +25,52 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
         if (Array.isArray(this.hideList)) hideList = this.hideList;
         else hideList = this.hideList.trim().replace(/ /g, "").split(",");
 
-        let item = this.item;
-        this.showMedia = !hideList.includes("media") && typeof item.media != "undefined";
-        this.showUserStatus = !hideList.includes("userStatus");
-        this.showCompulsory = !hideList.includes("compulsory") && (item.compulsory === true || item.compulsory === 1 || item.compulsory === '1');
-        this.showCourseType = !hideList.includes("courseType") && (item.typeText || item.finalCourseTypeText || item.courseTypeText);
-        this.showCategoryName = !hideList.includes("categoryName") && (item.categoryname || item.categoryName);
-        if (item.tags)
+        if (!hideList.includes("media"))
         {
-            if (Array.isArray(item.tags)) this.tags = item.tags;
-            else this.tags = item.tags.trim().replace(/ /g, "").split(",");
+            if (this.item.media == "online") this.finalTags.push({text: "E-Learning"});
+            else if (this.item.media == "offline") this.finalTags.push({text: "Classroom Training"});
         }
-        this.showTags = this.tags.length > 0;
-
-        this.finalShow = this.showMedia || this.showUserStatus || this.showCompulsory || this.showCourseType || this.showCategoryName || this.showTags;
+        if (!hideList.includes("userStatus"))
+        {
+            if (this.item.isUserEnrolled && !this.item.isUserFinished && !this.item.isUserAccredited)
+            {
+                if (!this.item.isCourseEnded) this.finalTags.push({text: "Enrolled", class: "green"});
+                else this.finalTags.push({text: "Failed", class: "red"});
+            }
+            else if (this.item.isUserEnrolled && this.item.isUserFinished && !this.item.isUserAccredited)
+            {
+                this.finalTags.push({text: "Finished", class: "green"});
+            }
+            else if (this.item.isUserEnrolled && this.item.isUserFinished && this.item.isUserAccredited)
+            {
+                this.finalTags.push({text: "Accredited", class: "green", icon: "checkmark-circle"});
+            }
+        }
+        if (!hideList.includes("compulsory"))
+        {
+            if (this.item.compulsory === true || this.item.compulsory === 1 || this.item.compulsory === '1')
+            {
+                this.finalTags.push({text: "Compulsory", class: "orange"});
+            }
+        }
+        if (!hideList.includes("courseType"))
+        {
+            if (this.item.typeText || this.item.finalCourseTypeText || this.item.courseTypeText)
+            {
+                this.finalTags.push({text: this.item.typeText || this.item.finalCourseTypeText || this.item.courseTypeText, class: "dark-grey"});
+            }
+        }
+        if (!hideList.includes("categoryName"))
+        {
+            if (this.item.categoryname || this.item.categoryName)
+            {
+                this.finalTags.push({text: this.item.categoryname || this.item.categoryName, class: "dark-grey"});
+            }
+        }
+        if (this.item.tags && Array.isArray(this.item.tags) && this.item.tags.length > 0)
+        {
+            this.item.tags.forEach((tag) => this.finalTags.push({text: tag}));
+        }
     }
     ngOnChanges(changes: SimpleChanges): void
     {

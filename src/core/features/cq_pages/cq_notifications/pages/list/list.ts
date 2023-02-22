@@ -171,7 +171,8 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
             newItem.subTitle = this.CH.getHumanDayDateTimeWithName(newItem.timecreated * 1000);
 
             this.notificationList.push(newItem);
-        })
+        });
+        this.adjustScreenHeight(".page-slider-notification-list");
     }
 
     /**
@@ -291,6 +292,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
             this.subject = this.CH.capitalize(this.selectedOne);
             let index = target == "notification" ? 0 : 1;
             this.pageSlider.slideTo(index);
+            this.adjustScreenHeight(".page-slider-notification-list");
         }
     }
     pageSliderChange(): void
@@ -298,6 +300,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         this.pageSlider.getActiveIndex().then((index) => {
             this.selectedOne = index ? "announcement" : "notification";
             this.subject = this.CH.capitalize(this.selectedOne);
+            this.adjustScreenHeight(".page-slider-notification-list");
         });
     }
     isAvailable(data: any): boolean
@@ -316,14 +319,32 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         }
     }
 
+    refreshByCQ(refresher?: IonRefresher): void
+    {
+        if (this.selectedOne == "notification") this.refreshNotifications(refresher);
+        else if (this.selectedOne == "announcement") this.refreshAnnouncements(refresher);
+    }
+    adjustScreenHeight(pageClass: string): void
+    {
+        // a moment after slide, make sure the slider has proper height
+        setTimeout(() => {
+            let parent = document.querySelector(pageClass) as HTMLElement | null;
+            let activeChild = document.querySelector(pageClass + " .swiper-wrapper .swiper-slide-active > div:first-child") as HTMLDivElement | null;
+            if (parent && activeChild)
+            {
+                parent.style.height = activeChild.offsetHeight + 0 + "px";
+            }
+        }, 200);
+    }
+
     // =========================================================================================================== announcement
-    loadAnnouncements(mode?: string): void
+    loadAnnouncements(mode?: string, refresher?: IonRefresher): void
     {
         this.announcementIsLoading = true;
         const params: any = {
             class: "CqLib",
             function: "get_announcements",
-            page: this.announcementPage,
+            page: mode && mode == "refresh" ? 1 : this.announcementPage,
             length: mode && mode == "refresh" ? ((this.announcementPage - 1) * 30) : 30,
         };
         this.CH.callApi(params)
@@ -336,7 +357,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
                 return announcement;
             });
 
-            if (mode && mode == "load_more") this.announcementList.concat(announcements);
+            if (mode && mode == "load_more") this.announcementList = this.announcementList.concat(announcements);
             else this.announcementList = announcements;
 
             if (mode && mode == "refresh") {}
@@ -350,15 +371,19 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
             
             // cannot sign up because server is unreachable
             this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
+        })
+        .finally(() => {
+            if (refresher) refresher.complete();
+            this.adjustScreenHeight(".page-slider-notification-list");
         });
     }
     loadMoreAnnouncements(): void
     {
         this.loadAnnouncements("load_more");
     }
-    refreshAnnouncements(): void
+    refreshAnnouncements(refresher?: IonRefresher): void
     {
-        this.loadAnnouncements("refresh");
+        this.loadAnnouncements("refresh", refresher);
     }
     openAnnouncement(item): void
     {

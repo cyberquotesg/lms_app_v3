@@ -1120,6 +1120,7 @@ export class CqHelper
 	{
 		if (typeof value == "undefined") return "00";
 		else if (typeof value != "number") value = parseInt(value);
+
 		return value < 10 ? "0" + value : value;
 	}
     getDayName(day: number): string
@@ -1133,6 +1134,8 @@ export class CqHelper
     	if (day == 5) return "Thu";
     	if (day == 6) return "Fri";
     	if (day == 7) return "Sat";
+
+    	return "";
     }
     getMonthName(month: number): string
     {
@@ -1153,6 +1156,8 @@ export class CqHelper
     	if (month == 10) return "Oct";
     	if (month == 11) return "Nov";
     	if (month == 12) return "Dec";
+
+    	return "";
     }
     getMonthNumber(month: string): number
     {
@@ -1173,28 +1178,30 @@ export class CqHelper
     	else if (month == "oct") return 10;
     	else if (month == "nov") return 11;
     	else if (month == "dec") return 12;
+
+    	return 0;
     }
     /* converts time like 06:40:35 to seconds
      * the seconds should not have miliseconds
     */
     timeToSecond(time: string): number
     {
-    	time = time.split(":");
-    	var hours = (time[0] ? Number(time[0]) : 0) * 60 * 60;
-    	var minutes = (time[1] ? Number(time[1]) : 1) * 60;
-    	var seconds = (time[2] ? Number(time[2]) : 2);
+    	let timeArray = time.split(":");
+    	var hours = (timeArray[0] ? Number(timeArray[0]) : 0) * 60 * 60;
+    	var minutes = (timeArray[1] ? Number(timeArray[1]) : 1) * 60;
+    	var seconds = (timeArray[2] ? Number(timeArray[2]) : 2);
 
     	return hours + minutes + seconds;
     }
 
-    getTimeDifference(time_1: string|number|Date, time_2: string|number|Date, humanTime?: boolean): number
+    getTimeDifference(time_1: string|number|Date, time_2: string|number|Date, humanTime?: boolean): number|string
     {
     	if (typeof time_1 == "string" || typeof time_1 == "number") time_1 = new Date(time_1);
     	if (typeof time_2 == "string" || typeof time_2 == "number") time_2 = new Date(time_2);
 
     	var difference = (time_2.getTime() - time_1.getTime()) / 1000;
 
-    	if (humanTime) this.getUnixTimeToHumanTime(difference);
+    	if (humanTime) return this.getUnixTimeToHumanTime(difference);
     	else return difference;
     }
     getDayDifference(day_1: string|number|Date, day_2: string|number|Date, inclusive?: boolean, absolute?: boolean): number
@@ -1205,7 +1212,7 @@ export class CqHelper
     	if (typeof day_2 == "string" || typeof day_2 == "number") day_2 = new Date(day_2);
     	day_2 = new Date(day_2.toDateString());
 
-    	difference = (day_2.getTime() - day_1.getTime()) / 24 / 60 / 60 / 1000;
+    	let difference = (day_2.getTime() - day_1.getTime()) / 24 / 60 / 60 / 1000;
 
     	if (inclusive) difference++;
     	if (absolute) difference = Math.abs(difference);
@@ -1261,7 +1268,7 @@ export class CqHelper
     	return 	this.goodDecimal(the_date.getHours()) + ":" + 
     			this.goodDecimal(the_date.getMinutes());
     }
-    getHumanTimeFromString(the_time: string|number|Date): string
+    getHumanTimeFromString(the_time?: string): string
     {
     	if (typeof the_time == "undefined") return "";
     	else return the_time.substr(0, 5);
@@ -1328,14 +1335,14 @@ export class CqHelper
     /*
      * unixTime is timestamp WITHOUT miliseconds
     */
-    getUnixTimeToHours(unixTime: number): string
+    getUnixTimeToHours(unixTime: number): number
     {
     	return unixTime / 60 / 60;
     }
     /*
      * unixTime is timestamp WITHOUT miliseconds
     */
-    getUnixTimeToDays(unixTime: number): string
+    getUnixTimeToDays(unixTime: number): number
     {
     	return this.getUnixTimeToHours(unixTime) / 24;
     }

@@ -14,6 +14,7 @@
                 <button class="{{ 'notification' == selectedOne ? 'active' : '' }}" (click)="selectOne('notification')" style="flex-grow: 1;">
                     Notification <span *ngIf="notificationNumber && notificationNumber != '0'">({{ notificationNumber }})</span>
                 </button>
+                
                 <button class="{{ 'announcement' == selectedOne ? 'active' : '' }} ml-cs" (click)="selectOne('announcement')" style="flex-grow: 1;">
                     Announcement <span *ngIf="announcementNumber && announcementNumber != '0'">({{ announcementNumber }})</span>
                 </button>
@@ -22,7 +23,7 @@
             <ion-slides #pageSlider class="page-slider page-slider-notification-list" [options]="pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
                 <ion-slide style="display: block;">
                     <div class="pl-cs pr-cs pb-cst">
-                        <cq_items type="list" [items]="notificationList" (onSelectItem)="notifications.select($event)"></cq_items>
+                        <cq_items type="list" [items]="notificationList" (onSelectItem)="openNotification($event)"></cq_items>
                         <button *ngIf="isAvailable(notificationList)" class="load-more-button {{ notificationIsLoading ? 'loading' : '' }}" (click)="loadMoreNotifications()" [disabled]="!notifications.loaded || notifications.completed">
                             <ion-icon *ngIf="!notificationIsLoading" name="arrow-down-circle"></ion-icon>
                             <ion-spinner *ngIf="notificationIsLoading"></ion-spinner>

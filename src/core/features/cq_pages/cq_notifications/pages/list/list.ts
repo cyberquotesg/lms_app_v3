@@ -297,6 +297,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
         this.announcementSubscription.unsubscribe();
     }
 
+    // =========================================================================================================== by cq
     ngOnInit(): void
     {
         this.notificationSubscription = this.CH.notificationNumber.subscribe((value) => {
@@ -354,10 +355,21 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
             this.fetchMoreNotificationsFailed = true;
         }
     }
+    openNotification(item): void
+    {
+        this.CH.log("opening this item", item);
+
+        if (item.eventtype != "announcement") this.notifications.select(item);
+        else this.openAnnouncement({
+            id: item.customdata.discussion,
+            notificationId: item.id,
+        });
+    }
 
     refreshByCQ(refresher?: IonRefresher, forceTab?: string): void
     {
         let selectedOne = forceTab || this.selectedOne;
+        this.CH.log("refreshByCQ() on tab", selectedOne);
 
         if (selectedOne == "notification")
         {
@@ -372,6 +384,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     }
     adjustScreenHeight(pageClass: string): void
     {
+        /* *a/
         // a moment after slide, make sure the slider has proper height
         setTimeout(() => {
             let parent = document.querySelector(pageClass) as HTMLElement | null;
@@ -381,9 +394,10 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
                 parent.style.height = activeChild.offsetHeight + 0 + "px";
             }
         }, 200);
+        /* */
     }
 
-    // =========================================================================================================== announcement
+    // =========================================================================================================== announcement by cq
     loadAnnouncements(mode?: string, refresher?: IonRefresher): void
     {
         this.announcementIsLoading = true;
@@ -434,18 +448,25 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     }
     openAnnouncement(item): void
     {
-        for (let announcement of this.announcementList)
-        {
-            if (announcement.id == item.id)
-            {
-                item.read = true;
-                item.tags = [];
-                break;
-            }
-        }
+        this.CH.log("opening this announcement", item);
 
+        let notificationId = 0;
+        if (item.notificationId) notificationId = item.notificationId;
+        else
+        {
+            for (let notification of this.notificationList)
+            {
+                if (notification.customdata?.discussion == item.id)
+                {
+                    notificationId = notification.id;
+                    break;
+                }
+            };
+        }
+        
         const stateParams: any = {
             discussion_id: item.id,
+            notification_id: notificationId,
         };
         CoreNavigator.navigateToSitePath('/CqAnnouncement/index', {
             params: stateParams,

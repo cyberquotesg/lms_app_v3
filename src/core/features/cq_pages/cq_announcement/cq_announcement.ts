@@ -10,6 +10,7 @@ import { CoreUtils } from '@services/utils/utils';
 import { FileTransfer, FileTransferObject } from '@ionic-native/file-transfer/ngx';
 import { FileOpener } from '@ionic-native/file-opener/ngx';
 import { File } from '@ionic-native/file/ngx';
+import { AddonNotifications } from '@features/cq_pages/cq_notifications/services/notifications';
 
 @Component({
     selector: 'cq_announcement',
@@ -19,6 +20,7 @@ export class CqAnnouncement extends CqPage implements OnInit
 {
     pageParams: any = {
         discussion_id: 0,
+        notification_id: 0,
     };
     pageDefaults: any = {
         announcement: [],
@@ -40,7 +42,15 @@ export class CqAnnouncement extends CqPage implements OnInit
         this.CH.updateCount("announcement");
     }
 
-    ngOnInit(): void { this.usuallyOnInit(); }
+    ngOnInit(): void {
+        this.usuallyOnInit(() => {
+            if (this.pageParams.notification_id)
+            {
+                this.CH.log("marking notification as read", this.pageParams.notification_id);
+                AddonNotifications.markNotificationRead(this.pageParams.notification_id);
+            }
+        });
+    }
     ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }

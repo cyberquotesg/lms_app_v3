@@ -30,10 +30,10 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
         if (this.displayNotification)
         {
             this.notificationSubscription = this.CH.notificationNumber.subscribe((notificationCount) => {
-                this.announcementSubscription = this.CH.announcementNumber.subscribe((announcementCount) => {
-                    let value = Number(notificationCount) + Number(announcementCount);
+                // this.announcementSubscription = this.CH.announcementNumber.subscribe((announcementCount) => {
+                    let value = Number(notificationCount)/* + Number(announcementCount)*/;
                     this.number = this.CH.shortenNotificationCount(value);
-                });
+                // });
             });
         }
     }
@@ -46,7 +46,7 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
         if (this.displayNotification)
         {
             this.notificationSubscription.unsubscribe();
-            this.announcementSubscription.unsubscribe();
+            // this.announcementSubscription.unsubscribe();
         }
     }
 }

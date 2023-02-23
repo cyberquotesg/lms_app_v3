@@ -3,6 +3,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, SimpleChange } from '@angular/core';
 import { CqHelper } from '../../services/cq_helper';
 import { CqComponent } from '../../classes/cq_component';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'cq_header',
@@ -16,6 +17,8 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     @Input() displayProgress: boolean = false;
 
     number = "0";
+    notificationSubscription: Subscription;
+    announcementSubscription: Subscription;
 
     constructor(CH: CqHelper)
     {
@@ -26,10 +29,10 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     {
         if (this.displayNotification)
         {
-            this.CH.getNotificationCount((notificationCount) => {
-                this.CH.getAnnouncementCount((announcementCount) => {
+            this.notificationSubscription = this.CH.notificationNumber.subscribe((notificationCount) => {
+                this.announcementSubscription = this.CH.announcementNumber.subscribe((announcementCount) => {
                     let value = Number(notificationCount) + Number(announcementCount);
-                    this.number = this.shortenNotificationCount(value);
+                    this.number = this.CH.shortenNotificationCount(value);
                 });
             });
         }
@@ -42,40 +45,8 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     {
         if (this.displayNotification)
         {
-            // no need to unsubscribe in the new app because notification count is displayed on component that always be displayed
-            // this.events.unsubscribe('newNotificationCount');
-        }
-    }
-
-    shortenNotificationCount(count: number): string
-    {
-        if (count == 0)
-        {
-            return '';
-        }
-        else if (count <= 999)
-        {
-            return String(count);
-        }
-        else if (count <= 9999)
-        {
-            count = Math.floor(count / 100) / 10;
-            return String(count) + 'K';
-        }
-        else if (count <= 999999)
-        {
-            count = Math.floor(count / 1000);
-            return String(count) + 'K';
-        }
-        else if (count <= 9999999)
-        {
-            count = Math.floor(count / 100000) / 10;
-            return String(count) + 'M';
-        }
-        else
-        {
-            count = Math.floor(count / 1000000);
-            return String(count) + 'M';
+            this.notificationSubscription.unsubscribe();
+            this.announcementSubscription.unsubscribe();
         }
     }
 }

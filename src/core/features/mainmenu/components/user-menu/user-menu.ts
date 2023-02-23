@@ -66,7 +66,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     // by rachmad
     constructor(protected CH: CqHelper)
     {
-        this.CH.getAnnouncementCount((value) => {
+        this.CH.announcementNumber.subscribe((value) => {
             this.announcementCount = value;
         });
     }

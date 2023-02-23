@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
+import { AfterViewInit, Component, OnInit, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
 import { IonRefresher, IonSlides, Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
@@ -44,10 +44,16 @@ import { CqHelper } from '../../../services/cq_helper';
     templateUrl: 'list.html',
     styleUrls: ['list.scss', '../../notifications.scss'],
 })
-export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
+export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
+
+    notificationSubscription: Subscription;
+    announcementSubscription: Subscription;
+
+    notificationNumber = "0";
+    announcementNumber = "0";
 
     notifications!: CoreListItemsManager<AddonNotificationsNotificationToRender, AddonNotificationsNotificationsSource>;
     fetchMoreNotificationsFailed = false;
@@ -168,10 +174,14 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         this.notificationList = [];
         this.notifications.items.forEach((item) => {
             let newItem = this.CH.cloneJson(item);
+
             newItem.subTitle = this.CH.getHumanDayDateTimeWithName(newItem.timecreated * 1000);
+            if (!newItem.read) newItem.tags = ["New"];
 
             this.notificationList.push(newItem);
         });
+
+        this.CH.log("notificationList", this.notificationList);
         this.adjustScreenHeight(".page-slider-notification-list");
     }
 
@@ -282,8 +292,34 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         this.readObserver?.off();
         this.pushObserver?.unsubscribe();
         this.notifications?.destroy();
+
+        this.notificationSubscription.unsubscribe();
+        this.announcementSubscription.unsubscribe();
     }
 
+    ngOnInit(): void
+    {
+        this.notificationSubscription = this.CH.notificationNumber.subscribe((value) => {
+            let oldValue = this.notificationNumber;
+            this.notificationNumber = this.CH.shortenNotificationCount(value);
+
+            if (oldValue != this.notificationNumber) this.refreshByCQ(undefined, "notification");
+        });
+        this.announcementSubscription = this.CH.announcementNumber.subscribe((value) => {
+            let oldValue = this.announcementNumber;
+            this.announcementNumber = this.CH.shortenNotificationCount(value);
+
+            if (oldValue != this.announcementNumber) this.refreshByCQ(undefined, "announcement");
+        });
+    }
+    ionViewWillEnter(): void
+    {
+        if (this.notifications.loaded || this.announcementLoaded)
+        {
+            this.CH.log("this is considered back, running refreshByCQ() automatically");
+            this.refreshByCQ();
+        }
+    }
     selectOne(target: string): void
     {
         if (this.selectedOne != target)
@@ -319,10 +355,20 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         }
     }
 
-    refreshByCQ(refresher?: IonRefresher): void
+    refreshByCQ(refresher?: IonRefresher, forceTab?: string): void
     {
-        if (this.selectedOne == "notification") this.refreshNotifications(refresher);
-        else if (this.selectedOne == "announcement") this.refreshAnnouncements(refresher);
+        let selectedOne = forceTab || this.selectedOne;
+
+        if (selectedOne == "notification")
+        {
+            if (this.notificationIsLoading) this.CH.log("refreshByCQ() is rejected, this.notificationIsLoading is true");
+            else this.refreshNotifications(refresher);
+        }
+        else if (selectedOne == "announcement")
+        {
+            if (this.announcementIsLoading) this.CH.log("refreshByCQ() is rejected, this.announcementIsLoading is true");
+            else this.refreshAnnouncements(refresher);
+        }
     }
     adjustScreenHeight(pageClass: string): void
     {
@@ -359,6 +405,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
 
             if (mode && mode == "load_more") this.announcementList = this.announcementList.concat(announcements);
             else this.announcementList = announcements;
+            this.CH.log("announcementList", this.announcementList);
 
             if (mode && mode == "refresh") {}
             else this.announcementPage++;

@@ -13,13 +13,17 @@ import { CoreUtilsProvider } from '@services/utils/utils';
 import { CoreSiteBasicInfo, CoreSites } from '@services/sites';
 import { CorePlatform } from '@services/platform';
 import { CoreConstants } from '@/core/constants';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class CqHelper
 {
-    notificationCount: BehaviorSubject<number> = new BehaviorSubject<number>(0);
-    announcementCount: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+    notificationBS: BehaviorSubject<number>;
+    notificationNumber: Observable<number>;
+
+    announcementBS: BehaviorSubject<number>;
+    announcementNumber: Observable<number>;
+
     zoom: any;
     zoomInitiated: boolean = false;
 
@@ -39,6 +43,11 @@ export class CqHelper
 	    private utils: CoreUtilsProvider,
 	)
 	{
+		this.notificationBS = new BehaviorSubject<number>(0);
+		this.notificationNumber = this.notificationBS.asObservable();
+
+		this.announcementBS = new BehaviorSubject<number>(0);
+		this.announcementNumber = this.announcementBS.asObservable();
 	}
 
     config(): any
@@ -800,6 +809,38 @@ export class CqHelper
     	else return {};
     }
 
+    shortenNotificationCount(count: number): string
+    {
+        if (count == 0)
+        {
+            return '';
+        }
+        else if (count <= 999)
+        {
+            return String(count);
+        }
+        else if (count <= 9999)
+        {
+            count = Math.floor(count / 100) / 10;
+            return String(count) + 'K';
+        }
+        else if (count <= 999999)
+        {
+            count = Math.floor(count / 1000);
+            return String(count) + 'K';
+        }
+        else if (count <= 9999999)
+        {
+            count = Math.floor(count / 100000) / 10;
+            return String(count) + 'M';
+        }
+        else
+        {
+            count = Math.floor(count / 1000000);
+            return String(count) + 'M';
+        }
+    }
+
     /* ============================================================================================= api related helpers
     */
 
@@ -922,20 +963,11 @@ export class CqHelper
 
     setNotificationCount(value: number): void
     {
-        this.notificationCount.next(value);
+        this.notificationBS.next(value);
     }
-    getNotificationCount(callback): void
-    {
-    	this.notificationCount.asObservable().subscribe(callback);
-    }
-
     setAnnouncementCount(value: number): void
     {
-        this.announcementCount.next(value);
-    }
-    getAnnouncementCount(callback): void
-    {
-    	this.announcementCount.asObservable().subscribe(callback);
+        this.announcementBS.next(value);
     }
 
     updateCount(target: string | string[]): void

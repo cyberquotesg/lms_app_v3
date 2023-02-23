@@ -260,6 +260,11 @@ export class AddonNotificationsProvider {
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
 
+        // by rachmad
+        preSets.getFromCache = false;
+        preSets.saveToCache = true;
+        preSets.forceOffline = false;
+
         // Get unread notifications.
         const response = await site.read<AddonNotificationsGetMessagesWSResponse>('core_message_get_messages', data, preSets);
 

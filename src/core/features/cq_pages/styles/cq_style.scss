@@ -413,6 +413,8 @@ body
 
 		    > core-loading
 		    {
+		    	display: block !important;
+		    	
 	    	    &::before
 	    	    {
 	    	    	content: "";
@@ -1717,6 +1719,7 @@ body
 	    overflow: hidden;
 	    border: 20px solid $base_background_no_image;
 	    box-shadow: $neumorphism_shadow;
+	    will-change: transform;
 
 	    .db-sizer
 	    {

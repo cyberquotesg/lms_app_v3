@@ -309,4 +309,9 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
         this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
     }
+
+    showRejectedReason(message: string): void
+    {
+        this.CH.alert('Info!', message);
+    }
 }

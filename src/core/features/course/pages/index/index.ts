@@ -60,7 +60,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {hasEnrolled, selfEnrolId};
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {courseImage, fullname, basicInformation, hasEnded, hasEnrolled, isSelfEnrol, selfEnrolId, hasAccredited};
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
@@ -73,10 +73,10 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         onModule: {},
     };
 
+    sections: CoreCourseWSSection[] = []; // List of course sections.
     protected currentPagePath = '';
     protected selectTabObserver: CoreEventObserver;
     protected completionObserver: CoreEventObserver;
-    protected sections: CoreCourseWSSection[] = []; // List of course sections.
     protected firstTabName?: string;
     protected module?: CoreCourseModuleData;
     protected modNavOptions?: CoreNavigationOptions;
@@ -426,7 +426,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             params.calls.course = {
                 class: 'CqCourseLib',
                 function: 'view_e_learning',
-                course_id: this.course.id,
+                course_id: this.course!.id,
             };
         }
         if (modeArray.includes("additionals"))
@@ -434,7 +434,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             params.calls.additionals = {
                 class: 'CqCourseLib',
                 function: 'additionals_e_learning',
-                course_id: this.course.id,
+                course_id: this.course!.id,
             };
         }
         let temp = await this.CH.callApi(params);
@@ -451,6 +451,16 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             }
         }
         this.course = course;
+
+        // fake values to force compiler accept the variable
+        if (typeof this.course!.courseImage == "undefined") this.course!.courseImage = null;
+        if (typeof this.course!.fullname == "undefined") this.course!.fullname = "";
+        if (typeof this.course!.basicInformation == "undefined") this.course!.basicInformation = [];
+        if (typeof this.course!.hasEnded == "undefined") this.course!.hasEnded = false;
+        if (typeof this.course!.hasEnrolled == "undefined") this.course!.hasEnrolled = false;
+        if (typeof this.course!.hasAccredited == "undefined") this.course!.hasAccredited = false;
+        if (typeof this.course!.isSelfEnrol == "undefined") this.course!.isSelfEnrol = false;
+        if (typeof this.course!.selfEnrolId == "undefined") this.course!.selfEnrolId = 0;
 
         let tempGrades = await CoreGrades.getGradeItems(this.course!.id, 0, 0, "", true),
             grades: any = {

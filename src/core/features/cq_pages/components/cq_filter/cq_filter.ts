@@ -35,10 +35,10 @@ export class CqFilterComponent extends CqComponent implements OnInit, OnChanges 
     @Input() filterMultipleTitle?: string;
     @Output() onFilterChange: EventEmitter<any>;
 
-    private filterText = '';
-    private filterMultipleInternal: any[] = [];
-    private hasFilterMultiple: boolean = false;
-    private openingFilterMultiple: boolean = false;
+    filterText = '';
+    filterMultipleInternal: any[] = [];
+    hasFilterMultiple: boolean = false;
+    openingFilterMultiple: boolean = false;
 
     constructor(CH: CqHelper)
     {

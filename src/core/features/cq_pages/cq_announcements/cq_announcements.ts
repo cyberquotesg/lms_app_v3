@@ -29,8 +29,8 @@ export class CqAnnouncements extends CqPage implements OnInit
     };
 
     private agent: any;
-    private loading: any = false;
-    private showItems: boolean = true;
+    loading: any = false;
+    showItems: boolean = true;
 
     constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
     {

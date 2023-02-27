@@ -12,7 +12,7 @@ export class CqFilterComponentModal extends CqComponent implements OnInit, OnCha
     @Input() filterMultiple: any[];
     @Input() filterMultipleTitle?: string;
 
-    private filterMultipleInternal: any[] = [];
+    filterMultipleInternal: any[] = [];
 
     constructor(CH: CqHelper)
     {

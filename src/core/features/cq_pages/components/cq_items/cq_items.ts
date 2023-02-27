@@ -14,7 +14,7 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() hideTags: boolean = false;
     @Output() onSelectItem: EventEmitter<number>;
 
-    private showFakeItems: boolean = false;
+    showFakeItems: boolean = false;
 
     constructor(CH: CqHelper)
     {

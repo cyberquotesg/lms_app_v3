@@ -14,15 +14,15 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
     @Input() big: boolean;
     @Output() onZero: EventEmitter<any>;
 
-    private agent: any;
-    private startInDays: number;
-    private startInHours: number;
-    private startInMinutes: number;
-    private startInSeconds: number;
-    private willStartIn: number;
-    private timeUrgency: number;
-    private bigClass: string;
-    private focusOn: string;
+    agent: any;
+    startInDays: number;
+    startInHours: number;
+    startInMinutes: number;
+    startInSeconds: number;
+    willStartIn: number;
+    timeUrgency: number;
+    bigClass: string;
+    focusOn: string;
 
     constructor(CH: CqHelper)
     {

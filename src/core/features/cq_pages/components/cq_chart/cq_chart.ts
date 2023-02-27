@@ -15,8 +15,8 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
     @Input() data: ChartData;
     @ViewChild('cqChart') cqChart: ElementRef;
 
-    private chart: Chart;
-    private inited: boolean = false;
+    chart: Chart;
+    inited: boolean = false;
 
     constructor(CH: CqHelper)
     {

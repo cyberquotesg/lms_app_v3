@@ -30,7 +30,7 @@ export class CqAnnouncement extends CqPage implements OnInit
     };
 
     private agent: any;
-    private loading: any = false;
+    loading: any = false;
 
     constructor(renderer: Renderer2, CH: CqHelper, platform: Platform,
         private transfer: FileTransfer,

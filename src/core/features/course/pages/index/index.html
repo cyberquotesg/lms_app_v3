@@ -17,7 +17,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="loaded">
-        <ion-card>
+        <ion-card *ngIf="course">
             <div class="card-image">
                 <div *ngIf="course.courseImage" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + course.courseImage + ')'}"></div>
                 <span *ngIf="!course.courseImage" class="card-image-letter">{{ getLetter(course.fullname) }}</span>
@@ -39,7 +39,7 @@
             </ion-card-content>
         </ion-card>
 
-        <div *ngIf="!course.hasEnded" class="pl-cs pr-cs mt-cst">
+        <div *ngIf="course && !course.hasEnded" class="pl-cs pr-cs mt-cst">
             <ng-container *ngIf="!course.hasEnrolled">
                 <button *ngIf="course.isSelfEnrol" (click)="takeCourse()" class="button button-small {{ cqLoading ? 'active' : '' }}" style="width: 100%;">
                     <span *ngIf="!cqLoading"><b>Enrol</b></span>
@@ -61,7 +61,7 @@
             </ng-container>
         </div>
 
-        <ng-container *ngIf="course.hasEnrolled && grades.onCourse.length > 0">
+        <ng-container *ngIf="course && course.hasEnrolled && grades.onCourse.length > 0">
             <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                 Grades
                 <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
@@ -89,57 +89,61 @@
             </ion-card>
         </ng-container>
 
-        <ng-container *ngFor="let section of sections; let i = index">
-            <ng-container *ngIf="section.visible == 1">
-                <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
-                    <small class="d-block mb-4">Course Section {{ i + 1 }}</small>
-                    {{ section.name }}
+        <ng-container *ngIf="course">
+            <ng-container *ngFor="let section of sections; let i = index">
+                <ng-container *ngIf="section.visible == 1">
+                    
+                    <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                        <small class="d-block mb-4">Course Section {{ i + 1 }}</small>
+                        {{ section.name }}
 
-                    <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
-                </div>
+                        <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                    </div>
 
-                <ion-card>
-                    <ion-card-content>
-                        <div class="sessions">
-                            <ng-container *ngFor="let module of section.modules">
+                    <ion-card>
+                        <ion-card-content>
+                            <div class="sessions">
+                                <ng-container *ngFor="let module of section.modules">
 
-                                <!-- 
-                                    * visible Visible setting (0 or 1; if this is 0, students cannot see/access the activity) - from
-                                    *    course_modules table
-                                    * 
-                                    * visibleoncoursepage Visible on course page setting - from course_modules table, adjusted to
-                                    *    whether course format allows this module to have the "stealth" mode
-                                 -->
-                                <div *ngIf="module.visible == 1 && module.visibleoncoursepage == 1" class="session {{ getModuleClass(section, module) }}" (click)="moduleClicked($event, section, module)">
-                                    <div class="session-info">
-                                        <div class="card-item">
-                                            <div class="card-item-icon">
-                                                <img src="{{ module.modicon }}">
-                                            </div>
-                                            <div class="card-item-text">
-                                                <ng-container *ngIf="course.hasEnrolled && module.completion != 0">
-                                                    <ion-icon *ngIf="module.completiondata && module.completiondata.state" name="checkbox-outline" style="float: right; font-size: 30px;"></ion-icon>
-                                                    <ion-icon *ngIf="!(module.completiondata && module.completiondata.state)" name="square-outline" style="float: right; font-size: 30px;"></ion-icon>
-                                                </ng-container>
+                                    <!-- 
+                                        * visible Visible setting (0 or 1; if this is 0, students cannot see/access the activity) - from
+                                        *    course_modules table
+                                        * 
+                                        * visibleoncoursepage Visible on course page setting - from course_modules table, adjusted to
+                                        *    whether course format allows this module to have the "stealth" mode
+                                     -->
+                                    <div *ngIf="module.visible == 1 && module.visibleoncoursepage == 1" class="session {{ getModuleClass(section, module) }}" (click)="moduleClicked($event, section, module)">
+                                        <div class="session-info">
+                                            <div class="card-item">
+                                                <div class="card-item-icon">
+                                                    <img src="{{ module.modicon }}">
+                                                </div>
+                                                <div class="card-item-text">
+                                                    <ng-container *ngIf="course.hasEnrolled && module.completion != 0">
+                                                        <ion-icon *ngIf="module.completiondata && module.completiondata.state" name="checkbox-outline" style="float: right; font-size: 30px;"></ion-icon>
+                                                        <ion-icon *ngIf="!(module.completiondata && module.completiondata.state)" name="square-outline" style="float: right; font-size: 30px;"></ion-icon>
+                                                    </ng-container>
 
-                                                <div>
-                                                    {{ module.name }}
-                                                    <div class="cq-tag-wrapper mt-4">
-                                                        <span class="cq-tag dark-grey">{{ module.modplural }}</span>
-                                                        <span *ngIf="course.hasEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
+                                                    <div>
+                                                        {{ module.name }}
+                                                        <div class="cq-tag-wrapper mt-4">
+                                                            <span class="cq-tag dark-grey">{{ module.modplural }}</span>
+                                                            <span *ngIf="course.hasEnrolled && grades.onModule[module.id]" class="cq-tag dark-grey">Grade {{ grades.onModule[module.id] }}</span>
+                                                        </div>
+
+                                                        <div *ngIf="course.hasEnrolled && isModuleDisabled(section, module)" class="session-bottom mt-cs" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                                                     </div>
-
-                                                    <div *ngIf="course.hasEnrolled && isModuleDisabled(section, module)" class="session-bottom mt-cs" [innerHTML]="module.availabilityinfo" style="font-size: 14px"></div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                            </ng-container>
-                        </div>
-                    </ion-card-content>
-                </ion-card>
+                                </ng-container>
+                            </div>
+                        </ion-card-content>
+                    </ion-card>
+
+                </ng-container>
             </ng-container>
         </ng-container>
     </core-loading>

@@ -15,8 +15,8 @@ export class CqChecklogBannerComponent extends CqComponent implements OnInit, On
     @Input() name: string;
     @Input() message: string;
 
-    private timeHI: string;
-    private timeA: string;
+    timeHI: string;
+    timeA: string;
 
     constructor(CH: CqHelper)
     {

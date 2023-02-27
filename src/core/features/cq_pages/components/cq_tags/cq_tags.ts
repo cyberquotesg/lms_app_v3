@@ -12,7 +12,7 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() item: any = {};
     @Input() hideList: string | string[] = "";
 
-    private finalTags: any[] = [];
+    finalTags: any[] = [];
 
     constructor(CH: CqHelper)
     {

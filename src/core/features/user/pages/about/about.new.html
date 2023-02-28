@@ -52,9 +52,9 @@
                             <div class="card-item-text"><a [href]="encodedAddress" core-link auto-login="no" [showBrowserWarning]="false">{{ formattedAddress }}</a></div>
                         </div>
 
-                        <div *ngIf="user.country_text" class="card-item">
+                        <div *ngIf="clonedUser.country_text" class="card-item">
                             <div class="card-item-icon"><ion-icon name="earth"></ion-icon></div>
-                            <div class="card-item-text">{{ user.country_text }}</div>
+                            <div class="card-item-text">{{ clonedUser.country_text }}</div>
                         </div>
 
                         <div *ngIf="organizationCombined" class="card-item">

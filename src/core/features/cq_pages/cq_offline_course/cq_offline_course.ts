@@ -310,8 +310,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
         this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
     }
 
-    showRejectedReason(message: string): void
+    showRejectedReason(message?: string): void
     {
-        this.CH.alert('Info!', message);
+        if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
     }
 }

@@ -54,6 +54,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
     interests?: string[];
 
     // by rachmad
+    clonedUser: any = {};
     reps: any[] = [];
     hasReps: boolean = false;
     hasAbout: boolean = false;
@@ -151,11 +152,11 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
                 }
             });
 
-            let clonedUser = JSON.parse(JSON.stringify(user));
+            this.clonedUser = JSON.parse(JSON.stringify(user));
             this.hasReps = this.reps.length > 0;
             this.hasAbout = !!(
-                clonedUser.email || this.formattedAddress ||
-                clonedUser.country_text || clonedUser.organization_text || clonedUser.departmentid_text || clonedUser.branch_text ||
+                this.clonedUser.email || this.formattedAddress ||
+                this.clonedUser.country_text || this.clonedUser.organization_text || this.clonedUser.departmentid_text || this.clonedUser.branch_text ||
                 this.licenseType || this.licenseCode ||
                 this.interests
             );
@@ -163,9 +164,9 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             let temp: string[];
 
             temp = [];
-            if (clonedUser.organization_text) temp.push(clonedUser.organization_text);
-            if (clonedUser.departmentid_text) temp.push(clonedUser.departmentid_text);
-            if (clonedUser.branch_text) temp.push(clonedUser.branch_text);
+            if (this.clonedUser.organization_text) temp.push(this.clonedUser.organization_text);
+            if (this.clonedUser.departmentid_text) temp.push(this.clonedUser.departmentid_text);
+            if (this.clonedUser.branch_text) temp.push(this.clonedUser.branch_text);
             this.organizationCombined = temp.join(", ");
 
             temp = [];

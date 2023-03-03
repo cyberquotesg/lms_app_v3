@@ -361,8 +361,14 @@ body
 
 		ion-header
 		{
+			height: 50px;
+			overflow: hidden;
+
 			ion-toolbar
 			{
+				height: 50px;
+    			overflow: hidden;
+
 	    	    &::before
 	    	    {
 	    	    	content: "";
@@ -403,7 +409,7 @@ body
 		ion-content
 		{
 			position: relative;
-		    z-index: 9;
+		    z-index: 13;
 		    background: $base_background_no_image;
 
 		    &::part(background)
@@ -1333,6 +1339,9 @@ body
 	}
 	cq_header
 	{
+		height: 50px;
+		overflow: hidden;
+		
 		ion-title
 		{
 			*

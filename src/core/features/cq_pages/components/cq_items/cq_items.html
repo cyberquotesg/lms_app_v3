@@ -13,12 +13,7 @@
 
                 <ion-card-header>
                     <ion-card-title>
-                        <div class="card-title-inner">
-                            {{ item.title }} 
-                        </div>
-                        <div *ngIf="item.subTitle" class="card-sub-title-inner">
-                            <div [innerHtml]="item.subTitle"></div>
-                        </div>
+                        <div class="card-title-inner" [innerHtml]="item.title"></div>
                     </ion-card-title>
                 </ion-card-header>
             </ion-card>
@@ -45,9 +40,7 @@
                 </div>
                 <ion-card-header>
                     <ion-card-title>
-                        <div class="card-title-inner">
-                            {{ item.title }}
-                        </div>
+                        <div class="card-title-inner" [innerHtml]="item.title"></div>
 
                         <div *ngIf="item.subTitle" class="card-sub-title-inner">
                             <div [innerHtml]="item.subTitle"></div>

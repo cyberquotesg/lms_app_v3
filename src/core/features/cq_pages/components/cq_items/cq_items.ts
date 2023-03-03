@@ -55,7 +55,7 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
         this.items.forEach((item) => {
             item.title = item.title || item.subject || item.name || item.displayname || item.fullname_trimmed || item.fullnameTrimmed || item.fullname || item.shortname || "";
             item.letter = this.CH.getLetter(item.title) || "";
-            item.subTitle = item.subTitle || item.description || item.summary || item.smallmessage || item.timecreated || "";
+            item.subTitle = (item.subTitle || item.description || item.summary || item.smallmessage || item.timecreated || "").replace(/\&lt;/g, "<").replace(/\&gt;/g, ">");
             item.image = item.image || item.course_image_full || item.courseImageFull || item.course_image || item.courseImage ||  item.thumbnail || item.iconurl || item.profileimageurlfrom || null;
 
             if (item.has_finished || item.hasFinished)

@@ -215,7 +215,7 @@
                 <ng-container *ngFor="let session of pageData.sessions; let i = index">
                     <!-- progress card for enrolled course -->
                     <ng-container *ngIf="session.userEnrolment == '2'">
-                        <div *ngIf="!session.sessionHasEnded" class="pl-cs pr-cs mt-cst">
+                        <div *ngIf="!session.sessionHasEnded" class="pl-cs pr-cs mt-cst mb-cst">
                             <p *ngIf="session.unavailableMessage == ''" class="mt-cs">
                                 <button (click)="leaveSession(session)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
                                     <span *ngIf="!loading"><b class="color-red">Withdraw</b></span>
@@ -228,7 +228,7 @@
                             </div>
                         </div>
 
-                        <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                        <div *ngIf="session.zoomMeeting != 1 || (session.zoomMeeting == 1 && session.retainQrCodeChecklog == 1)" class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                             Progress
                             <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
                                 <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : 'dark-grey' }}">
@@ -240,7 +240,7 @@
                             <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
                         </div>
 
-                        <ion-card>
+                        <ion-card *ngIf="session.zoomMeeting != 1 || (session.zoomMeeting == 1 && session.retainQrCodeChecklog == 1)">
                             <ion-card-content>
                                 <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pt-cs pb-cs mb-cs">
                                     <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true" (onZero)="timeHasCome($event, i)"></cq_will_start_in>

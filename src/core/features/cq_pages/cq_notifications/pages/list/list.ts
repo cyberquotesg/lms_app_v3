@@ -359,11 +359,18 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     {
         this.CH.log("opening this item", item);
 
-        if (item.eventtype != "announcement") this.notifications.select(item);
-        else this.openAnnouncement({
-            id: item.customdata.discussion,
-            notificationId: item.id,
-        });
+        if (item.eventtype != "announcement")
+        {
+            this.notifications.select(item);
+            this.CH.updateCount("notification, announcement");
+        }
+        else
+        {
+            this.openAnnouncement({
+                id: item.customdata.discussion,
+                notificationId: item.id,
+            });
+        }
     }
 
     refreshByCQ(refresher?: IonRefresher, forceTab?: string): void
@@ -449,6 +456,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     openAnnouncement(item): void
     {
         this.CH.log("opening this announcement", item);
+        this.CH.updateCount("notification, announcement");
 
         let notificationId = 0;
         if (item.notificationId) notificationId = item.notificationId;

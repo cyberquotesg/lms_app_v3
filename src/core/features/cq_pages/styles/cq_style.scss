@@ -365,13 +365,13 @@ body
 			left: 0px;
 			top: 0px;
 			right: 0px;
-			height: 50px;
+			height: $header_height;
 			overflow: hidden;
 			z-index: 14;
 
 			ion-toolbar
 			{
-				height: 50px;
+				height: $header_height;
     			overflow: hidden;
 
 	    	    &::before
@@ -381,7 +381,7 @@ body
 	    	    	left: 0px;
 	    	    	top: 0px;
 	    	    	right: 0px;
-	    	    	height: 50px;
+	    	    	height: $header_height;
 	    			background: $gradient_background;
 	    	    	z-index: 1 !important;
 					box-shadow: $neumorphism_shadow;
@@ -414,10 +414,10 @@ body
 		ion-content
 		{
 			position: absolute;
-			top: 50px;
+			top: $header_height;
 			left: 0px;
 			right: 0px;
-			height: calc(100vh - 50px);
+			height: calc(100vh - #{$header_height});
 		    z-index: 13;
 		    overflow: hidden;
 		    background: $base_background_no_image;
@@ -789,7 +789,7 @@ body
 	.cq-slide
 	{
 		width: 100vw;
-		min-height: calc(100vh - 50px - 80px - 48px);
+		min-height: calc(100vh - #{$header_height} - 80px - 48px);
 		background: $base_background_no_image;
 
 		.cq-slide-wrapper
@@ -986,6 +986,57 @@ body
     		position: absolute !important;
 		    right: 5px !important;
 		    top: 4px !important;
+    	}
+    }
+
+    ion-router-outlet
+    {
+	    page-addon-mod-scorm-player.ion-page
+	    {
+	    	ion-header
+	    	{
+	    	}
+	    	ion-content
+	    	{
+		    	core-iframe
+		    	{
+		    	}
+	    	}
+	    }
+    }
+    &.core-iframe-fullscreen
+    {
+    	ion-router-outlet
+    	{
+    		page-addon-mod-scorm-player.ion-page
+    		{
+    			ion-header
+    			{
+    				ion-toolbar
+    				{
+    					ion-back-button
+    					{
+    						display: block !important;
+    					}
+    					.buttons-first-slot
+    					{
+    						position: absolute;
+    						left: 4px;
+    						top: 0px;
+    						flex-direction: row;
+    						height: $header_height;
+    					}
+    					.buttons-last-slot
+    					{
+    						position: absolute;
+    						top: 0px;
+    						right: 4px;
+    						flex-direction: row;
+    						height: $header_height;
+    					}
+    				}
+    			}
+    		}
     	}
     }
 
@@ -1351,7 +1402,7 @@ body
 	}
 	cq_header
 	{
-		height: 50px;
+		height: $header_height;
 		overflow: hidden;
 		
 		ion-title

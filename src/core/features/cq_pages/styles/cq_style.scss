@@ -361,8 +361,13 @@ body
 
 		ion-header
 		{
+			position: absolute;
+			left: 0px;
+			top: 0px;
+			right: 0px;
 			height: 50px;
 			overflow: hidden;
+			z-index: 14;
 
 			ion-toolbar
 			{
@@ -376,7 +381,7 @@ body
 	    	    	left: 0px;
 	    	    	top: 0px;
 	    	    	right: 0px;
-	    	    	bottom: 0px;
+	    	    	height: 50px;
 	    			background: $gradient_background;
 	    	    	z-index: 1 !important;
 					box-shadow: $neumorphism_shadow;
@@ -408,8 +413,13 @@ body
 		}
 		ion-content
 		{
-			position: relative;
+			position: absolute;
+			top: 50px;
+			left: 0px;
+			right: 0px;
+			height: calc(100vh - 50px);
 		    z-index: 13;
+		    overflow: hidden;
 		    background: $base_background_no_image;
 
 		    &::part(background)
@@ -421,6 +431,7 @@ body
 		    {
 		    	display: block !important;
 		    	
+		    	/* *a/
 	    	    &::before
 	    	    {
 	    	    	content: "";
@@ -437,6 +448,7 @@ body
 	    	    	position: relative;
 	    	    	z-index: 2;
 	    	    }
+		    	/* */
 		    }
 		}
 		ion-footer

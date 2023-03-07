@@ -92,4 +92,9 @@ export class CqGeneral
     {
         this.CH.alert(title, message);
     }
+
+    alert(message: string): void
+    {
+        this.CH.alert("cq alert", message);
+    }
 }

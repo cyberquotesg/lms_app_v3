@@ -30,15 +30,20 @@ export class CqOfflineCourse extends CqPage implements OnInit
     };
 
     private agent: any;
+    private platform: any;
     loading: any = false;
 
     constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
     {
         super(renderer, CH);
-        this.pageData.isIos = platform.is('ios');
+        this.platform = platform;
     }
 
-    ngOnInit(): void { this.usuallyOnInit(); }
+    ngOnInit(): void {
+        this.usuallyOnInit(() => {
+            this.pageData.isIos = this.platform.is('ios');
+        });
+    }
     ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }

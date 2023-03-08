@@ -8,6 +8,14 @@ export class CqGeneral
     {
     }
 
+    isProduction(): boolean
+    {
+        return this.CH.isProduction();
+    }
+    isDevelopment(): boolean
+    {
+        return !this.CH.isProduction();
+    }
     asIf(result?: boolean): boolean
     {
         return !!result;

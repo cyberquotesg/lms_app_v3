@@ -350,6 +350,12 @@ body
 	core-user-menu-button
 	{
 		position: relative;
+		text-decoration: none !important;
+
+		*
+		{
+			text-decoration: none !important;
+		}
 	}
 	core-empty-box
 	{
@@ -357,16 +363,12 @@ body
 	}
 	ion-tabs, ion-modal
 	{
-		// background: $base_background_no_image;
+		background: $base_background_no_image;
 
 		ion-header
 		{
-			position: absolute;
-			left: 0px;
-			top: 0px;
-			right: 0px;
+			position: relative;
 			height: $header_height;
-			overflow: hidden;
 			z-index: 14;
 
 			ion-toolbar
@@ -413,13 +415,8 @@ body
 		}
 		ion-content
 		{
-			position: absolute;
-			top: $header_height;
-			left: 0px;
-			right: 0px;
-			height: calc(100vh - #{$header_height});
+			position: relative;
 		    z-index: 13;
-		    overflow: hidden;
 		    background: $base_background_no_image;
 
 		    &::part(background)
@@ -1478,8 +1475,7 @@ body
 	{
 		ion-refresher
 		{
-			// not sure, this makes view good on browser, but worst on mobile app
-			// background: $gradient_background;
+			background: $gradient_background;
 		}
 	}
 	.calendar-navigation-button

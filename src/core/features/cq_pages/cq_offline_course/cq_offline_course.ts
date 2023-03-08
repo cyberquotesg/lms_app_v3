@@ -238,9 +238,9 @@ export class CqOfflineCourse extends CqPage implements OnInit
         }
         else this.QRCodeScanner(session);
     }
-    fakeQRCode(session: any): void
+    fakeScanQRCode(session: any, checklog: any): void
     {
-        let fakeQRCodeData = "date_1664359036556_5711206634|date_in";
+        let fakeQRCodeData = checklog.identifier + "|" + checklog.type;
 
         if (session.venueCheck == 1)
         {

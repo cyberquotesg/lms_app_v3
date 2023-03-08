@@ -54,16 +54,20 @@ export class CqHelper
     {
     	return CoreConstants.CONFIG;
     }
+    isProduction(): boolean
+    {
+    	return this.config().isProduction;
+    }
     log(data1: any, data2?: any): void
     {
-    	if (this.config().isProduction) return;
+    	if (this.isProduction()) return;
 
     	if (typeof data2 == 'undefined') console.log('cq - ' + data1);
     	else console.log('cq - ' + data1, data2);
     }
     errorLog(data1: any, data2?: any): void
     {
-    	if (!this.config().isProduction)
+    	if (!this.isProduction())
     	{
 	    	if (typeof data2 == 'undefined') console.error('cq - ' + data1);
 	    	else console.error('cq - ' + data1, data2);

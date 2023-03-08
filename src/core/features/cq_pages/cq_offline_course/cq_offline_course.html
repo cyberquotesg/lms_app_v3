@@ -23,7 +23,6 @@
 
                 <ion-card-header>
                     <ion-card-title class="text-center">{{ pageData.course.name }}</ion-card-title>
-                    <!-- <span (click)="showChecklogBannerTemp(1)">development</span> -->
                 </ion-card-header>
 
                 <ion-card-content>
@@ -251,11 +250,12 @@
                                         <ion-icon class="button-big pl-10 pr-10" name='scan-outline' (click)="scanQRCode(session)"></ion-icon>
                                         <ion-icon class="button-small" name='qr-code-outline'></ion-icon>
                                     </div>
-                                    <!-- 
-                                    <button class="button ml-cs mt-cs mr-cs mb-cs" (click)="fakeQRCode(session)">
-                                        Fake QR Code
-                                    </button>
-                                     -->
+                                </div>
+
+                                <!-- this is only for development -->
+                                <div *ngIf="isDevelopment()" class="mb-cs text-center">
+                                    <button (click)="showChecklogBannerTemp(1)">Show Check In Banner</button>
+                                    <button (click)="showChecklogBannerTemp(2)" class="mt-cst">Show Check Out Banner</button>
                                 </div>
 
                                 <table style="max-width: 100%; margin: 0px auto">
@@ -263,6 +263,13 @@
                                         <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
                                             CHECKLOG {{ checklog.inOut }}<br />
                                             <small>{{ checklog.date }} {{ time24To12(checklog.time) }}</small>
+
+                                            <!-- this is only for development -->
+                                            <div *ngIf="isDevelopment()" class="mt-cst text-center">
+                                                <button (click)="fakeScanQRCode(session, checklog)">
+                                                    Fake Check {{ checklog.inOut }}
+                                                </button>
+                                            </div>
                                         </td>
                                         <td class="pl-20 pr-20 text-center {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">:</td>
                                         <td class="text-right {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">

@@ -350,11 +350,11 @@ body
 	core-user-menu-button
 	{
 		position: relative;
-		text-decoration: none !important;
+		outline: none !important;
 
 		*
 		{
-			text-decoration: none !important;
+			outline: none !important;
 		}
 	}
 	core-empty-box
@@ -1422,6 +1422,17 @@ body
 				}
 			}
 		}
+
+		ion-header
+		{
+			ion-toolbar
+			{
+	    	    &::before
+	    	    {
+					box-shadow: none !important;
+	    	    }
+	    	}
+		}
 	}
 	ion-button
 	{
@@ -1467,14 +1478,6 @@ body
 		    flex-direction: row;
 		    align-items: flex-start;
 		    padding-top: 16px;
-		}
-	}
-	.cq_dashboard
-	{
-		ion-refresher
-		{
-			// not sure, this makes view good on browser, but worst on mobile app
-			// background: $gradient_background;
 		}
 	}
 	.calendar-navigation-button

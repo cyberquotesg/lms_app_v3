@@ -54,7 +54,11 @@ export class CqMyCourses extends CqPage implements OnInit
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            this.pageData.filterMultiple = this.CH.toJson(data);
+            let temp = this.CH.toJson(data);
+            if (!this.CH.isSame(this.pageData.filterMultiple, temp))
+            {
+                this.pageData.filterMultiple = temp;
+            }
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -105,8 +109,11 @@ export class CqMyCourses extends CqPage implements OnInit
             let courses = this.CH.toArray(this.CH.toJson(data));
             this.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < modeData.length;
 
-            if (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') this.pageData.courses = courses;
-            else this.pageData.courses = this.pageData.courses.concat(courses);
+            let temp = (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') ? courses : this.pageData.courses.concat(courses);
+            if (!this.CH.isSame(this.pageData.courses, temp))
+            {
+                this.pageData.courses = temp;
+            }
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);

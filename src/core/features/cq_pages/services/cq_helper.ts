@@ -1386,4 +1386,84 @@ export class CqHelper
     {
     	return 1000 * 60 * 60 * 24;
     }
+
+    isSame(data1: any, data2: any, strict?: boolean): boolean
+    {
+        let type1: string = typeof data1; if (data1 == null) type1 = "null";
+        let type2: string = typeof data2; if (data2 == null) type2 = "null";
+        let debug = false;
+     
+        if (debug)
+        {
+        	this.log("starting isSame() function");
+        	this.log("data1", data1);
+        	this.log("data2", data2);
+        	this.log("strict is", strict);
+        }
+
+        // types are different
+        if ((type1 == "object" && type2 != "object") || (type1 != "object" && type2 == "object"))
+        {
+        	if (debug)
+        	{
+        		this.log("types are different, result is false");
+        		this.log(type1 + " vs " + type2);
+        		this.log("strict is", strict);
+        	}
+        	return false;
+        }
+        
+        // primitive data
+        else if (type1 != "object")
+        {
+        	let result = strict ? data1 === data2 : data1 == data2;
+        	if (!result && debug)
+        	{
+        		this.log("data is different, result is false");
+        		this.log(data1 + " vs " + data2);
+        		this.log("strict is", strict);
+        	}
+
+        	return result;
+        }
+        
+        // array
+        else if (Array.isArray(data1))
+        {
+            // both length are different
+            if (data1.length != data2.length)
+            {
+        		this.log("data length is different, result is false");
+        		this.log(data1.length + " vs " + data2.length);
+        		this.log("strict is", strict);
+
+            	return false;
+            }
+            
+            let index;
+            for (index in data1)
+            {
+                if (!this.isSame(data1[index], data2[index], strict)) return false;
+            }
+            
+            return true;
+        }
+        
+        // object
+        else
+        {
+            // comparing keys
+            let key1 = Object.keys(data1);
+            let key2 = Object.keys(data2);
+            if (!this.isSame(key1, key2, strict)) return false;
+            
+            let key;
+            for (key of key1)
+            {
+                if (!this.isSame(data1[key], data2[key], strict)) return false;
+            }
+            
+            return true;
+        }
+    }
 }

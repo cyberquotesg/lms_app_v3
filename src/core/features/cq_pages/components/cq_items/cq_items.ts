@@ -14,6 +14,7 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() hideTags: boolean = false;
     @Output() onSelectItem: EventEmitter<number>;
 
+    workingItems: any | any[];
     showFakeItems: boolean = false;
 
     constructor(CH: CqHelper)
@@ -36,14 +37,16 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
 
     prepareItems(): void
     {
+        this.workingItems = this.CH.cloneJson(this.items);
+        
         // initial checks
-        if (!Array.isArray(this.items))
+        if (!Array.isArray(this.workingItems))
         {
             // empty thing, skip
-            if (!this.items) return;
+            if (!this.workingItems) return;
 
             // make sure it is array
-            this.items = [this.items];
+            this.workingItems = [this.workingItems];
             this.showFakeItems = false;
         }
         else
@@ -52,7 +55,7 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
         }
 
         // adjust the properties
-        this.items.forEach((item) => {
+        this.workingItems.forEach((item) => {
             item.title = item.title || item.subject || item.name || item.displayname || item.fullname_trimmed || item.fullnameTrimmed || item.fullname || item.shortname || "";
             item.letter = this.CH.getLetter(item.title) || "";
             item.subTitle = (item.subTitle || item.description || item.summary || item.smallmessage || item.timecreated || "").replace(/\&lt;/g, "<").replace(/\&gt;/g, ">");

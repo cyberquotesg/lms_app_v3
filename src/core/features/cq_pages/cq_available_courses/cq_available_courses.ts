@@ -134,10 +134,16 @@ export class CqAvailableCourses extends CqPage implements OnInit
             let allData = this.CH.toJson(data);
 
             // onlineFilter
-            this.pageData.online.filterMultiple = allData.onlineFilter;
+            if (!this.CH.isSame(this.pageData.online.filterMultiple, allData.onlineFilter))
+            {
+                this.pageData.online.filterMultiple = allData.onlineFilter;
+            }
 
             // offlineFilter
-            this.pageData.offline.filterMultiple = allData.offlineFilter;
+            if (!this.CH.isSame(this.pageData.offline.filterMultiple, allData.offlineFilter))
+            {
+                this.pageData.offline.filterMultiple = allData.offlineFilter;
+            }
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -191,8 +197,11 @@ export class CqAvailableCourses extends CqPage implements OnInit
                 this.pageData.online.initiated = true;
                 this.pageData.online.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < this.pageData.online.length;
 
-                if (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') this.pageData.online.courses = courses;
-                else this.pageData.online.courses = this.pageData.online.courses.concat(courses);
+                let temp = (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') ? courses : this.pageData.online.courses.concat(courses);
+                if (!this.CH.isSame(this.pageData.online.courses, temp))
+                {
+                    this.pageData.online.courses = temp;
+                }
 
                 if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
 
@@ -229,8 +238,11 @@ export class CqAvailableCourses extends CqPage implements OnInit
                     courses[id].media = 'offline';
                 }
 
-                if (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') this.pageData.offline.courses = courses;
-                else this.pageData.offline.courses = this.pageData.offline.courses.concat(courses);
+                let temp = (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') ? courses : this.pageData.offline.courses.concat(courses);
+                if (!this.CH.isSame(this.pageData.offline.courses, temp))
+                {
+                    this.pageData.offline.courses = temp;
+                }
 
                 if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
 

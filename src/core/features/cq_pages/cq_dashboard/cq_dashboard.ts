@@ -134,6 +134,7 @@ export class CqDashboard extends CqPage implements OnInit
 
         this.pageJobExecuter(jobName, params, (data) => {
             let allData = this.CH.toJson(data);
+            let temp;
 
             // myHours
             let hours = allData.myHours;
@@ -141,13 +142,24 @@ export class CqDashboard extends CqPage implements OnInit
             this.pageData.dashMinutes = this.CH.beautifulNumber(hours.hours.minutes);
 
             // myCourses
-            this.pageData.myCourses = allData.myCourses;
+            if (!this.CH.isSame(this.pageData.myCourses, allData.myCourses))
+            {
+                this.pageData.myCourses = allData.myCourses;
+            }
 
             // classroomTrainingList
-            this.pageData.classroomTrainingList = this.CH.toArray(allData.classroomTrainingList);
+            temp = this.CH.toArray(allData.classroomTrainingList);
+            if (!this.CH.isSame(this.pageData.classroomTrainingList, temp))
+            {
+                this.pageData.classroomTrainingList = temp;
+            }
 
             // eLearningList
-            this.pageData.eLearningList = this.CH.toArray(allData.eLearningList);
+            temp = this.CH.toArray(allData.eLearningList);
+            if (!this.CH.isSame(this.pageData.eLearningList, temp))
+            {
+                this.pageData.eLearningList = temp;
+            }
 
             // additionalContents
             this.pageData.additionalContents = this.CH.toArray(allData.additionalContents);

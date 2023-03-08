@@ -363,8 +363,6 @@ body
 	}
 	ion-tabs, ion-modal
 	{
-		background: $base_background_no_image;
-
 		ion-header
 		{
 			position: relative;
@@ -1475,7 +1473,8 @@ body
 	{
 		ion-refresher
 		{
-			background: $gradient_background;
+			// not sure, this makes view good on browser, but worst on mobile app
+			// background: $gradient_background;
 		}
 	}
 	.calendar-navigation-button

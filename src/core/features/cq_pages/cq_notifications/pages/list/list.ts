@@ -391,17 +391,18 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     }
     adjustScreenHeight(pageClass: string): void
     {
-        /* *a/
-        // a moment after slide, make sure the slider has proper height
-        setTimeout(() => {
-            let parent = document.querySelector(pageClass) as HTMLElement | null;
-            let activeChild = document.querySelector(pageClass + " .swiper-wrapper .swiper-slide-active > div:first-child") as HTMLDivElement | null;
-            if (parent && activeChild)
-            {
-                parent.style.height = activeChild.offsetHeight + 0 + "px";
-            }
-        }, 200);
-        /* */
+        for (let time of [200, 700])
+        {
+            // a moment after slide, make sure the slider has proper height
+            setTimeout(() => {
+                let parent = document.querySelector(pageClass) as HTMLElement | null;
+                let activeChild = document.querySelector(pageClass + " .swiper-wrapper .swiper-slide-active > div:first-child") as HTMLDivElement | null;
+                if (parent && activeChild)
+                {
+                    parent.style.height = activeChild.offsetHeight + 0 + "px";
+                }
+            }, time);
+        }
     }
 
     // =========================================================================================================== announcement by cq

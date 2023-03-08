@@ -33,37 +33,40 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
 
     ngOnInit(): void
     {
-        this.translateTime(this.unixtimestamp);
-
-        if (this.big) this.bigClass = 'big';
-        else this.bigClass = '';
-
-        if (this.animation) this.agent = setInterval(() => {
-            this.unixtimestamp--;
-            this.translateTime(this.unixtimestamp);
-
-            if (this.unixtimestamp == 0)
-            {
-                let emitData: any = {
-                    date: new Date(),
-                };
-                this.CH.log('emit data', emitData);
-                this.onZero.emit(emitData);
-
-                clearInterval(this.agent);
-            }
-        }, 1000);
+        this.prepare();
     }
     ngOnChanges(changes: SimpleChanges): void
     {
         this.implementChanges(changes);
-        
-        this.translateTime(this.unixtimestamp);
-
-        if (this.big) this.bigClass = 'big';
-        else this.bigClass = '';
+        this.prepare();
     }
 
+    prepare(): void
+    {
+        if (this.big) this.bigClass = 'big';
+        else this.bigClass = '';
+
+        this.translateTime(this.unixtimestamp);
+        if (this.animation)
+        {
+            clearInterval(this.agent);
+            this.agent = setInterval(() => {
+                this.unixtimestamp--;
+                this.translateTime(this.unixtimestamp);
+
+                if (this.unixtimestamp == 0)
+                {
+                    let emitData: any = {
+                        date: new Date(),
+                    };
+                    this.CH.log('emit data', emitData);
+                    this.onZero.emit(emitData);
+
+                    clearInterval(this.agent);
+                }
+            }, 1000);
+        }
+    }
     translateTime(unixtimestamp): void
     {
         let translatedTime = this.CH.translateTime(unixtimestamp);

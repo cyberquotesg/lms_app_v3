@@ -13,6 +13,8 @@ export class CqComponent extends CqGeneral
 
     implementChanges(changes: any): void
     {
+        this.CH.log("impementing changes", changes);
+        
         for (let varName in changes)
         {
             if (typeof changes[varName] != 'undefined')

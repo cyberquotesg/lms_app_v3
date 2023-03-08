@@ -26,6 +26,7 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
 
     ngOnInit(): void
     {
+        this.prepareItems();
     }
     ngOnChanges(changes: SimpleChanges): void
     {
@@ -42,8 +43,7 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
             if (!this.items) return;
 
             // make sure it is array
-            else this.items = [this.items];
-
+            this.items = [this.items];
             this.showFakeItems = false;
         }
         else

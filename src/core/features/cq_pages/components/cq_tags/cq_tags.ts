@@ -21,9 +21,21 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
 
     ngOnInit(): void
     {
+        this.prepareData();
+    }
+    ngOnChanges(changes: SimpleChanges): void
+    {
+        this.implementChanges(changes);
+        this.prepareData();
+    }
+
+    prepareData(): void
+    {
         let hideList: string[];
         if (Array.isArray(this.hideList)) hideList = this.hideList;
         else hideList = this.hideList.trim().replace(/ /g, "").split(",");
+
+        this.finalTags = [];
 
         if (!hideList.includes("media"))
         {
@@ -71,9 +83,5 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
         {
             this.item.tags.forEach((tag) => this.finalTags.push({text: tag}));
         }
-    }
-    ngOnChanges(changes: SimpleChanges): void
-    {
-        this.implementChanges(changes);
     }
 }

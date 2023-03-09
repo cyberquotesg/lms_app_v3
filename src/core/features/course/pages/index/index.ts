@@ -627,16 +627,23 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         if (this.isModuleDisabled(courseSection, courseModule))
         {
             if (courseModule.availabilityinfo) this.CH.alert('Oops!', courseModule.availabilityinfo);
-            else this.CH.alert('Oops!', "This module is not available");
+            else this.CH.alert('Oops!', "This course module is not available");
         }
-        else if (CoreCourseHelper.canUserViewModule(courseModule, courseSection) && courseModule.handlerData?.action)
+        else if (CoreCourseHelper.canUserViewModule(courseModule, courseSection))
         {
-            courseModule.handlerData.action(event, courseModule, courseModule.course);
+            if (courseModule.handlerData?.action)
+            {
+                courseModule.handlerData.action(event, courseModule, courseModule.course);
+            }
+            else
+            {
+                this.CH.errorLog("module error", {courseId: this.course.id, courseSection, courseModule, media: "online", error: "courseModule.handlerData?.action is falsy"});
+                this.CH.alert('Oops!', "Cannot open this course module, please contact course administrator");
+            }
         }
         else
         {
-            this.CH.errorLog("module error", {courseId: this.course.id, courseSection, courseModule, media: "online", error});
-            this.CH.alert('Oops!', "Cannot open this course module, please contact course administrator");
+            this.CH.alert('Oops!', "You are not allowed to open this course module");
         }
     }
 }

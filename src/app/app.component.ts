@@ -289,7 +289,8 @@ export class AppComponent implements OnInit, AfterViewInit {
                 },
             },
         };
-        this.CH.callApi(institutionParams).then((data) => {
+        this.CH.callApi(institutionParams)
+        .then((data) => {
             let allData = this.CH.toJson(data);
             this.CH.log("country data", allData.country);
             this.CH.log("organization data", allData.organization);
@@ -355,6 +356,9 @@ export class AppComponent implements OnInit, AfterViewInit {
                 this.renderer.addClass(this.CH.getBody(), 'logged-in');
                 this.renderer.setProperty(this.CH.getBody(), 'style', cssVars.join(';'));
             }
+        })
+        .catch((error) => {
+            this.CH.errorLog("institution information error", {institutionParams, error});
         });
 
         // zoom

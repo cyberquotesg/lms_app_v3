@@ -117,10 +117,11 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 this.CH.alert('Oops!', data.message)
             }
         })
-        .catch(() => {
+        .catch((error) => {
             this.loading = false;
             
             // cannot sign up because server is unreachable
+            this.CH.errorLog("enrolment error", {courseId: this.pageData.course.id, sessionId, media: "offline", purpose, error});
             this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
         });
     }
@@ -212,10 +213,11 @@ export class CqOfflineCourse extends CqPage implements OnInit
                     else this.CH.alert('Oops!', data.message);
                 });
             })
-            .catch((e) => {
+            .catch((error) => {
                 loading.dismiss();
                 
                 // cannot sign up because server is unreachable
+                this.CH.errorLog("checklog error", {courseId: this.pageData.course.id, sessionId: session.id, media: "offline", QRCodeData, latitude, longitude, error});
                 this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
             })
             .finally(() => {

@@ -87,22 +87,4 @@ export class CqGeneral
     {
         return this.CH.timeRemoveSeconds(time);
     }
-
-    simpleLoading(content: string): void
-    {
-        this.CH.loading(content);
-    }
-    simpleToast(message: string): void
-    {
-        this.CH.toast(message);
-    }
-    simpleAlert(title: string, message: string): void
-    {
-        this.CH.alert(title, message);
-    }
-
-    alert(message: string): void
-    {
-        this.CH.alert("cq alert", message);
-    }
 }

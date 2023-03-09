@@ -571,7 +571,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         catch(error)
         {
             this.cqLoading = false;
-            this.CH.log("enrol error", error);
+            this.CH.errorLog("enrolment error", {courseId: this.course.id, media: "online", purpose: "sign_up", error});
             this.CH.alert("Oops!", "Cannot enrol to the course, please contact course administrator");
         }
     }
@@ -599,7 +599,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 catch(error)
                 {
                     this.cqLoading = false;
-                    this.CH.log("unenrol error", error);
+                    this.CH.errorLog("enrolment error", {courseId: this.course.id, media: "online", purpose: "withdraw", error});
                     this.CH.alert("Oops!", "Cannot withdraw from the course, please contact course administrator");
                 }
             }
@@ -635,6 +635,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
         else
         {
+            this.CH.errorLog("module error", {courseId: this.course.id, courseSection, courseModule, media: "online", error});
             this.CH.alert('Oops!', "Cannot open this course module, please contact course administrator");
         }
     }

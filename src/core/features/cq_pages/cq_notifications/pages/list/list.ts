@@ -443,10 +443,11 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
             this.announcementLoaded = true;
             this.announcementIsLoading = false;
         })
-        .catch(() => {
+        .catch((error) => {
             this.announcementIsLoading = false;
             
             // cannot sign up because server is unreachable
+            this.CH.errorLog("announcement error", {error});
             this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
         })
         .finally(() => {

@@ -197,12 +197,11 @@ export class CqPage extends CqGeneral
             if (response && response.exception) throw (response);
             else callback(response);
         })
-        .catch((e) => {
+        .catch((error) => {
             this.CH.setPageJobNumbers(this.pageJob, jobName, -1);
-            this.CH.log('failed to call api', jobName);
-            this.CH.log(e);
+            this.CH.errorLog('failed to call api', {jobName, params, error});
 
-            if (e.message) this.CH.alert('Oops!', e.message);
+            if (error.message) this.CH.alert('Oops!', error.message);
             else this.CH.alert('Oops!', 'We have trouble, please try again');
         })
         .finally(() => {
@@ -259,9 +258,8 @@ export class CqPage extends CqGeneral
             if (refresher) refresher.complete();
             if (typeof finalCallback == 'function') finalCallback();
         })
-        .catch((e) => {
-            this.CH.log('cannot set page status');
-            this.CH.log(e);
+        .catch((error) => {
+            this.CH.errorLog('failed to finalize api call', {error, pageJob: this.pageJob, numbers});
         });
     }
 

@@ -188,12 +188,14 @@ export class CqAnnouncement extends CqPage implements OnInit
                 .then(() => {
                     loading.dismiss();
                 })
-                .catch(() => {
+                .catch((openError) => {
                     loading.dismiss();
+                    this.CH.errorLog("open attachment error", {name, url, error: openError});
                     this.CH.alert('Oops!', 'Failed to open the file');
                 });
-            }, (error) => {
+            }, (downloadError) => {
                 loading.dismiss();
+                this.CH.errorLog("download attachment error", {name, url, error: downloadError});
                 this.CH.alert('Oops!', 'Failed to download the file');
             });
         });

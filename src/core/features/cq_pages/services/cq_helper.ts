@@ -67,11 +67,7 @@ export class CqHelper
     }
     errorLog(data1: any, data2?: any): void
     {
-    	if (!this.isProduction())
-    	{
-	    	if (typeof data2 == 'undefined') console.error('cq - ' + data1);
-	    	else console.error('cq - ' + data1, data2);
-    	}
+    	this.log(data1, data2);
 
 		if (this.config().sendErrorLog)
 		{
@@ -1104,10 +1100,12 @@ export class CqHelper
     	        }
     	    }
 
+    		this.errorLog("init zoom error", {data: jsonData, error: "connection to Zoom was failed"});
 			this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection or contact your course administrator.");
     	}
     	else
     	{
+    		this.errorLog("init zoom error", {data: jsonData, error: "organization is not connected to zoom"});
     	    this.alert("Oops!", "Your organization is not connected to zoom, please contact your course administrator.");
     	}
 

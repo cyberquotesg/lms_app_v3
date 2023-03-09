@@ -172,14 +172,19 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
 
         this.notificationIsLoading = false;
         this.notificationList = [];
+        let temp: any[] = [];
         this.notifications.items.forEach((item) => {
             let newItem = this.CH.cloneJson(item);
 
             newItem.subTitle = this.CH.getHumanDayDateTimeWithName(newItem.timecreated * 1000);
             if (!newItem.read) newItem.tags = ["New"];
 
-            this.notificationList.push(newItem);
+            temp.push(newItem);
         });
+        if (!this.CH.isSame(this.notificationList, temp))
+        {
+            this.notificationList = temp;
+        }
 
         this.CH.log("notificationList", this.notificationList);
         this.adjustScreenHeight(".page-slider-notification-list");
@@ -425,8 +430,11 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
                 return announcement;
             });
 
-            if (mode && mode == "load_more") this.announcementList = this.announcementList.concat(announcements);
-            else this.announcementList = announcements;
+            let temp = (mode && mode == "load_more") ? this.announcementList.concat(announcements) : announcements;
+            if (!this.CH.isSame(this.announcementList, temp))
+            {
+                this.announcementList = temp;
+            }
             this.CH.log("announcementList", this.announcementList);
 
             if (mode && mode == "refresh") {}

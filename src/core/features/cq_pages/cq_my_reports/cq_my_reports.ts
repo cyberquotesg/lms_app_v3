@@ -96,29 +96,42 @@ export class CqMyReports extends CqPage implements OnInit
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            let allData = this.CH.toJson(data);
+            let allData = this.CH.toJson(data),
+                temp: any;
 
             // courseTypes
             let courseTypesArray: any[] = [];
-            for (let id in allData.courseTypes)
-            {
-                courseTypesArray.push(allData.courseTypes[id]);
-            }
-            this.pageData.courseTypes = {
+            for (let id in allData.courseTypes) courseTypesArray.push(allData.courseTypes[id]);
+            temp = {
                 object: allData.courseTypes,
                 array: courseTypesArray,
             };
+            if (!this.CH.isSame(this.pageData.courseTypes, temp))
+            {
+                this.pageData.courseTypes = temp;
+            }
 
             // cqConfig
-            this.pageData.CqConfig = {};
-            allData.cqConfig.forEach((config) => {
-                this.pageData.CqConfig[config.name] = config.value;
-            });
+            temp = {};
+            allData.cqConfig.forEach((config) => temp[config.name] = config.value);
+            if (!this.CH.isSame(this.pageData.CqConfig, temp))
+            {
+                this.pageData.CqConfig = temp;
+            }
 
             // years
-            if (modeData.mode == 'firstload') this.pageData.selectedYear = allData.years.current;
-            this.pageData.currentYear = allData.years.current;
-            this.pageData.availableYears = allData.years.available;
+            if (modeData.mode == 'firstload')
+            {
+                this.pageData.selectedYear = allData.years.current;
+            }
+            if (!this.CH.isSame(this.pageData.currentYear, allData.years.current))
+            {
+                this.pageData.currentYear = allData.years.current;
+            }
+            if (!this.CH.isSame(this.pageData.availableYears, allData.years.available))
+            {
+                this.pageData.availableYears = allData.years.available;
+            }
 
             if (modeData.mode == 'firstload')
             {
@@ -128,7 +141,10 @@ export class CqMyReports extends CqPage implements OnInit
             }
 
             // filterMultiple
-            this.pageData.filterMultiple = allData.filterMultiple;
+            if (!this.CH.isSame(this.pageData.filterMultiple, allData.filterMultiple))
+            {
+                this.pageData.filterMultiple = allData.filterMultiple;
+            }
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -236,7 +252,10 @@ export class CqMyReports extends CqPage implements OnInit
             chartData.datasets = datasets;
             thisYearData.chartData = chartData;
 
-            this.pageData[this.pageData.selectedYear] = thisYearData;
+            if (!this.CH.isSame(this.pageData[this.pageData.selectedYear], thisYearData))
+            {
+                this.pageData[this.pageData.selectedYear] = thisYearData;
+            }
 
             this.adjustScreenHeight(".page-slider-cqmr");
         }, moreloader, refresher, finalCallback);

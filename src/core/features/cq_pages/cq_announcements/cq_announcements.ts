@@ -85,8 +85,11 @@ export class CqAnnouncements extends CqPage implements OnInit
             let announcements = this.CH.toArray(this.CH.toJson(data));
             this.reachedEndOfList = this.CH.isEmpty(announcements) || this.CH.getLength(announcements) < modeData.length;
 
-            if (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') this.pageData.announcements = announcements;
-            else this.pageData.announcements = this.pageData.announcements.concat(announcements);
+            let temp = (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') ? announcements : this.pageData.announcements.concat(announcements);
+            if (!this.CH.isSame(this.pageData.announcements, temp))
+            {
+                this.pageData.announcements = temp;
+            }
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);

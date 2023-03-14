@@ -48,8 +48,11 @@
     <preference name="SplashScreenDelay" value="15000" />
     <preference name="SplashMaintainAspectRatio" value="true" />
     <preference name="SplashShowOnlyFirstTime" value="false" />
-    <preference name="android-minSdkVersion" value="22" />
-    <preference name="android-targetSdkVersion" value="31" />
+    <preference name="android-minSdkVersion" value="23" />
+    <preference name="android-targetSdkVersion" value="32" />
+    <preference name="GradleVersion" value="7.3.3" />
+    <preference name="AndroidGradlePluginVersion" value="7.2.2" />
+    <preference name="GradlePluginKotlinVersion" value="1.7.10" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
     <preference name="AndroidInsecureFileModeEnabled" value="true" />
     <preference name="CustomURLSchemePluginClearsAndroidIntent" value="true" />

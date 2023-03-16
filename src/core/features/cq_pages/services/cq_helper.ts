@@ -1078,6 +1078,7 @@ export class CqHelper
     }
     async initiateZoom(): Promise<boolean>
     {
+    	if (!this.zoom) return false;
     	if (this.zoomInitiated) return true;
 
     	const zoomKeysParams = {
@@ -1114,6 +1115,9 @@ export class CqHelper
     }
     joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname): void
     {
+    	if (!this.zoom) return;
+    	if (!this.zoomInitiated) return;
+
     	if (!CorePlatform.is('cordova'))
     	{
 	    	this.log("cancel join meeting zoom", "this is not cordova");
@@ -1145,7 +1149,7 @@ export class CqHelper
     async joinMeetingZoom(meetingNumber, meetingPassword, userFullname): Promise<void> 
     {
     	await this.initiateZoom();
-    	if (this.zoomInitiated) this.joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname);
+    	this.joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname);
     }
 
     /* ============================================================================================= date time

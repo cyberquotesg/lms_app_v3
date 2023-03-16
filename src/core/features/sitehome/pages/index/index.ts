@@ -29,7 +29,6 @@ import { CoreCourseModulePrefetchDelegate } from '@features/course/services/modu
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CoreBlockHelper } from '@features/block/services/block-helper';
 import { CoreUtils } from '@services/utils/utils';
-import { Zoom } from '@awesome-cordova-plugins/zoom';
 
 /**
  * Page that displays site home index.
@@ -54,9 +53,6 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
     searchEnabled = false;
     newsForumModule?: CoreCourseModuleData;
 
-    zoom: any;
-    zoomMessage = '';
-
     protected updateSiteObserver: CoreEventObserver;
     protected fetchSuccess = false;
 
@@ -65,12 +61,6 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
         this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, () => {
             this.searchEnabled = !CoreCourses.isSearchCoursesDisabledInSite();
         }, CoreSites.getCurrentSiteId());
-
-        this.zoom = Zoom;
-
-        this.zoom.initialize("vujMj62PCpES2IcnDOdEFfEM2xA8nMWwX6j2", "vl3ttFEmlBe1Iswk9VwcJYyvo0Duz5HgrBWc")
-            .then((success: any) => this.zoomMessage += JSON.stringify(success) + " | ")
-            .catch((error: any) => this.zoomMessage += JSON.stringify(error) + " | ");
     }
 
     /**
@@ -228,24 +218,5 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
      */
     ngOnDestroy(): void {
         this.updateSiteObserver.off();
-    }
-
-    joinMeetingZoom(): void {
-        this.zoom.joinMeeting("7948923157", "2R1j7F", "aaaa", {
-                "no_driving_mode":true,
-                "no_invite":true,
-                "no_meeting_end_message":true,
-                "no_titlebar":false,
-                "no_bottom_toolbar":false,
-                "no_dial_in_via_phone":true,
-                "no_dial_out_to_phone":true,
-                "no_disconnect_audio":true,
-                "no_share":true,
-                "no_audio":true,
-                "no_video":true,
-                "no_meeting_error_message":true
-            })
-            .then((success: any) => this.zoomMessage += JSON.stringify(success) + " | ")
-            .catch((error: any) => this.zoomMessage += JSON.stringify(error) + " | ");
     }
 }

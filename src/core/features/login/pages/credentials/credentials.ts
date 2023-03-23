@@ -34,7 +34,7 @@ import { CoreForms } from '@singletons/form';
  */
 @Component({
     selector: 'page-core-login-credentials',
-    templateUrl: 'credentials.html',
+    templateUrl: 'credentials.new.html',
     styleUrls: ['../../login.scss'],
 })
 export class CoreLoginCredentialsPage implements OnInit, OnDestroy {

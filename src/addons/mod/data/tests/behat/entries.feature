@@ -21,20 +21,14 @@ Feature: Users can manage entries in database activities
     And the following "activities" exist:
     | activity | name      | intro        | course | idnumber |
     | data     | Web links | Useful links | C1     | data1    |
-    And I log in as "teacher1"
-    And I am on "Course 1" course homepage
-    # TODO Create and use a generator for database fields.
-    And I add a "Short text" field to "Web links" database and I fill the form with:
-      | Field name | URL |
-      | Field description | URL link |
-    And I add a "Short text" field to "Web links" database and I fill the form with:
-      | Field name | Description |
-      | Field description | Link description |
-    And I log out
+    And the following "mod_data > fields" exist:
+    | database | type | name        | description      |
+    | data1    | text | URL         | URL link         |
+    | data1    | text | Description | Link description |
 
   Scenario: Create entry
     Given I entered the data activity "Web links" on course "Course 1" as "student1" in the app
-    Then I should find "No entries in database" in the app
+    Then I should find "No entries yet" in the app
     When I press "Add entries" in the app
     And I set the following fields to these values in the app:
       | URL | https://moodle.org/ |
@@ -148,7 +142,7 @@ Feature: Users can manage entries in database activities
     Then I should find "Are you sure you want to delete this entry?" in the app
     And I press "Delete" in the app
     And I should not find "Moodle Cloud" in the app
-    And I should find "No entries in database" in the app
+    And I should find "No entries yet" in the app
 
   Scenario: Delete entry (teacher) & Update entry (teacher)
     Given I entered the data activity "Web links" on course "Course 1" as "student1" in the app
@@ -212,3 +206,22 @@ Feature: Users can manage entries in database activities
     Then I should find "Are you sure you want to delete this entry?" in the app
     And I press "Delete" in the app
     And I should not find "Moodle Cloud" in the app
+
+  Scenario: Handle number 0 correctly when creating entries
+    Given the following "activities" exist:
+      | activity | name      | intro     | course | idnumber |
+      | data     | Number DB | Number DB | C1     | data2    |
+    And the following "mod_data > fields" exist:
+      | database | type   | name   | description  |
+      | data2    | number | Number | Number value |
+    And I entered the data activity "Number DB" on course "Course 1" as "student1" in the app
+    When I press "Add entries" in the app
+    And I press "Save" near "Number DB" in the app
+    Then I should find "You did not fill out any fields!" in the app
+
+    When I press "OK" in the app
+    And I set the following fields to these values in the app:
+      | Number | 0 |
+    And I press "Save" near "Number DB" in the app
+    Then I should find "0" near "Number:" in the app
+    But I should not find "Save" in the app

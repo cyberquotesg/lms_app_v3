@@ -144,7 +144,7 @@ export class SQLiteDB {
      * @param equal True means we want to equate to the constructed expression.
      * @param onEmptyItems This defines the behavior when the array of items provided is empty. Defaults to false,
      *                     meaning return empty. Other values will become part of the returned SQL fragment.
-     * @return A list containing the constructed sql fragment and an array of parameters.
+     * @returns A list containing the constructed sql fragment and an array of parameters.
      */
     static getInOrEqual(
         items: SQLiteDBRecordValue | SQLiteDBRecordValue[],
@@ -174,7 +174,8 @@ export class SQLiteDB {
             sql = equal ? '= ?' : '<> ?';
             params = Array.isArray(items) ? items : [items];
         } else {
-            sql = (equal ? '' : 'NOT ') + 'IN (' + ',?'.repeat(items.length).substring(1) + ')';
+            const questionMarks = ',?'.repeat(items.length).substring(1);
+            sql = (equal ? '' : 'NOT ') + `IN (${questionMarks})`;
             params = items;
         }
 
@@ -200,7 +201,7 @@ export class SQLiteDB {
      * @param column Name of the column to add.
      * @param type Type of the column to add.
      * @param constraints Other constraints (e.g. NOT NULL).
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async addColumn(table: string, column: string, type: SQLiteDBColumnType, constraints?: string): Promise<void> {
         constraints = constraints || '';
@@ -226,7 +227,7 @@ export class SQLiteDB {
      * @param uniqueKeys List of sets of unique columns. E.g: [['section', 'title'], ['author', 'title']].
      * @param foreignKeys List of foreign keys.
      * @param tableCheck Check constraint for the table.
-     * @return SQL query.
+     * @returns SQL query.
      */
     buildCreateTableSql(
         name: string,
@@ -237,7 +238,7 @@ export class SQLiteDB {
         tableCheck?: string,
     ): string {
         const columnsSql: string[] = [];
-        let sql = `CREATE TABLE IF NOT EXISTS ${name} (`;
+        let tableStructureSQL = '';
 
         // First define all the columns.
         for (const index in columns) {
@@ -245,7 +246,7 @@ export class SQLiteDB {
             let columnSql: string = column.name || '';
 
             if (column.type) {
-                columnSql += ' ' + column.type;
+                columnSql += ` ${column.type}`;
             }
 
             if (column.primaryKey) {
@@ -273,25 +274,25 @@ export class SQLiteDB {
 
             columnsSql.push(columnSql);
         }
-        sql += columnsSql.join(', ');
+        tableStructureSQL += columnsSql.join(', ');
 
         // Now add the table constraints.
 
         if (primaryKeys && primaryKeys.length) {
-            sql += `, PRIMARY KEY (${primaryKeys.join(', ')})`;
+            tableStructureSQL += `, PRIMARY KEY (${primaryKeys.join(', ')})`;
         }
 
         if (uniqueKeys && uniqueKeys.length) {
             for (const index in uniqueKeys) {
                 const setOfKeys = uniqueKeys[index];
                 if (setOfKeys && setOfKeys.length) {
-                    sql += `, UNIQUE (${setOfKeys.join(', ')})`;
+                    tableStructureSQL += `, UNIQUE (${setOfKeys.join(', ')})`;
                 }
             }
         }
 
         if (tableCheck) {
-            sql += `, CHECK (${tableCheck})`;
+            tableStructureSQL += `, CHECK (${tableCheck})`;
         }
 
         for (const index in foreignKeys) {
@@ -301,29 +302,29 @@ export class SQLiteDB {
                 continue;
             }
 
-            sql += `, FOREIGN KEY (${foreignKey.columns.join(', ')}) REFERENCES ${foreignKey.table} `;
+            tableStructureSQL += `, FOREIGN KEY (${foreignKey.columns.join(', ')}) REFERENCES ${foreignKey.table} `;
 
             if (foreignKey.foreignColumns && foreignKey.foreignColumns.length) {
-                sql += `(${foreignKey.foreignColumns.join(', ')})`;
+                tableStructureSQL += `(${foreignKey.foreignColumns.join(', ')})`;
             }
 
             if (foreignKey.actions) {
-                sql += ` ${foreignKey.actions}`;
+                tableStructureSQL += ` ${foreignKey.actions}`;
             }
         }
 
-        return sql + ')';
+        return `CREATE TABLE IF NOT EXISTS ${name} (${tableStructureSQL})`;
     }
 
     /**
      * Close the database.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async close(): Promise<void> {
         await this.ready();
 
-        await this.db!.close();
+        await this.db?.close();
     }
 
     /**
@@ -331,7 +332,7 @@ export class SQLiteDB {
      *
      * @param table The table to query.
      * @param conditions The conditions to build the where clause. Must not contain numeric indexes.
-     * @return Promise resolved with the count of records returned from the specified criteria.
+     * @returns Promise resolved with the count of records returned from the specified criteria.
      */
     async countRecords(table: string, conditions?: SQLiteDBRecordValues): Promise<number> {
         const selectAndParams = this.whereClause(conditions);
@@ -346,7 +347,7 @@ export class SQLiteDB {
      * @param select A fragment of SQL to be used in a where clause in the SQL call.
      * @param params An array of sql parameters.
      * @param countItem The count string to be used in the SQL call. Default is COUNT('x').
-     * @return Promise resolved with the count of records returned from the specified criteria.
+     * @returns Promise resolved with the count of records returned from the specified criteria.
      */
     async countRecordsSelect(
         table: string,
@@ -355,7 +356,7 @@ export class SQLiteDB {
         countItem: string = 'COUNT(\'x\')',
     ): Promise<number> {
         if (select) {
-            select = 'WHERE ' + select;
+            select = `WHERE ${select}`;
         }
 
         return this.countRecordsSql(`SELECT ${countItem} FROM ${table} ${select}`, params);
@@ -368,7 +369,7 @@ export class SQLiteDB {
      *
      * @param sql The SQL string you wish to be executed.
      * @param params An array of sql parameters.
-     * @return Promise resolved with the count.
+     * @returns Promise resolved with the count.
      */
     async countRecordsSql(sql: string, params?: SQLiteDBRecordValue[]): Promise<number> {
         const count = await this.getFieldSql(sql, params);
@@ -388,7 +389,7 @@ export class SQLiteDB {
      * @param uniqueKeys List of sets of unique columns. E.g: [['section', 'title'], ['author', 'title']].
      * @param foreignKeys List of foreign keys.
      * @param tableCheck Check constraint for the table.
-     * @return Promise resolved when success.
+     * @returns Promise resolved when success.
      */
     async createTable(
         name: string,
@@ -407,7 +408,7 @@ export class SQLiteDB {
      * Create a table if it doesn't exist from a schema.
      *
      * @param table Table schema.
-     * @return Promise resolved when success.
+     * @returns Promise resolved when success.
      */
     async createTableFromSchema(table: SQLiteDBTableSchema): Promise<void> {
         await this.createTable(table.name, table.columns, table.primaryKeys, table.uniqueKeys, table.foreignKeys, table.tableCheck);
@@ -417,7 +418,7 @@ export class SQLiteDB {
      * Create several tables if they don't exist from a list of schemas.
      *
      * @param tables List of table schema.
-     * @return Promise resolved when success.
+     * @returns Promise resolved when success.
      */
     async createTablesFromSchema(tables: SQLiteDBTableSchema[]): Promise<void> {
         const promises = tables.map(table => this.createTableFromSchema(table));
@@ -431,7 +432,7 @@ export class SQLiteDB {
      *
      * @param table The table to delete from.
      * @param conditions The conditions to build the where clause. Must not contain numeric indexes.
-     * @return Promise resolved with the number of affected rows.
+     * @returns Promise resolved with the number of affected rows.
      */
     async deleteRecords(table: string, conditions?: SQLiteDBRecordValues): Promise<number> {
         if (conditions === null || conditions === undefined) {
@@ -452,7 +453,7 @@ export class SQLiteDB {
      * @param table The table to delete from.
      * @param field The name of a field.
      * @param values The values field might take.
-     * @return Promise resolved with the number of affected rows.
+     * @returns Promise resolved with the number of affected rows.
      */
     async deleteRecordsList(table: string, field: string, values: SQLiteDBRecordValue[]): Promise<number> {
         const selectAndParams = this.whereClauseList(field, values);
@@ -466,11 +467,11 @@ export class SQLiteDB {
      * @param table The table to delete from.
      * @param select A fragment of SQL to be used in a where clause in the SQL call.
      * @param params Array of sql parameters.
-     * @return Promise resolved with the number of affected rows.
+     * @returns Promise resolved with the number of affected rows.
      */
     async deleteRecordsSelect(table: string, select: string = '', params?: SQLiteDBRecordValue[]): Promise<number> {
         if (select) {
-            select = 'WHERE ' + select;
+            select = `WHERE ${select}`;
         }
 
         const result = await this.execute(`DELETE FROM ${table} ${select}`, params);
@@ -482,7 +483,7 @@ export class SQLiteDB {
      * Drop a table if it exists.
      *
      * @param name The table name.
-     * @return Promise resolved when success.
+     * @returns Promise resolved when success.
      */
     async dropTable(name: string): Promise<void> {
         await this.execute(`DROP TABLE IF EXISTS ${name}`);
@@ -495,13 +496,13 @@ export class SQLiteDB {
      *
      * @param sql SQL query to execute.
      * @param params Query parameters.
-     * @return Promise resolved with the result.
+     * @returns Promise resolved with the result.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async execute(sql: string, params?: SQLiteDBRecordValue[]): Promise<any> {
         await this.ready();
 
-        return this.db!.executeSql(sql, params);
+        return this.db?.executeSql(sql, params);
     }
 
     /**
@@ -510,13 +511,13 @@ export class SQLiteDB {
      * these query will be run in SQLite (Mobile) and Web SQL (desktop), so your query should work in both environments.
      *
      * @param sqlStatements SQL statements to execute.
-     * @return Promise resolved with the result.
+     * @returns Promise resolved with the result.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async executeBatch(sqlStatements: (string | string[] | any)[]): Promise<void> {
         await this.ready();
 
-        await this.db!.sqlBatch(sqlStatements);
+        await this.db?.sqlBatch(sqlStatements);
     }
 
     /**
@@ -529,29 +530,15 @@ export class SQLiteDB {
             return;
         }
 
-        // Remove undefined entries and convert null to "NULL".
-        for (const name in data) {
-            if (data[name] === undefined) {
-                delete data[name];
-            }
-        }
-    }
-
-    /**
-     * Format the data to where params.
-     *
-     * @param data Object data.
-     * @return List of params.
-     */
-    protected formatDataToSQLParams(data: SQLiteDBRecordValues): SQLiteDBRecordValue[] {
-        return Object.keys(data).map((key) => data[key]!);
+        // Remove undefined entries.
+        Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
     }
 
     /**
      * Get all the records from a table.
      *
      * @param table The table to query.
-     * @return Promise resolved with the records.
+     * @returns Promise resolved with the records.
      */
     async getAllRecords<T = unknown>(table: string): Promise<T[]> {
         return this.getRecords(table);
@@ -563,7 +550,7 @@ export class SQLiteDB {
      * @param table The table to query.
      * @param field The field to return the value of.
      * @param conditions The conditions to build the where clause. Must not contain numeric indexes.
-     * @return Promise resolved with the field's value.
+     * @returns Promise resolved with the field's value.
      */
     async getField(table: string, field: string, conditions?: SQLiteDBRecordValues): Promise<SQLiteDBRecordValue> {
         const selectAndParams = this.whereClause(conditions);
@@ -578,7 +565,7 @@ export class SQLiteDB {
      * @param field The field to return the value of.
      * @param select A fragment of SQL to be used in a where clause returning one row with one column.
      * @param params Array of sql parameters.
-     * @return Promise resolved with the field's value.
+     * @returns Promise resolved with the field's value.
      */
     async getFieldSelect(
         table: string,
@@ -587,7 +574,7 @@ export class SQLiteDB {
         params?: SQLiteDBRecordValue[],
     ): Promise<SQLiteDBRecordValue> {
         if (select) {
-            select = 'WHERE ' + select;
+            select = `WHERE ${select}`;
         }
 
         return this.getFieldSql(`SELECT ${field} FROM ${table} ${select}`, params);
@@ -598,7 +585,7 @@ export class SQLiteDB {
      *
      * @param sql The SQL query returning one row with one column.
      * @param params An array of sql parameters.
-     * @return Promise resolved with the field's value.
+     * @returns Promise resolved with the field's value.
      */
     async getFieldSql(sql: string, params?: SQLiteDBRecordValue[]): Promise<SQLiteDBRecordValue> {
         const record = await this.getRecordSql<Record<string, SQLiteDBRecordValue>>(sql, params);
@@ -612,7 +599,7 @@ export class SQLiteDB {
     /**
      * Get the database name.
      *
-     * @return Database name.
+     * @returns Database name.
      */
     getName(): string {
         return this.name;
@@ -624,7 +611,7 @@ export class SQLiteDB {
      * @param table The table to query.
      * @param conditions The conditions to build the where clause. Must not contain numeric indexes.
      * @param fields A comma separated list of fields to return.
-     * @return Promise resolved with the record, rejected if not found.
+     * @returns Promise resolved with the record, rejected if not found.
      */
     getRecord<T = unknown>(table: string, conditions?: SQLiteDBRecordValues, fields: string = '*'): Promise<T> {
         const selectAndParams = this.whereClause(conditions);
@@ -639,7 +626,7 @@ export class SQLiteDB {
      * @param select A fragment of SQL to be used in a where clause in the SQL call.
      * @param params An array of sql parameters.
      * @param fields A comma separated list of fields to return.
-     * @return Promise resolved with the record, rejected if not found.
+     * @returns Promise resolved with the record, rejected if not found.
      */
     getRecordSelect<T = unknown>(
         table: string,
@@ -648,7 +635,7 @@ export class SQLiteDB {
         fields: string = '*',
     ): Promise<T> {
         if (select) {
-            select = ' WHERE ' + select;
+            select = ` WHERE ${select}`;
         }
 
         return this.getRecordSql<T>(`SELECT ${fields} FROM ${table} ${select}`, params);
@@ -662,7 +649,7 @@ export class SQLiteDB {
      *
      * @param sql The SQL string you wish to be executed, should normally only return one record.
      * @param params List of sql parameters
-     * @return Promise resolved with the records.
+     * @returns Promise resolved with the records.
      */
     async getRecordSql<T = unknown>(sql: string, params?: SQLiteDBRecordValue[]): Promise<T> {
         const result = await this.getRecordsSql<T>(sql, params, 0, 1);
@@ -683,7 +670,7 @@ export class SQLiteDB {
      * @param fields A comma separated list of fields to return.
      * @param limitFrom Return a subset of records, starting at this point.
      * @param limitNum Return a subset comprising this many records in total.
-     * @return Promise resolved with the records.
+     * @returns Promise resolved with the records.
      */
     getRecords<T = unknown>(
         table: string,
@@ -708,7 +695,7 @@ export class SQLiteDB {
      * @param fields A comma separated list of fields to return.
      * @param limitFrom Return a subset of records, starting at this point.
      * @param limitNum Return a subset comprising this many records in total.
-     * @return Promise resolved with the records.
+     * @returns Promise resolved with the records.
      */
     getRecordsList<T = unknown>(
         table: string,
@@ -734,7 +721,7 @@ export class SQLiteDB {
      * @param fields A comma separated list of fields to return.
      * @param limitFrom Return a subset of records, starting at this point.
      * @param limitNum Return a subset comprising this many records in total.
-     * @return Promise resolved with the records.
+     * @returns Promise resolved with the records.
      */
     getRecordsSelect<T = unknown>(
         table: string,
@@ -746,10 +733,10 @@ export class SQLiteDB {
         limitNum: number = 0,
     ): Promise<T[]> {
         if (select) {
-            select = ' WHERE ' + select;
+            select = ` WHERE ${select}`;
         }
         if (sort) {
-            sort = ' ORDER BY ' + sort;
+            sort = ` ORDER BY ${sort}`;
         }
 
         const sql = `SELECT ${fields} FROM ${table} ${select} ${sort}`;
@@ -764,7 +751,7 @@ export class SQLiteDB {
      * @param params List of sql parameters
      * @param limitFrom Return a subset of records, starting at this point.
      * @param limitNum Return a subset comprising this many records.
-     * @return Promise resolved with the records.
+     * @returns Promise resolved with the records.
      */
     async getRecordsSql<T = unknown>(
         sql: string,
@@ -778,7 +765,7 @@ export class SQLiteDB {
             if (limits[1] < 1) {
                 limits[1] = Number.MAX_VALUE;
             }
-            sql += ' LIMIT ' + limits[0] + ', ' + limits[1];
+            sql += ` LIMIT ${limits[0]}, ${limits[1]}`;
         }
 
         const result = await this.execute(sql, params);
@@ -796,7 +783,7 @@ export class SQLiteDB {
      *
      * @param table The database table.
      * @param data A data object with values for one or more fields in the record.
-     * @return Array with the SQL query and the params.
+     * @returns Array with the SQL query and the params.
      */
     protected getSqlInsertQuery(table: string, data: SQLiteDBRecordValues): SQLiteDBQueryParams {
         this.formatDataToInsert(data);
@@ -807,7 +794,7 @@ export class SQLiteDB {
 
         return {
             sql: `INSERT OR REPLACE INTO ${table} (${fields}) VALUES (${questionMarks})`,
-            params: this.formatDataToSQLParams(data),
+            params: Object.values(data),
         };
     }
 
@@ -835,7 +822,7 @@ export class SQLiteDB {
      *
      * @param table The database table to be inserted into.
      * @param data A data object with values for one or more fields in the record.
-     * @return Promise resolved with new rowId. Please notice this rowId is internal from SQLite.
+     * @returns Promise resolved with new rowId. Please notice this rowId is internal from SQLite.
      */
     async insertRecord(table: string, data: SQLiteDBRecordValues): Promise<number> {
         const sqlAndParams = this.getSqlInsertQuery(table, data);
@@ -849,7 +836,7 @@ export class SQLiteDB {
      *
      * @param table The database table to be inserted into.
      * @param dataObjects List of objects to be inserted.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async insertRecords(table: string, dataObjects: SQLiteDBRecordValues[]): Promise<void> {
         if (!Array.isArray(dataObjects)) {
@@ -870,7 +857,7 @@ export class SQLiteDB {
      *
      * @param table The database table to be inserted into.
      * @param source The database table to get the records from.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async insertRecordsFrom(
         table: string,
@@ -888,7 +875,7 @@ export class SQLiteDB {
      * @param oldTable Old table name.
      * @param newTable New table name.
      * @param mapCallback Mapping callback to migrate each record.
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     async migrateTable(
         oldTable: string,
@@ -897,7 +884,7 @@ export class SQLiteDB {
     ): Promise<void> {
         try {
             await this.tableExists(oldTable);
-        } catch (error) {
+        } catch {
             // Old table does not exist, ignore.
             return;
         }
@@ -919,7 +906,7 @@ export class SQLiteDB {
 
         try {
             await this.dropTable(oldTable);
-        } catch (error) {
+        } catch {
             // Error deleting old table, ignore.
         }
     }
@@ -931,7 +918,7 @@ export class SQLiteDB {
      *
      * @param limitFrom Where to start results from.
      * @param limitNum How many results to return.
-     * @return Normalised limit params in array: [limitFrom, limitNum].
+     * @returns Normalised limit params in array: [limitFrom, limitNum].
      */
     normaliseLimitFromNum(limitFrom?: number, limitNum?: number): number[] {
         // We explicilty treat these cases as 0.
@@ -953,18 +940,18 @@ export class SQLiteDB {
     /**
      * Open the database. Only needed if it was closed before, a database is automatically opened when created.
      *
-     * @return Promise resolved when open.
+     * @returns Promise resolved when open.
      */
     async open(): Promise<void> {
         await this.ready();
 
-        await this.db!.open();
+        await this.db?.open();
     }
 
     /**
      * Wait for the DB to be ready.
      *
-     * @return Promise resolved when ready.
+     * @returns Promise resolved when ready.
      */
     ready(): Promise<void> {
         return this.promise;
@@ -975,7 +962,7 @@ export class SQLiteDB {
      *
      * @param table The table to check.
      * @param conditions The conditions to build the where clause. Must not contain numeric indexes.
-     * @return Promise resolved if exists, rejected otherwise.
+     * @returns Promise resolved if exists, rejected otherwise.
      */
     async recordExists(table: string, conditions?: SQLiteDBRecordValues): Promise<void> {
         const record = await this.getRecord(table, conditions);
@@ -990,7 +977,7 @@ export class SQLiteDB {
      * @param table The table to query.
      * @param select A fragment of SQL to be used in a where clause in the SQL call.
      * @param params An array of sql parameters.
-     * @return Promise resolved if exists, rejected otherwise.
+     * @returns Promise resolved if exists, rejected otherwise.
      */
     async recordExistsSelect(table: string, select: string = '', params: SQLiteDBRecordValue[] = []): Promise<void> {
         const record = await this.getRecordSelect(table, select, params);
@@ -1004,7 +991,7 @@ export class SQLiteDB {
      *
      * @param sql The SQL query returning one row with one column.
      * @param params An array of sql parameters.
-     * @return Promise resolved if exists, rejected otherwise.
+     * @returns Promise resolved if exists, rejected otherwise.
      */
     async recordExistsSql(sql: string, params?: SQLiteDBRecordValue[]): Promise<void> {
         const record = await this.getRecordSql(sql, params);
@@ -1017,7 +1004,7 @@ export class SQLiteDB {
      * Test whether a table exists..
      *
      * @param name The table name.
-     * @return Promise resolved if exists, rejected otherwise.
+     * @returns Promise resolved if exists, rejected otherwise.
      */
     async tableExists(name: string): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -1027,10 +1014,10 @@ export class SQLiteDB {
     /**
      * Update one or more records in a table.
      *
-     * @param string table The database table to update.
+     * @param table The database table to update.
      * @param data An object with the fields to update: fieldname=>fieldvalue.
      * @param conditions The conditions to build the where clause. Must not contain numeric indexes.
-     * @return Promise resolved with the number of affected rows.
+     * @returns Promise resolved with the number of affected rows.
      */
     async updateRecords(table: string, data: SQLiteDBRecordValues, conditions?: SQLiteDBRecordValues): Promise<number> {
         const whereAndParams = this.whereClause(conditions);
@@ -1041,11 +1028,11 @@ export class SQLiteDB {
     /**
      * Update one or more records in a table. It accepts a WHERE clause as a string.
      *
-     * @param string table The database table to update.
+     * @param table The database table to update.
      * @param data An object with the fields to update: fieldname=>fieldvalue.
      * @param where Where clause. Must not include the "WHERE" word.
      * @param whereParams Params for the where clause.
-     * @return Promise resolved with the number of affected rows.
+     * @returns Promise resolved with the number of affected rows.
      */
     async updateRecordsWhere(
         table: string,
@@ -1066,7 +1053,7 @@ export class SQLiteDB {
         }
 
         // Create the list of params using the "data" object and the params for the where clause.
-        let params = this.formatDataToSQLParams(data);
+        let params = Object.values(data);
         if (where && whereParams) {
             params = params.concat(whereParams);
         }
@@ -1080,7 +1067,7 @@ export class SQLiteDB {
      * Returns the SQL WHERE conditions.
      *
      * @param conditions The conditions to build the where clause. Must not contain numeric indexes.
-     * @return An array list containing sql 'where' part and 'params'.
+     * @returns An array list containing sql 'where' part and 'params'.
      */
     whereClause(conditions: SQLiteDBRecordValues = {}): SQLiteDBQueryParams {
         if (!conditions || !Object.keys(conditions).length) {
@@ -1090,19 +1077,19 @@ export class SQLiteDB {
             };
         }
 
-        const where: string[] = [];
         const params: SQLiteDBRecordValue[] = [];
 
-        for (const key in conditions) {
-            const value = conditions[key];
+        const where = Object.keys(conditions).map((field) => {
+            const value = conditions[field];
 
             if (value === undefined || value === null) {
-                where.push(key + ' IS NULL');
-            } else {
-                where.push(key + ' = ?');
-                params.push(value);
+                return `${field} IS NULL`;
             }
-        }
+
+            params.push(value);
+
+            return `${field} = ?`;
+        });
 
         return {
             sql: where.join(' AND '),
@@ -1115,7 +1102,7 @@ export class SQLiteDB {
      *
      * @param field The name of a field.
      * @param values The values field might take.
-     * @return An array containing sql 'where' part and 'params'.
+     * @returns An array containing sql 'where' part and 'params'.
      */
     whereClauseList(field: string, values: SQLiteDBRecordValue[]): SQLiteDBQueryParams {
         if (!values || !values.length) {
@@ -1130,7 +1117,7 @@ export class SQLiteDB {
 
         values.forEach((value) => {
             if (value === undefined || value === null) {
-                sql = field + ' IS NULL';
+                sql = `${field} IS NULL`;
             } else {
                 params.push(value);
             }
@@ -1138,14 +1125,14 @@ export class SQLiteDB {
 
         if (params && params.length) {
             if (sql !== '') {
-                sql = sql + ' OR ';
+                sql += ' OR ';
             }
 
             if (params.length == 1) {
-                sql = sql + field + ' = ?';
+                sql += `${field} = ?`;
             } else {
                 const questionMarks = ',?'.repeat(params.length).substring(1);
-                sql = sql + field + ' IN (' + questionMarks + ')';
+                sql += ` ${field} IN (${questionMarks})`;
             }
         }
 
@@ -1232,7 +1219,7 @@ export class SQLiteDB {
 }
 
 export type SQLiteDBRecordValues = {
-    [key: string]: SQLiteDBRecordValue | undefined | null;
+    [key: string]: SQLiteDBRecordValue;
 };
 
 export type SQLiteDBQueryParams = {
@@ -1240,4 +1227,4 @@ export type SQLiteDBQueryParams = {
     params: SQLiteDBRecordValue[];
 };
 
-export type SQLiteDBRecordValue = number | string;
+export type SQLiteDBRecordValue = number | string  | undefined | null;

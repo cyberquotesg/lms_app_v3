@@ -18,6 +18,8 @@ import { CoreSite, CoreSiteInfo } from '@classes/site';
 import { CoreFilter } from '@features/filter/services/filter';
 import { CoreLoginSitesComponent } from '@features/login/components/sites/sites';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
+import { CoreUserAuthenticatedSupportConfig } from '@features/user/classes/support/authenticated-support-config';
+import { CoreUserSupport } from '@features/user/services/support';
 import { CoreUser, CoreUserProfile } from '@features/user/services/user';
 import {
     CoreUserProfileHandlerData,
@@ -30,9 +32,6 @@ import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { ModalController, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
-
-// by rachmad
-import { CqHelper } from '@features/cq_pages/services/cq_helper';
 
 /**
  * Component to display a user menu.
@@ -53,23 +52,11 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     handlers: CoreUserProfileHandlerData[] = [];
     handlersLoaded = false;
     user?: CoreUserProfile;
-    // change by rachmad
-    // displaySwitchAccount = true;
-    displaySwitchAccount = false;
+    displaySwitchAccount = true;
+    displayContactSupport = false;
     removeAccountOnLogout = false;
 
-    // by rachmad
-    announcementCount: number = 0;
-
     protected subscription!: Subscription;
-
-    // by rachmad
-    constructor(protected CH: CqHelper)
-    {
-        this.CH.announcementNumber.subscribe((value) => {
-            this.announcementCount = value;
-        });
-    }
 
     /**
      * @inheritdoc
@@ -80,9 +67,8 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         this.siteInfo = currentSite.getInfo();
         this.siteName = currentSite.getSiteName();
         this.siteUrl = currentSite.getURL();
-        // change by rachmad
-        // this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
-        this.displaySwitchAccount = false;
+        this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
+        this.displayContactSupport = new CoreUserAuthenticatedSupportConfig(currentSite).canContactSupport();
         this.removeAccountOnLogout = !!CoreConstants.CONFIG.removeaccountonlogout;
 
         this.loadSiteLogo(currentSite);
@@ -105,12 +91,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                     }
 
                     const newHandlers = handlers
-                        // by rachmad
-                        // .filter((handler) => handler.type === CoreUserDelegateService.TYPE_NEW_PAGE)
-                        .filter((handler) => {
-                            return handler.type === CoreUserDelegateService.TYPE_NEW_PAGE && handler.name && handler.name.indexOf("AddonBadges") > -1
-                        })
-                        // by rachmad
+                        .filter((handler) => handler.type === CoreUserDelegateService.TYPE_NEW_PAGE)
                         .map((handler) => handler.data);
 
                     // Only update handlers if they have changed, to prevent a blink effect.
@@ -129,7 +110,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
      * Load site logo from current site public config.
      *
      * @param currentSite Current site object.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async loadSiteLogo(currentSite: CoreSite): Promise<void> {
         if (CoreConstants.CONFIG.forceLoginLogo) {
@@ -194,6 +175,16 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         await this.close(event);
 
         handler.action(event, this.user, CoreUserDelegateContext.USER_MENU);
+    }
+
+    /**
+     * Contact site support.
+     *
+     * @param event Click event.
+     */
+    async contactSupport(event: Event): Promise<void> {
+        await this.close(event);
+        await CoreUserSupport.contact();
     }
 
     /**
@@ -285,14 +276,4 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         this.subscription?.unsubscribe();
     }
 
-    // by rachmad
-    goToAnnouncement(): void
-    {
-        const stateParams: any = {
-        };
-        CoreNavigator.navigateToSitePath('/CqAnnouncements/index', {
-            params: stateParams,
-            preferCurrentTab: false,
-        });
-    }
 }

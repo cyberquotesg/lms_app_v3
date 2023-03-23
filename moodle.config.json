@@ -1,13 +1,8 @@
 {
-    "app_id": "com.moodle.cyberquote",
-    "appname": "CQ Academy",
-    "desktopappname": "CQ Academy",
-    "versioncode": 30020,
-    "versionname": "3.0.020",
-    "isProduction": false,
-    "siteurl": "https://qaslms.cyberquote.com",
-    "sitename": "CQ Academy",
-    "sendErrorLog": true,
+    "app_id": "com.moodle.moodlemobile",
+    "appname": "Moodle Mobile",
+    "versioncode": 41100,
+    "versionname": "4.1.1",
     "cache_update_frequency_usually": 420000,
     "cache_update_frequency_often": 1200000,
     "cache_update_frequency_sometimes": 3600000,
@@ -58,6 +53,7 @@
         "ro": "Română",
         "ru": "Русский",
         "sl": "Slovenščina",
+        "sq": "Shqip",
         "sr-cr": "Српски",
         "sr-lt": "Srpski",
         "sv": "Svenska",
@@ -89,6 +85,8 @@
         "high": 120
     },
     "customurlscheme": "moodlemobile",
+    "siteurl": "",
+    "sitename": "",
     "multisitesdisplay": "",
     "sitefindersettings": {},
     "onlyallowlistedsites": false,
@@ -102,7 +100,7 @@
     "forceLoginLogo": false,
     "ioswebviewscheme": "moodleappfs",
     "appstores": {
-        "android": "com.moodle.cyberquote",
+        "android": "com.moodle.moodlemobile",
         "ios": "id633359593"
     },
     "wsrequestqueuelimit": 10,
@@ -113,9 +111,5 @@
         "long": 3500,
         "sticky": 0
     },
-
-    "notificationInterval": 10000,
-    "recaptchaSiteKey" : "6LcTWaIaAAAAAM95sNdgh8wOdLmjd5241OqIZuRA",
-    "tokenKey": [1, 4, 5, 8, 9],
-    "catpchaOrToken": "token"
+    "disableTokenFile": false
 }

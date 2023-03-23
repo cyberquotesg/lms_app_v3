@@ -16,7 +16,7 @@ import { CoreColorScheme, CoreZoomLevel } from '@features/settings/services/sett
 import { CoreMainMenuLocalizedCustomItem } from '@features/mainmenu/services/mainmenu';
 import { CoreLoginSiteInfo, CoreSitesDemoSiteData } from '@services/sites';
 import { OpenFileAction } from '@services/utils/utils';
-import { CoreLoginSiteSelectorListMethod } from '@features/login/services/login-helper';
+import { CoreLoginSiteFinderSettings, CoreLoginSiteSelectorListMethod } from '@features/login/services/login-helper';
 import { CoreDatabaseConfiguration } from '@classes/database/database-table';
 import { ToastDuration } from '@services/utils/dom';
 
@@ -45,7 +45,7 @@ export interface EnvironmentConfig {
     siteurl: string | CoreLoginSiteInfo[];
     sitename: string;
     multisitesdisplay: CoreLoginSiteSelectorListMethod;
-    sitefindersettings: Record<string, unknown>;
+    sitefindersettings: Partial<CoreLoginSiteFinderSettings>;
     onlyallowlistedsites: boolean;
     skipssoconfirmation: boolean;
     forcedefaultlanguage: boolean;
@@ -73,4 +73,5 @@ export interface EnvironmentConfig {
     toastDurations: Record<ToastDuration, number>;
     disableCallWSInBackground?: boolean; // If true, disable calling WS in background.
     callWSInBackgroundExpirationTime?: number; // Ms to consider an entry expired when calling WS in background. Default: 1 week.
+    disableTokenFile: boolean; // Disable the use of tokenpluginfile.php for downloading files (so it fallbacks to pluginfile.php)
 }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Component, Optional, OnInit } from '@angular/core';
+import { CoreError } from '@classes/errors/error';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { IonContent } from '@ionic/angular';
@@ -158,7 +159,7 @@ export class AddonModChoiceIndexComponent extends CoreCourseModuleMainActivityCo
      * Convenience function to get choice options.
      *
      * @param choice Choice data.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async fetchOptions(choice: AddonModChoiceChoice): Promise<void> {
         let options = await AddonModChoice.getOptions(choice.id, { cmId: this.module.id });
@@ -226,7 +227,7 @@ export class AddonModChoiceIndexComponent extends CoreCourseModuleMainActivityCo
      *
      * @param choice Choice.
      * @param options Online options.
-     * @return Promise resolved with the options.
+     * @returns Promise resolved with the options.
      */
     protected async getOfflineResponses(
         choice: AddonModChoiceChoice,
@@ -284,7 +285,7 @@ export class AddonModChoiceIndexComponent extends CoreCourseModuleMainActivityCo
      * Convenience function to get choice results.
      *
      * @param choice Choice.
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     protected async fetchResults(choice: AddonModChoiceChoice): Promise<void> {
         if (this.choiceNotOpenYet) {
@@ -327,7 +328,7 @@ export class AddonModChoiceIndexComponent extends CoreCourseModuleMainActivityCo
      * Check if a choice is open.
      *
      * @param choice Choice data.
-     * @return True if choice is open, false otherwise.
+     * @returns True if choice is open, false otherwise.
      */
     protected isChoiceOpen(choice: AddonModChoiceChoice): boolean {
         return (!choice.timeopen || choice.timeopen <= this.now) && (!choice.timeclose || choice.timeclose > this.now);
@@ -336,7 +337,7 @@ export class AddonModChoiceIndexComponent extends CoreCourseModuleMainActivityCo
     /**
      * Return true if the user has selected at least one option.
      *
-     * @return True if the user has responded.
+     * @returns True if the user has responded.
      */
     canSave(): boolean {
         if (!this.choice) {
@@ -424,7 +425,7 @@ export class AddonModChoiceIndexComponent extends CoreCourseModuleMainActivityCo
      * Function to call when some data has changed. It will refresh/prefetch data.
      *
      * @param online Whether the data was sent to server or stored in offline.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async dataUpdated(online: boolean): Promise<void> {
         if (!online || !this.isPrefetched()) {
@@ -454,22 +455,14 @@ export class AddonModChoiceIndexComponent extends CoreCourseModuleMainActivityCo
     }
 
     /**
-     * Performs the sync of the activity.
-     *
-     * @return Promise resolved when done.
+     * @inheritdoc
      */
     protected sync(): Promise<AddonModChoiceSyncResult> {
-        return AddonModChoiceSync.syncChoice(this.choice!.id, this.userId);
-    }
+        if (!this.choice) {
+            throw new CoreError('Cannot sync without a choice.');
+        }
 
-    /**
-     * Checks if sync has succeed from result sync data.
-     *
-     * @param result Data returned on the sync function.
-     * @return Whether it succeed or not.
-     */
-    protected hasSyncSucceed(result: AddonModChoiceSyncResult): boolean {
-        return result.updated;
+        return AddonModChoiceSync.syncChoice(this.choice.id, this.userId);
     }
 
 }

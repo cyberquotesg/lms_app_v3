@@ -50,7 +50,7 @@ import { AddonModForumPostOptionsMenuComponent } from '../post-options-menu/post
 import { CoreRatingInfo } from '@features/rating/services/rating';
 import { CoreForms } from '@singletons/form';
 import { CoreFileEntry } from '@services/file-helper';
-import { AddonModForumSharedPostFormData } from '../../pages/discussion/discussion.page';
+import { AddonModForumSharedPostFormData } from '../../pages/discussion/discussion';
 import { CoreDom } from '@singletons/dom';
 
 /**
@@ -103,7 +103,7 @@ export class AddonModForumPostComponent implements OnInit, OnDestroy, OnChanges 
     }
 
     /**
-     * Component being initialized.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.tagsEnabled = CoreTag.areTagsAvailableInSite();
@@ -510,7 +510,7 @@ export class AddonModForumPostComponent implements OnInit, OnDestroy, OnChanges 
     }
 
     /**
-     * Component being destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.unblockOperation();
@@ -519,7 +519,7 @@ export class AddonModForumPostComponent implements OnInit, OnDestroy, OnChanges 
     /**
      * Confirm discard changes if any.
      *
-     * @return Promise resolved if the user confirms or data was not changed and rejected otherwise.
+     * @returns Promise resolved if the user confirms or data was not changed and rejected otherwise.
      */
     protected async confirmDiscard(): Promise<void> {
         if (AddonModForumHelper.hasPostDataChanged(this.formData, this.originalData)) {
@@ -545,7 +545,7 @@ export class AddonModForumPostComponent implements OnInit, OnDestroy, OnChanges 
     /**
      * Scroll to reply/edit form.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async scrollToForm(): Promise<void> {
         await CoreDom.scrollToElement(

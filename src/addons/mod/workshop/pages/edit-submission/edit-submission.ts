@@ -97,7 +97,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
     }
 
     /**
-     * Component being initialized.
+     * @inheritdoc
      */
     ngOnInit(): void {
         try {
@@ -131,7 +131,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
     /**
      * Check if we can leave the page or not.
      *
-     * @return Resolved if we can leave it, rejected if not.
+     * @returns Resolved if we can leave it, rejected if not.
      */
     async canLeave(): Promise<boolean> {
         if (this.forceLeave) {
@@ -157,7 +157,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
     /**
      * Fetch the submission data.
      *
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     protected async fetchSubmissionData(): Promise<void> {
         try {
@@ -244,7 +244,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
     /**
      * Get the form input data.
      *
-     * @return Object with all the info.
+     * @returns Object with all the info.
      */
     protected getInputData(): AddonModWorkshopEditSubmissionInputData {
         const values: AddonModWorkshopEditSubmissionInputData = {
@@ -267,7 +267,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
     /**
      * Check if data has changed.
      *
-     * @return True if changed or false if not.
+     * @returns True if changed or false if not.
      */
     protected hasDataChanged(): boolean {
         if (!this.loaded) {
@@ -308,7 +308,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
     /**
      * Send submission and save.
      *
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     protected async saveSubmission(): Promise<void> {
         const inputData = this.getInputData();
@@ -385,11 +385,14 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
                     );
                     newSubmissionId = false;
                 } else {
+                    if (!submissionId) {
+                        throw new CoreError('Submission cannot be updated without a submissionId');
+                    }
                     // Try to send it to server.
                     // Don't allow offline if there are attachments since they were uploaded fine.
                     newSubmissionId = await AddonModWorkshop.updateSubmission(
                         this.workshopId,
-                        submissionId!,
+                        submissionId,
                         this.courseId,
                         inputData.title,
                         inputData.content,
@@ -470,7 +473,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
     }
 
     /**
-     * Component being destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.isDestroyed = true;

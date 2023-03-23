@@ -215,29 +215,17 @@ export class AddonModGlossaryIndexComponent extends CoreCourseModuleMainActivity
     }
 
     /**
-     * Performs the sync of the activity.
-     *
-     * @return Promise resolved when done.
+     * @inheritdoc
      */
     protected sync(): Promise<AddonModGlossarySyncResult> {
         return AddonModGlossaryPrefetchHandler.sync(this.module, this.courseId);
     }
 
     /**
-     * Checks if sync has succeed from result sync data.
-     *
-     * @param result Data returned on the sync function.
-     * @return Whether it succeed or not.
-     */
-    protected hasSyncSucceed(result: AddonModGlossarySyncResult): boolean {
-        return result.updated;
-    }
-
-    /**
      * Compares sync event data with current data to check if refresh content is needed.
      *
      * @param syncEventData Data receiven on sync observer.
-     * @return True if refresh is needed, false otherwise.
+     * @returns True if refresh is needed, false otherwise.
      */
     protected isRefreshSyncNeeded(syncEventData: AddonModGlossaryAutoSyncData): boolean {
         return !!this.glossary && syncEventData.glossaryId == this.glossary.id &&
@@ -301,7 +289,7 @@ export class AddonModGlossaryIndexComponent extends CoreCourseModuleMainActivity
      * Convenience function to load more entries.
      *
      * @param infiniteComplete Infinite scroll complete function. Only used from core-infinite-loading.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async loadMoreEntries(infiniteComplete?: () => void): Promise<void> {
         const entries = await this.promisedEntries;
@@ -482,7 +470,7 @@ class AddonModGlossaryEntriesManager extends CoreListItemsManager<AddonModGlossa
     /**
      * Check whether there is any entry in the items.
      *
-     * @return Whether there is an entry.
+     * @returns Whether there is an entry.
      */
     get hasEntries(): boolean {
         return this.getSource().onlineEntries.length > 0 || this.getSource().offlineEntries.length > 0;

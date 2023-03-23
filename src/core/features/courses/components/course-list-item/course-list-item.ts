@@ -114,7 +114,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
                 } else if (instance === 'paypal') {
                     this.enrolmentIcons.push({
                         label: 'core.courses.otherenrolments',
-                        icon: 'fas-external-link-alt',
+                        icon: 'fas-up-right-from-square',
                     });
                 }
             });
@@ -234,6 +234,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
         this.prefetchCourseData.icon = statusData.icon;
         this.prefetchCourseData.statusTranslatable = statusData.statusTranslatable;
         this.prefetchCourseData.loading = statusData.loading;
+        this.prefetchCourseData.downloadSucceeded = status === CoreConstants.DOWNLOADED;
     }
 
     /**

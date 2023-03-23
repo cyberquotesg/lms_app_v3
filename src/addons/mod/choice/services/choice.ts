@@ -53,7 +53,7 @@ export class AddonModChoiceProvider {
      *
      * @param choice Choice to check.
      * @param hasAnswered True if user has answered the choice, false otherwise.
-     * @return True if the students can see the results.
+     * @returns True if the students can see the results.
      */
     canStudentSeeResults(choice: AddonModChoiceChoice, hasAnswered: boolean): boolean {
         const now = Date.now();
@@ -71,21 +71,20 @@ export class AddonModChoiceProvider {
      * @param courseId Course ID the choice belongs to.
      * @param responses IDs of the answers. If not defined, delete all the answers of the current user.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved with boolean: true if response was sent to server, false if stored in device.
+     * @returns Promise resolved with boolean: true if response was sent to server, false if stored in device.
      */
     async deleteResponses(
         choiceId: number,
         name: string,
         courseId: number,
-        responses?: number[],
+        responses: number[] = [],
         siteId?: string,
     ): Promise<boolean> {
         siteId = siteId || CoreSites.getCurrentSiteId();
-        responses = responses || [];
 
         // Convenience function to store a message to be synchronized later.
         const storeOffline = async (): Promise<boolean> => {
-            await AddonModChoiceOffline.saveResponse(choiceId, name, courseId, responses!, true, siteId);
+            await AddonModChoiceOffline.saveResponse(choiceId, name, courseId, responses, true, siteId);
 
             return false;
         };
@@ -119,7 +118,7 @@ export class AddonModChoiceProvider {
      * @param choiceId Choice ID.
      * @param responses IDs of the answers. If not defined, delete all the answers of the current user.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when responses are successfully deleted.
+     * @returns Promise resolved when responses are successfully deleted.
      */
     async deleteResponsesOnline(choiceId: number, responses?: number[], siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);
@@ -151,7 +150,7 @@ export class AddonModChoiceProvider {
      * Get cache key for choice data WS calls.
      *
      * @param courseId Course ID.
-     * @return Cache key.
+     * @returns Cache key.
      */
     protected getChoiceDataCacheKey(courseId: number): string {
         return ROOT_CACHE_KEY + 'choice:' + courseId;
@@ -161,7 +160,7 @@ export class AddonModChoiceProvider {
      * Get cache key for choice options WS calls.
      *
      * @param choiceId Choice ID.
-     * @return Cache key.
+     * @returns Cache key.
      */
     protected getChoiceOptionsCacheKey(choiceId: number): string {
         return ROOT_CACHE_KEY + 'options:' + choiceId;
@@ -171,7 +170,7 @@ export class AddonModChoiceProvider {
      * Get cache key for choice results WS calls.
      *
      * @param choiceId Choice ID.
-     * @return Cache key.
+     * @returns Cache key.
      */
     protected getChoiceResultsCacheKey(choiceId: number): string {
         return ROOT_CACHE_KEY + 'results:' + choiceId;
@@ -184,7 +183,7 @@ export class AddonModChoiceProvider {
      * @param key Name of the property to check.
      * @param value Value to search.
      * @param options Other options.
-     * @return Promise resolved when the choice is retrieved.
+     * @returns Promise resolved when the choice is retrieved.
      */
     protected async getChoiceByDataKey(
         courseId: number,
@@ -224,7 +223,7 @@ export class AddonModChoiceProvider {
      * @param courseId Course ID.
      * @param cmId Course module ID.
      * @param options Other options.
-     * @return Promise resolved when the choice is retrieved.
+     * @returns Promise resolved when the choice is retrieved.
      */
     getChoice(courseId: number, cmId: number, options: CoreSitesCommonWSOptions = {}): Promise<AddonModChoiceChoice> {
         return this.getChoiceByDataKey(courseId, 'coursemodule', cmId, options);
@@ -236,7 +235,7 @@ export class AddonModChoiceProvider {
      * @param courseId Course ID.
      * @param choiceId Choice ID.
      * @param options Other options.
-     * @return Promise resolved when the choice is retrieved.
+     * @returns Promise resolved when the choice is retrieved.
      */
     getChoiceById(courseId: number, choiceId: number, options: CoreSitesCommonWSOptions = {}): Promise<AddonModChoiceChoice> {
         return this.getChoiceByDataKey(courseId, 'id', choiceId, options);
@@ -247,7 +246,7 @@ export class AddonModChoiceProvider {
      *
      * @param choiceId Choice ID.
      * @param options Other options.
-     * @return Promise resolved with choice options.
+     * @returns Promise resolved with choice options.
      */
     async getOptions(choiceId: number, options: CoreCourseCommonModWSOptions = {}): Promise<AddonModChoiceOption[]> {
         const site = await CoreSites.getSite(options.siteId);
@@ -278,7 +277,7 @@ export class AddonModChoiceProvider {
      *
      * @param choiceId Choice ID.
      * @param options Other options.
-     * @return Promise resolved with choice results.
+     * @returns Promise resolved with choice results.
      */
     async getResults(choiceId: number, options: CoreCourseCommonModWSOptions = {}): Promise<AddonModChoiceResult[]> {
         const site = await CoreSites.getSite(options.siteId);
@@ -307,7 +306,7 @@ export class AddonModChoiceProvider {
      *
      * @param courseId Course ID.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when the data is invalidated.
+     * @returns Promise resolved when the data is invalidated.
      */
     async invalidateChoiceData(courseId: number, siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);
@@ -321,7 +320,7 @@ export class AddonModChoiceProvider {
      * @param moduleId The module ID.
      * @param courseId Course ID.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when data is invalidated.
+     * @returns Promise resolved when data is invalidated.
      */
     async invalidateContent(moduleId: number, courseId: number, siteId?: string): Promise<void> {
         siteId = siteId || CoreSites.getCurrentSiteId();
@@ -341,7 +340,7 @@ export class AddonModChoiceProvider {
      *
      * @param choiceId Choice ID.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when the data is invalidated.
+     * @returns Promise resolved when the data is invalidated.
      */
     async invalidateOptions(choiceId: number, siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);
@@ -354,7 +353,7 @@ export class AddonModChoiceProvider {
      *
      * @param choiceId Choice ID.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when the data is invalidated.
+     * @returns Promise resolved when the data is invalidated.
      */
     async invalidateResults(choiceId: number, siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);
@@ -368,7 +367,7 @@ export class AddonModChoiceProvider {
      * @param id Choice ID.
      * @param name Name of the choice.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when the WS call is successful.
+     * @returns Promise resolved when the WS call is successful.
      */
     logView(id: number, name?: string, siteId?: string): Promise<void> {
         const params: AddonModChoiceViewChoiceWSParams = {
@@ -395,7 +394,7 @@ export class AddonModChoiceProvider {
      * @param courseId Course ID the choice belongs to.
      * @param responses IDs of selected options.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved with boolean: true if response was sent to server, false if stored in device.
+     * @returns Promise resolved with boolean: true if response was sent to server, false if stored in device.
      */
     async submitResponse(choiceId: number, name: string, courseId: number, responses: number[], siteId?: string): Promise<boolean> {
         siteId = siteId || CoreSites.getCurrentSiteId();
@@ -436,7 +435,7 @@ export class AddonModChoiceProvider {
      * @param choiceId Choice ID.
      * @param responses IDs of selected options.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when responses are successfully submitted.
+     * @returns Promise resolved when responses are successfully submitted.
      */
     async submitResponseOnline(choiceId: number, responses: number[], siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);

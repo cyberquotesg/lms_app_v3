@@ -70,7 +70,7 @@ export class AddonQtypeDdImageOrTextQuestion {
      * Convert the X and Y position of the BG IMG to a position relative to the window.
      *
      * @param bgImgXY X and Y of the BG IMG relative position.
-     * @return Position relative to the window.
+     * @returns Position relative to the window.
      */
     convertToWindowXY(bgImgXY: number[]): number[] {
         const bgImg = this.doc.bgImg();
@@ -239,7 +239,7 @@ export class AddonQtypeDdImageOrTextQuestion {
      *
      * @param choice Choice number.
      * @param drop Drop zone.
-     * @return Draggable elements.
+     * @returns Draggable elements.
      */
     getChoicesForDrop(choice: number, drop: HTMLElement): HTMLElement[] {
         if (!this.doc.topNode) {
@@ -256,7 +256,7 @@ export class AddonQtypeDdImageOrTextQuestion {
      *
      * @param choice Choice number.
      * @param drop Drop zone.
-     * @return Unplaced draggable element.
+     * @returns Unplaced draggable element.
      */
     getUnplacedChoiceForDrop(choice: number, drop: HTMLElement): HTMLElement | null {
         const dragItems = this.getChoicesForDrop(choice, drop);
@@ -316,8 +316,6 @@ export class AddonQtypeDdImageOrTextQuestion {
 
     /**
      * Initialize the question.
-     *
-     * @param question Question.
      */
     initializer(): void {
         this.doc = new AddonQtypeDdImageOrTextQuestionDocStructure(this.container, this.question.slot);
@@ -710,9 +708,15 @@ export class AddonQtypeDdImageOrTextQuestionDocStructure {
         this.topNode = this.container.querySelector<HTMLElement>('.addon-qtype-ddimageortext-container');
         this.dragItemsArea = this.topNode?.querySelector<HTMLElement>('div.draghomes') || null;
 
+        if (!this.topNode) {
+            this.logger.error('ddimageortext container not found');
+
+            return;
+        }
+
         if (this.dragItemsArea) {
             // On 3.9+ dragitems were removed.
-            const dragItems = this.topNode!.querySelector('div.dragitems');
+            const dragItems = this.topNode.querySelector('div.dragitems');
 
             if (dragItems) {
                 // Remove empty div.dragitems.
@@ -720,10 +724,10 @@ export class AddonQtypeDdImageOrTextQuestionDocStructure {
             }
 
             // 3.6+ site, transform HTML so it has the same structure as in Moodle 3.5.
-            const ddArea = this.topNode!.querySelector('div.ddarea');
+            const ddArea = this.topNode.querySelector('div.ddarea');
             if (ddArea) {
                 // Move div.dropzones to div.ddarea.
-                const dropZones = this.topNode!.querySelector('div.dropzones');
+                const dropZones = this.topNode.querySelector('div.dropzones');
                 if (dropZones) {
                     ddArea.appendChild(dropZones);
                 }
@@ -740,7 +744,7 @@ export class AddonQtypeDdImageOrTextQuestionDocStructure {
                 draghome.classList.add(`dragitemhomes${index}`);
             });
         } else {
-            this.dragItemsArea = this.topNode!.querySelector<HTMLElement>('div.dragitems');
+            this.dragItemsArea = this.topNode.querySelector<HTMLElement>('div.dragitems');
         }
     }
 
@@ -799,14 +803,15 @@ export class AddonQtypeDdImageOrTextQuestionDocStructure {
     getClassnameNumericSuffix(node: HTMLElement, prefix: string): number | undefined {
         if (node.classList && node.classList.length) {
             const patt1 = new RegExp(`^${prefix}([0-9])+$`);
-            const patt2 = new RegExp('([0-9])+$');
 
-            for (let index = 0; index < node.classList.length; index++) {
-                if (patt1.test(node.classList[index])) {
-                    const match = patt2.exec(node.classList[index]);
+            const classFound = Array.from(node.classList)
+                .find((className) => patt1.test(className));
 
-                    return Number(match![0]);
-                }
+            if (classFound) {
+                const patt2 = new RegExp('([0-9])+$');
+                const match = patt2.exec(classFound);
+
+                return Number(match?.[0]);
             }
         }
 

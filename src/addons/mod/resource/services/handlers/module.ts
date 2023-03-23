@@ -83,7 +83,7 @@ export class AddonModResourceModuleHandlerService extends CoreModuleHandlerBase 
         };
         handlerData.buttons = [{
             hidden: true,
-            icon: openWithPicker ? 'fas-share-square' : 'fas-file',
+            icon: openWithPicker ? 'fas-share-from-square' : 'fas-file',
             label: module.name + ': ' + Translate.instant(openWithPicker ? 'core.openwith' : 'addon.mod_resource.openthefile'),
             action: async (event: Event, module: CoreCourseModuleData, courseId: number): Promise<void> => {
                 const hide = await this.hideOpenButton(module);
@@ -116,7 +116,7 @@ export class AddonModResourceModuleHandlerService extends CoreModuleHandlerBase 
      * Returns if contents are loaded to show open button.
      *
      * @param module The module object.
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     protected async hideOpenButton(module: CoreCourseModuleData): Promise<boolean> {
         if (!module.contentsinfo) { // Not informed before 3.7.6.
@@ -133,7 +133,7 @@ export class AddonModResourceModuleHandlerService extends CoreModuleHandlerBase 
      *
      * @param module The module object.
      * @param courseId The course ID.
-     * @return Resource data.
+     * @returns Resource data.
      */
     protected async getResourceData(
         module: CoreCourseModuleData,

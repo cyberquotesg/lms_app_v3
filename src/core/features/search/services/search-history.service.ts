@@ -32,7 +32,7 @@ export class CoreSearchHistoryProvider {
      *
      * @param searchArea Search Area Name.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved with the list of items when done.
+     * @returns Promise resolved with the list of items when done.
      */
     async getSearchHistory(searchArea: string, siteId?: string): Promise<CoreSearchHistoryDBRecord[]> {
         const site = await CoreSites.getSite(siteId);
@@ -51,17 +51,20 @@ export class CoreSearchHistoryProvider {
      *
      * @param searchArea Search area to control
      * @param db SQLite DB where to perform the search.
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     protected async controlSearchLimit(searchArea: string, db: SQLiteDB): Promise<void> {
         const items = await this.getSearchHistory(searchArea);
         if (items.length > CoreSearchHistoryProvider.HISTORY_LIMIT) {
             // Over the limit. Remove the last.
             const lastItem = items.pop();
+            if (!lastItem) {
+                return;
+            }
 
             const searchItem = {
-                searcharea: lastItem!.searcharea,
-                searchedtext: lastItem!.searchedtext,
+                searcharea: lastItem.searcharea,
+                searchedtext: lastItem.searchedtext,
             };
 
             await db.deleteRecords(SEARCH_HISTORY_TABLE_NAME, searchItem);
@@ -74,7 +77,7 @@ export class CoreSearchHistoryProvider {
      * @param searchArea Area where the search has been performed.
      * @param text Text of the performed text.
      * @param db SQLite DB where to perform the search.
-     * @return True if exists, false otherwise.
+     * @returns True if exists, false otherwise.
      */
     protected async updateExistingItem(searchArea: string, text: string, db: SQLiteDB): Promise<boolean> {
         const searchItem = {
@@ -103,7 +106,7 @@ export class CoreSearchHistoryProvider {
      * @param searchArea Area where the search has been performed.
      * @param text Text of the performed text.
      * @param siteId Site ID. If not defined, current site.
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     async insertOrUpdateSearchText(searchArea: string, text: string, siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);

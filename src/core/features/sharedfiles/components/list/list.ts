@@ -21,7 +21,7 @@ import { CoreSharedFiles } from '@features/sharedfiles/services/sharedfiles';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreText } from '@singletons/text';
+import { CorePath } from '@singletons/path';
 
 /**
  * Component to display the list of shared files, either as a modal or inside a page.
@@ -43,12 +43,12 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
     @Output() onFilePicked = new EventEmitter<FileEntry>();
 
     filesLoaded = false;
-    files?: (FileEntry | DirectoryEntry)[];
+    files: (FileEntry | DirectoryEntry)[] = [];
 
     protected shareObserver?: CoreEventObserver;
 
     /**
-     * Component being initialized.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.siteId = this.siteId || CoreSites.getCurrentSiteId();
@@ -57,7 +57,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
 
         // Listen for new files shared with the app.
         this.shareObserver = CoreEvents.on(CoreEvents.FILE_SHARED, (data) => {
-            if (data.siteId == this.siteId) {
+            if (data.siteId === this.siteId) {
                 // File was stored in current site, refresh the list.
                 this.filesLoaded = false;
                 this.loadFiles().finally(() => {
@@ -70,7 +70,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
     /**
      * Load the files.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async loadFiles(): Promise<void> {
         this.files = await CoreSharedFiles.getSiteSharedFiles(this.siteId, this.path, this.mimetypes);
@@ -94,7 +94,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
      * @param index Position of the file.
      */
     fileDeleted(index: number): void {
-        this.files!.splice(index, 1);
+        this.files.splice(index, 1);
     }
 
     /**
@@ -104,7 +104,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
      * @param data Data containing the new FileEntry.
      */
     fileRenamed(index: number, data: { file: FileEntry }): void {
-        this.files![index] = data.file;
+        this.files[index] = data.file;
     }
 
     /**
@@ -113,7 +113,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
      * @param folder The folder to open.
      */
     openFolder(folder: DirectoryEntry): void {
-        const path = CoreText.concatenatePaths(this.path || '', folder.name);
+        const path = CorePath.concatenatePaths(this.path || '', folder.name);
 
         if (this.isModal) {
             this.path = path;
@@ -161,7 +161,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Component destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.shareObserver?.off();

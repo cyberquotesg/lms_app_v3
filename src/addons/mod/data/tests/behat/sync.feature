@@ -21,20 +21,15 @@ Feature: Users can store entries in database activities when offline and sync wh
     And the following "activities" exist:
     | activity | name      | intro        | course | idnumber |
     | data     | Web links | Useful links | C1     | data1    |
-    And I log in as "teacher1"
-    And I am on "Course 1" course homepage
-    And I add a "Short text" field to "Web links" database and I fill the form with:
-      | Field name | URL |
-      | Field description | URL link |
-    And I add a "Short text" field to "Web links" database and I fill the form with:
-      | Field name | Description |
-      | Field description | Link description |
-    And I log out
+    And the following "mod_data > fields" exist:
+    | database | type | name        | description      |
+    | data1    | text | URL         | URL link         |
+    | data1    | text | Description | Link description |
 
   Scenario: Create entry (offline)
     Given I entered the data activity "Web links" on course "Course 1" as "student1" in the app
     And I switch network connection to offline
-    And I should find "No entries in database" in the app
+    And I should find "No entries yet" in the app
     When I press "Add entries" in the app
     And I set the following fields to these values in the app:
       | URL | https://moodle.org/ |
@@ -52,7 +47,7 @@ Feature: Users can store entries in database activities when offline and sync wh
 
   Scenario: Update entry (offline) & Delete entry (offline)
     Given I entered the data activity "Web links" on course "Course 1" as "student1" in the app
-    And I should find "No entries in database" in the app
+    And I should find "No entries yet" in the app
     And I press "Add entries" in the app
     And I set the following fields to these values in the app:
       | URL | https://moodle.org/ |
@@ -102,7 +97,7 @@ Feature: Users can store entries in database activities when offline and sync wh
 
   Scenario: Students can undo deleting entries to a database in the app while offline
     Given I entered the data activity "Web links" on course "Course 1" as "student1" in the app
-    And I should find "No entries in database" in the app
+    And I should find "No entries yet" in the app
     And I press "Add entries" in the app
     And I set the following fields to these values in the app:
       | URL | https://moodle.org/ |

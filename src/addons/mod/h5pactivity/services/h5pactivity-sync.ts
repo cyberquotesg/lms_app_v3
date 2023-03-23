@@ -16,6 +16,7 @@ import { Injectable } from '@angular/core';
 
 import { CoreNetworkError } from '@classes/errors/network-error';
 import { CoreCourseActivitySyncBaseProvider } from '@features/course/classes/activity-sync';
+import { CoreSyncResult } from '@services/sync';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreXAPIOffline } from '@features/xapi/services/offline';
 import { CoreXAPI } from '@features/xapi/services/xapi';
@@ -45,7 +46,7 @@ export class AddonModH5PActivitySyncProvider extends CoreCourseActivitySyncBaseP
      *
      * @param siteId Site ID to sync. If not defined, sync all sites.
      * @param force Wether to force sync not depending on last execution.
-     * @return Promise resolved if sync is successful, rejected if sync fails.
+     * @returns Promise resolved if sync is successful, rejected if sync fails.
      */
     syncAllActivities(siteId?: string, force?: boolean): Promise<void> {
         return this.syncOnSites('H5P activities', (siteId) => this.syncAllActivitiesFunc(!!force, siteId), siteId);
@@ -56,7 +57,7 @@ export class AddonModH5PActivitySyncProvider extends CoreCourseActivitySyncBaseP
      *
      * @param force Wether to force sync not depending on last execution.
      * @param siteId Site ID to sync. If not defined, sync all sites.
-     * @return Promise resolved if sync is successful, rejected if sync fails.
+     * @returns Promise resolved if sync is successful, rejected if sync fails.
      */
     protected async syncAllActivitiesFunc(force: boolean, siteId?: string): Promise<void> {
         const entries = await CoreXAPIOffline.getAllStatements(siteId);
@@ -83,7 +84,7 @@ export class AddonModH5PActivitySyncProvider extends CoreCourseActivitySyncBaseP
      *
      * @param contextId Context ID of the activity.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when the activity is synced or it doesn't need to be synced.
+     * @returns Promise resolved when the activity is synced or it doesn't need to be synced.
      */
     async syncActivityIfNeeded(contextId: number, siteId?: string): Promise<AddonModH5PActivitySyncResult | undefined> {
         const needed = await this.isSyncNeeded(contextId, siteId);
@@ -98,7 +99,7 @@ export class AddonModH5PActivitySyncProvider extends CoreCourseActivitySyncBaseP
      *
      * @param contextId Context ID of the activity.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved if sync is successful, rejected otherwise.
+     * @returns Promise resolved if sync is successful, rejected otherwise.
      */
     syncActivity(contextId: number, siteId?: string): Promise<AddonModH5PActivitySyncResult> {
         siteId = siteId || CoreSites.getCurrentSiteId();
@@ -122,7 +123,7 @@ export class AddonModH5PActivitySyncProvider extends CoreCourseActivitySyncBaseP
      *
      * @param contextId Context ID of the activity.
      * @param siteId Site ID.
-     * @return Promise resolved if sync is successful, rejected otherwise.
+     * @returns Promise resolved if sync is successful, rejected otherwise.
      */
     protected async syncActivityData(contextId: number, siteId: string): Promise<AddonModH5PActivitySyncResult> {
 
@@ -197,10 +198,7 @@ export const AddonModH5PActivitySync = makeSingleton(AddonModH5PActivitySyncProv
 /**
  * Sync result.
  */
-export type AddonModH5PActivitySyncResult = {
-    updated: boolean;
-    warnings: string[];
-};
+export type AddonModH5PActivitySyncResult = CoreSyncResult;
 
 /**
  * Data passed to AUTO_SYNC event.

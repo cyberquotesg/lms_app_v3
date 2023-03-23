@@ -39,18 +39,18 @@ export class AddonModQuizPushClickHandlerService implements CorePushNotification
      * Check if a notification click is handled by this handler.
      *
      * @param notification The notification to check.
-     * @return Whether the notification click is handled by this handler
+     * @returns Whether the notification click is handled by this handler
      */
     async handles(notification: AddonModQuizPushNotificationData): Promise<boolean> {
         return CoreUtils.isTrueOrOne(notification.notif) && notification.moodlecomponent == 'mod_quiz' &&
-                this.SUPPORTED_NAMES.indexOf(notification.name!) != -1;
+                this.SUPPORTED_NAMES.indexOf(notification.name ?? '') != -1;
     }
 
     /**
      * Handle the notification click.
      *
      * @param notification The notification to check.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async handleClick(notification: AddonModQuizPushNotificationData): Promise<void> {
         const contextUrlParams = CoreUrlUtils.extractUrlParams(notification.contexturl || '');

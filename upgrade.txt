@@ -1,12 +1,20 @@
 This files describes API changes in the Moodle Mobile app,
 information provided here is intended especially for developers.
 
+=== 4.2.0 ===
+
+- CoreIconComponent has been removed after deprecation period: Use CoreFaIconDirective instead.
+- The courseSummaryComponent property has been removed from the CoreCourseFormatComponent component, and the getCourseSummaryComponent method from the CoreCourseFormatHandler interface.
+- Font Awesome icon library has been updated to 6.3.0.
+
 === 4.1.0 ===
 
 - Zoom levels changed from "normal / low / high" to " none / medium / high".
 - --addon-messages-* CSS3 variables have been renamed to --core-messages-*
 - The database constants in CoreSite (WS_CACHE_TABLE, CONFIG_TABLE, LAST_VIEWED_TABLE) and the DBRecord types have been moved to src/core/services/database.
 - The component <core-block> will no longer detect changes of properties inside the extraData object, it will only detect changes if the object itself changes.
+- CSS variable declarations have been moved to the `html` selector instead of using `body` and `:root`.
+- The second argument of `CoreTextUtilsProvider.cleanTags` has been converted into an object with boolean flags.
 
 === 4.0.0 ===
 

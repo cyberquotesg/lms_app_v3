@@ -102,7 +102,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     }
 
     /**
-     * Component being initialized.
+     * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
         super.ngOnInit();
@@ -124,6 +124,8 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
 
     /**
      * Attempt the quiz.
+     *
+     * @returns Promise resolved when done.
      */
     async attemptQuiz(): Promise<void> {
         if (this.showStatusSpinner || !this.quiz) {
@@ -240,7 +242,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
      * Get the user attempts in the quiz and the result info.
      *
      * @param quiz Quiz instance.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async getAttempts(quiz: AddonModQuizQuizData): Promise<void> {
         // Always get the best grade because it includes the grade to pass.
@@ -321,7 +323,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
      * Get result info to show.
      *
      * @param quiz Quiz.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async getResultInfo(quiz: AddonModQuizQuizData): Promise<void> {
         if (!this.attempts.length || !quiz.showGradeColumn || !this.bestGrade?.hasgrade ||
@@ -331,15 +333,16 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
             return;
         }
 
+        const bestGrade = this.bestGrade.grade;
         const formattedGradebookGrade = AddonModQuiz.formatGrade(this.gradebookData.grade, quiz.decimalpoints);
-        const formattedBestGrade = AddonModQuiz.formatGrade(this.bestGrade.grade, quiz.decimalpoints);
+        const formattedBestGrade = AddonModQuiz.formatGrade(bestGrade, quiz.decimalpoints);
         let gradeToShow = formattedGradebookGrade; // By default we show the grade in the gradebook.
 
         this.showResults = true;
         this.gradeOverridden = formattedGradebookGrade != formattedBestGrade;
         this.gradebookFeedback = this.gradebookData.feedback;
 
-        if (this.bestGrade.grade! > this.gradebookData.grade && this.gradebookData.grade == quiz.grade) {
+        if (bestGrade && bestGrade > this.gradebookData.grade && this.gradebookData.grade == quiz.grade) {
             // The best grade is higher than the max grade for the quiz.
             // We'll do like Moodle web and show the best grade instead of the gradebook grade.
             this.gradeOverridden = false;
@@ -388,7 +391,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     /**
      * Go to review an attempt that has just been finished.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async goToAutoReview(): Promise<void> {
         if (!this.autoReview) {
@@ -415,10 +418,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     }
 
     /**
-     * Checks if sync has succeed from result sync data.
-     *
-     * @param result Data returned on the sync function.
-     * @return If suceed or not.
+     * @inheritdoc
      */
     protected hasSyncSucceed(result: AddonModQuizSyncResult): boolean {
         if (result.attemptFinished) {
@@ -473,7 +473,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     /**
      * Perform the invalidate content function.
      *
-     * @return Resolved when done.
+     * @returns Resolved when done.
      */
     protected async invalidateContent(): Promise<void> {
         const promises: Promise<void>[] = [];
@@ -497,7 +497,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
      * Compares sync event data with current data to check if refresh content is needed.
      *
      * @param syncEventData Data receiven on sync observer.
-     * @return True if refresh is needed, false otherwise.
+     * @returns True if refresh is needed, false otherwise.
      */
     protected isRefreshSyncNeeded(syncEventData: AddonModQuizAutoSyncData): boolean {
         if (!this.courseId || !this.module) {
@@ -550,19 +550,26 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     }
 
     /**
-     * Performs the sync of the activity.
-     *
-     * @return Promise resolved when done.
+     * @inheritdoc
      */
-    protected sync(): Promise<AddonModQuizSyncResult> {
-        return AddonModQuizSync.syncQuiz(this.candidateQuiz!, true);
+    protected async sync(): Promise<AddonModQuizSyncResult> {
+        if (!this.candidateQuiz) {
+            return {
+                warnings: [],
+                attemptFinished: false,
+                updated: false,
+            };
+        }
+
+        return AddonModQuizSync.syncQuiz(this.candidateQuiz, true);
     }
 
     /**
      * Treat user attempts.
      *
+     * @param quiz Quiz data.
      * @param attempts The attempts to treat.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async treatAttempts(
         quiz: AddonModQuizQuizData,
@@ -576,36 +583,31 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
         }
 
         const lastFinished = AddonModQuiz.getLastFinishedAttemptFromList(attempts);
-        const promises: Promise<unknown>[] = [];
+        let openReview = false;
 
         if (this.autoReview && lastFinished && lastFinished.id >= this.autoReview.attemptId) {
             // User just finished an attempt in offline and it seems it's been synced, since it's finished in online.
             // Go to the review of this attempt if the user hasn't left this view.
             if (!this.isDestroyed && this.isCurrentView) {
-                promises.push(this.goToAutoReview());
+                openReview = true;
             }
             this.autoReview = undefined;
         }
 
-        // Get combined review options.
-        promises.push(AddonModQuiz.getCombinedReviewOptions(quiz.id, { cmId: this.module.id }).then((options) => {
-            this.options = options;
+        const [options] = await Promise.all([
+            AddonModQuiz.getCombinedReviewOptions(quiz.id, { cmId: this.module.id }),
+            this.getQuizGrade(),
+            openReview ? this.goToAutoReview() : undefined,
+        ]);
 
-            return;
-        }));
-
-        // Get best grade.
-        promises.push(this.getQuizGrade());
-
-        await Promise.all(promises);
-
+        this.options = options;
         const grade = this.gradebookData?.grade !== undefined ? this.gradebookData.grade : this.bestGrade?.grade;
         const quizGrade = AddonModQuiz.formatGrade(grade, quiz.decimalpoints);
 
         // Calculate data to construct the header of the attempts table.
-        AddonModQuizHelper.setQuizCalculatedData(quiz, this.options!);
+        AddonModQuizHelper.setQuizCalculatedData(quiz, this.options);
 
-        this.overallStats = !!lastFinished && this.options!.alloptions.marks >= AddonModQuizProvider.QUESTION_OPTIONS_MARK_AND_MAX;
+        this.overallStats = !!lastFinished && this.options.alloptions.marks >= AddonModQuizProvider.QUESTION_OPTIONS_MARK_AND_MAX;
 
         // Calculate data to show for each attempt.
         const formattedAttempts = await Promise.all(attempts.map((attempt, index) => {
@@ -623,7 +625,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     /**
      * Get quiz grade data.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async getQuizGrade(): Promise<void> {
         try {
@@ -647,7 +649,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     /**
      * Go to page to view the attempt details.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async viewAttempt(attemptId: number): Promise<void> {
         await CoreNavigator.navigateToSitePath(
@@ -656,7 +658,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     }
 
     /**
-     * Component being destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         super.ngOnDestroy();

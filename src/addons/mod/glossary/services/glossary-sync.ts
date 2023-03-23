@@ -21,7 +21,7 @@ import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreRatingSync } from '@features/rating/services/rating-sync';
 import { CoreNetwork } from '@services/network';
 import { CoreSites } from '@services/sites';
-import { CoreSync } from '@services/sync';
+import { CoreSync, CoreSyncResult } from '@services/sync';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
@@ -50,7 +50,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      *
      * @param siteId Site ID to sync. If not defined, sync all sites.
      * @param force Wether to force sync not depending on last execution.
-     * @return Promise resolved if sync is successful, rejected if sync fails.
+     * @returns Promise resolved if sync is successful, rejected if sync fails.
      */
     syncAllGlossaries(siteId?: string, force?: boolean): Promise<void> {
         return this.syncOnSites('all glossaries', (siteId) => this.syncAllGlossariesFunc(!!force, siteId), siteId);
@@ -61,7 +61,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      *
      * @param force Wether to force sync not depending on last execution.
      * @param siteId Site ID to sync.
-     * @return Promise resolved if sync is successful, rejected if sync fails.
+     * @returns Promise resolved if sync is successful, rejected if sync fails.
      */
     protected async syncAllGlossariesFunc(force: boolean, siteId: string): Promise<void> {
         siteId = siteId || CoreSites.getCurrentSiteId();
@@ -77,7 +77,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      *
      * @param force Wether to force sync not depending on last execution.
      * @param siteId Site ID to sync.
-     * @return Promise resolved if sync is successful, rejected if sync fails.
+     * @returns Promise resolved if sync is successful, rejected if sync fails.
      */
     protected async syncAllGlossariesEntries(force: boolean, siteId: string): Promise<void> {
         const entries = await AddonModGlossaryOffline.getAllNewEntries(siteId);
@@ -113,7 +113,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      * @param glossaryId Glossary ID.
      * @param userId User the entry belong to.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when the glossary is synced or if it doesn't need to be synced.
+     * @returns Promise resolved when the glossary is synced or if it doesn't need to be synced.
      */
     async syncGlossaryEntriesIfNeeded(
         glossaryId: number,
@@ -137,7 +137,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      * @param glossaryId Glossary ID to be synced.
      * @param userId User the entries belong to.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved if sync is successful, rejected otherwise.
+     * @returns Promise resolved if sync is successful, rejected otherwise.
      */
     syncGlossaryEntries(glossaryId: number, userId?: number, siteId?: string): Promise<AddonModGlossarySyncResult> {
         userId = userId || CoreSites.getCurrentSiteUserId();
@@ -248,7 +248,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      * @param cmId Course module to be synced. If not defined, sync all glossaries.
      * @param force Wether to force sync not depending on last execution.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved if sync is successful, rejected otherwise.
+     * @returns Promise resolved if sync is successful, rejected otherwise.
      */
     async syncRatings(cmId?: number, force?: boolean, siteId?: string): Promise<AddonModGlossarySyncResult> {
         siteId = siteId || CoreSites.getCurrentSiteId();
@@ -285,7 +285,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      * @param concept Glossary entry concept.
      * @param timeCreated Time to allow duplicated entries.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved when deleted.
+     * @returns Promise resolved when deleted.
      */
     protected async deleteAddEntry(glossaryId: number, concept: string, timeCreated: number, siteId?: string): Promise<void> {
         await Promise.all([
@@ -300,7 +300,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      * @param glossaryId Glossary ID.
      * @param entry Offline entry.
      * @param siteId Site ID. If not defined, current site.
-     * @return Promise resolved with draftid if uploaded, resolved with 0 if nothing to upload.
+     * @returns Promise resolved with draftid if uploaded, resolved with 0 if nothing to upload.
      */
     protected async uploadAttachments(glossaryId: number, entry: AddonModGlossaryOfflineEntry, siteId?: string): Promise<number> {
         if (!entry.attachments) {
@@ -329,7 +329,7 @@ export class AddonModGlossarySyncProvider extends CoreCourseActivitySyncBaseProv
      *
      * @param glossaryId Glossary ID.
      * @param userId User the entries belong to.. If not defined, current user.
-     * @return Sync ID.
+     * @returns Sync ID.
      */
     protected getGlossarySyncId(glossaryId: number, userId?: number): string {
         userId = userId || CoreSites.getCurrentSiteUserId();
@@ -344,10 +344,7 @@ export const AddonModGlossarySync = makeSingleton(AddonModGlossarySyncProvider);
 /**
  * Data returned by a glossary sync.
  */
-export type AddonModGlossarySyncResult = {
-    warnings: string[]; // List of warnings.
-    updated: boolean; // Whether some data was sent to the server or offline data was updated.
-};
+export type AddonModGlossarySyncResult = CoreSyncResult;
 
 /**
  * Data passed to AUTO_SYNCED event.

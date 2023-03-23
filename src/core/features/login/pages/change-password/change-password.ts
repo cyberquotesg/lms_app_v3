@@ -15,12 +15,12 @@
 import { Component, OnDestroy } from '@angular/core';
 
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { Translate } from '@singletons';
 import { CoreNavigator } from '@services/navigator';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreUtils } from '@services/utils/utils';
+import { CoreUserSupport } from '@features/user/services/support';
 
 /**
  * Page that shows instructions to change the password.
@@ -35,6 +35,7 @@ export class CoreLoginChangePasswordPage implements OnDestroy {
     logoutLabel: string;
 
     protected urlLoadedObserver?: CoreEventObserver;
+    protected messageObserver?: CoreEventObserver;
     protected browserClosedObserver?: CoreEventObserver;
 
     constructor() {
@@ -42,12 +43,12 @@ export class CoreLoginChangePasswordPage implements OnDestroy {
     }
 
     /**
-     * Show a help modal.
+     * Show help modal.
      */
     showHelp(): void {
-        CoreDomUtils.showAlert(
-            Translate.instant('core.help'),
+        CoreUserSupport.showHelp(
             Translate.instant('core.login.changepasswordhelp'),
+            Translate.instant('core.login.changepasswordsupportsubject'),
         );
     }
 
@@ -90,9 +91,34 @@ export class CoreLoginChangePasswordPage implements OnDestroy {
             return;
         }
 
-        this.urlLoadedObserver = CoreEvents.on(CoreEvents.IAB_LOAD_START, (event) => {
+        this.urlLoadedObserver = CoreEvents.on(CoreEvents.IAB_LOAD_STOP, (event) => {
             if (event.url.match(/\/login\/change_password\.php.*return=1/)) {
-                // Password should have changed.
+                // Password has changed, close the IAB now.
+                CoreUtils.closeInAppBrowser();
+                this.login();
+
+                return;
+            }
+
+            if (!event.url.match(/\/login\/change_password\.php/)) {
+                return;
+            }
+
+            // Use a script to check if the user changed the password, in some platforms we cannot tell using the URL.
+            CoreUtils.getInAppBrowserInstance()?.executeScript({
+                code: `
+                    if (
+                        document.querySelector('input[type="password"]') === null &&
+                        document.querySelector('button[type="submit"]') !== null
+                    ) {
+                        webkit.messageHandlers.cordova_iab.postMessage(JSON.stringify({ passwordChanged: true }));
+                    }
+                `,
+            });
+        });
+
+        this.messageObserver = CoreEvents.on(CoreEvents.IAB_MESSAGE, (data) => {
+            if (data.passwordChanged) {
                 CoreUtils.closeInAppBrowser();
                 this.login();
             }
@@ -100,8 +126,11 @@ export class CoreLoginChangePasswordPage implements OnDestroy {
 
         this.browserClosedObserver = CoreEvents.on(CoreEvents.IAB_EXIT, () => {
             this.urlLoadedObserver?.off();
+            this.messageObserver?.off();
             this.browserClosedObserver?.off();
+
             delete this.urlLoadedObserver;
+            delete this.messageObserver;
             delete this.browserClosedObserver;
         });
     }
@@ -111,6 +140,7 @@ export class CoreLoginChangePasswordPage implements OnDestroy {
      */
     ngOnDestroy(): void {
         this.urlLoadedObserver?.off();
+        this.messageObserver?.off();
         this.browserClosedObserver?.off();
     }
 

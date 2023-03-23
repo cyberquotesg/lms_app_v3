@@ -54,7 +54,7 @@ export class CoreCronDelegateService {
     async initializeDatabase(): Promise<void> {
         try {
             await CoreApp.createTablesFromSchema(APP_SCHEMA);
-        } catch (e) {
+        } catch {
             // Ignore errors.
         }
 
@@ -76,7 +76,7 @@ export class CoreCronDelegateService {
      * @param name Name of the handler.
      * @param force Wether the execution is forced (manual sync).
      * @param siteId Site ID. If not defined, all sites.
-     * @return Promise resolved if handler is executed successfully, rejected otherwise.
+     * @returns Promise resolved if handler is executed successfully, rejected otherwise.
      */
     protected async checkAndExecuteHandler(name: string, force?: boolean, siteId?: string): Promise<void> {
         if (!this.handlers[name] || !this.handlers[name].execute) {
@@ -142,23 +142,26 @@ export class CoreCronDelegateService {
      * @param name Name of the handler.
      * @param force Wether the execution is forced (manual sync).
      * @param siteId Site ID. If not defined, all sites.
-     * @return Promise resolved when the handler finishes or reaches max time, rejected if it fails.
+     * @returns Promise resolved when the handler finishes or reaches max time, rejected if it fails.
      */
-    protected executeHandler(name: string, force?: boolean, siteId?: string): Promise<void> {
-        return new Promise((resolve, reject): void => {
-            this.logger.debug('Executing handler: ' + name);
+    protected async executeHandler(name: string, force?: boolean, siteId?: string): Promise<void> {
+        this.logger.debug('Executing handler: ' + name);
 
+        try {
             // Wrap the call in Promise.resolve to make sure it's a promise.
-            Promise.resolve(this.handlers[name].execute!(siteId, force)).then(resolve).catch(reject).finally(() => {
-                clearTimeout(cancelTimeout);
-            });
+            const promise = Promise.resolve(this.handlers[name].execute?.(siteId, force));
 
-            const cancelTimeout = setTimeout(() => {
+            await CoreUtils.timeoutPromise(promise, CoreCronDelegateService.MAX_TIME_PROCESS);
+        } catch (error) {
+            if (error.timeout) {
                 // The handler took too long. Resolve because we don't want to retry soon.
                 this.logger.debug(`Resolving execution of handler '${name}' because it took too long.`);
-                resolve();
-            }, CoreCronDelegateService.MAX_TIME_PROCESS);
-        });
+
+                return;
+            }
+
+            throw error;
+        }
     }
 
     /**
@@ -166,7 +169,7 @@ export class CoreCronDelegateService {
      * Please notice that some tasks may not be executed depending on the network connection and sync settings.
      *
      * @param siteId Site ID. If not defined, all sites.
-     * @return Promise resolved if all handlers are executed successfully, rejected otherwise.
+     * @returns Promise resolved if all handlers are executed successfully, rejected otherwise.
      */
     async forceSyncExecution(siteId?: string): Promise<void> {
         const promises: Promise<void>[] = [];
@@ -187,7 +190,7 @@ export class CoreCronDelegateService {
      *
      * @param name Name of the handler.
      * @param siteId Site ID. If not defined, all sites.
-     * @return Promise resolved if handler has been executed successfully, rejected otherwise.
+     * @returns Promise resolved if handler has been executed successfully, rejected otherwise.
      */
     forceCronHandlerExecution(name: string, siteId?: string): Promise<void> {
         const handler = this.handlers[name];
@@ -207,30 +210,31 @@ export class CoreCronDelegateService {
      * Get a handler's interval.
      *
      * @param name Handler's name.
-     * @return Handler's interval.
+     * @returns Handler's interval.
      */
     protected getHandlerInterval(name: string): number {
-        if (!this.handlers[name] || !this.handlers[name].getInterval) {
+        if (this.handlers[name] === undefined) {
             // Invalid, return default.
             return CoreCronDelegateService.DEFAULT_INTERVAL;
         }
 
         // Don't allow intervals lower than the minimum.
-        const minInterval = CoreCronDelegateService.MIN_INTERVAL;
-        const handlerInterval = this.handlers[name].getInterval!();
+        const handlerInterval = this.handlers[name].getInterval?.();
 
         if (!handlerInterval) {
             return CoreCronDelegateService.DEFAULT_INTERVAL;
-        } else {
-            return Math.max(minInterval, handlerInterval);
         }
+
+        const minInterval = CoreCronDelegateService.MIN_INTERVAL;
+
+        return Math.max(minInterval, handlerInterval);
     }
 
     /**
      * Get a handler's last execution ID.
      *
      * @param name Handler's name.
-     * @return Handler's last execution ID.
+     * @returns Handler's last execution ID.
      */
     protected getHandlerLastExecutionId(name: string): string {
         return 'last_execution_' + name;
@@ -240,7 +244,7 @@ export class CoreCronDelegateService {
      * Get a handler's last execution time. If not defined, return 0.
      *
      * @param name Handler's name.
-     * @return Promise resolved with the handler's last execution time.
+     * @returns Promise resolved with the handler's last execution time.
      */
     protected async getHandlerLastExecutionTime(name: string): Promise<number> {
         const id = this.getHandlerLastExecutionId(name);
@@ -251,7 +255,7 @@ export class CoreCronDelegateService {
             const time = Number(entry.value);
 
             return isNaN(time) ? 0 : time;
-        } catch (err) {
+        } catch {
             return 0; // Not set, return 0.
         }
     }
@@ -260,21 +264,16 @@ export class CoreCronDelegateService {
      * Check if a handler uses network. Defaults to true.
      *
      * @param name Handler's name.
-     * @return True if handler uses network or not defined, false otherwise.
+     * @returns True if handler uses network or not defined, false otherwise.
      */
     protected handlerUsesNetwork(name: string): boolean {
-        if (!this.handlers[name] || !this.handlers[name].usesNetwork) {
-            // Invalid, return default.
-            return true;
-        }
-
-        return this.handlers[name].usesNetwork!();
+        return this.handlers[name]?.usesNetwork?.() ?? true;
     }
 
     /**
      * Check if there is any manual sync handler registered.
      *
-     * @return Whether it has at least 1 manual sync handler.
+     * @returns Whether it has at least 1 manual sync handler.
      */
     hasManualSyncHandlers(): boolean {
         for (const name in this.handlers) {
@@ -289,7 +288,7 @@ export class CoreCronDelegateService {
     /**
      * Check if there is any sync handler registered.
      *
-     * @return Whether it has at least 1 sync handler.
+     * @returns Whether it has at least 1 sync handler.
      */
     hasSyncHandlers(): boolean {
         for (const name in this.handlers) {
@@ -305,30 +304,20 @@ export class CoreCronDelegateService {
      * Check if a handler can be manually synced. Defaults will use isSync instead.
      *
      * @param name Handler's name.
-     * @return True if handler is a sync process and can be manually executed or not defined, false otherwise.
+     * @returns True if handler is a sync process and can be manually executed or not defined, false otherwise.
      */
     protected isHandlerManualSync(name: string): boolean {
-        if (!this.handlers[name] || !this.handlers[name].canManualSync) {
-            // Invalid, return default.
-            return this.isHandlerSync(name);
-        }
-
-        return this.handlers[name].canManualSync!();
+        return this.handlers[name]?.canManualSync?.() ?? this.isHandlerSync(name);
     }
 
     /**
      * Check if a handler is a sync process. Defaults to true.
      *
      * @param name Handler's name.
-     * @return True if handler is a sync process or not defined, false otherwise.
+     * @returns True if handler is a sync process or not defined, false otherwise.
      */
     protected isHandlerSync(name: string): boolean {
-        if (!this.handlers[name] || !this.handlers[name].isSync) {
-            // Invalid, return default.
-            return true;
-        }
-
-        return this.handlers[name].isSync!();
+        return this.handlers[name]?.isSync?.() ?? true;
     }
 
     /**
@@ -361,7 +350,7 @@ export class CoreCronDelegateService {
      *
      * @param name Name of the handler.
      * @param timeToNextExecution Time (in milliseconds). If not supplied it will be calculated.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async scheduleNextExecution(name: string, timeToNextExecution?: number): Promise<void> {
         if (!this.handlers[name]) {
@@ -398,7 +387,7 @@ export class CoreCronDelegateService {
      *
      * @param name Handler's name.
      * @param time Time to set.
-     * @return Promise resolved when the execution time is saved.
+     * @returns Promise resolved when the execution time is saved.
      */
     protected async setHandlerLastExecutionTime(name: string, time: number): Promise<void> {
         const id = this.getHandlerLastExecutionId(name);
@@ -495,28 +484,28 @@ export interface CoreCronHandler {
     /**
      * Returns handler's interval in milliseconds. Defaults to CoreCronDelegateService.DEFAULT_INTERVAL.
      *
-     * @return Interval time (in milliseconds).
+     * @returns Interval time (in milliseconds).
      */
     getInterval?(): number;
 
     /**
      * Check whether the process uses network or not. True if not defined.
      *
-     * @return Whether the process uses network or not
+     * @returns Whether the process uses network or not
      */
     usesNetwork?(): boolean;
 
     /**
      * Check whether it's a synchronization process or not. True if not defined.
      *
-     * @return Whether it's a synchronization process or not.
+     * @returns Whether it's a synchronization process or not.
      */
     isSync?(): boolean;
 
     /**
      * Check whether the sync can be executed manually. Call isSync if not defined.
      *
-     * @return Whether the sync can be executed manually.
+     * @returns Whether the sync can be executed manually.
      */
     canManualSync?(): boolean;
 
@@ -525,7 +514,7 @@ export interface CoreCronHandler {
      *
      * @param siteId ID of the site affected. If not defined, all sites.
      * @param force Determines if it's a forced execution.
-     * @return Promise resolved when done. If the promise is rejected, this function will be called again often,
+     * @returns Promise resolved when done. If the promise is rejected, this function will be called again often,
      *         it shouldn't be abused.
      */
     execute?(siteId?: string, force?: boolean): Promise<void>;

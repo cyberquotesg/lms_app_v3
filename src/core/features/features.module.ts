@@ -27,9 +27,11 @@ import { CoreGradesModule } from './grades/grades.module';
 import { CoreH5PModule } from './h5p/h5p.module';
 import { CoreLoginModule } from './login/login.module';
 import { CoreMainMenuModule } from './mainmenu/mainmenu.module';
+import { CoreNativeModule } from '@features/native/native.module';
 import { CorePushNotificationsModule } from './pushnotifications/pushnotifications.module';
 import { CoreQuestionModule } from './question/question.module';
 import { CoreRatingModule } from './rating/rating.module';
+import { CoreRemindersModule } from './reminders/reminders.module';
 import { CoreSearchModule } from './search/search.module';
 import { CoreSettingsModule } from './settings/settings.module';
 import { CoreSharedFilesModule } from './sharedfiles/sharedfiles.module';
@@ -37,13 +39,11 @@ import { CoreSiteHomeModule } from './sitehome/sitehome.module';
 import { CoreSitePluginsModule } from './siteplugins/siteplugins.module';
 import { CoreStylesModule } from './styles/styles.module';
 import { CoreTagModule } from './tag/tag.module';
-import { CoreUserToursModule } from './usertours/user-tours.module';
 import { CoreUserModule } from './user/user.module';
+import { CoreUserToursModule } from './usertours/user-tours.module';
 import { CoreViewerModule } from './viewer/viewer.module';
 import { CoreXAPIModule } from './xapi/xapi.module';
-import { CoreNativeModule } from '@features/native/native.module';
-
-import { CQPagesModule } from './cq_pages/cq_pages.module';
+import { CoreReportBuilderModule } from './reportbuilder/reportbuilder.module';
 
 @NgModule({
     imports: [
@@ -63,18 +63,19 @@ import { CQPagesModule } from './cq_pages/cq_pages.module';
         CorePushNotificationsModule,
         CoreQuestionModule,
         CoreRatingModule,
+        CoreRemindersModule,
         CoreSearchModule,
         CoreSettingsModule,
         CoreSharedFilesModule,
         CoreSiteHomeModule,
         CoreSitePluginsModule,
-        CoreTagModule,
         CoreStylesModule,
-        CoreUserToursModule,
+        CoreTagModule,
         CoreUserModule,
+        CoreUserToursModule,
         CoreViewerModule,
         CoreXAPIModule,
-        CQPagesModule,
+        CoreReportBuilderModule,
 
         // Import last to allow overrides.
         CoreEmulatorModule,

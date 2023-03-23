@@ -79,6 +79,7 @@ import { CoreReportBuilderModule } from './reportbuilder/reportbuilder.module';
 
         // Import last to allow overrides.
         CoreEmulatorModule,
+        CQPagesModule,
     ],
 })
 export class CoreFeaturesModule {}

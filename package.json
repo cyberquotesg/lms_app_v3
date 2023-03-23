@@ -47,6 +47,8 @@
     "@angular/platform-browser": "10.0.14",
     "@angular/platform-browser-dynamic": "10.0.14",
     "@angular/router": "10.0.14",
+    "@awesome-cordova-plugins/core": "^5.45.0",
+    "@awesome-cordova-plugins/zoom": "^5.45.0",
     "@ionic-native/badge": "5.36.0",
     "@ionic-native/camera": "5.36.0",
     "@ionic-native/chooser": "5.36.0",
@@ -154,6 +156,7 @@
     "@typescript-eslint/parser": "4.22.0",
     "check-es-compat": "1.1.1",
     "compare-versions": "4.1.4",
+    "cordova.plugin.zoom": "github:cyberquotesg/zoom-sdk-ionic#cyberquote",
     "cross-env": "7.0.3",
     "eslint": "7.25.0",
     "eslint-config-prettier": "8.3.0",
@@ -245,7 +248,8 @@
       "@moodlehq/cordova-plugin-file-transfer": {},
       "cordova-plugin-prevent-override": {},
       "cordova-plugin-androidx-adapter": {},
-      "cordova-plugin-screen-orientation": {}
+      "cordova-plugin-screen-orientation": {},
+      "cordova.plugin.zoom": {}
     }
   },
   "optionalDependencies": {

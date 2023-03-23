@@ -52,7 +52,11 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     handlers: CoreUserProfileHandlerData[] = [];
     handlersLoaded = false;
     user?: CoreUserProfile;
-    displaySwitchAccount = true;
+
+    // by rachmad
+    // displaySwitchAccount = true;
+    displaySwitchAccount = false;
+
     displayContactSupport = false;
     removeAccountOnLogout = false;
 
@@ -67,7 +71,11 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         this.siteInfo = currentSite.getInfo();
         this.siteName = currentSite.getSiteName();
         this.siteUrl = currentSite.getURL();
-        this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
+
+        // by rachmad
+        // this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
+        this.displaySwitchAccount = false;
+        
         this.displayContactSupport = new CoreUserAuthenticatedSupportConfig(currentSite).canContactSupport();
         this.removeAccountOnLogout = !!CoreConstants.CONFIG.removeaccountonlogout;
 

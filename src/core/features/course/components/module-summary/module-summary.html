@@ -24,8 +24,8 @@
                     </core-format-text>
                 </h1>
             </ion-label>
-            <ion-button fill="clear" *ngIf="displayOptions.displayOpenInBrowser" [href]="externalUrl" core-link [showBrowserWarning]="false"
-                [attr.aria-label]="'core.openinbrowser' | translate" slot="end">
+            <ion-button fill="clear" *ngIf="displayOptions.displayOpenInBrowser && externalUrl" [href]="externalUrl" core-link
+                [showBrowserWarning]="false" [attr.aria-label]="'core.openinbrowser' | translate" slot="end">
                 <ion-icon name="fas-external-link-alt" slot="icon-only" aria-hidden="true"></ion-icon>
             </ion-button>
         </ion-item>
@@ -77,10 +77,12 @@
                                 </core-format-text>
                             </p>
                             <p class="item-heading" *ngIf="grade.itemmodule">
-                                {{ 'core.grades.grade' | translate}}
+                                {{ 'core.grades.grade' | translate }}
                             </p>
                             <p *ngIf="grade.grade && grade.grade != '-'" [innerHTML]="grade.grade"></p>
-                            <ion-badge *ngIf="!grade.grade || grade.grade == '-'" color="light">Not graded</ion-badge>
+                            <ion-badge *ngIf="!grade.grade || grade.grade == '-'" color="light">
+                                {{ 'core.grades.notgraded' | translate }}
+                            </ion-badge>
                         </ion-label>
                         <ion-icon *ngIf="grade.icon" name="{{grade.icon}}" slot="end" [attr.aria-label]="grade.iconAlt">
                         </ion-icon>

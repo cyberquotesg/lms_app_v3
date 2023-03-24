@@ -14,8 +14,8 @@
 
 import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreSharedModule } from '@/core/shared.module';
-import { AddonNotificationsListPage } from '@addons/notifications/pages/list/list';
-import { AddonNotificationsNotificationPage } from '@addons/notifications/pages/notification/notification';
+import { AddonNotificationsListPage } from '@features/cq_pages/cq_notifications/pages/list/list';
+import { AddonNotificationsNotificationPage } from '@features/cq_pages/cq_notifications/pages/notification/notification';
 import { Injector, NgModule } from '@angular/core';
 import { RouterModule, ROUTES, Routes } from '@angular/router';
 import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';

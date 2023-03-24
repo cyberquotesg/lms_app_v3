@@ -16,7 +16,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { CoreSharedModule } from '@/core/shared.module';
-import { AddonNotificationsSettingsPage } from '@addons/notifications/pages/settings/settings';
+import { AddonNotificationsSettingsPage } from '@features/cq_pages/cq_notifications/pages/settings/settings';
 
 const routes: Routes = [
     {

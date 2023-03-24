@@ -16,7 +16,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { CoreSharedModule } from '@/core/shared.module';
-import { AddonNotificationsSettingsPage } from './settings';
+import { AddonNotificationsSettingsPage } from '@addons/notifications/pages/settings/settings';
 
 const routes: Routes = [
     {
@@ -35,4 +35,4 @@ const routes: Routes = [
     ],
     exports: [RouterModule],
 })
-export class AddonNotificationsSettingsPageModule {}
+export class AddonNotificationsSettingsLazyModule {}

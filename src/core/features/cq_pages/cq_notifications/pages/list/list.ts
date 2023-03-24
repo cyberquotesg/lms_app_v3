@@ -41,7 +41,7 @@ import { CqHelper } from '../../../services/cq_helper';
  */
 @Component({
     selector: 'page-addon-notifications-list',
-    templateUrl: 'list.html',
+    templateUrl: 'list.new.html',
     styleUrls: ['list.scss', '../../notifications.scss'],
 })
 export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDestroy {
@@ -223,7 +223,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     /**
      * Mark all notifications as read.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async markAllNotificationsAsRead(): Promise<void> {
         this.loadingMarkAllNotificationsAsRead = true;
@@ -240,7 +240,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     /**
      * Load mark all notifications as read button.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async loadMarkAllAsReadButton(): Promise<void> {
         // Check if mark all as read should be displayed (there are unread notifications).

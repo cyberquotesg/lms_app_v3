@@ -1,0 +1,71 @@
+<ion-header>
+    <cq_header [title]="subject" [displayMenu]="true" [displayNotification]="true" [displayUserMenu]="true" [displayProgress]="notificationIsLoading || announcementIsLoading"></cq_header>
+</ion-header>
+
+<ion-content>
+    <ion-refresher slot="fixed" [disabled]="(selectedOne == 'notification' && !notifications.loaded) || (selectedOne == 'announcement' && !announcementLoaded)" (ionRefresh)="refreshByCQ($event.target)">
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+    </ion-refresher>
+
+    <core-loading [hideUntil]="(selectedOne == 'notification' && notifications.loaded) || (selectedOne == 'announcement' && announcementLoaded)">
+        <div class="base-background pb-5">
+
+            <div class="mt-36 mb-36 pl-cs pr-cs" style="display: flex; justify-content: center;">
+                <button class="{{ 'notification' == selectedOne ? 'active' : '' }}" (click)="selectOne('notification')" style="flex-grow: 1;">
+                    Notification <span *ngIf="notificationNumber && notificationNumber != '0'">({{ notificationNumber }})</span>
+                </button>
+                
+                <button class="{{ 'announcement' == selectedOne ? 'active' : '' }} ml-cs" (click)="selectOne('announcement')" style="flex-grow: 1;">
+                    Announcement <span *ngIf="announcementNumber && announcementNumber != '0'">({{ announcementNumber }})</span>
+                </button>
+            </div>
+
+            <ion-slides #pageSlider class="page-slider page-slider-notification-list" [options]="pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
+                <ion-slide style="display: block;">
+                    <div class="pl-cs pr-cs pb-cst">
+                        <cq_items type="list" [items]="notificationList" (onSelectItem)="openNotification($event)"></cq_items>
+                        <button *ngIf="isAvailable(notificationList)" class="load-more-button {{ notificationIsLoading ? 'loading' : '' }}" (click)="loadMoreNotifications()" [disabled]="!notifications.loaded || notifications.completed">
+                            <ion-icon *ngIf="!notificationIsLoading" name="arrow-down-circle"></ion-icon>
+                            <ion-spinner *ngIf="notificationIsLoading"></ion-spinner>
+                        </button>
+
+                        <!-- 
+                        <div class="mark-all-as-read" slot="fixed" collapsible-footer appearOnBottom>
+                            <ion-chip *ngIf="notifications.loaded && canMarkAllNotificationsAsRead" [disabled]="loadingMarkAllNotificationsAsRead"
+                                color="info" class="clickable fab-chip" (click)="markAllNotificationsAsRead()">
+                                <ion-icon name="fas-eye" aria-hidden="true" *ngIf="!loadingMarkAllNotificationsAsRead"></ion-icon>
+                                <ion-spinner [attr.aria-label]="'core.loading' | translate" *ngIf="loadingMarkAllNotificationsAsRead">
+                                </ion-spinner>
+                                {{ 'addon.notifications.markallread' | translate }}
+                            </ion-chip>
+                        </div>
+                         -->
+                    </div>
+                </ion-slide>
+
+                <ion-slide style="display: block;">
+                    <div class="pl-cs pr-cs pb-cst">
+                        <cq_items type="list" [items]="announcementList" (onSelectItem)="openAnnouncement($event)"></cq_items>
+                        <button *ngIf="isAvailable(announcementList)" class="load-more-button {{ announcementIsLoading ? 'loading' : '' }}" (click)="loadMoreAnnouncements()" [disabled]="announcementReachedEndOfList">
+                            <ion-icon *ngIf="!announcementIsLoading" name="arrow-down-circle"></ion-icon>
+                            <ion-spinner *ngIf="announcementIsLoading"></ion-spinner>
+                        </button>
+
+                        <!-- 
+                        <div class="mark-all-as-read" slot="fixed" collapsible-footer appearOnBottom>
+                            <ion-chip
+                                color="info" class="clickable fab-chip" (click)="markAllAnnouncementsAsRead()">
+                                <ion-icon name="fas-eye" aria-hidden="true" *ngIf="!announcementMarkingAllAsReadLoading"></ion-icon>
+                                <ion-spinner [attr.aria-label]="'core.loading' | translate" *ngIf="announcementMarkingAllAsReadLoading">
+                                </ion-spinner>
+                                {{ 'addon.notifications.markallread' | translate }}
+                            </ion-chip>
+                        </div>
+                         -->
+                    </div>
+                </ion-slide>
+            </ion-slides>
+
+        </div>
+    </core-loading>
+</ion-content>

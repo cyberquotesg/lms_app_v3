@@ -45,6 +45,8 @@ import { CoreViewerModule } from './viewer/viewer.module';
 import { CoreXAPIModule } from './xapi/xapi.module';
 import { CoreReportBuilderModule } from './reportbuilder/reportbuilder.module';
 
+import { CQPagesModule } from './cq_pages/cq_pages.module';
+
 @NgModule({
     imports: [
         CoreBlockModule,

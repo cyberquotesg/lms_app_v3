@@ -348,7 +348,7 @@ export class AddonCalendarDayPage implements OnInit, OnDestroy {
      * @param day Day.
      */
     gotoEvent(eventId: number, day: PreloadedDay): void {
-        CoreNavigator.navigateToSitePath(`/calendar/event/${eventId}`, { params: { date: day.moment.format('MMDDY') } });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`, { params: { date: day.moment.format('MMDDY') } });
     }
 
     /**
@@ -388,7 +388,7 @@ export class AddonCalendarDayPage implements OnInit, OnDestroy {
             params.courseId = this.filter.courseId;
         }
 
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${eventId}`, { params });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${eventId}`, { params });
     }
 
     /**

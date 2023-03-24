@@ -24,6 +24,8 @@ import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.modu
 import { CoreScreen } from '@services/screen';
 import { AddonNotificationsMainMenuHandlerService } from './services/handlers/mainmenu';
 
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 /**
  * Build module routes.
  *
@@ -64,6 +66,7 @@ function buildRoutes(injector: Injector): Routes {
     imports: [
         CoreSharedModule,
         CoreMainMenuComponentsModule,
+        CqComponentsModule,
     ],
     declarations: [
         AddonNotificationsListPage,

@@ -20,6 +20,8 @@ import { CoreSharedModule } from '@/core/shared.module';
 import { resolveContentsRoutes } from '@features/course/course-contents-routing.module';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 /**
  * Build module routes.
  *
@@ -46,6 +48,7 @@ function buildRoutes(injector: Injector): Routes {
     imports: [
         CoreSharedModule,
         CoreCourseComponentsModule,
+        CqComponentsModule,
     ],
     declarations: [
         CoreCourseContentsPage,

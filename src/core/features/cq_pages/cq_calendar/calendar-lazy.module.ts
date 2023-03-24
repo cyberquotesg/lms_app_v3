@@ -27,6 +27,8 @@ import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/comp
 import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { AddonCalendarMainMenuHandlerService } from './services/handlers/mainmenu';
 
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 /**
  * Build module routes.
  *
@@ -69,6 +71,7 @@ function buildRoutes(injector: Injector): Routes {
         AddonCalendarComponentsModule,
         CoreMainMenuComponentsModule,
         CoreEditorComponentsModule,
+        CqComponentsModule,
     ],
     exports: [RouterModule],
     declarations: [

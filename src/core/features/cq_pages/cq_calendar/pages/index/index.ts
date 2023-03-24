@@ -305,7 +305,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
      * @param eventId Event to load.
      */
     gotoEvent(eventId: number): void {
-        CoreNavigator.navigateToSitePath(`/calendar/event/${eventId}`);
+        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`);
     }
 
     /**
@@ -324,7 +324,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
             params[key] = this.filter[key];
         });
 
-        CoreNavigator.navigateToSitePath('/calendar/day', { params });
+        CoreNavigator.navigateToSitePath('/CqCalendar/day', { params });
     }
 
     /**
@@ -353,14 +353,14 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
             params.courseId = this.filter.courseId;
         }
 
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${eventId}`, { params });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${eventId}`, { params });
     }
 
     /**
      * Open calendar events settings.
      */
     openSettings(): void {
-        CoreNavigator.navigateToSitePath('/calendar/calendar-settings');
+        CoreNavigator.navigateToSitePath('/CqCalendar/calendar-settings');
     }
 
     /**

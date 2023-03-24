@@ -18,6 +18,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { CoreSharedModule } from '@/core/shared.module';
 import { AddonNotificationsSettingsPage } from '@features/cq_pages/cq_notifications/pages/settings/settings';
 
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 const routes: Routes = [
     {
         path: '',
@@ -29,6 +31,7 @@ const routes: Routes = [
     imports: [
         RouterModule.forChild(routes),
         CoreSharedModule,
+        CqComponentsModule,
     ],
     declarations: [
         AddonNotificationsSettingsPage,

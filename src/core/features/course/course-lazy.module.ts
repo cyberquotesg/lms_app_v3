@@ -23,6 +23,8 @@ import { CoreCourseListModTypePage } from '@features/course/pages/list-mod-type/
 import { CoreCourseModulePreviewPage } from '@features/course/pages/module-preview/module-preview';
 import { CoreCourseHelper } from './services/course-helper';
 
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 export const COURSE_INDEX_PATH = ':courseId';
 
 /**
@@ -74,6 +76,7 @@ function buildRoutes(injector: Injector): Routes {
         CoreSharedModule,
         CoreCourseComponentsModule,
         CoreCourseSummaryPageModule,
+        CqComponentsModule,
     ],
     exports: [RouterModule],
     providers: [

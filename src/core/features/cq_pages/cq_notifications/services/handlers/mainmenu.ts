@@ -30,7 +30,7 @@ import { CoreMainMenuProvider } from '@features/mainmenu/services/mainmenu';
 @Injectable({ providedIn: 'root' })
 export class AddonNotificationsMainMenuHandlerService implements CoreMainMenuHandler {
 
-    static readonly PAGE_NAME = 'notifications';
+    static readonly PAGE_NAME = 'cq-notifications';
 
     name = 'AddonNotifications';
     priority = 600;

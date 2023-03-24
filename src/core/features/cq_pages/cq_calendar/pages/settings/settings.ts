@@ -32,7 +32,7 @@ import { CqPage } from '../../../classes/cq_page';
  */
 @Component({
     selector: 'page-addon-calendar-settings',
-    templateUrl: 'settings.html',
+    templateUrl: 'settings.new.html',
 })
 export class AddonCalendarSettingsPage extends CqPage implements OnInit {
 

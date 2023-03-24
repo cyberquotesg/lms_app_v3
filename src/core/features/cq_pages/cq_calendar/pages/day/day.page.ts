@@ -56,7 +56,7 @@ import { CqPage } from '../../../classes/cq_page';
  */
 @Component({
     selector: 'page-addon-calendar-day',
-    templateUrl: 'day.html',
+    templateUrl: 'day.new.html',
     styleUrls: ['../../calendar-common.scss', 'day.scss'],
 })
 export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {

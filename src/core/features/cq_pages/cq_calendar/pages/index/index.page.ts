@@ -43,7 +43,7 @@ import { CqPage } from '../../../classes/cq_page';
  */
 @Component({
     selector: 'page-addon-calendar-index',
-    templateUrl: 'index.html',
+    templateUrl: 'index.new.html',
 })
 export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy {
 

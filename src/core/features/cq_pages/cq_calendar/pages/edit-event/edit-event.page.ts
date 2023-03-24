@@ -54,7 +54,7 @@ import { CqPage } from '../../../classes/cq_page';
  */
 @Component({
     selector: 'page-addon-calendar-edit-event',
-    templateUrl: 'edit-event.html',
+    templateUrl: 'edit-event.new.html',
     styleUrls: ['edit-event.scss'],
 })
 export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDestroy, CanLeave {

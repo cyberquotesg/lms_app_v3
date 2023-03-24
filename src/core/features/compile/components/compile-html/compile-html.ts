@@ -39,6 +39,9 @@ import { CoreCompile } from '@features/compile/services/compile';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * This component has a behaviour similar to $compile for AngularJS. Given an HTML code, it will compile it so all its
  * components and directives are instantiated.
@@ -84,6 +87,9 @@ export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
     protected pendingCalls = {};
 
     constructor(
+        // by rachmad
+        protected CH: CqHelper,
+
         protected changeDetector: ChangeDetectorRef,
         element: ElementRef,
         differs: KeyValueDiffers,
@@ -174,8 +180,14 @@ export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
         return class CoreCompileHtmlFakeComponent implements OnInit, AfterContentInit, AfterViewInit, OnDestroy {
 
             private ongoingLifecycleHooks: Set<keyof AfterViewInit | keyof AfterContentInit | keyof OnDestroy> = new Set();
+            
+            // by rachmad
+            protected CH: CqHelper;
 
             constructor() {
+                // by rachmad
+                this.CH = compileInstance.CH;
+                
                 // Store this instance so it can be accessed by the outer component.
                 compileInstance.componentInstance = this;
 

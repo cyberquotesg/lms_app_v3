@@ -23,10 +23,10 @@ import { CoreMainMenuHandler, CoreMainMenuHandlerData } from '@features/mainmenu
 @Injectable({ providedIn: 'root' })
 export class AddonCalendarMainMenuHandlerService implements CoreMainMenuHandler {
 
-    static readonly PAGE_NAME = 'CqCalendar';
+    static readonly PAGE_NAME = 'calendar';
 
     name = 'AddonCalendar';
-    priority = 2000;
+    priority = 550;
 
     /**
      * Check if the handler is enabled on a site level.
@@ -44,7 +44,7 @@ export class AddonCalendarMainMenuHandlerService implements CoreMainMenuHandler 
      */
     getDisplayData(): CoreMainMenuHandlerData {
         return {
-            icon: 'calendar',
+            icon: 'far-calendar',
             title: 'addon.calendar.calendar',
             page: AddonCalendarMainMenuHandlerService.PAGE_NAME,
             class: 'addon-calendar-handler',

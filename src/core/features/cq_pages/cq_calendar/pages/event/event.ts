@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnDestroy, OnInit, Renderer2 } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { AlertOptions } from '@ionic/core';
 import {
@@ -28,7 +28,6 @@ import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreSites } from '@services/sites';
-import { CoreLocalNotifications } from '@services/local-notifications';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreGroups } from '@services/groups';
@@ -38,23 +37,21 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreUtils } from '@services/utils/utils';
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { CoreConstants } from '@/core/constants';
-import { AddonCalendarReminderTimeModalComponent } from '@features/cq_pages/cq_calendar/components/reminder-time-modal/reminder-time-modal';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
-
-import { CqHelper } from '../../../services/cq_helper';
-import { CqPage } from '../../../classes/cq_page';
+import { CoreReminders, CoreRemindersService } from '@features/reminders/services/reminders';
+import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
 
 /**
  * Page that displays a single calendar event.
  */
 @Component({
     selector: 'page-addon-calendar-event',
-    templateUrl: 'event.new.html',
+    templateUrl: 'event.html',
     styleUrls: ['../../calendar-common.scss', 'event.scss'],
 })
-export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy {
+export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
     protected eventId!: number;
     protected siteHomeId: number;
@@ -74,7 +71,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
     courseName = '';
     groupName?: string;
     courseUrl = '';
-    notificationsEnabled = false;
+    remindersEnabled = false;
     moduleUrl = '';
     categoryPath = '';
     currentTime = -1;
@@ -86,11 +83,8 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
 
     constructor(
         protected route: ActivatedRoute,
-        renderer: Renderer2, CH: CqHelper
     ) {
-        super(renderer, CH);
-
-        this.notificationsEnabled = CoreLocalNotifications.isAvailable();
+        this.remindersEnabled = CoreReminders.isEnabled();
         this.siteHomeId = CoreSites.getCurrentSiteHomeId();
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
@@ -137,7 +131,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         });
 
         // Reload reminders if default notification time changes.
-        this.defaultTimeChangedObserver = CoreEvents.on(AddonCalendarProvider.DEFAULT_NOTIFICATION_TIME_CHANGED, () => {
+        this.defaultTimeChangedObserver = CoreEvents.on(CoreRemindersService.DEFAULT_NOTIFICATION_TIME_CHANGED, () => {
             this.loadReminders();
         }, this.currentSiteId);
 
@@ -151,19 +145,18 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
     /**
      * Load reminders.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async loadReminders(): Promise<void> {
-        if (!this.notificationsEnabled || !this.event) {
+        if (!this.remindersEnabled || !this.event) {
             return;
         }
 
-        const reminders = await AddonCalendar.getEventReminders(this.eventId, this.currentSiteId);
-        this.reminders = await AddonCalendarHelper.formatReminders(reminders, this.event.timestart, this.currentSiteId);
+        this.reminders = await AddonCalendarHelper.getEventReminders(this.eventId, this.event.timestart, this.currentSiteId);
     }
 
     /**
-     * View loaded.
+     * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
         try {
@@ -187,7 +180,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      *
      * @param sync Whether it should try to synchronize offline events.
      * @param showErrors Whether to show sync errors to the user.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async fetchEvent(sync = false, showErrors = false): Promise<void> {
         this.isOnline = CoreNetwork.isOnline();
@@ -204,7 +197,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
             // Get the event data.
             if (this.eventId >= 0) {
                 const event = await AddonCalendar.getEventById(this.eventId);
-                this.event = AddonCalendarHelper.formatEventData(event);
+                this.event = await AddonCalendarHelper.formatEventData(event);
             }
 
             try {
@@ -326,7 +319,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      * Sync offline events.
      *
      * @param showErrors Whether to show sync errors to the user.
-     * @return Promise resolved with boolean: whether event was deleted on sync.
+     * @returns Promise resolved with boolean: whether event was deleted on sync.
      */
     protected async syncEvents(showErrors = false): Promise<boolean> {
         let deleted = false;
@@ -370,7 +363,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      *
      * @param event Event.
      * @param courseId Course ID.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     protected async loadGroupName(event: AddonCalendarEventToDisplay, courseId: number): Promise<void> {
         try {
@@ -393,8 +386,12 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
             return;
         }
 
-        const reminderTime = await CoreDomUtils.openModal<number>({
-            component: AddonCalendarReminderTimeModalComponent,
+        const reminderTime = await CoreDomUtils.openPopover<{timeBefore: number}>({
+            component: CoreRemindersSetReminderMenuComponent,
+            componentProps: {
+                eventTime: this.event.timestart,
+            },
+            // TODO: Add event to open the popover in place.
         });
 
         if (reminderTime === undefined) {
@@ -402,18 +399,18 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
             return;
         }
 
-        await AddonCalendar.addEventReminder(this.event, reminderTime, this.currentSiteId);
+        await AddonCalendar.addEventReminder(this.event, reminderTime.timeBefore, this.currentSiteId);
 
         await this.loadReminders();
     }
 
     /**
-     * Cancel the selected notification.
+     * Delete the selected reminder.
      *
      * @param id Reminder ID.
      * @param e Click event.
      */
-    async cancelNotification(id: number, e: Event): Promise<void> {
+    async deleteReminder(id: number, e: Event): Promise<void> {
         e.preventDefault();
         e.stopPropagation();
 
@@ -423,7 +420,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
             const modal = await CoreDomUtils.showModalLoading('core.deleting', true);
 
             try {
-                await AddonCalendar.deleteEventReminder(id);
+                await CoreReminders.removeReminder(id);
                 await this.loadReminders();
             } catch (error) {
                 CoreDomUtils.showErrorModalDefault(error, 'Error deleting reminder');
@@ -441,7 +438,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      * @param refresher Refresher.
      * @param done Function to call when done.
      * @param showErrors Whether to show sync errors to the user.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async doRefresh(refresher?: IonRefresher, done?: () => void, showErrors= false): Promise<void> {
         if (!this.eventLoaded) {
@@ -459,7 +456,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      *
      * @param sync Whether it should try to synchronize offline events.
      * @param showErrors Whether to show sync errors to the user.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async refreshEvent(sync = false, showErrors = false): Promise<void> {
         this.syncIcon = CoreConstants.ICON_LOADING;
@@ -480,7 +477,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      * Open the page to edit the event.
      */
     openEdit(): void {
-        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${this.eventId}`);
+        CoreNavigator.navigateToSitePath(`/calendar/edit/${this.eventId}`);
     }
 
     /**
@@ -642,7 +639,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
     }
 
     /**
-     * Page destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.editEventObserver.off();

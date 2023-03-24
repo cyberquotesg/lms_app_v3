@@ -58,7 +58,7 @@ import { CqComponent } from '../../../classes/cq_component';
  */
 @Component({
     selector: 'addon-calendar-calendar',
-    templateUrl: 'addon-calendar-calendar.html',
+    templateUrl: 'addon-calendar-calendar.new.html',
     styleUrls: ['calendar.scss'],
 })
 export class AddonCalendarCalendarComponent extends CqComponent implements OnInit, DoCheck, OnDestroy {
@@ -174,7 +174,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
     /**
      * Fetch contacts.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async fetchData(): Promise<void> {
         try {
@@ -205,7 +205,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
      * Refresh events.
      *
      * @param afterChange Whether the refresh is done after an event has changed or has been synced.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async refreshData(afterChange = false): Promise<void> {
         const selectedMonth = this.manager?.getSelectedItem() || null;
@@ -262,31 +262,15 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
      * Go to current month.
      */
     async goToCurrentMonth(): Promise<void> {
-        const manager = this.manager;
-        const slides = this.slides;
-        if (!manager || !slides) {
-            return;
-        }
+        const currentMoment = moment();
 
-        const currentMonth = {
-            moment: moment(),
-        };
-        this.loaded = false;
-
-        try {
-            // Make sure the day is loaded.
-            await manager.getSource().loadItem(currentMonth);
-
-            slides.slideToItem(currentMonth);
-        } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.calendar.errorloadevents', true);
-        } finally {
-            this.loaded = true;
-        }
+        await this.viewMonth(currentMoment.month() + 1, currentMoment.year());
     }
 
     /**
      * Check whether selected month is loaded.
+     *
+     * @returns If selected month has been loaded.
      */
     selectedMonthLoaded(): boolean {
         return !!this.manager?.getSelectedItem()?.loaded;
@@ -294,6 +278,8 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
 
     /**
      * Check whether selected month is current month.
+     *
+     * @returns If selected month is the current.
      */
     selectedMonthIsCurrent(): boolean {
         return !!this.manager?.getSelectedItem()?.isCurrentMonth;
@@ -325,12 +311,47 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
     }
 
     /**
+     * View a certain month and year.
+     *
+     * @param month Month.
+     * @param year Year.
+     */
+    async viewMonth(month: number, year: number): Promise<void> {
+        const manager = this.manager;
+        const slides = this.slides;
+        if (!manager || !slides) {
+            return;
+        }
+
+        this.loaded = false;
+        const item = {
+            moment: moment({
+                year,
+                month: month - 1,
+            }),
+        };
+
+        try {
+            // Make sure the day is loaded.
+            await manager.getSource().loadItem(item);
+
+            slides.slideToItem(item);
+        } catch (error) {
+            CoreDomUtils.showErrorModalDefault(error, 'addon.calendar.errorloadevents', true);
+        } finally {
+            this.loaded = true;
+        }
+    }
+
+    /**
      * Component destroyed.
      */
     ngOnDestroy(): void {
         this.undeleteEventObserver?.off();
         this.manager?.destroy();
-        this.managerUnsubscribe && this.managerUnsubscribe();
+        this.managerUnsubscribe?.();
+
+        delete this.manager;
     }
 
 }
@@ -375,7 +396,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
     /**
      * Fetch data.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async fetchData(): Promise<void> {
         await Promise.all([
@@ -410,7 +431,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
     /**
      * Load categories to be able to filter events.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async loadCategories(): Promise<void> {
         if (this.categories) {
@@ -431,7 +452,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
     /**
      * Load events created or edited in offline.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async loadOfflineEvents(): Promise<void> {
         // Get offline events.
@@ -447,7 +468,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
     /**
      * Load events deleted in offline.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async loadOfflineDeletedEvents(): Promise<void> {
         this.deletedEvents = await AddonCalendarOffline.getAllDeletedEventsIds();
@@ -456,7 +477,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
     /**
      * Load time format.
      *
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async loadTimeFormat(): Promise<void> {
         this.timeFormat = await AddonCalendar.getCalendarTimeFormat();
@@ -516,6 +537,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
         const weeks = result.weeks as AddonCalendarWeek[];
         const currentDay = moment().date();
         const currentTime = CoreTimeUtils.timestamp();
+        const dayMoment = moment(month.moment);
 
         const preloadedMonth: PreloadedMonth = {
             ...month,
@@ -528,13 +550,15 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
         await Promise.all(weeks.map(async (week) => {
             await Promise.all(week.days.map(async (day) => {
                 day.periodName = CoreTimeUtils.userDate(
-                    month.moment.unix() * 1000,
+                    dayMoment.date(day.mday).unix() * 1000,
                     'core.strftimedaydate',
                 );
                 day.eventsFormated = day.eventsFormated || [];
                 day.filteredEvents = day.filteredEvents || [];
                 // Format online events.
-                const onlineEventsFormatted = day.events.map((event) => AddonCalendarHelper.formatEventData(event));
+                const onlineEventsFormatted = await Promise.all(
+                    day.events.map((event) => AddonCalendarHelper.formatEventData(event)),
+                );
 
                 day.eventsFormated = day.eventsFormated.concat(onlineEventsFormatted);
 
@@ -599,7 +623,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
      *
      * @param event Event object.
      * @param currentTime Current time.
-     * @return True if it's in the past.
+     * @returns True if it's in the past.
      */
     isEventPast(event: { timestart: number; timeduration: number}, currentTime: number): boolean {
         return (event.timestart + event.timeduration) < currentTime;
@@ -609,7 +633,7 @@ class AddonCalendarMonthSlidesItemsManagerSource extends CoreSwipeSlidesDynamicI
      * Invalidate content.
      *
      * @param selectedMonth The current selected month.
-     * @return Promise resolved when done.
+     * @returns Promise resolved when done.
      */
     async invalidateContent(selectedMonth: PreloadedMonth | null): Promise<void> {
         const promises: Promise<void>[] = [];

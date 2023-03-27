@@ -8,13 +8,6 @@
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
     </ion-refresher>
     <core-loading [hideUntil]="dataLoaded">
-
-        <div>
-            <button (click)="joinMeetingZoom()">Join Meeting Zoom</button>
-            <hr />
-            {{zoomMessage}}
-        </div>
-        
         <ion-list class="core-course-module-list-wrapper">
             <!-- Site home main contents. -->
             <ng-container *ngIf="section && section.hasContent">

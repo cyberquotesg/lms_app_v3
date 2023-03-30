@@ -1,13 +1,30 @@
-Commands
-- Node Modules		npm clear cache --force; npm i
-- Start Web			npm run start
-- Build Android		npm run build-android
-- Build iOS			npm run build-ios
-- Sign App			C:\"Program Files"\Java\jdk1.8.0_261\bin\jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.jks -storepass Budianto123 -keypass Budianto123 C:\Users\DELL\Documents\lms_app_v3\platforms\android\app\build\outputs\bundle\release\app-release.aab my-alias
+PREPARATION
+- npm run prepare_modules
 
-Make Sure Before Building
-- Choose correct branch
-- Assets
+WEB
+- Branch: cyberquote-development
+- npm run web_dev
+
+ANDROID
+- Branch: cyberquote-development (dev) or cyberquote-production (prod)
+- Assets (Merge straightaway)
 - Zoom SDK
-- Sign App
+- npm run android_dev (dev) or npm run android_prod (prod)
+- C:\"Program Files"\Java\jdk1.8.0_261\bin\jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.jks -storepass Budianto123 -keypass Budianto123 C:\Users\DELL\Documents\lms_app_v3\platforms\android\app\build\outputs\bundle\release\app-release.aab my-alias
 - Change Name
+
+IOS
+- Branch: cyberquote-development (dev) or cyberquote-production (prod)
+- Assets (DO NOT Merge straightaway)
+- Zoom SDK
+- npm run ios_dev (dev) or npm run ios_prod (prod)
+- setup signin
+- remove audio from Info / Required Background Modes / App plays audio or streams audio/video using AirPlay
+
+
+
+
+
+
+
+

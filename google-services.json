@@ -1,33 +1,34 @@
 {
   "project_info": {
-    "project_number": "587896526108",
-    "project_id": "cq-academy-staging",
-    "storage_bucket": "cq-academy-staging.appspot.com"
+    "project_number": "308439807229",
+    "firebase_url": "https://cq-academy.firebaseio.com",
+    "project_id": "cq-academy",
+    "storage_bucket": "cq-academy.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:587896526108:android:8bf1d9944a30936a49d6d9",
+        "mobilesdk_app_id": "1:308439807229:android:fa3b8b2e271b9ec5653a94",
         "android_client_info": {
           "package_name": "com.moodle.cyberquote"
         }
       },
       "oauth_client": [
         {
-          "client_id": "587896526108-aogguiqqpnmr5a0hqqil2umtbcm45dar.apps.googleusercontent.com",
+          "client_id": "308439807229-e4keprriv4f0ncuvc5rcuuuhsmsfn7ak.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAb1XjM8MqRF8XVIqsvy_gZbRE-4KzsjLw"
+          "current_key": "AIzaSyCsUj-kEmAe3Mk9IxT7XxBTe7wHIKjH5Kg"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "587896526108-aogguiqqpnmr5a0hqqil2umtbcm45dar.apps.googleusercontent.com",
+              "client_id": "308439807229-e4keprriv4f0ncuvc5rcuuuhsmsfn7ak.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

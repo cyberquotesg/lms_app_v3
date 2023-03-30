@@ -22,6 +22,8 @@
     "start": "ionic serve --browser=$MOODLE_APP_BROWSER",
     "serve:test": "NODE_ENV=testing ionic serve --no-open",
     "build": "ionic build",
+    "build-android": "ionic cordova build android",
+    "build-ios": "ionic cordova build ios",
     "build:prod": "NODE_ENV=production ionic build --prod",
     "build:test": "NODE_ENV=testing ionic build --configuration=testing",
     "dev:android": "ionic cordova run android --livereload --external --ssl",

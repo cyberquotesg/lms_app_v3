@@ -1,0 +1,10 @@
+Commands
+- Node Modules		npm clear cache --force; npm i
+- Start Web			npm run start
+- Build Android		npm run build-android
+- Build iOS			npm run build-ios
+- Sign App			C:\"Program Files"\Java\jdk1.8.0_261\bin\jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.jks C:\Users\DELL\Documents\lms_app_v3\platforms\android\app\build\outputs\bundle\release\app-release.aab my-alias
+
+Make Sure Before Building
+- Assets
+- Zoom SDK

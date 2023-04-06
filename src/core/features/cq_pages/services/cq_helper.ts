@@ -1090,6 +1090,8 @@ export class CqHelper
 
     	if (jsonData.success)
     	{
+    		this.log("init zoom jsonData.list", JSON.stringify(jsonData.list));
+    		
     	    let initiated = false;
     	    for (let key of jsonData.list)
     	    {

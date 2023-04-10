@@ -7,6 +7,7 @@ import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
+import zoomClass from '@zoomus/websdk/embedded'
 
 @Component({
     selector: 'cq_offline_course',
@@ -31,6 +32,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
     private agent: any;
     private platform: any;
+    private zoomAgent: any;
+    private zoomAgentInitted: boolean = false;
     loading: any = false;
 
     constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
@@ -310,7 +313,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
         this.openInBrowser(url);
     }
 
-    async joinMeetingZoom(meetingNumber, meetingPassword): Promise<void> {
+    async joinMeetingZoom(meetingNumber, meetingPassword): Promise<void>
+    {
         let userId = this.CH.getUserId();
         let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
 
@@ -320,5 +324,61 @@ export class CqOfflineCourse extends CqPage implements OnInit
     showRejectedReason(message?: string): void
     {
         if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
+    }
+
+    async joinMeetingZoomWeb(meetingNumber, meetingPassword): Promise<void>
+    {
+        if (!this.zoomAgentInitted)
+        {
+            this.zoomAgent = zoomClass.createClient();
+            this.zoomAgent.init({
+                zoomAppRoot: document.getElementById('zoomElement'),
+                language: 'en-US',
+            });
+            this.zoomAgentInitted = true;
+        }
+
+        let userId = this.CH.getUserId();
+        let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
+        let userEmail = (await this.CH.getUser().getProfile(userId)).email;
+
+        if (!userEmail)
+        {
+            this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
+            this.CH.errorLog("zoom error", "user email is not provided");
+            return;
+        }
+
+        const params: any = {
+            class: 'CqLib',
+            function: 'get_zoom_jwt',
+            meeting_number: meetingNumber,
+        };
+        this.CH.callApi(params)
+        .then((data) => {
+            data = this.CH.toJson(data);
+
+            let zoomParams = {
+                sdkKey: data.sdkKey,
+                signature: data.jwt,
+                meetingNumber: meetingNumber,
+                userName: userFullname,
+                userEmail: userEmail,
+                password: meetingPassword,
+                role: 0,
+            };
+            this.CH.log("starting zoom", zoomParams);
+            this.zoomAgent.join(zoomParams)
+            .then((success) => {
+                this.CH.log("zoom started", success);
+            })
+            .catch((error) => {
+                this.CH.alert('Oops!', error.reason);
+                this.CH.errorLog("zoom error", error);
+            });
+        })
+        .catch((error) => {
+            this.CH.errorLog("zoom error", error);
+        });
     }
 }

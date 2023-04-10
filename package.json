@@ -102,6 +102,7 @@
     "@types/chart.js": "2.9.31",
     "@types/cordova": "0.0.34",
     "@types/dom-mediacapture-record": "1.0.7",
+    "@zoomus/websdk": "^2.11.0",
     "chart.js": "2.9.4",
     "cordova": "11.0.0",
     "cordova-android": "10.1.1",

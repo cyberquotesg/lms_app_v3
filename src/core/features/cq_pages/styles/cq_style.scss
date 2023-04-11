@@ -164,6 +164,31 @@ body
 	}
 
 	// ============================================================================================= helper
+	#zoomElement
+	{
+		display: none;
+		position: fixed;
+		left: 0px;
+		top: 0px;
+		right: 0px;
+		bottom: 0px;
+		z-index: 9;
+
+		button
+		{
+			background: transparent !important;
+			box-shadow: none !important;
+		}
+	}
+	*[class*="zmwebsdk"]
+	{
+		button
+		{
+			background: transparent !important;
+			box-shadow: none !important;
+		}
+	}
+
 	@include padding_margin;
 	@include padding_margin_component_spacing;
 

@@ -326,59 +326,70 @@ export class CqOfflineCourse extends CqPage implements OnInit
         if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
     }
 
-    async joinMeetingZoomWeb(meetingNumber, meetingPassword): Promise<void>
+    joinMeetingZoomWeb(meetingNumber, meetingPassword): Promise<void>
     {
-        if (!this.zoomAgentInitted)
-        {
-            this.zoomAgent = zoomClass.createClient();
-            this.zoomAgent.init({
-                zoomAppRoot: document.getElementById('zoomElement'),
-                language: 'en-US',
-            });
-            this.zoomAgentInitted = true;
-        }
+        this.CH.loading('Please wait...', async (loading) => {
+            if (!this.zoomAgentInitted)
+            {
+                this.zoomAgent = zoomClass.createClient();
+                this.zoomAgent.init({
+                    zoomAppRoot: document.getElementById('zoomElement'),
+                    language: 'en-US',
+                });
+                this.zoomAgentInitted = true;
+            }
 
-        let userId = this.CH.getUserId();
-        let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
-        let userEmail = (await this.CH.getUser().getProfile(userId)).email;
+            let userId = this.CH.getUserId();
+            let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
+            let userEmail = (await this.CH.getUser().getProfile(userId)).email;
 
-        if (!userEmail)
-        {
-            this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
-            this.CH.errorLog("zoom error", "user email is not provided");
-            return;
-        }
+            if (!userEmail)
+            {
+                loading.dismiss();
+                this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
+                this.CH.errorLog("zoom error", "user email is not provided");
+                return;
+            }
 
-        const params: any = {
-            class: 'CqLib',
-            function: 'get_zoom_jwt',
-            meeting_number: meetingNumber,
-        };
-        this.CH.callApi(params)
-        .then((data) => {
-            data = this.CH.toJson(data);
-
-            let zoomParams = {
-                sdkKey: data.sdkKey,
-                signature: data.jwt,
-                meetingNumber: meetingNumber,
-                userName: userFullname,
-                userEmail: userEmail,
-                password: meetingPassword,
-                role: 0,
+            const params: any = {
+                class: 'CqLib',
+                function: 'get_zoom_jwt',
+                meeting_number: meetingNumber,
             };
-            this.CH.log("starting zoom", zoomParams);
-            this.zoomAgent.join(zoomParams)
-            .then((success) => {
-                this.CH.log("zoom started", success);
+            this.CH.callApi(params)
+            .then((data) => {
+                data = this.CH.toJson(data);
+
+                let zoomParams = {
+                    sdkKey: data.sdkKey,
+                    signature: data.jwt,
+                    meetingNumber: meetingNumber,
+                    userName: userFullname,
+                    userEmail: userEmail,
+                    password: meetingPassword,
+                    role: 0,
+                };
+                this.CH.log("starting zoom", zoomParams);
+                this.zoomAgent.join(zoomParams)
+                .then((success) => {
+                    loading.dismiss();
+                    this.CH.log("zoom started", success);
+                })
+                .catch((error) => {
+                    loading.dismiss();
+                    if (error.errorCode == 3008) this.CH.alert('Oops!', error.reason);
+                    else
+                    {
+                        this.CH.alert('Oops!', "Unexpected error occurred, please try again or contact course administrator");
+                        this.CH.errorLog("zoom error", error);
+                    }
+                });
             })
             .catch((error) => {
-                this.CH.alert('Oops!', error.reason);
+                loading.dismiss();
+                this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
                 this.CH.errorLog("zoom error", error);
             });
-        })
-        .catch((error) => {
-            this.CH.errorLog("zoom error", error);
         });
     }
 }

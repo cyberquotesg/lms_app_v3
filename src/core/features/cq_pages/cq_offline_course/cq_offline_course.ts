@@ -334,7 +334,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
         if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
     }
 
-    joinMeetingZoomWeb(meetingNumber, meetingPassword): Promise<void>
+    joinMeetingZoomWeb(meetingNumber, meetingPassword): void
     {
         this.CH.loading('Please wait...', async (loading) => {
             if (!this.zoomAgentInitted)

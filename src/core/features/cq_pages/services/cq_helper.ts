@@ -1064,6 +1064,7 @@ export class CqHelper
 	    	});
     	}
 
+    	this.log("init zoom", {apiKey, apiSecret});
     	return this.zoom.initialize(apiKey, apiSecret)
     	.then((success: any) => {
     		this.log("init zoom ok", success);
@@ -1126,6 +1127,7 @@ export class CqHelper
 	    	return;
     	}
 
+    	this.log("join meeting zoom", {meetingNumber, meetingPassword, meetingScreenName});
         this.zoom.joinMeeting(meetingNumber, meetingPassword, meetingScreenName, {
             "no_driving_mode":true,
             "no_invite":true,

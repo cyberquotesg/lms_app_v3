@@ -7,7 +7,7 @@ import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
-import zoomClass from '@zoomus/websdk/embedded'
+// import zoomClass from '@zoomus/websdk/embedded'
 
 @Component({
     selector: 'cq_offline_course',
@@ -334,6 +334,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
         if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
     }
 
+    /* *a/
     joinMeetingZoomWeb(meetingNumber, meetingPassword): void
     {
         this.CH.loading('Please wait...', async (loading) => {
@@ -400,4 +401,5 @@ export class CqOfflineCourse extends CqPage implements OnInit
             });
         });
     }
+    /* */
 }

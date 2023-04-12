@@ -317,8 +317,16 @@ export class CqOfflineCourse extends CqPage implements OnInit
     {
         let userId = this.CH.getUserId();
         let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
+        let userEmail = (await this.CH.getUser().getProfile(userId)).email;
 
-        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
+        if (!userEmail)
+        {
+            this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
+            this.CH.errorLog("zoom error", "user email is not provided");
+            return;
+        }
+
+        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname + " (" + userEmail + ")");
     }
 
     showRejectedReason(message?: string): void

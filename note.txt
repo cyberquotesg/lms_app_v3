@@ -23,6 +23,8 @@ IOS
 - setup signin
 - remove audio from Info / Required Background Modes / App plays audio or streams audio/video using AirPlay
 - Build Active Architecture Only: Yes
+- replace this in Pods -> source="$(readlink "${source}")" with this -> source="$(readlink -f "${source}")"
+- npm run ios_dev (make sure)
 - Build via XCode
 - Archive
 - Distribute

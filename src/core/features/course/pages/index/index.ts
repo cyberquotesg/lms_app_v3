@@ -469,34 +469,40 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         if (typeof this.course!.isSelfEnrol == "undefined") this.course!.isSelfEnrol = false;
         if (typeof this.course!.selfEnrolId == "undefined") this.course!.selfEnrolId = 0;
 
-        let tempGrades = await CoreGrades.getGradeItems(this.course!.id, 0, 0, "", true),
+        let tempGrades: any = [],
             grades: any = {
                 summary: "-",
                 onCourse: [],
                 onModule: {},
             };
-        tempGrades.forEach((grade) => {
-            // has cmid, so it is onModule
-            if (grade.cmid)
-            {
-                grades.onModule[grade.cmid] = grade.gradeformatted;
-            }
+        
+        if (this.course.hasEnrolled)
+        {
+            tempGrades = await CoreGrades.getGradeItems(this.course!.id, 0, 0, "", true);
+            tempGrades.forEach((grade) => {
+                // has cmid, so it is onModule
+                if (grade.cmid)
+                {
+                    grades.onModule[grade.cmid] = grade.gradeformatted;
+                }
 
-            // always include to onCourse
-            grades.onCourse.push({
-                name: grade.itemname ? grade.itemname : grade.itemtype == "course" ? "Total Grade" : "-",
-                value: grade.gradeformatted === "" ? "-" : grade.gradeformatted,
-                range: grade.rangeformatted === "" ? "-" : grade.rangeformatted,
-                inPercent: grade.percentageformatted === "" ? "-" : grade.percentageformatted,
+                // always include to onCourse
+                grades.onCourse.push({
+                    name: grade.itemname ? grade.itemname : grade.itemtype == "course" ? "Total Grade" : "-",
+                    value: grade.gradeformatted === "" ? "-" : grade.gradeformatted,
+                    range: grade.rangeformatted === "" ? "-" : grade.rangeformatted,
+                    inPercent: grade.percentageformatted === "" ? "-" : grade.percentageformatted,
+                });
+
+                // summary
+                if (grade.itemtype == "course")
+                {
+                    grades.summary = grade.gradeformatted === "" ? "-" : grade.gradeformatted;
+                    grades.summary += grade.percentageformatted != "" && grade.percentageformatted != "-" ? (" (" + grade.percentageformatted + ")") : "";
+                }
             });
+        }
 
-            // summary
-            if (grade.itemtype == "course")
-            {
-                grades.summary = grade.gradeformatted === "" ? "-" : grade.gradeformatted;
-                grades.summary += grade.percentageformatted != "" && grade.percentageformatted != "-" ? (" (" + grade.percentageformatted + ")") : "";
-            }
-        });
         this.grades = grades;
 
         // remove link in availability info

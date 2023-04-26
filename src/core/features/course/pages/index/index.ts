@@ -476,7 +476,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 onModule: {},
             };
         
-        if (this.course.hasEnrolled)
+        if (this.course!.hasEnrolled)
         {
             tempGrades = await CoreGrades.getGradeItems(this.course!.id, 0, 0, "", true);
             tempGrades.forEach((grade) => {

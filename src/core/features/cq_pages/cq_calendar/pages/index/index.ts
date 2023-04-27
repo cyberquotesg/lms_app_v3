@@ -39,7 +39,7 @@ import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-lin
  */
 @Component({
     selector: 'page-addon-calendar-index',
-    templateUrl: 'index.html',
+    templateUrl: 'index.new.html',
 })
 export class AddonCalendarIndexPage implements OnInit, OnDestroy {
 

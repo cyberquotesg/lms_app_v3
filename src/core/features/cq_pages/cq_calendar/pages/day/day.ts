@@ -53,7 +53,7 @@ import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classe
  */
 @Component({
     selector: 'page-addon-calendar-day',
-    templateUrl: 'day.html',
+    templateUrl: 'day.new.html',
     styleUrls: ['../../calendar-common.scss', 'day.scss'],
 })
 export class AddonCalendarDayPage implements OnInit, OnDestroy {

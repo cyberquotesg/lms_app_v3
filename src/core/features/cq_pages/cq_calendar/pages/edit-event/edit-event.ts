@@ -53,7 +53,7 @@ import { CoreAppProvider } from '@services/app';
  */
 @Component({
     selector: 'page-addon-calendar-edit-event',
-    templateUrl: 'edit-event.html',
+    templateUrl: 'edit-event.new.html',
     styleUrls: ['edit-event.scss'],
 })
 export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {

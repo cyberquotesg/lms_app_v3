@@ -48,7 +48,7 @@ import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/compo
  */
 @Component({
     selector: 'page-addon-calendar-event',
-    templateUrl: 'event.html',
+    templateUrl: 'event.new.html',
     styleUrls: ['../../calendar-common.scss', 'event.scss'],
 })
 export class AddonCalendarEventPage implements OnInit, OnDestroy {

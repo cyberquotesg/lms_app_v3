@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { AlertOptions } from '@ionic/core';
 import {
@@ -40,8 +40,9 @@ import { CoreConstants } from '@/core/constants';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
-import { CoreReminders, CoreRemindersService } from '@features/reminders/services/reminders';
-import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays a single calendar event.
@@ -51,7 +52,7 @@ import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/compo
     templateUrl: 'event.new.html',
     styleUrls: ['../../calendar-common.scss', 'event.scss'],
 })
-export class AddonCalendarEventPage implements OnInit, OnDestroy {
+export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy {
 
     protected eventId!: number;
     protected siteHomeId: number;
@@ -83,7 +84,10 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
     constructor(
         protected route: ActivatedRoute,
+        renderer: Renderer2, CH: CqHelper
     ) {
+        super(renderer, CH);
+
         this.remindersEnabled = CoreReminders.isEnabled();
         this.siteHomeId = CoreSites.getCurrentSiteHomeId();
         this.currentSiteId = CoreSites.getCurrentSiteId();

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { FormControl, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { IonRefresher } from '@ionic/angular';
 import { CoreEvents } from '@singletons/events';
@@ -45,8 +45,9 @@ import { CanLeave } from '@guards/can-leave';
 import { CoreForms } from '@singletons/form';
 import { CoreReminders, CoreRemindersService, CoreRemindersUnits } from '@features/reminders/services/reminders';
 import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
-import moment from 'moment-timezone';
-import { CoreAppProvider } from '@services/app';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays a form to create/edit an event.
@@ -56,7 +57,7 @@ import { CoreAppProvider } from '@services/app';
     templateUrl: 'edit-event.new.html',
     styleUrls: ['edit-event.scss'],
 })
-export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
+export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDestroy, CanLeave {
 
     @ViewChild(CoreEditorRichTextEditorComponent) descriptionEditor!: CoreEditorRichTextEditorComponent;
     @ViewChild('editEventForm') formElement!: ElementRef;
@@ -101,7 +102,10 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
 
     constructor(
         protected fb: FormBuilder,
+        renderer: Renderer2, CH: CqHelper
     ) {
+        super(renderer, CH);
+
         this.currentSite = CoreSites.getRequiredCurrentSite();
         this.remindersEnabled = CoreReminders.isEnabled();
         this.errors = {

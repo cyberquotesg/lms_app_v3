@@ -45,6 +45,8 @@ import { CanLeave } from '@guards/can-leave';
 import { CoreForms } from '@singletons/form';
 import { CoreReminders, CoreRemindersService, CoreRemindersUnits } from '@features/reminders/services/reminders';
 import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
+import moment from 'moment-timezone';
+import { CoreAppProvider } from '@services/app';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';

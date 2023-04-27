@@ -40,6 +40,8 @@ import { CoreConstants } from '@/core/constants';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
+import { CoreReminders, CoreRemindersService } from '@features/reminders/services/reminders';
+import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';

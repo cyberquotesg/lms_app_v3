@@ -64,7 +64,7 @@
                                     <p class="mt-cs"><b>Location</b></p>
                                     <p class="no-break">{{ session.venue }}</p>
 
-                                    <p class="no-break" *ngIf="session.userEnrolment == '2' && session.latitude && session.longitude && session.latitude != '0' && session.longitude != '0'" class="mt-cst">
+                                    <p class="no-break mt-4" *ngIf="session.userEnrolment == '2' && session.latitude && session.longitude && session.latitude != '0' && session.longitude != '0'" class="mt-cst">
                                         <button class="button-small" (click)="openMap(session)">
                                             <img src="assets/img/icons/{{ pageData.isIos ? 'apple' : 'google' }}_map.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                             <span style="vertical-align: middle; margin-left: 2px;">View in Map</span>
@@ -76,10 +76,11 @@
                             <!-- information for ongoing course -->
                             <ng-container *ngIf="session.userEnrolment == '2' && !session.sessionHasEnded">
                                 <ng-container *ngIf="session.zoomMeeting == 1">
-                                    <p class="mt-cs"><b>Zoom Meeting</b></p>
-                                    <p class="no-break" *ngIf="session.userEnrolment == '2'">
-                                        <ng-container *ngFor="let date of session.dates">
-                                            <ng-container *ngIf="date.dateHasNextTime">
+                                    <ng-container *ngFor="let date of session.dates">
+                                        <ng-container *ngIf="date.dateHasNextTime">
+                                            <p class="mt-cs"><b>Zoom Meeting</b></p>
+                                            <p class="no-break">Available at {{ date.dateText }} {{ time24To12(timeRemoveSeconds(date.startTime)) }} - {{ time24To12(timeRemoveSeconds(date.endTime)) }}</p>
+                                            <p class="no-break mt-4" *ngIf="session.userEnrolment == '2'">
 
                                                 <!-- date hasn't started, give fake button -->
                                                 <ng-container *ngIf="!date.dateHasStarted">
@@ -101,14 +102,14 @@
                                                         <span style="vertical-align: middle; margin-left: 2px;">Join In Browser</span>
                                                     </button>
                                                 </ng-container>
-                                            </ng-container>
+                                            </p>
                                         </ng-container>
-                                    </p>
+                                    </ng-container>
                                 </ng-container>
 
                                 <ng-container *ngIf="session.calendarButtons.google || session.calendarButtons.outlook || (pageData.isIos && session.calendarButtons.apple)">
                                     <p class="mt-cs"><b>Save to Calendar</b></p>
-                                    <p class="no-break">
+                                    <p class="no-break mt-4">
                                         <button *ngIf="session.calendarButtons.google" class="button-small mr-8" (click)="openInBrowser(session.calendarButtons.google)">
                                             <img src="assets/img/icons/google_calendar.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                             <span style="vertical-align: middle; margin-left: 2px;">Google</span>

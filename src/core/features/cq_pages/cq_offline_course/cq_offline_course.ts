@@ -273,33 +273,20 @@ export class CqOfflineCourse extends CqPage implements OnInit
     }
 
     /* for testing purpose */
-    showChecklogBannerTemp(type: number): void
+    fakeChecklogBanner(checklog: any): void
     {
         let data: any;
-        this.CH.log('showChecklogBannerTemp', type);
-
-        if (type == 1)
-        {
-            data = {
-                success: true,
-                code: 'checked_in',
-                type: 'in',
-                time: '9.12 am',
-                name: 'my course name',
-                message: 'You have successfully checked in',
-            };
-        }
-        else if (type == 2)
-        {
-            data = {
-                success: true,
-                code: 'checked_out',
-                type: 'out',
-                time: '9.52 am',
-                name: 'my course name',
-                message: 'You have successfully checked out',
-            };
-        }
+        let word = checklog.inOut.toLowerCase();
+        this.CH.log('fakeChecklogBanner', checklog.inOut);
+        
+        data = {
+            success: true,
+            code: 'checked_' + word,
+            type: word,
+            time: this.CH.time24To12(checklog.time),
+            name: this.pageData.course.name,
+            message: 'You have successfully checked ' + word,
+        };
 
         this.CH.log('having data', data);
         this.showChecklogBanner(data);

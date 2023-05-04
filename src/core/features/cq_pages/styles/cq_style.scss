@@ -808,6 +808,10 @@ body
 			}
 		}
 	}
+	ion-spinner
+	{
+		color: var(--headerBackgroundColor, $cq_purple_dark) !important;
+	}
 	.cq-slide
 	{
 		width: 100vw;

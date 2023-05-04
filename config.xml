@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget
     id="com.moodle.cyberquote"
-    versionCode="30300"
-    android-versionCode="30300"
-    ios-CFBundleVersion="3.0.300"
-    version="3.0.300"
+    versionCode="30400"
+    android-versionCode="30400"
+    ios-CFBundleVersion="3.0.400"
+    version="3.0.400"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:cdv="http://cordova.apache.org/ns/1.0"
@@ -245,7 +245,7 @@
             <true />
         </edit-config>
         <edit-config file="*-Info.plist" mode="merge" target="CFBundleShortVersionString">
-            <string>3.0.300</string>
+            <string>3.0.400</string>
         </edit-config>
         <edit-config file="*-Info.plist" mode="overwrite" target="CFBundleLocalizations">
             <array>

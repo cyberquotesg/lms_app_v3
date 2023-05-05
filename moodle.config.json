@@ -4,7 +4,7 @@
     "desktopappname": "CQ Academy",
     "versioncode": 30400,
     "versionname": "3.0.400",
-    "isProduction": false,
+    "isProduction": true,
     "siteurl": "https://qaslms.cyberquote.com",
     "sitename": "CQ Academy",
     "sendErrorLog": true,

@@ -32,7 +32,7 @@
     </ng-container>
 
     <ng-container *ngIf="isAvailable(workingItems) && type == 'list'">
-        <div *ngFor="let item of workingItems" class="list" data-id="{{ item.id }}">
+        <div *ngFor="let item of workingItems; let i = index" class="list" data-id="{{ item.id }}">
             <ion-card class="thin inline" (click)="selectItem(item)">
                 <div class="card-image">
                     <div *ngIf="item.image" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + item.image + ')'}"></div>
@@ -42,8 +42,17 @@
                     <ion-card-title>
                         <div class="card-title-inner" [innerHtml]="item.title"></div>
 
-                        <div *ngIf="item.subTitle" class="card-sub-title-inner">
+                        <div *ngIf="listSecondLine == 'subTitle' && item.subTitle" class="card-sub-title-inner">
                             <div [innerHtml]="item.subTitle"></div>
+                        </div>
+                        <div *ngIf="listSecondLine == 'countdown'" class="card-sub-title-inner">
+                            <cq_will_start_in *ngIf="item.willStartIn > 0" [unixtimestamp]="item.willStartIn" [animation]="true" (onZero)="timeHasCome($event, i)"></cq_will_start_in>
+                            <div *ngIf="item.willStartIn == 0" class="will-start-in-information time-urgency-1 second-font">
+                                Starting
+                            </div>
+                            <div *ngIf="item.willStartIn < 0" class="will-start-in-information second-font">
+                                Now Ongoing
+                            </div>
                         </div>
                     </ion-card-title>
                     <div *ngIf="!hideTags" class="card-tags">

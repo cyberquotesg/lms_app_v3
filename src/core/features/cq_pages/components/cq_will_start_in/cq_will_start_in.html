@@ -20,7 +20,7 @@
             </span> minute{{ s(startInMinutes) }}
         </ng-container>
 
-        <ng-container *ngIf="focusOn == 'focus-on-minutes'">
+        <ng-container *ngIf="focusOn == 'focus-on-minutes' || focusOn == 'focus-on-seconds'">
             <span class="start-number seconds">
                 {{ beautifulNumber(startInSeconds) }}
             </span> second{{ s(startInSeconds) }}

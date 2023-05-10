@@ -58,6 +58,10 @@ export class CqHelper
     {
     	return this.config().isProduction;
     }
+    appVersion(): string
+    {
+    	return this.config().versionname;
+    }
     log(data1: any, data2?: any): void
     {
     	if (this.isProduction()) return;

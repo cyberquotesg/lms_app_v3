@@ -59,6 +59,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     // by rachmad
     // displaySwitchAccount = true;
     displaySwitchAccount = false;
+    isProduction: boolean;
     appVersion: string;
 
     displayContactSupport = false;
@@ -83,6 +84,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         // by rachmad
         // this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
         this.displaySwitchAccount = false;
+        this.isProduction = this.CH.isProduction();
         this.appVersion = this.CH.appVersion();
         
         this.displayContactSupport = new CoreUserAuthenticatedSupportConfig(currentSite).canContactSupport();

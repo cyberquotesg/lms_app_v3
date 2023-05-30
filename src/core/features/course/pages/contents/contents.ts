@@ -43,7 +43,7 @@ import { CoreRefreshContext, CORE_REFRESH_CONTEXT } from '@/core/utils/refresh-c
  */
 @Component({
     selector: 'page-core-course-contents',
-    templateUrl: 'contents.html',
+    templateUrl: 'contents.new.html',
     providers: [{
         provide: CORE_REFRESH_CONTEXT,
         useExisting: forwardRef(() => CoreCourseContentsPage),

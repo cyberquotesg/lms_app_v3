@@ -140,6 +140,10 @@ export class CoreCourseModuleNavigationComponent implements OnInit, OnDestroy {
 
                     const found = await this.isModuleAvailable(module);
                     if (found) {
+                        // by rachmad
+                        const disabledByCQ = this.isModuleDisabled_byCQ(section, module);
+                        if (disabledByCQ) continue;
+
                         this.nextModule = module;
                         this.nextModuleSection = section;
                     }
@@ -182,6 +186,12 @@ export class CoreCourseModuleNavigationComponent implements OnInit, OnDestroy {
      */
     protected async isModuleAvailable(module: CoreCourseModuleData): Promise<boolean> {
         return !CoreCourseHelper.isModuleStealth(module) && CoreCourse.instance.moduleHasView(module);
+    }
+
+    // by rachmad
+    isModuleDisabled_byCQ(courseSection: any, courseModule: any): boolean
+    {
+        return !courseSection.uservisible || !courseModule.uservisible || !!courseModule.availabilityinfo;
     }
 
     /**

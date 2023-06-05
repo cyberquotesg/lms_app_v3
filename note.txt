@@ -1,13 +1,30 @@
-Commands
-- Node Modules		npm clear cache --force; npm i
-- Start Web			npm run start
-- Build Android		npm run build-android
-- Build iOS			npm run build-ios
-- Sign App			C:\"Program Files"\Java\jdk1.8.0_261\bin\jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.jks -storepass Budianto123 -keypass Budianto123 C:\Users\DELL\Documents\lms_app_v3\platforms\android\app\build\outputs\bundle\release\app-release.aab my-alias
+WEB
+- Branch: cyberquote-development
+- npm run _dev
 
-Make Sure Before Building
-- Choose correct branch
-- Assets
+ANDROID
+- Branch: cyberquote-development (dev) or cyberquote-production (prod)
+- Version in config.xml and moodle.config.json
+- npm run all_prepare (begining) or npm run android_dev (if all_prepare produces error) 
 - Zoom SDK
-- Sign App
+- npm run android_reinstall
+- Assets (Merge straightaway)
+- npm run android_dev (dev) or npm run android_prod (prod)
+- C:\"Program Files"\Java\jdk1.8.0_261\bin\jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.jks -storepass Budianto123 -keypass Budianto123 C:\Users\DELL\Documents\lms_app_v3\platforms\android\app\build\outputs\bundle\release\app-release.aab my-alias
 - Change Name
+
+IOS
+- Branch: cyberquote-development (dev) or cyberquote-production (prod)
+- Version in config.xml and moodle.config.json
+- npm run all_prepare (begining) or npm run ios_dev (if all_prepare produces error) 
+- Zoom SDK
+- npm run ios_reinstall
+- Assets (DO NOT Merge straightaway)
+- setup signin
+- remove audio from Info / Required Background Modes / App plays audio or streams audio/video using AirPlay
+- Build Active Architecture Only: Yes
+- replace this in Pods -> source="$(readlink "${source}")" with this -> source="$(readlink -f "${source}")"
+- npm run ios_dev (make sure)
+- Build via XCode
+- Archive
+- Distribute

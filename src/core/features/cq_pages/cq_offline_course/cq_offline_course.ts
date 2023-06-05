@@ -7,6 +7,7 @@ import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
+// import zoomClass from '@zoomus/websdk/embedded'
 
 @Component({
     selector: 'cq_offline_course',
@@ -31,6 +32,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
     private agent: any;
     private platform: any;
+    private zoomAgent: any;
+    private zoomAgentInitted: boolean = false;
     loading: any = false;
 
     constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
@@ -270,33 +273,20 @@ export class CqOfflineCourse extends CqPage implements OnInit
     }
 
     /* for testing purpose */
-    showChecklogBannerTemp(type: number): void
+    fakeChecklogBanner(checklog: any): void
     {
         let data: any;
-        this.CH.log('showChecklogBannerTemp', type);
-
-        if (type == 1)
-        {
-            data = {
-                success: true,
-                code: 'checked_in',
-                type: 'in',
-                time: '9.12 am',
-                name: 'my course name',
-                message: 'You have successfully checked in',
-            };
-        }
-        else if (type == 2)
-        {
-            data = {
-                success: true,
-                code: 'checked_out',
-                type: 'out',
-                time: '9.52 am',
-                name: 'my course name',
-                message: 'You have successfully checked out',
-            };
-        }
+        let word = checklog.inOut.toLowerCase();
+        this.CH.log('fakeChecklogBanner', checklog.inOut);
+        
+        data = {
+            success: true,
+            code: 'checked_' + word,
+            type: word,
+            time: this.CH.time24To12(checklog.time),
+            name: this.pageData.course.name,
+            message: 'You have successfully checked ' + word,
+        };
 
         this.CH.log('having data', data);
         this.showChecklogBanner(data);
@@ -310,15 +300,93 @@ export class CqOfflineCourse extends CqPage implements OnInit
         this.openInBrowser(url);
     }
 
-    async joinMeetingZoom(meetingNumber, meetingPassword): Promise<void> {
+    async joinMeetingZoom(meetingNumber, meetingPassword): Promise<void>
+    {
         let userId = this.CH.getUserId();
         let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
+        let userEmail = (await this.CH.getUser().getProfile(userId)).email;
 
-        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
+        if (!userEmail)
+        {
+            this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
+            this.CH.errorLog("zoom error", "user email is not provided");
+            return;
+        }
+
+        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname + " (" + userEmail + ")");
     }
 
     showRejectedReason(message?: string): void
     {
         if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
     }
+
+    /* *a/
+    joinMeetingZoomWeb(meetingNumber, meetingPassword): void
+    {
+        this.CH.loading('Please wait...', async (loading) => {
+            if (!this.zoomAgentInitted)
+            {
+                this.zoomAgent = zoomClass.createClient();
+                this.zoomAgent.init({
+                    zoomAppRoot: document.getElementById('zoomElement'),
+                    language: 'en-US',
+                });
+                this.zoomAgentInitted = true;
+            }
+
+            let userId = this.CH.getUserId();
+            let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
+            let userEmail = (await this.CH.getUser().getProfile(userId)).email;
+
+            if (!userEmail)
+            {
+                loading.dismiss();
+                this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
+                this.CH.errorLog("zoom error", "user email is not provided");
+                return;
+            }
+
+            const params: any = {
+                class: 'CqLib',
+                function: 'get_zoom_jwt',
+                meeting_number: meetingNumber,
+            };
+            this.CH.callApi(params)
+            .then((data) => {
+                data = this.CH.toJson(data);
+
+                let zoomParams = {
+                    sdkKey: data.sdkKey,
+                    signature: data.jwt,
+                    meetingNumber: meetingNumber,
+                    userName: userFullname,
+                    userEmail: userEmail,
+                    password: meetingPassword,
+                    role: 0,
+                };
+                this.CH.log("starting zoom", zoomParams);
+                this.zoomAgent.join(zoomParams)
+                .then((success) => {
+                    loading.dismiss();
+                    this.CH.log("zoom started", success);
+                })
+                .catch((error) => {
+                    loading.dismiss();
+                    if (error.errorCode == 3008) this.CH.alert('Oops!', error.reason);
+                    else
+                    {
+                        this.CH.alert('Oops!', "Unexpected error occurred, please try again or contact course administrator");
+                        this.CH.errorLog("zoom error", error);
+                    }
+                });
+            })
+            .catch((error) => {
+                loading.dismiss();
+                this.CH.alert('Oops!', 'Server is unreachable, please check your internet connection');
+                this.CH.errorLog("zoom error", error);
+            });
+        });
+    }
+    /* */
 }

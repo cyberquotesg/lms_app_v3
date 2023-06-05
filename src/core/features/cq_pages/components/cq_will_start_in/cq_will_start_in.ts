@@ -79,6 +79,7 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
 
         if (this.startInDays != 0) this.focusOn = 'focus-on-days';
         else if (this.startInHours != 0) this.focusOn = 'focus-on-hours';
-        else this.focusOn = 'focus-on-minutes';
+        else if (this.startInMinutes != 0)  this.focusOn = 'focus-on-minutes';
+        else this.focusOn = 'focus-on-seconds';
     }
 }

@@ -66,9 +66,6 @@ export class AppComponent implements OnInit, AfterViewInit {
      * @inheritdoc
      */
     ngOnInit(): void {
-        // by rachmad
-        if (this.CH.isLoggedIn()) this.ifLoggedIn();
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = <any> window;
         CoreDomUtils.toggleModeClass('ionic5', true);

@@ -10,15 +10,53 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background pb-5">
 
-        <div class="ml-20 mt-36 mr-20 pb-36">
-            <cq_filter (onFilterChange)="onFilterChange($event)"></cq_filter>
-            <cq_items *ngIf="showItems" type="list" [items]="pageData.announcements" (onSelectItem)="openAnnouncement($event)"></cq_items>
+        <ng-container *ngIf="showItems">
+            <ion-item *ngFor="let announcement of pageData.announcements" class="ion-text-wrap" (click)="openAnnouncement(announcement)" button [detail]="false" lines="full">
+                <div class="mt-cst mb-cst" style="position: relative; min-height: 50px;">
+                    <span style="
+                        position: absolute;
+                        left: 0px;
+                        top: 0px;
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 50%;
+                        color: white;
+                        background: red;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-size: 24px;
+                    " class="background-dark-grey">
+                        <span *ngIf="!announcement.thumbnail">{{ getLetter(announcement.subject) }}</span>
+                        <span *ngIf="announcement.thumbnail" [ngStyle]="{ 'background-image': 'url(' + announcement.thumbnail + ')' }" style="
+                            width: 100%;
+                            height: 100%;
+                            background-size: cover;
+                            background-position: center center;
+                        "></span>
+                    </span>
+                    <div class="item-heading" style="margin-left: 50px;" class="pl-cst mt-8 mb-4">
+                        <core-format-text [text]="announcement.subject" contextLevel="system" [contextInstanceId]="0"
+                            [wsNotFiltered]="true">
+                        </core-format-text>
+                    </div>
+                    <div style="margin-left: 50px;" class="pl-cst">
+                        {{ announcement.subTitle }} <span *ngIf="announcement.userFullname">by {{ announcement.userFullname }}</span>
 
-            <button *ngIf="isAvailable(pageData.announcements)" class="load-more-button {{ pageIsLoading ? 'loading' : '' }}" (click)="pageForceLoadMore()" [disabled]="reachedEndOfList">
-                <ion-icon *ngIf="!pageIsLoading" name="arrow-down-circle"></ion-icon>
-                <ion-spinner *ngIf="pageIsLoading"></ion-spinner>
-            </button>
-        </div>
+                        <div *ngIf="!announcement.read" class="cq-tag-wrapper mt-4">
+                            <span class="cq-tag">New</span>
+                        </div>
+                    </div>
+                </div>
+            </ion-item>
+        </ng-container>
+
+        <core-empty-box *ngIf="!showItems || pageData.announcements.length == 0" icon="far-bell"
+            message="No Announcements">
+        </core-empty-box>
+
+        <core-infinite-loading *ngIf="isAvailable(pageData.announcements) && !reachedEndOfList" [enabled]="!reachedEndOfList" (action)="pageForceLoadMore()">
+        </core-infinite-loading>
 
         </div>
     </core-loading>

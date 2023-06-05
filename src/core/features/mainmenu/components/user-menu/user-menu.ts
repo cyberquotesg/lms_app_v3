@@ -33,6 +33,9 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { ModalController, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Component to display a user menu.
  */
@@ -56,11 +59,17 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     // by rachmad
     // displaySwitchAccount = true;
     displaySwitchAccount = false;
+    isProduction: boolean;
+    appVersion: string;
 
     displayContactSupport = false;
     removeAccountOnLogout = false;
 
     protected subscription!: Subscription;
+
+    // by rachmad
+    constructor(protected CH: CqHelper) {
+    }
 
     /**
      * @inheritdoc
@@ -75,6 +84,8 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         // by rachmad
         // this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
         this.displaySwitchAccount = false;
+        this.isProduction = this.CH.isProduction();
+        this.appVersion = this.CH.appVersion();
         
         this.displayContactSupport = new CoreUserAuthenticatedSupportConfig(currentSite).canContactSupport();
         this.removeAccountOnLogout = !!CoreConstants.CONFIG.removeaccountonlogout;

@@ -10,7 +10,7 @@ import { CoreUtils } from '@services/utils/utils';
 
 @Component({
     selector: 'cq_announcements',
-    templateUrl: './cq_announcements.old.html',
+    templateUrl: './cq_announcements.html',
 })
 export class CqAnnouncements extends CqPage implements OnInit
 {

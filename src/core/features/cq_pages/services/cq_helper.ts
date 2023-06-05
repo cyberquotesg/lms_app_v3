@@ -58,6 +58,10 @@ export class CqHelper
     {
     	return this.config().isProduction;
     }
+    appVersion(): string
+    {
+    	return this.config().versionname;
+    }
     log(data1: any, data2?: any): void
     {
     	if (this.isProduction()) return;
@@ -1064,6 +1068,7 @@ export class CqHelper
 	    	});
     	}
 
+    	this.log("init zoom", {apiKey, apiSecret});
     	return this.zoom.initialize(apiKey, apiSecret)
     	.then((success: any) => {
     		this.log("init zoom ok", success);
@@ -1090,6 +1095,8 @@ export class CqHelper
 
     	if (jsonData.success)
     	{
+    		this.log("init zoom jsonData.list", JSON.stringify(jsonData.list));
+    		
     	    let initiated = false;
     	    for (let key of jsonData.list)
     	    {
@@ -1113,7 +1120,7 @@ export class CqHelper
 		this.zoomInitiated = false;
     	return false;
     }
-    joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname): void
+    joinMeetingZoomEngine(meetingNumber, meetingPassword, meetingScreenName): void
     {
     	if (!this.zoom) return;
     	if (!this.zoomInitiated) return;
@@ -1124,7 +1131,8 @@ export class CqHelper
 	    	return;
     	}
 
-        this.zoom.joinMeeting(meetingNumber, meetingPassword, userFullname, {
+    	this.log("join meeting zoom", {meetingNumber, meetingPassword, meetingScreenName});
+        this.zoom.joinMeeting(meetingNumber, meetingPassword, meetingScreenName, {
             "no_driving_mode":true,
             "no_invite":true,
             "no_meeting_end_message":true,
@@ -1142,14 +1150,14 @@ export class CqHelper
     		this.log("join meeting zoom ok", success);
         })
         .catch((error: any) => {
-    		this.errorLog("join meeting zoom error", {meetingNumber, meetingPassword, userFullname, error});
+    		this.errorLog("join meeting zoom error", {meetingNumber, meetingPassword, meetingScreenName, error});
             this.alert("Oops!", "Cannot start Zoom meeting, please check your internet connection or contact your course administrator.");
         });
     }
-    async joinMeetingZoom(meetingNumber, meetingPassword, userFullname): Promise<void> 
+    async joinMeetingZoom(meetingNumber, meetingPassword, meetingScreenName): Promise<void> 
     {
     	await this.initiateZoom();
-    	this.joinMeetingZoomEngine(meetingNumber, meetingPassword, userFullname);
+    	this.joinMeetingZoomEngine(meetingNumber, meetingPassword, meetingScreenName);
     }
 
     /* ============================================================================================= date time

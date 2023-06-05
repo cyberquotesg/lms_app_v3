@@ -14,7 +14,7 @@ import { AddonNotifications } from '@features/cq_pages/cq_notifications/services
 
 @Component({
     selector: 'cq_announcement',
-    templateUrl: './cq_announcement.old.html',
+    templateUrl: './cq_announcement.html',
 })
 export class CqAnnouncement extends CqPage implements OnInit
 {

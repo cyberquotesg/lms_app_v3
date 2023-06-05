@@ -17,3 +17,19 @@
         }
     }
 }
+
+// by rachmad
+#main-scorm-content
+{
+    height: calc(100vh - 50px - 72px - 54px - 48px);
+    background: white;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    padding-bottom: 20px;
+
+    ion-item
+    {
+        margin-top: 20px;
+    }
+}

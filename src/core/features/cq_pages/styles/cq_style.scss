@@ -29,7 +29,7 @@ $base_background_no_image: #f2f2f2;
 $base_background: #{$base_background_no_image} url("../images/pattern/geometry.png");
 $component_background: #f2f2f2;
 
-$gradient_background: linear-gradient(90deg, var(--headerBackgroundRightenColor) 0%, var(--headerBackgroundColor) 50%, var(--headerBackgroundLightenColor) 100%);
+$gradient_background: linear-gradient(90deg, var(--headerBackgroundRightenColor, $cq_purple_dark) 0%, var(--headerBackgroundColor, $cq_purple_dark) 50%, var(--headerBackgroundLightenColor, $cq_purple_dark) 100%);
 $bar_background: $gradient_background;
 
 @mixin padding_margin
@@ -164,6 +164,33 @@ body
 	}
 
 	// ============================================================================================= helper
+	/* *a/
+	#zoomElement
+	{
+		display: none;
+		position: fixed;
+		left: 0px;
+		top: 0px;
+		right: 0px;
+		bottom: 0px;
+		z-index: 9;
+
+		button
+		{
+			background: transparent !important;
+			box-shadow: none !important;
+		}
+	}
+	*[class*="zmwebsdk"]
+	{
+		button
+		{
+			background: transparent !important;
+			box-shadow: none !important;
+		}
+	}
+	/* */
+
 	@include padding_margin;
 	@include padding_margin_component_spacing;
 
@@ -567,7 +594,8 @@ body
 				.card-sub-title-inner
 				{
 					font-size: 14px;
-					margin-top: 8px
+					margin-top: 8px;
+					padding: 4px 0px;
 				}
 			}
 		}
@@ -780,6 +808,10 @@ body
 				margin-bottom: 20px;
 			}
 		}
+	}
+	ion-spinner
+	{
+		color: var(--headerBackgroundColor, $cq_purple_dark) !important;
 	}
 	.cq-slide
 	{
@@ -1453,15 +1485,15 @@ body
 		{
 			width: 24px;
     		height: 24px;
-			border-color: var(--buttonBorderColor);
+			border-color: var(--buttonBorderColor, #DCC4DC);
 			border-radius: 50% !important;
-    		background-color: var(--buttonColor);
+    		background-color: var(--buttonColor, #DCC4DC);
 
     		.checkbox-inner
     		{
     			left: 50% !important;
     			top: 50% !important;
-    			border-color: var(--buttonTextColor);
+    			border-color: var(--buttonTextColor, #5B305D);
     			transform: translate(-50%, -50%) rotate(45deg);
     		}
 		}
@@ -1886,9 +1918,9 @@ body
 	.will-start-in-information
 	{
 	    text-align: center;
-	    font-size: 16px;
+	    font-size: 14px;
 	    font-weight: 700;
-	    line-height: 1em;
+	    line-height: 1.2em;
 
 	    .start-number
 	    {
@@ -2167,7 +2199,7 @@ body
         bottom: 0px;
         width: 4px;
         min-height: calc(100vh - 219px);
-        background: var(--footerBackgroundColor);
+        background: var(--footerBackgroundColor, #5B305D);
         z-index: 1;
     }
     .year-box-wrapper
@@ -2179,13 +2211,13 @@ body
 	    .year-box
 	    {
 	        padding: 5px 15px 5px 15px;
-	        background-color: var(--buttonColor);
+	        background-color: var(--buttonColor, #DCC4DC);
 	        font-family: "secondfont";
 	        font-size: 16px;
 	        font-weight: bold;
 	        border-radius: 4px;
 	        display: inline-block;
-	        color: var(--buttonTextColor);
+	        color: var(--buttonTextColor, #5B305D);
 	    }
 	    .course-box
 	    {
@@ -2199,7 +2231,7 @@ body
 	        top: 0px;
 	        bottom: -100px;
 	        width: 4px;
-	        background: var(--footerBackgroundColor);
+	        background: var(--footerBackgroundColor, #5B305D);
 	        z-index: 1;
 	    }
 	    .course-dot
@@ -2207,7 +2239,7 @@ body
 	        position: absolute;
 	        left: 15px;
 	        top: 38px;
-	        border: 4px solid var(--buttonColor);
+	        border: 4px solid var(--buttonColor, #DCC4DC);
 	        width: 14px;
 	        height: 14px;
 	        border-radius: 50%;

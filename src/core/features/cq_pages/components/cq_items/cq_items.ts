@@ -11,6 +11,7 @@ import { CqComponent } from '../../classes/cq_component';
 export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
     @Input() items: any | any[] = [];
     @Input() type: string = "tile";
+    @Input() listSecondLine: string = ""; // "" | "subTitle" | "countdown"
     @Input() hideTags: boolean = false;
     @Output() onSelectItem: EventEmitter<number>;
 
@@ -77,5 +78,9 @@ export class CqItemsComponent extends CqComponent implements OnInit, OnChanges {
     selectItem(item: any): void
     {
         this.onSelectItem.emit(item);
+    }
+    timeHasCome(data: any, index: number): void
+    {
+        this.workingItems[index].willStartIn = -1;
     }
 }

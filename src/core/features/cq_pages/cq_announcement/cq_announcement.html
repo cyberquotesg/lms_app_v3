@@ -11,34 +11,60 @@
         <div class="base-background pb-5">
 
         <div *ngIf="isAvailable(pageData.announcement.message)">
-            <ion-card>
-                <div class="card-image">
-                    <div *ngIf="pageData.announcement.thumbnail" class="card-image-frame" [ngStyle]="{'background-image': 'url(' + pageData.announcement.thumbnail + ')'}"></div>
-                    <span *ngIf="!pageData.announcement.thumbnail" class="card-image-letter">{{ getLetter(pageData.announcement.subject) }}</span>
+
+            <ion-item class="ion-text-wrap" [detail]="false" lines="full">
+                <div class="mt-cst mb-cst" style="position: relative; min-height: 50px;">
+                    <span style="
+                        position: absolute;
+                        left: 0px;
+                        top: 0px;
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 50%;
+                        color: white;
+                        background: red;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-size: 24px;
+                    " class="background-dark-grey">
+                        <span *ngIf="!pageData.announcement.thumbnail">{{ getLetter(pageData.announcement.subject) }}</span>
+                        <span *ngIf="pageData.announcement.thumbnail" [ngStyle]="{ 'background-image': 'url(' + pageData.announcement.thumbnail + ')' }" style="
+                            width: 100%;
+                            height: 100%;
+                            background-size: cover;
+                            background-position: center center;
+                        "></span>
+                    </span>
+                    <div class="item-heading" style="margin-left: 50px;" class="pl-cst mt-8 mb-4">
+                        <core-format-text [text]="pageData.announcement.subject" contextLevel="system" [contextInstanceId]="0"
+                            [wsNotFiltered]="true">
+                        </core-format-text>
+                    </div>
+                    <div style="margin-left: 50px;" class="pl-cst">{{ pageData.announcement.subTitle }} <span *ngIf="pageData.announcement.userFullname">by {{ pageData.announcement.userFullname }}</span></div>
                 </div>
+            </ion-item>
 
-                <ion-card-header>
-                    <ion-card-title class="text-center" style="height: auto;">{{ pageData.announcement.subject }}</ion-card-title>
-                    <div *ngIf="pageData.announcement.userFullname" class="text-center mt-8">by {{ pageData.announcement.userFullname }}</div>
-                </ion-card-header>
-
-                <ion-card-content>
+            <ion-item class="ion-text-wrap" [detail]="false" lines="full">
+                <div>
                     <ng-container *ngFor="let message of pageData.announcement.messageArray">
                         <div *ngIf="message.type == 'text'" [innerHTML]="message.content"></div>
-                        <a *ngIf="message.type == 'link'" (click)="openInBrowser(message.content)">{{ message.content2 }}</a>
+                        <p *ngIf="message.type == 'link'"><a (click)="openInBrowser(message.content)">{{ message.content2 }}</a></p>
                         <core-iframe *ngIf="message.type == 'youtube'" [src]="message.content" iframeHeight="auto" [allowFullscreen]="true"></core-iframe>
                     </ng-container>
-                </ion-card-content>
+                </div>
+            </ion-item>
 
-                <ion-card-content *ngIf="isAvailable(pageData.announcement.attachments)" style="border-top: 1px solid #e1e1e1">
-                    <div>Downloadable:</div>
-                    <div class="mt-4 mr--4 ml--4">
+            <ion-item *ngIf="isAvailable(pageData.announcement.attachments)">
+                <div>
+                    <p>Downloadable:</p>
+                    <p class="mr--4 ml--4">
                         <button *ngFor="let attachment of pageData.announcement.attachments" (click)="downloadAttachment(attachment.name, attachment.link)" class="button button-small mt-4 mb-4 ml-4 mr-4">
                             {{ attachment.name }}
                         </button>
-                    </div>
-                </ion-card-content>
-            </ion-card>
+                    </p>
+                </div>
+            </ion-item>
         </div>
 
         <cq_empty [empty]="isEmpty(pageData.announcement.message)"></cq_empty>

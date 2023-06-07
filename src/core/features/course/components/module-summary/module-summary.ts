@@ -106,7 +106,11 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
             displayRefresh: true,
             displayPrefetch: true,
             displaySize: true,
-            displayBlog: true,
+
+            // by rachmad
+            displayBlog: false,
+            // displayBlog: true,
+
             displayGrades: true,
         }, this.displayOptions);
 

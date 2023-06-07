@@ -505,6 +505,11 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         this.grades = grades;
 
+        // remove empty sections
+        this.sections = this.sections.filter((section) => {
+            return section.modules.length;
+        });
+
         // remove link in availability info
         this.sections.forEach((section) => {
             section.modules.forEach((courseModule) => {

@@ -56,11 +56,11 @@ export class CoreCourseModuleInfoComponent implements OnInit {
     moduleNameTranslated = '';
 
     // by rachmad
-    showInfoBox: boolean;
-    showCompletion: boolean;
-    showDates: boolean;
-    showAvailabilityinfo: boolean;
-    showDescription: boolean;
+    finalShowInfoBox = false;
+    finalShowCompletion = false;
+    finalShowDates = false;
+    finalShowAvailabilityinfo = false;
+    finalShowDescription = false;
 
     /**
      * @inheritdoc
@@ -72,11 +72,11 @@ export class CoreCourseModuleInfoComponent implements OnInit {
         this.showCompletion = CoreSites.getRequiredCurrentSite().isVersionGreaterEqualThan('3.11');
 
         // by rachmad
-        this.showCompletion = this.showCompletion && this.module.completiondata && (this.module.completiondata.isautomatic || (this.showManualCompletion && this.module.uservisible));
-        this.showDates = this.module.dates && this.module.dates.length;
-        this.showAvailabilityinfo = this.showAvailabilityInfo && this.module.availabilityinfo;
-        this.showDescription = this.description;
-        this.showInfoBox = this.showCompletion || this.showDates || this.showAvailabilityinfo || this.showDescription;
+        this.finalShowCompletion = !!(this.showCompletion && this.module.completiondata && (this.module.completiondata.isautomatic || (this.showManualCompletion && this.module.uservisible)));
+        this.finalShowDates = !!(this.module.dates && this.module.dates.length);
+        this.finalShowAvailabilityinfo = !!(this.showAvailabilityInfo && this.module.availabilityinfo);
+        this.finalShowDescription = !!(this.description);
+        this.finalShowInfoBox = this.finalShowCompletion || this.finalShowDates || this.finalShowAvailabilityinfo || this.finalShowDescription;
     }
 
 }

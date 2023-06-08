@@ -13,9 +13,9 @@
     </ion-label>
 </ion-item>
 
-<div *ngIf="showInfoBox" class="core-module-info-box">
+<div *ngIf="finalShowInfoBox" class="core-module-info-box">
     <!-- Module completion. -->
-    <div *ngIf="showCompletion" class="core-module-info-completion core-module-info-box-section">
+    <div *ngIf="finalShowCompletion" class="core-module-info-completion core-module-info-box-section">
         <core-course-module-completion [completion]="module.completiondata" [moduleName]="module.name" [moduleId]="module.id"
             [showCompletionConditions]="true" [showManualCompletion]="showManualCompletion && module.uservisible"
             (completionChanged)="completionChanged.emit($event)">
@@ -23,25 +23,25 @@
     </div>
 
     <!-- Activity dates. -->
-    <div *ngIf="showDates" class="core-module-dates core-module-info-box-section">
+    <div *ngIf="finalShowDates" class="core-module-dates core-module-info-box-section">
         <core-reminders-date *ngFor="let date of module.dates" [component]="component" [instanceId]="module.id" [type]="date.dataid"
             [label]="date.label" [time]="date.timestamp" [relativeTo]="date.relativeto" [title]="module.name" [url]="module.url">
         </core-reminders-date>
     </div>
 
     <!-- Availability info space. -->
-    <div *ngIf="showAvailabilityinfo" class="core-module-availabilityinfo core-module-info-box-section">
+    <div *ngIf="finalShowAvailabilityinfo" class="core-module-availabilityinfo core-module-info-box-section">
         <ion-icon name="fas-lock" [attr.aria-label]="'core.restricted' | translate"></ion-icon>
         <core-format-text [text]="module.availabilityinfo" contextLevel="module" [contextInstanceId]="module.id" [courseId]="module.course">
         </core-format-text>
     </div>
 
-    <div *ngIf="showDescription" class="core-module-info-description core-module-info-box-section">
+    <div *ngIf="finalShowDescription" class="core-module-info-description core-module-info-box-section">
         <core-format-text [text]="description" [component]="component" [componentId]="componentId" contextLevel="module"
             [contextInstanceId]="module.id" [courseId]="courseId" [collapsible-item]="expandDescription ? null : ''">
         </core-format-text>
     </div>
-    <ng-content *ngIf="showDescription" select="[description]"></ng-content>
+    <ng-content *ngIf="finalShowDescription" select="[description]"></ng-content>
 </div>
 
 <ng-content></ng-content>

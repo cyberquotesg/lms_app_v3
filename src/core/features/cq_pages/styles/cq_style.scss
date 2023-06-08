@@ -373,6 +373,27 @@ body
 			}
 		}
 	}
+	.set-following-iframe-to
+	{
+		iframe
+		{
+			width: var(--iframe-width) !important;
+			height: var(--iframe-height) !important;
+		}
+	}
+	.set-following-iframe-to-fill
+	{
+		position: relative;
+
+		iframe
+		{
+			position: absolute;
+			left: 0px;
+			top: 0px;
+			width: 100% !important;
+			height: 100% !important;
+		}
+	}
 
 	core-user-menu-button
 	{

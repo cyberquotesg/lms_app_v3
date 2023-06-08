@@ -1,0 +1,26 @@
+#main-wrapper
+{
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+    height: calc(100vh - 50px - 54px - 48px);
+
+	> *
+	{
+		flex-grow: 0;
+		flex-shrink: 0;
+	}
+
+	#main-content
+	{
+		flex-grow: 1;
+		flex-shrink: 0;
+	}
+}
+@media (orientation: landscape)
+{
+	#main-wrapper
+	{
+	    height: calc(100vh - 50px - 54px);
+	}
+}

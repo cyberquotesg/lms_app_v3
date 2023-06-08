@@ -26,7 +26,10 @@ import { AddonModPageHelper } from '../../services/page-helper';
  */
 @Component({
     selector: 'addon-mod-page-index',
-    templateUrl: 'addon-mod-page-index.html',
+    templateUrl: 'addon-mod-page-index.new.html',
+
+    // by rachmad
+    styleUrls: ['index.scss'],
 })
 export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit {
 

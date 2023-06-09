@@ -3,7 +3,7 @@
 	display: flex;
 	justify-content: center;
 	flex-direction: column;
-    height: calc(100vh - 50px - 54px - 48px);
+    height: calc(100vh - 50px - 54px);
 
 	> *
 	{
@@ -15,12 +15,5 @@
 	{
 		flex-grow: 1;
 		flex-shrink: 0;
-	}
-}
-@media (orientation: landscape)
-{
-	#main-wrapper
-	{
-	    height: calc(100vh - 50px - 54px);
 	}
 }

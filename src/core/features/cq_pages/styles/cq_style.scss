@@ -1318,7 +1318,7 @@ body
 	{
 		&:not(.bar-button):not(.tab-button):not(.alert-button):not(.action-sheet-button):not(.excluded-button)
 		{
-		    padding: 7px 13px;
+		    padding: 7px 12px;
 			border-radius: 12px;
 			text-decoration: none !important;
 			line-height: 1.5em;
@@ -2420,7 +2420,7 @@ body
 		{
 			display: flex !important;
 		}
-		
+
 		ion-back-button
 		{
 			&.button

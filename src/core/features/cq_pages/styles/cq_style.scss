@@ -210,6 +210,10 @@ body
 	{
 		background: $base_background_no_image;
 	}
+	.base-background-as-var
+	{
+		--background: #{$base_background_no_image} !important;
+	}
 	.gradient-background
 	{
 		background-image: $gradient_background !important;
@@ -1169,7 +1173,6 @@ body
 			}
 			.back-button
 			{
-				color: var(--headerTextColor, white) !important;
 				position: absolute;
 			    left: $button_drawer_offset;
 			    width: auto;
@@ -1179,40 +1182,19 @@ body
 
 				.button-inner
 				{
-					color: var(--headerTextColor, white) !important;
-
 					.back-button-icon
 					{
 						padding: 0px;
 					}
 				}
 			}
-			.bar-buttons
-			{
-				color: var(--headerTextColor, white) !important;
-
-				.bar-button
-				{
-					color: var(--headerTextColor, white) !important;
-
-					.button-inner
-					{
-						color: var(--headerTextColor, white) !important;
-					}
-				}
-			}
 			.toolbar-content
 			{
-				color: var(--headerTextColor, white) !important;
-
 				.title
 				{
-					color: var(--headerTextColor, white) !important;
-
 					.toolbar-title
 					{
 						text-align: center;
-						color: var(--headerTextColor, white) !important;
 					}
 				}
 			}
@@ -1429,7 +1411,6 @@ body
 		        &::part(native)
 		        {
 		        	background: transparent !important;
-		        	color: white !important;
 				}
 			}
         }
@@ -2385,6 +2366,48 @@ body
 			}
 		}
 		/* */
+		.header
+		{
+			.toolbar
+			{
+				.back-button
+				{
+					color: var(--headerTextColor, white) !important;
+					.button-inner
+					{
+						color: var(--headerTextColor, white) !important;
+					}
+				}
+				.bar-buttons
+				{
+					color: var(--headerTextColor, white) !important;
+
+					.bar-button
+					{
+						color: var(--headerTextColor, white) !important;
+
+						.button-inner
+						{
+							color: var(--headerTextColor, white) !important;
+						}
+					}
+				}
+				.toolbar-content
+				{
+					color: var(--headerTextColor, white) !important;
+
+					.title
+					{
+						color: var(--headerTextColor, white) !important;
+
+						.toolbar-title
+						{
+							color: var(--headerTextColor, white) !important;
+						}
+					}
+				}
+			}
+		}
 		.content
 		{
 			.fixed-content,
@@ -2396,6 +2419,20 @@ body
 		.footer
 		{
 			display: flex !important;
+		}
+		
+		ion-back-button
+		{
+			&.button
+			{
+				&:not(.bar-button):not(.tab-button):not(.alert-button):not(.action-sheet-button):not(.excluded-button)
+				{
+			        &::part(native)
+			        {
+			        	color: white !important;
+					}
+				}
+	        }
 		}
 	}
 

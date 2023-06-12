@@ -439,6 +439,7 @@ body
 			{
 				height: $header_height;
     			overflow: hidden;
+    			--ion-safe-area-top: 0px;
 
 	    	    &::before
 	    	    {

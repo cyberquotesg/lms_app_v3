@@ -3,7 +3,7 @@
 	display: flex;
 	justify-content: center;
 	flex-direction: column;
-    height: calc(100vh - 50px - 54px);
+    flex-grow: 1;
 
 	> *
 	{
@@ -15,5 +15,10 @@
 	{
 		flex-grow: 1;
 		flex-shrink: 0;
+
+		iframe + div
+		{
+			display: none;
+		}
 	}
 }

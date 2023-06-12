@@ -413,6 +413,20 @@ body
 	{
 		min-height: 60vh;
 	}
+	core-format-text
+	{
+		iframe + div
+		{
+			display: none;
+		}
+	}
+	page-addon-mod-scorm-player
+	{
+		core-loading
+		{
+			height: 100%;
+		}
+	}
 	ion-tabs, ion-modal
 	{
 		ion-header

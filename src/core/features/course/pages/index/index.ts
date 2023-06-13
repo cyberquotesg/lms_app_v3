@@ -297,7 +297,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             saveToCache: true,
             emergencyCache: true,
         };
-        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        this.sections = (await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), [])).filter((section) => {
+            return section.modules.length;
+        });
 
         // Load sections.
         // this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
@@ -505,11 +507,6 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         this.grades = grades;
 
-        // remove empty sections
-        this.sections = this.sections.filter((section) => {
-            return section.modules.length;
-        });
-
         // remove link in availability info
         this.sections.forEach((section) => {
             section.modules.forEach((courseModule) => {
@@ -535,8 +532,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             saveToCache: true,
             emergencyCache: true,
         };
-        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
-        const sections = this.sections;
+        let sections = (await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), [])).filter((section) => {
+            return section.modules.length;
+        });
 
         if (refresh) {
             // Invalidate the recently downloaded module list. To ensure info can be prefetched.

@@ -1,7 +1,8 @@
 <!-- Buttons to add to the header. -->
 <core-navbar-buttons slot="end">
-    <ion-button fill="clear" (click)="openModuleSummary()" aria-haspopup="true" [attr.aria-label]="'core.info' | translate">
-        <ion-icon name="fas-circle-info" slot="icon-only" aria-hidden="true"></ion-icon>
+    <ion-button fill="clear" (click)="manageFullscreen()" aria-haspopup="true" [attr.aria-label]="'core.info' | translate">
+        <ion-icon *ngIf="!isFullscreen" name="fas-expand" slot="icon-only" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="isFullscreen" name="fas-compress" slot="icon-only" aria-hidden="true"></ion-icon>
     </ion-button>
 </core-navbar-buttons>
 

@@ -427,6 +427,48 @@ body
 			height: 100%;
 		}
 	}
+    &.core-iframe-fullscreen
+    {
+		page-addon-mod-scorm-player,
+		page-addon-mod-page-index
+		{
+			ion-header
+			{
+				ion-toolbar
+				{
+					ion-buttons.buttons-last-slot
+					{
+						position: absolute;
+						top: 0px;
+						right: 4px;
+						height: $header_height;
+					}
+				}
+			}
+		}
+		ion-tabs
+		{
+			@media (orientation: landscape)
+			{
+				ion-header
+				{
+					height: 100vh;
+
+					ion-toolbar
+					{
+						height: 100vh;
+						--min-height: 100vh;
+
+			    	    &::before
+			    	    {
+			    	    	height: 100vh;
+			    	    }
+			    	}
+			    }
+			}
+		}
+    }
+
 	ion-tabs, ion-modal
 	{
 		ion-header
@@ -1053,98 +1095,6 @@ body
     		position: absolute !important;
 		    right: 5px !important;
 		    top: 4px !important;
-    	}
-    }
-
-    ion-router-outlet
-    {
-	    page-addon-mod-scorm-player.ion-page
-	    {
-	    	ion-header
-	    	{
-	    	}
-	    	ion-content
-	    	{
-		    	core-iframe
-		    	{
-		    	}
-	    	}
-	    }
-    }
-    &.core-iframe-fullscreen
-    {
-    	ion-router-outlet
-    	{
-    		page-addon-mod-scorm-player.ion-page
-    		{
-    			ion-header
-    			{
-    				ion-toolbar
-    				{
-    					ion-back-button
-    					{
-    						display: block !important;
-    					}
-    					ion-buttons
-    					{
-    						position: absolute;
-    						flex-direction: row;
-    						height: $header_height;
-
-    						@media (orientation: portrait)
-    						{
-	    						&.buttons-first-slot
-	    						{
-	    							left: 4px;
-	    							top: 0px;
-	    						}
-	    						&.buttons-last-slot
-	    						{
-	    							top: 0px;
-	    							right: 4px;
-	    						}
-    						}
-    						@media (orientation: landscape)
-    						{
-	    						&.buttons-first-slot
-	    						{
-	    							left: 0px;
-	    							top: 0px;
-	    							right: 0px;
-	    						}
-	    						&.buttons-last-slot
-	    						{
-	    							left: 0px;
-	    							right: 0px;
-	    							bottom: 0px;
-	    						}
-    						}
-    					}
-    				}
-    			}
-    		}
-
-			ion-tabs
-			{
-				@media (orientation: landscape)
-				{
-					ion-header
-					{
-						height: 100vh;
-
-						ion-toolbar
-						{
-							height: 100vh;
-							--min-height: 100vh;
-
-				    	    &::before
-				    	    {
-				    	    	height: 100vh;
-				    	    }
-				    	}
-				    }
-				}
-			}
     	}
     }
 

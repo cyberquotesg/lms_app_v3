@@ -21,6 +21,9 @@ import { CoreUtils } from '@services/utils/utils';
 import { AddonModPageProvider, AddonModPagePage, AddonModPage } from '../../services/page';
 import { AddonModPageHelper } from '../../services/page-helper';
 
+// by rachmad
+import { StatusBar } from '@singletons';
+
 /**
  * Component that displays a page.
  */
@@ -40,6 +43,9 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
     timemodified?: number;
     page?: AddonModPagePage;
     warning?: string;
+
+    // by rachmad
+    isFullscreen = false;
 
     protected fetchContentDefaultError = 'addon.mod_page.errorwhileloadingthepage';
 
@@ -120,4 +126,13 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
         await AddonModPage.logView(this.module.instance, this.module.name);
     }
 
+    // by rachmad
+    manageFullscreen(): void
+    {
+        this.isFullscreen = !this.isFullscreen;
+
+        this.isFullscreen ? StatusBar.hide() : StatusBar.show();
+        document.body.classList.toggle('core-iframe-fullscreen', this.isFullscreen);
+        document.getElementById("main-wrapper").classList.toggle('is-fullscreen', this.isFullscreen);
+    }
 }

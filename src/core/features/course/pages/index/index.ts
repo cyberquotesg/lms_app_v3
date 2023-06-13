@@ -297,9 +297,12 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             saveToCache: true,
             emergencyCache: true,
         };
-        this.sections = (await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), [])).filter((section) => {
+        let sections: CoreCourseWSSection[] = [];
+        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = sections.filter((section) => {
             return section.modules.length;
         });
+        this.sections = sections;
 
         // Load sections.
         // this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
@@ -532,7 +535,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             saveToCache: true,
             emergencyCache: true,
         };
-        let sections = (await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), [])).filter((section) => {
+        let sections: CoreCourseWSSection[] = [];
+        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = sections.filter((section) => {
             return section.modules.length;
         });
 

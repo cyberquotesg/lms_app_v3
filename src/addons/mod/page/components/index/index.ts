@@ -133,6 +133,6 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
 
         this.isFullscreen ? StatusBar.hide() : StatusBar.show();
         document.body.classList.toggle('core-iframe-fullscreen', this.isFullscreen);
-        document.getElementById("main-wrapper").classList.toggle('is-fullscreen', this.isFullscreen);
+        document.getElementById("main-wrapper")!.classList.toggle('is-fullscreen', this.isFullscreen);
     }
 }

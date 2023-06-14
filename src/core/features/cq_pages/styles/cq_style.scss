@@ -427,47 +427,6 @@ body
 			height: 100%;
 		}
 	}
-    &.core-iframe-fullscreen
-    {
-		page-addon-mod-scorm-player,
-		page-addon-mod-page-index
-		{
-			ion-header
-			{
-				ion-toolbar
-				{
-					ion-buttons.buttons-last-slot
-					{
-						position: absolute;
-						top: 0px;
-						right: 4px;
-						height: $header_height;
-					}
-				}
-			}
-		}
-		ion-tabs
-		{
-			@media (orientation: landscape)
-			{
-				ion-header
-				{
-					height: 100vh;
-
-					ion-toolbar
-					{
-						height: 100vh;
-						--min-height: 100vh;
-
-			    	    &::before
-			    	    {
-			    	    	height: 100vh;
-			    	    }
-			    	}
-			    }
-			}
-		}
-    }
 
 	ion-tabs, ion-modal
 	{
@@ -481,7 +440,6 @@ body
 			{
 				height: $header_height;
     			overflow: hidden;
-    			--ion-safe-area-top: 0px;
 
 	    	    &::before
 	    	    {
@@ -2480,4 +2438,50 @@ body
 			}			
 		}
 	}
+    &.core-iframe-fullscreen
+    {
+		page-addon-mod-scorm-player,
+		page-addon-mod-page-index
+		{
+			ion-header
+			{
+    			--ion-safe-area-left: 0px;
+    			--ion-safe-area-top: 0px;
+    			--ion-safe-area-right: 0px;
+    			--ion-safe-area-bottom: 0px;
+    			
+				ion-toolbar
+				{
+					ion-buttons.buttons-last-slot
+					{
+						position: absolute;
+						top: 0px;
+						right: 4px;
+						height: $header_height;
+					}
+				}
+			}
+		}
+		ion-tabs
+		{
+			@media (orientation: landscape)
+			{
+				ion-header
+				{
+					height: 100vh;
+
+					ion-toolbar
+					{
+						height: 100vh;
+						--min-height: 100vh;
+
+			    	    &::before
+			    	    {
+			    	    	height: 100vh;
+			    	    }
+			    	}
+			    }
+			}
+		}
+    }
 }

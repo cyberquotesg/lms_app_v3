@@ -19,7 +19,7 @@
 
         <ion-slides #pageSlider class="page-slider page-slider-cqac" [options]="pageData.sliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 80px - 48px);">
             <ion-slide *ngFor="let media of pageData.medias">
-                <div class="text-left pl-cs pr-cs pt-36 pb-36" style="width: 100%">
+                <div class="text-left pl-cs pr-cs pt-36 pb-30" style="width: 100%">
                     <cq_filter [filterMultipleTitle]="media == 'online' ? 'E-Learning Filter' : 'Classroom Training Filter'" [filterMultiple]="pageData[media].filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
                     <cq_items [items]="pageData[media].courses" (onSelectItem)="openCourse($event)"></cq_items>
                     

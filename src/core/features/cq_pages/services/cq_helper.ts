@@ -14,6 +14,7 @@ import { CoreSiteBasicInfo, CoreSites } from '@services/sites';
 import { CorePlatform } from '@services/platform';
 import { CoreConstants } from '@/core/constants';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { Device } from '@singletons';
 
 @Injectable({ providedIn: 'root' })
 export class CqHelper
@@ -61,6 +62,26 @@ export class CqHelper
     appVersion(): string
     {
     	return this.config().versionname;
+    }
+    getDeviceInfo(): any
+    {
+    	return {
+    		appId: this.config().app_id,
+    		name: Device.manufacturer || "no_manufacturer",
+    		model: Device.model || "no_model",
+    		platform: Device.platform || "no_platform",
+    		version: Device.version || "no_version",
+    		uuid: Device.uuid || "no_uuid",
+    	};
+    }
+    getDeviceInfoString(): string
+    {
+    	let data: any = this.getDeviceInfo();
+    	let result: string[] = [];
+
+    	for (let key in data) result.push(data[key]);
+
+    	return result.join("-");
     }
     log(data1: any, data2?: any): void
     {
@@ -369,13 +390,15 @@ export class CqHelper
 	    var saltIterator = -1;
 
 	    // the salt must be sent to server to generate token
-	    this.http.get(this.config().siteurl + '/cq_lib/call.php?function=request_token&params[]=300&params[]=' + salt, {
+	    this.http.get(this.config().siteurl + '/cq_lib/call.php?function=request_csrf_token&params[]=300&params[]=' + salt + "&params[]=" + this.getDeviceInfoString(), {
 	    	observe: 'body', responseType: 'text'
     	}).subscribe((data) => {
+    		let jsonData = this.toJson(data);
+    		
 	        // after token has been received, it contains some salt within
 	        // but the salt is inserted into the token once more in some indexes
 	        // so in this step, the token has salt twice, once is mixed by server, once is mixed by app
-	        var token = data.split('').map((text, index) => {
+	        var token = jsonData.token.split('').map((text, index) => {
 	            if (saltIndexes.indexOf(index) > -1)
 	            {
 	                saltIterator++;
@@ -993,6 +1016,12 @@ export class CqHelper
     getSite(): any
     {
         return CoreSites.getCurrentSite();
+    }
+    async getSiteConfig(): Promise<any>
+    {
+    	let data = CoreSites.getSitePublicConfig(this.config().siteurl);
+
+    	return data;
     }
     isLoggedIn(): boolean
     {

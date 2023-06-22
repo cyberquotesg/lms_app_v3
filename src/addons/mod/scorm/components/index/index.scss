@@ -19,17 +19,38 @@
 }
 
 // by rachmad
-#main-scorm-content
+#main-scorm-wrapper
 {
-    height: calc(100vh - 50px - 72px - 54px - 48px);
-    background: white;
     display: flex;
-    justify-content: center;
     flex-direction: column;
-    padding-bottom: 20px;
+    flex-grow: 1;
+    flex-shrink: 0;
 
-    ion-item
+    > *
     {
-        margin-top: 20px;
+        flex-grow: 0;
+        flex-shrink: 0;
     }
+
+    #main-scorm-content
+    {
+        flex-grow: 1;
+        background: white;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        padding-bottom: 20px;
+
+        ion-item
+        {
+            margin-top: 20px;
+        }
+    }
+}
+#main-scorm-footer
+{
+    width: 100%;
+    height: 54px;
+    flex-grow: 0;
+    flex-shrink: 0;
 }

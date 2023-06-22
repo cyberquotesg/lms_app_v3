@@ -67,16 +67,18 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
         }
         if (!hideList.includes("courseType"))
         {
-            if (this.item.typeText || this.item.finalCourseTypeText || this.item.courseTypeText)
+            let text = this.item.typeText || this.item.finalCourseTypeText || this.item.courseTypeText;
+            if (text && text.toLowerCase().replace(" ", "").replace("_", "") != "notset")
             {
-                this.finalTags.push({text: this.item.typeText || this.item.finalCourseTypeText || this.item.courseTypeText, class: "dark-grey"});
+                this.finalTags.push({text, class: "dark-grey"});
             }
         }
         if (!hideList.includes("categoryName"))
         {
-            if (this.item.categoryname || this.item.categoryName)
+            let text = this.item.categoryname || this.item.categoryName;
+            if (text && text.toLowerCase().replace(" ", "").replace("_", "") != "notset")
             {
-                this.finalTags.push({text: this.item.categoryname || this.item.categoryName, class: "dark-grey"});
+                this.finalTags.push({text, class: "dark-grey"});
             }
         }
         if (this.item.tags && Array.isArray(this.item.tags) && this.item.tags.length > 0)

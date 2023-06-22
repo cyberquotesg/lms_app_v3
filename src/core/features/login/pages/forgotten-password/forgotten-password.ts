@@ -30,7 +30,10 @@ import { CoreUserGuestSupportConfig } from '@features/user/classes/support/guest
  */
 @Component({
     selector: 'page-core-login-forgotten-password',
-    templateUrl: 'forgotten-password.html',
+    templateUrl: 'forgotten-password.new.html',
+
+    // by rachmad
+    styleUrls: ['../../login.scss'],
 })
 export class CoreLoginForgottenPasswordPage implements OnInit {
 
@@ -42,6 +45,9 @@ export class CoreLoginForgottenPasswordPage implements OnInit {
     supportConfig?: CoreUserSupportConfig;
     canContactSupport?: boolean;
     wasPasswordResetRequestedRecently = false;
+
+    // by rachmad
+    usingEmail = false;
 
     constructor(protected formBuilder: FormBuilder) {}
 
@@ -80,7 +86,9 @@ export class CoreLoginForgottenPasswordPage implements OnInit {
         e.preventDefault();
         e.stopPropagation();
 
-        const field = this.myForm.value.field;
+        // by rachmad
+        // const field = this.myForm.value.field;
+
         const value = this.myForm.value.value;
 
         if (!value) {
@@ -90,7 +98,10 @@ export class CoreLoginForgottenPasswordPage implements OnInit {
         }
 
         const modal = await CoreDomUtils.showModalLoading('core.sending', true);
-        const isMail = field === 'email';
+
+        // by rachmad
+        // const isMail = field === 'email';
+        const isMail = this.usingEmail;
 
         try {
             const response = await CoreLoginHelper.requestPasswordReset(
@@ -124,4 +135,9 @@ export class CoreLoginForgottenPasswordPage implements OnInit {
         }
     }
 
+    // by rachmad
+    changeUsingEmail(result): void
+    {
+        this.usingEmail = result;
+    }
 }

@@ -297,7 +297,12 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             saveToCache: true,
             emergencyCache: true,
         };
-        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        let sections: CoreCourseWSSection[] = [];
+        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = sections.filter((section) => {
+            return section.modules.length;
+        });
+        this.sections = sections;
 
         // Load sections.
         // this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
@@ -530,8 +535,11 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             saveToCache: true,
             emergencyCache: true,
         };
-        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
-        const sections = this.sections;
+        let sections: CoreCourseWSSection[] = [];
+        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = sections.filter((section) => {
+            return section.modules.length;
+        });
 
         if (refresh) {
             // Invalidate the recently downloaded module list. To ensure info can be prefetched.

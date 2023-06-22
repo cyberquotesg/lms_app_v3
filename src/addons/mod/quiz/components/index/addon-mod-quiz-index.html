@@ -137,7 +137,12 @@
     <!-- More data. -->
     <ng-container *ngIf="quiz">
         <!-- Error messages. -->
+
+        <!-- by rachmad -a->
         <ion-card class="core-danger-card addon-mod_quiz-prevent-messages">
+        <!-a- -->
+        <ion-card class="core-danger-card addon-mod_quiz-prevent-messages" *ngIf="preventMessages.length">
+            
             <ion-item class="ion-text-wrap" *ngFor="let message of preventMessages">
                 <ion-label>
                     <p>{{ message }}</p>

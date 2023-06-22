@@ -1,0 +1,39 @@
+<!-- Buttons to add to the header. -->
+<core-navbar-buttons slot="end">
+    <ion-button fill="clear" (click)="manageFullscreen()" aria-haspopup="true" [attr.aria-label]="'core.info' | translate">
+        <ion-icon *ngIf="!isFullscreen" name="fas-expand" slot="icon-only" aria-hidden="true"></ion-icon>
+        <ion-icon *ngIf="isFullscreen" name="fas-compress" slot="icon-only" aria-hidden="true"></ion-icon>
+    </ion-button>
+</core-navbar-buttons>
+
+<!-- Content. -->
+<core-loading [hideUntil]="!showLoading">
+
+    <!-- Activity info. -->
+    <div id="main-wrapper">
+        <core-course-module-info [module]="module" [description]="displayDescription && description" [component]="component"
+            [componentId]="componentId" [courseId]="courseId" (completionChanged)="onCompletionChange()">
+        </core-course-module-info>
+
+        <ion-card class="core-warning-card" *ngIf="warning">
+            <ion-item>
+                <ion-icon name="fas-triangle-exclamation" slot="start" aria-hidden="true"></ion-icon>
+                <ion-label><span [innerHTML]="warning"></span></ion-label>
+            </ion-item>
+        </ion-card>
+
+        <div id="main-content" class="set-following-iframe-to-fill">
+            <core-format-text [component]="component" [componentId]="componentId" [text]="contents" contextLevel="module"
+                [contextInstanceId]="module.id" [courseId]="courseId">
+            </core-format-text>
+
+            <p class="ion-padding-bottom addon-mod_page-timemodified" *ngIf="displayTimemodified && timemodified">
+                {{ 'core.lastmodified' | translate}}: {{ timemodified! * 1000 | coreFormatDate }}
+            </p>
+        </div>
+    </div>
+
+</core-loading>
+
+<core-course-module-navigation collapsible-footer appearOnBottom [hidden]="showLoading" [courseId]="courseId" [currentModuleId]="module.id">
+</core-course-module-navigation>

@@ -34,6 +34,9 @@ import { CoreUserGuestSupportConfig } from '@features/user/classes/support/guest
 import { SafeHtml } from '@angular/platform-browser';
 import { CorePlatform } from '@services/platform';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Page to enter the user credentials.
  */
@@ -72,6 +75,9 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
     constructor(
         protected fb: FormBuilder,
+
+        // by rachmad
+        protected CH: CqHelper,
     ) {}
 
     /**
@@ -232,6 +238,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
      * @param e Event.
      * @returns Promise resolved when done.
      */
+    /* by rachmad *a/
     async login(e?: Event): Promise<void> {
         if (e) {
             e.preventDefault();
@@ -306,6 +313,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             CoreForms.triggerFormSubmittedEvent(this.formElement, true);
         }
     }
+    /**/
 
     /**
      * Exceeded attempts message clicked.
@@ -385,4 +393,102 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
         this.valueChangeSubscription?.unsubscribe();
     }
 
+    /* by rachmad */
+    login(e?: Event): void
+    {
+        this.CH.getSiteConfig().then((publicConfig) => {
+            if (publicConfig.captcha_enabled)
+            {
+                this.CH.getRecaptcha("login", (value) => {
+                    this.loginOriginal("captcha", value, e);
+                });
+            }
+            else if (publicConfig.csrf_token_enabled)
+            {
+                this.CH.requestToken("login", (value) => {
+                    this.loginOriginal("token", value, e);
+                });
+            }
+            else
+            {
+                this.loginOriginal("", "", e);
+            }
+        });
+    }
+    async loginOriginal(captchaOrToken: string, value: string, e?: Event): Promise<void>
+    {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        CoreApp.closeKeyboard();
+
+        // Get input data.
+        const siteUrl = this.siteUrl;
+        const username = this.credForm.value.username;
+        const password = this.credForm.value.password;
+
+        if (!this.siteChecked || this.isBrowserSSO) {
+            // Site wasn't checked (it failed) or a previous check determined it was SSO. Let's check again.
+            await this.checkSite(siteUrl);
+
+            if (!this.isBrowserSSO && this.siteChecked) {
+                // Site doesn't use browser SSO, throw app's login again.
+                return this.login();
+            }
+
+            return;
+        }
+
+        if (!username) {
+            CoreDomUtils.showErrorModal('core.login.usernamerequired', true);
+
+            return;
+        }
+        if (!password) {
+            CoreDomUtils.showErrorModal('core.login.passwordrequired', true);
+
+            return;
+        }
+
+        if (!CoreNetwork.isOnline()) {
+            CoreDomUtils.showErrorModal('core.networkerrormsg', true);
+
+            return;
+        }
+
+        const modal = await CoreDomUtils.showModalLoading();
+
+        // Start the authentication process.
+        try {
+            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrToken, value);
+
+            const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
+
+            // Reset fields so the data is not in the view anymore.
+            this.credForm.controls['username'].reset();
+            this.credForm.controls['password'].reset();
+
+            this.siteId = id;
+
+            await CoreNavigator.navigateToSiteHome({ params: { urlToOpen: this.urlToOpen } });
+        } catch (error) {
+            CoreLoginHelper.treatUserTokenError(siteUrl, error, username, password);
+
+            if (error.loggedout) {
+                CoreNavigator.navigate('/login/sites', { reset: true });
+            } else if (error.errorcode == 'forcepasswordchangenotice') {
+                // Reset password field.
+                this.credForm.controls.password.reset();
+            } else if (error.errorcode === 'invalidlogin') {
+                this.loginAttempts++;
+            }
+        } finally {
+            modal.dismiss();
+
+            CoreForms.triggerFormSubmittedEvent(this.formElement, true);
+        }
+    }
 }
+

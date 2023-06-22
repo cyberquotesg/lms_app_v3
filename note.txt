@@ -1,6 +1,6 @@
 WEB
 - Branch: cyberquote-development
-- npm run _dev
+- npm run web_dev
 
 ANDROID
 - Branch: cyberquote-development (dev) or cyberquote-production (prod)

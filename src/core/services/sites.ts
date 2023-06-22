@@ -474,6 +474,10 @@ export class CoreSitesProvider {
         password: string,
         service?: string,
         retry?: boolean,
+
+        // by rachmad
+        captchaOrToken?: string,
+        value?: string,
     ): Promise<CoreSiteUserTokenResponse> {
         if (!CoreNetwork.isOnline()) {
             throw new CoreNetworkError();
@@ -487,6 +491,9 @@ export class CoreSitesProvider {
         };
         const loginUrl = siteUrl + '/login/token.php';
         let data: CoreSitesLoginTokenResponse;
+
+        // by rachmad
+        if (captchaOrToken && value) params[captchaOrToken] = value;
 
         try {
             data = await Http.post(loginUrl, params).pipe(timeout(CoreWS.getRequestTimeout())).toPromise();
@@ -518,7 +525,9 @@ export class CoreSitesProvider {
         if (!retry && data.errorcode == 'requirecorrectaccess') {
             siteUrl = CoreUrlUtils.addOrRemoveWWW(siteUrl);
 
-            return this.getUserToken(siteUrl, username, password, service, true);
+            // by rachmad
+            // return this.getUserToken(siteUrl, username, password, service, true);
+            return this.getUserToken(siteUrl, username, password, service, true, captchaOrToken, value);
         }
 
         if (data.errorcode == 'missingparam') {

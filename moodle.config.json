@@ -11,8 +11,8 @@
     "cache_update_frequency_rarely": 43200000,
     "default_lang": "en",
     "siteurl": "https://qaslms.cyberquote.com",
-    "isProduction": false,
-    "sendErrorLog": false,
+    "isProduction": true,
+    "sendErrorLog": true,
     "languages": {
         "af": "Afrikaans",
         "ar": "عربي",

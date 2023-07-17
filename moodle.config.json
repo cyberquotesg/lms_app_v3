@@ -10,9 +10,9 @@
     "cache_update_frequency_sometimes": 3600000,
     "cache_update_frequency_rarely": 43200000,
     "default_lang": "en",
-    "isProduction": false,
     "siteurl": "https://qaslms.cyberquote.com",
-    "sendErrorLog": true,
+    "isProduction": false,
+    "sendErrorLog": false,
     "languages": {
         "af": "Afrikaans",
         "ar": "عربي",

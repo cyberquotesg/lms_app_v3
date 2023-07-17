@@ -2,6 +2,7 @@
     "app_id": "com.moodle.cyberquote",
     "appname": "CQ Academy",
     "desktopappname": "CQ Academy",
+    "sitename": "CQ Academy",
     "versioncode": 30500,
     "versionname": "3.0.500",
     "cache_update_frequency_usually": 420000,
@@ -11,7 +12,6 @@
     "default_lang": "en",
     "isProduction": false,
     "siteurl": "https://qaslms.cyberquote.com",
-    "sitename": "CQ Academy",
     "sendErrorLog": true,
     "languages": {
         "af": "Afrikaans",

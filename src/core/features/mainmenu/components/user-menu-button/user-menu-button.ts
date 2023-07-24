@@ -45,9 +45,6 @@ export class CoreMainMenuUserButtonComponent implements OnInit {
         side: CoreScreen.isMobile ? CoreUserToursSide.Start : CoreUserToursSide.End,
     };
 
-    // by rachmad
-    avatarCounter: number = 0;
-
     constructor(protected routerOutlet: IonRouterOutlet) {
         const currentSite = CoreSites.getRequiredCurrentSite();
 

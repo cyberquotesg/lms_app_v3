@@ -171,7 +171,13 @@ export class CoreMainMenuPage implements OnInit, OnDestroy {
         // Re-build the list of tabs. If a handler is already in the list, use existing object to prevent re-creating the tab.
         const newTabs: CoreMainMenuHandlerToDisplay[] = [];
 
+        // by rachmad
+        const maxMenuLength = 5;
+
         for (let i = 0; i < handlers.length; i++) {
+            // by rachmad
+            if (i == maxMenuLength) break;
+            
             const handler = handlers[i];
 
             // Check if the handler is already in the tabs list. If so, use it.

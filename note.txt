@@ -5,7 +5,7 @@ WEB
 ANDROID
 - Branch: cyberquote-development (dev) or cyberquote-production (prod)
 - Version in config.xml and moodle.config.json
-- npm run all_prepare (begining) or npm run android_dev (if all_prepare produces error) 
+- npm run android_prepare
 - Zoom SDK
 - npm run android_reinstall
 - Assets (Merge straightaway)
@@ -16,14 +16,13 @@ ANDROID
 IOS
 - Branch: cyberquote-development (dev) or cyberquote-production (prod)
 - Version in config.xml and moodle.config.json
-- npm run all_prepare (begining) or npm run ios_dev (if all_prepare produces error) 
+- npm run ios_prepare
 - Zoom SDK
 - npm run ios_reinstall
 - Assets (DO NOT Merge straightaway)
 - setup signin
-- remove audio from Info / Required Background Modes / App plays audio or streams audio/video using AirPlay
 - replace this in Pods -> source="$(readlink "${source}")" with this -> source="$(readlink -f "${source}")"
-- npm run ios_dev (make sure)
+- npm run ios_dev (dev) or npm run ios_prod (prod)
 - Build via XCode
 - Archive
 - Distribute

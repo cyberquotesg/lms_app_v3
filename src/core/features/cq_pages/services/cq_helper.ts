@@ -96,17 +96,17 @@ export class CqHelper
 
 		if (this.config().sendErrorLog)
 		{
-			this.callApi({
-				class: "CqLib",
-				function: "mobile_error_log",
-				data: {
-					data1, data2,
-					country: this.getCountry(),
-					organization: this.getOrganization(),
-					platform: CorePlatform.platforms(),
-					config: this.config(),
-				}
-			});
+			// this.callApi({
+			// 	class: "CqLib",
+			// 	function: "mobile_error_log",
+			// 	data: {
+			// 		data1, data2,
+			// 		country: this.getCountry(),
+			// 		organization: this.getOrganization(),
+			// 		platform: CorePlatform.platforms(),
+			// 		config: this.config(),
+			// 	}
+			// });
 		}
     }
 
@@ -454,48 +454,49 @@ export class CqHelper
     /*
      * list: contains result for each api call, like [0, 0, 1, -1]
      * summary: the lowest number in list, for quick consideration
-     * final: the final result, whether all apis are okay or not
-     * done: the call completion, whether all apis have been called or not
+     * done: the call, whether all apis have been called or not
+     * result: the final result, whether all apis are okay or not
     */
     calculatePageStatus(numbers: number[]): any
     {
-    	var error = 0, idle = 0, success = 0, n,
-    		result: any = {
+    	var n, data: any = {
+    			error: 0,
+    			idle: 0,
+    			success: 0,
     			list: [],
     			summary: 0,
-    			final: false,
-    			done: false
+    			done: false,
+    			result: false,
     		};
 
     	for (n of numbers)
     	{
-    		if (n == -1) error++;
-    		else if (n == 0) idle++;
-    		else if (n == 1) success++;
+    		if (n == -1) data.error++;
+    		else if (n == 0) data.idle++;
+    		else if (n == 1) data.success++;
     		else continue;
 
-    		result.list.push(n);
+    		data.list.push(n);
     	}
 
-    	result.summary = error > 0 ? -1 : idle > 0 ? 0 : success > 0 ? 1 : numbers.length > 0 ? 0 : 1;
-    	result.final = result.summary == 1;
-    	result.done = idle == 0;
+    	data.summary = data.error > 0 ? -1 : data.idle > 0 ? 0 : data.success > 0 ? 1 : numbers.length > 0 ? 0 : 1;
+    	data.done = data.idle == 0;
+    	data.result = data.summary == 1;
 
-    	// this.log('numbers', numbers);
-    	// this.log('status number', resultNumber);
-    	// this.log('status', result);
+    	this.log('numbers', numbers);
+    	this.log('data', data);
 
-    	return result;
+    	return data;
     }
     /*
-     * ok if only all apis have been called
+     * ok if only no error on any api call
     */
     handlePageStatus(numbers: number[]): Promise<any>
     {
     	return new Promise((ok, ko) => {
     		var status = this.calculatePageStatus(numbers);
 
-    		if (status.done) ok(status);
+    		if (status.result > -1) ok(status);
     		else ko(status);
     	});
     }

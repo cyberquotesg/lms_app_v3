@@ -244,6 +244,9 @@ export class CqPage extends CqGeneral
         this.CH.log('numbers', numbers);
         this.CH.handlePageStatus(numbers)
         .then((status) => {
+            // if actually it is not done, then stop
+            if (!status.done) return;
+            
             this.CH.log('page status', status);
             this.CH.log('page params', this.pageParams);
             this.CH.log('final data', this.pageData);

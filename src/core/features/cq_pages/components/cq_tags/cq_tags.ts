@@ -44,7 +44,11 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
         }
         if (!hideList.includes("userStatus"))
         {
-            if (this.item.isUserEnrolled && !this.item.isUserFinished && !this.item.isUserAccredited)
+            if (this.item.isUserInWaitingList)
+            {
+                this.finalTags.push({text: "In Waiting List", class: "orange"});
+            }
+            else if (this.item.isUserEnrolled && !this.item.isUserFinished && !this.item.isUserAccredited)
             {
                 if (!this.item.isCourseEnded) this.finalTags.push({text: "Enrolled", class: "green"});
                 else this.finalTags.push({text: "Failed", class: "red"});

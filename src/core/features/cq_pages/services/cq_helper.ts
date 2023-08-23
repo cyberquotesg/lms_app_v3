@@ -96,17 +96,17 @@ export class CqHelper
 
 		if (this.config().sendErrorLog)
 		{
-			// this.callApi({
-			// 	class: "CqLib",
-			// 	function: "mobile_error_log",
-			// 	data: {
-			// 		data1, data2,
-			// 		country: this.getCountry(),
-			// 		organization: this.getOrganization(),
-			// 		platform: CorePlatform.platforms(),
-			// 		config: this.config(),
-			// 	}
-			// });
+			this.callApi({
+				class: "CqLib",
+				function: "mobile_error_log",
+				data: {
+					data1, data2,
+					country: this.getCountry(),
+					organization: this.getOrganization(),
+					platform: CorePlatform.platforms(),
+					config: this.config(),
+				}
+			});
 		}
     }
 

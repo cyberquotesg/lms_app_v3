@@ -183,19 +183,19 @@ export class CqMyReports extends CqPage implements OnInit
                 }
             }
 
-            thisYearData.perCourseType = data.hours.courseTypes;
             thisYearData.courses = data.list;
             thisYearData.coursesFiltered = this.CH.getFilteredData(thisYearData.courses, thisYearData.filterText, thisYearData.filterMultiple);
             thisYearData.totalCPD = data.hours.decimal;
             thisYearData.totalCPDInHours = this.CH.beautifulNumber(data.hours.hours);
             thisYearData.totalCPDInMinutes = this.CH.beautifulNumber(data.hours.minutes);
 
+            thisYearData.perCourseType = data.hours.courseTypes;
             for (let courseType of this.pageData.courseTypes.array)
             {
                 if (!thisYearData.perCourseType[courseType.jsIdentifier]) continue;
                 if (!thisYearData.perCourseType[courseType.jsIdentifier].courses) thisYearData.perCourseType[courseType.jsIdentifier].courses = [];
                 let temp = thisYearData.coursesFiltered.filter((course) => {
-                    return (course.type && course.type == courseType.id) || (course.courseType && course.courseType == courseType.id);
+                    return (typeof course.type != "undefined" && course.type == courseType.id) || (typeof course.courseType != "undefined" && course.courseType == courseType.id);
                 });
 
                 thisYearData.perCourseType[courseType.jsIdentifier].courses = thisYearData.perCourseType[courseType.jsIdentifier].courses.concat(temp);

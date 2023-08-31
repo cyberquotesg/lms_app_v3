@@ -119,5 +119,5 @@
     "appToken": "cq_academy_official_app",
     "recaptchaSiteKey" : "6LcTWaIaAAAAAM95sNdgh8wOdLmjd5241OqIZuRA",
     "tokenKey": [1, 4, 5, 8, 9],
-    "apiVersion": "2.0"
+    "apiVersion": "2.1"
 }

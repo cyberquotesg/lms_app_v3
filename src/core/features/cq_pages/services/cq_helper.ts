@@ -882,6 +882,9 @@ export class CqHelper
     	const url = this.config().siteurl + '/cq_api/index.php';
 		const headers = new HttpHeaders().set('Content-Type', 'text/plain; charset=utf-8');
 
+		// app token
+		params.apptoken = this.config().appToken;
+
     	// make sure wstoken is included at the end of sent data
     	if (!params.wstoken && this.getSite() && this.getWsToken()) params.wstoken = this.getWsToken();
 

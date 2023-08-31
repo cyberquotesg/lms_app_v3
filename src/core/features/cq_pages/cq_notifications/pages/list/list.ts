@@ -394,7 +394,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
             else this.refreshAnnouncements(refresher);
         }
     }
-    adjustScreenHeight(pagecluster: string): void
+    adjustScreenHeight(pageClass: string): void
     {
         for (let time of [200, 700])
         {

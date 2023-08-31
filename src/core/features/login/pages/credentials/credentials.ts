@@ -406,7 +406,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             else if (publicConfig.csrf_token_enabled)
             {
                 this.CH.requestCsrfToken("login", (value) => {
-                    this.loginOriginal("token", value, e);
+                    this.loginOriginal("csrf_token", value, e);
                 });
             }
             else

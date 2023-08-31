@@ -70,8 +70,8 @@ export class CqDashboard extends CqPage implements OnInit
     filterMultiple(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqLib',
-            function: 'get_filter_multiple',
+            cluster: 'CqLib',
+            endpoint: 'get_filter_multiple',
             page: 'dashboard',
         };
 
@@ -87,32 +87,32 @@ export class CqDashboard extends CqPage implements OnInit
         const params: any = {
             calls: {
                 myHours: {
-                    class: "CqCourseLib",
-                    function: "get_courses_reports",
+                    cluster: "CqCourseLib",
+                    endpoint: "get_courses_reports",
                     year: this.pageData.year,
                     return: "hours",
                 },
                 myCourses: {
-                    class: "CqCourseLib",
-                    function: "get_my_courses_list",
+                    cluster: "CqCourseLib",
+                    endpoint: "get_my_courses_list",
                     page: 1,
                     length: 5,
                 },
                 eLearningList: {
-                    class: "CqCourseLib",
-                    function: "get_e_learning_list",
+                    cluster: "CqCourseLib",
+                    endpoint: "get_e_learning_list",
                     page: 1,
                     length: 5,
                 },
                 classroomTrainingList: {
-                    class: "CqCourseLib",
-                    function: "get_classroom_training_list",
+                    cluster: "CqCourseLib",
+                    endpoint: "get_classroom_training_list",
                     page: 1,
                     length: 5,
                 },
                 additionalContents: {
-                    class: 'CqLib',
-                    function: 'get_contents_additional',
+                    cluster: 'CqLib',
+                    endpoint: 'get_contents_additional',
                     content_type: 'mobile',
                 },
             },

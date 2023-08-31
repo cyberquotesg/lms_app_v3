@@ -405,7 +405,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             }
             else if (publicConfig.csrf_token_enabled)
             {
-                this.CH.requestToken("login", (value) => {
+                this.CH.requestCsrfToken("login", (value) => {
                     this.loginOriginal("token", value, e);
                 });
             }
@@ -415,7 +415,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             }
         });
     }
-    async loginOriginal(captchaOrToken: string, value: string, e?: Event): Promise<void>
+    async loginOriginal(captchaOrCsrfToken: string, value: string, e?: Event): Promise<void>
     {
         if (e) {
             e.preventDefault();
@@ -462,7 +462,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
         // Start the authentication process.
         try {
-            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrToken, value);
+            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrCsrfToken, value);
 
             const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
 

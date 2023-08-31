@@ -55,8 +55,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
     course(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqCourseLib',
-            function: 'view_classroom_training',
+            cluster: 'CqCourseLib',
+            endpoint: 'view_classroom_training',
             course_id: this.pageParams.courseId,
         };
         this.pageJobExecuter(jobName, params, (data) => {
@@ -90,8 +90,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
     {
         this.loading = true;
         const params: any = {
-            class: 'CqCourseLib',
-            function: purpose + '_classroom_training',
+            cluster: 'CqCourseLib',
+            endpoint: purpose + '_classroom_training',
             session_id: sessionId,
         };
         this.CH.callApi(params)
@@ -197,8 +197,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
         let data = this.CH.readQRCode(QRCodeData);
         this.CH.loading('Please wait...', (loading) => {
             const params: any = {
-                class: 'CqCourseLib',
-                function: 'checklog_classroom_training',
+                cluster: 'CqCourseLib',
+                endpoint: 'checklog_classroom_training',
                 identifier: data[0],
                 type: data[1],
                 course_id: this.pageData.course.id,
@@ -348,8 +348,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
             }
 
             const params: any = {
-                class: 'CqLib',
-                function: 'get_zoom_jwt',
+                cluster: 'CqLib',
+                endpoint: 'get_zoom_jwt',
                 meeting_number: meetingNumber,
             };
             this.CH.callApi(params)

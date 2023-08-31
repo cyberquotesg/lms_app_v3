@@ -116,7 +116,8 @@
     },
     "disableTokenFile": false,
     "notificationInterval": 10000,
+    "appToken": "cq_academy_official_app",
     "recaptchaSiteKey" : "6LcTWaIaAAAAAM95sNdgh8wOdLmjd5241OqIZuRA",
     "tokenKey": [1, 4, 5, 8, 9],
-    "catpchaOrToken": "token"
+    "apiVersion": "2.0"
 }

@@ -436,16 +436,16 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         if (modeArray.includes("course"))
         {
             params.calls.course = {
-                class: 'CqCourseLib',
-                function: 'view_e_learning',
+                cluster: 'CqCourseLib',
+                endpoint: 'view_e_learning',
                 course_id: this.course!.id,
             };
         }
         if (modeArray.includes("additionals"))
         {
             params.calls.additionals = {
-                class: 'CqCourseLib',
-                function: 'additionals_e_learning',
+                cluster: 'CqCourseLib',
+                endpoint: 'additionals_e_learning',
                 course_id: this.course!.id,
             };
         }
@@ -608,8 +608,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 try
                 {
                     const params = {
-                        class: 'CqCourseLib',
-                        function: 'unenrol_e_learning',
+                        cluster: 'CqCourseLib',
+                        endpoint: 'unenrol_e_learning',
                         course_id: this.course.id,
                     };
                     await this.CH.callApi(params);

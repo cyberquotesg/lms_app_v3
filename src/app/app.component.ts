@@ -218,12 +218,12 @@ export class AppComponent implements OnInit, AfterViewInit {
         const institutionParams: any = {
             calls: {
                 country: {
-                    class: "CqInstitutionLib",
-                    function: "get_country_by_user",
+                    cluster: "CqInstitutionLib",
+                    endpoint: "get_country_by_user",
                 },
                 organization: {
-                    class: "CqInstitutionLib",
-                    function: "get_organization_by_user",
+                    cluster: "CqInstitutionLib",
+                    endpoint: "get_organization_by_user",
                 },
             },
         };

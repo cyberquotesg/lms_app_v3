@@ -394,7 +394,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
             else this.refreshAnnouncements(refresher);
         }
     }
-    adjustScreenHeight(pageClass: string): void
+    adjustScreenHeight(pagecluster: string): void
     {
         for (let time of [200, 700])
         {
@@ -415,8 +415,8 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     {
         this.announcementIsLoading = true;
         const params: any = {
-            class: "CqLib",
-            function: "get_announcements",
+            cluster: "CqLib",
+            endpoint: "get_announcements",
             page: mode && mode == "refresh" ? 1 : this.announcementPage,
             length: mode && mode == "refresh" ? ((this.announcementPage - 1) * 30) : 30,
         };

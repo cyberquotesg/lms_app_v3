@@ -72,24 +72,24 @@ export class CqMyReports extends CqPage implements OnInit
         const params: any = {
             calls: {
                 courseTypes: {
-                    class: 'CqCourseLib',
-                    function: 'get_course_type_of_user',
+                    cluster: 'CqCourseLib',
+                    endpoint: 'get_course_type_of_user',
                     include_non_cpd_hours: true,
                     include_empty_option: true,
                 },
                 cqConfig: {
-                    class: 'CqLib',
-                    function: 'get_cq_config',
+                    cluster: 'CqLib',
+                    endpoint: 'get_cq_config',
                     name: 'mobile_chart_type,mobile_chart_stacked',
                 },
                 years: {
-                    class: 'CqCourseLib',
-                    function: 'get_years_that_have_reports',
+                    cluster: 'CqCourseLib',
+                    endpoint: 'get_years_that_have_reports',
                     mode: 'full',
                 },
                 filterMultiple: {
-                    class: 'CqLib',
-                    function: 'get_filter_multiple',
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
                     page: 'my_reports',
                 },
             },
@@ -152,8 +152,8 @@ export class CqMyReports extends CqPage implements OnInit
     getCoursesReports(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqCourseLib',
-            function: 'get_courses_reports',
+            cluster: 'CqCourseLib',
+            endpoint: 'get_courses_reports',
             year: this.pageData.selectedYear,
             include_monthly_data: true,
         };

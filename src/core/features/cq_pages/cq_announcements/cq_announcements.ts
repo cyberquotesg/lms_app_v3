@@ -75,8 +75,8 @@ export class CqAnnouncements extends CqPage implements OnInit
         }
 
         const params: any = {
-            class: "CqLib",
-            function: "get_announcements",
+            cluster: "CqLib",
+            endpoint: "get_announcements",
             page: page,
             length: length,
             search: this.pageData.filterText ? this.pageData.filterText : null,

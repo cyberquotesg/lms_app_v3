@@ -118,13 +118,13 @@ export class CqAvailableCourses extends CqPage implements OnInit
         const params: any = {
             calls: {
                 onlineFilter: {
-                    class: 'CqLib',
-                    function: 'get_filter_multiple',
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
                     page: 'e_learning_list',
                 },
                 offlineFilter: {
-                    class: 'CqLib',
-                    function: 'get_filter_multiple',
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
                     page: 'classroom_training_list',
                 },
             },
@@ -178,8 +178,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
         if (media == "online")
         {
             const params: any = {
-                class: "CqCourseLib",
-                function: "get_e_learning_list",
+                cluster: "CqCourseLib",
+                endpoint: "get_e_learning_list",
                 page: page,
                 length: length,
                 search: this.pageData.online.filterText,
@@ -211,8 +211,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
         else if (media == "offline")
         {
             const params: any = {
-                class: "CqCourseLib",
-                function: "get_classroom_training_list",
+                cluster: "CqCourseLib",
+                endpoint: "get_classroom_training_list",
                 page: page,
                 length: length,
                 search: this.pageData.offline.filterText,

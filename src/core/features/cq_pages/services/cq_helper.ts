@@ -1028,6 +1028,10 @@ export class CqHelper
     	return CoreSites.logout();
     }
 
+    getSiteUrl(): string
+    {
+        return this.getSite().getURL();
+    }
     getSiteId(): string
     {
         return this.getSite().getId();

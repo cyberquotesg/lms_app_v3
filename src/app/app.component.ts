@@ -166,6 +166,14 @@ export class AppComponent implements OnInit, AfterViewInit {
             }
         });
 
+        // by rachmad
+        CoreEvents.on(CoreEvents.SESSION_EXPIRED, (data) => {
+            this.ifLoggedOut();
+        });
+        CoreEvents.on(CoreEvents.USER_NO_LOGIN, (data) => {
+            this.ifLoggedOut();
+        });
+
         this.onPlatformReady();
 
         // Quit app with back button.

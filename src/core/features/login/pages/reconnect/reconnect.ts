@@ -32,12 +32,16 @@ import { CoreUserAuthenticatedSupportConfig } from '@features/user/classes/suppo
 import { Translate } from '@singletons';
 import { SafeHtml } from '@angular/platform-browser';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { Params } from '@angular/router';
+
 /**
  * Page to enter the user password to reconnect to a site.
  */
 @Component({
     selector: 'page-core-login-reconnect',
-    templateUrl: 'reconnect.html',
+    templateUrl: 'reconnect.new.html',
     styleUrls: ['../../login.scss'],
 })
 export class CoreLoginReconnectPage implements OnInit, OnDestroy {
@@ -72,6 +76,9 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
 
     constructor(
         protected fb: FormBuilder,
+
+        // by rachmad
+        protected CH: CqHelper,
     ) {
         const currentSite = CoreSites.getCurrentSite();
 
@@ -85,6 +92,14 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
+        this.CH.logout().then(() => {
+            const params: Params = {
+                siteUrl: this.CH.getSiteUrl(),
+                siteId: this.CH.getSiteId(),
+            };
+            CoreNavigator.navigateToLoginCredentials(params);
+        });
+
         try {
             this.siteId = CoreNavigator.getRequiredRouteParam<string>('siteId');
 

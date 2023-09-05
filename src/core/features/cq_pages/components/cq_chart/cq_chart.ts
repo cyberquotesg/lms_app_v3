@@ -10,8 +10,9 @@ import { Chart, ChartData, ChartOptions } from 'chart.js';
     templateUrl: 'cq_chart.html'
 })
 export class CqChartComponent extends CqComponent implements OnInit, OnChanges, AfterViewInit {
-    @Input() type: string;
-    @Input() stacked: boolean;
+    @Input() type?: string;
+    @Input() stacked?: boolean;
+    @Input() lineTension?: number;
     @Input() data: ChartData;
     @ViewChild('cqChart') cqChart: ElementRef;
 
@@ -118,8 +119,8 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
             responsive: true,
             elements: {
                 line: {
-                    tension: 0
-                }
+                    tension: this.lineTension || 0,
+                },
             },
             maintainAspectRatio: false,
             legend: {
@@ -136,15 +137,15 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
         {
             options.scales = {
                 xAxes: [{
-                    stacked: true
+                    stacked: true,
                 }],
                 yAxes: [{
-                    stacked: true
-                }]
+                    stacked: true,
+                }],
             };
         }
         this.chart = new Chart(this.cqChart.nativeElement, {
-            type: this.type,
+            type: this.type || "line",
             data: this.data,
             options: options,
         });

@@ -5,7 +5,6 @@ import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { ChartData } from 'chart.js';
-import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grades';
 
 @Component({
     selector: 'cq_my_reports',
@@ -80,7 +79,7 @@ export class CqMyReports extends CqPage implements OnInit
                 cqConfig: {
                     cluster: 'CqLib',
                     endpoint: 'get_cq_config',
-                    name: 'mobile_chart_type,mobile_chart_stacked',
+                    name: 'mobile_chart_type,mobile_chart_stacked,mobile_chart_line_tension',
                 },
                 years: {
                     cluster: 'CqCourseLib',
@@ -167,22 +166,6 @@ export class CqMyReports extends CqPage implements OnInit
             let thisYearData: any = {};
 
             data = this.CH.toJson(data);
-
-            // go through course list, and if it is e-learning, put grade
-            for (let item of data.list)
-            {
-                if (item.media != "online") continue;
-                
-                let grades = await CoreGrades.getGradeItems(item.id, 0, 0, "", true);
-                for (let grade of grades)
-                {
-                    if (grade.itemtype != "course") continue;
-
-                    item.grade = grade.gradeformatted === "" ? "-" : grade.gradeformatted;
-                    item.gradeInPercent = grade.percentageformatted != "" && grade.percentageformatted != "-" ? grade.percentageformatted : "";
-                }
-            }
-
             thisYearData.courses = data.list;
             thisYearData.coursesFiltered = this.CH.getFilteredData(thisYearData.courses, thisYearData.filterText, thisYearData.filterMultiple);
             thisYearData.totalCPD = data.hours.decimal;

@@ -232,6 +232,32 @@ export class CqMyReports extends CqPage implements OnInit
                 index++;
             }
 
+            datasets.sort(function(a, b){
+                let i, a_index = 0, b_index = 0;
+
+                for (i in a.data)
+                {
+                    if (a.data[i] != 0)
+                    {
+                        a_index = Number(i);
+                        break;
+                    }
+                }
+
+                for (i in b.data)
+                {
+                    if (b.data[i] != 0)
+                    {
+                        b_index = Number(i);
+                        break;
+                    }
+                }
+
+                if (a_index > b_index) return 1;
+                else if (a_index < b_index) return -1;
+                else return 0;
+            });
+
             chartData.datasets = datasets;
             thisYearData.chartData = chartData;
 

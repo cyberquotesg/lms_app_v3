@@ -72,7 +72,7 @@ export class CqMyReports extends CqPage implements OnInit
             calls: {
                 courseTypes: {
                     cluster: 'CqCourseLib',
-                    endpoint: 'get_course_type_of_user',
+                    endpoint: 'get_course_types_of_user',
                     include_non_cpd_hours: true,
                     include_empty_option: true,
                 },

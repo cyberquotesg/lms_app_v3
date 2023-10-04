@@ -35,7 +35,7 @@
                     <p class="mt-cs"><b>Product Group</b></p>
                     <p class="no-break">{{ pageData.course.productGroupText }}</p>
 
-                    <p class="mt-cs"><b>CPD Hours</b></p>
+                    <p class="mt-cs"><b>CPD Hour{{ s(pageData.course.cpdHours) }}</b></p>
                     <p class="no-break">{{ pageData.course.cpdHours }} CPD Hour{{ s(pageData.course.cpdHours) }}</p>
 
                     <!-- enrolled -->
@@ -52,7 +52,7 @@
                                 <p class="no-break">Batch - {{ session.startDateText }}</p>
 
                                 <p class="mt-cs"><b>Date &amp; Time</b></p>
-                                <p class="no-break">{{ session.fullDateTimeTextCombined }}</p>
+                                <p class="no-break">{{ session.sessionTimeRange }}</p>
 
                                 <p class="mt-cs"><b>Withdrawal Administrator</b></p>
                                 <p class="no-break">{{ session.withdrawalAdministratorText }}</p>
@@ -60,7 +60,7 @@
                                 <p class="mt-cs"><b>Withdrawal Deadline</b></p>
                                 <p class="no-break">{{ session.withdrawalDeadlineText }}</p>
 
-                                <ng-container *ngIf="session.zoomMeeting != 1">
+                                <ng-container *ngIf="session.zoomMeeting != '1'">
                                     <p class="mt-cs"><b>Location</b></p>
                                     <p class="no-break">{{ session.venue }}</p>
 
@@ -75,33 +75,21 @@
 
                             <!-- information for ongoing course -->
                             <ng-container *ngIf="session.userEnrolment == '2' && !session.sessionHasEnded">
-                                <ng-container *ngIf="session.zoomMeeting == 1">
+                                <ng-container *ngIf="session.zoomMeeting == '1'">
                                     <ng-container *ngFor="let date of session.dates">
                                         <ng-container *ngIf="date.dateHasNextTime">
                                             <p class="mt-cs"><b>Zoom Meeting</b></p>
                                             <p class="no-break">Available at {{ date.dateText }} {{ time24To12(timeRemoveSeconds(date.startTime)) }} - {{ time24To12(timeRemoveSeconds(date.endTime)) }}</p>
-                                            <p class="no-break mt-4" *ngIf="session.userEnrolment == '2'">
+                                            <p class="no-break mt-4" *ngIf="session.userEnrolment == '2' && date.dateHasStarted">
+                                                <button class="button-small" (click)="joinMeetingZoom(date.zoomMeetingid, date.zoomMeetingPassword)">
+                                                    <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
+                                                    <span style="vertical-align: middle; margin-left: 2px;">Join In App</span>
+                                                </button>
 
-                                                <!-- date hasn't started, give fake button -->
-                                                <ng-container *ngIf="!date.dateHasStarted">
-                                                    <button class="button-small" (click)="alertZoomNotStarted(date)">
-                                                        <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                        <span style="vertical-align: middle; margin-left: 2px;">{{ date.dateText }} {{ time24To12(timeRemoveSeconds(date.startTime)) }}</span>
-                                                    </button>
-                                                </ng-container>
-
-                                                <!-- date has started, meaning the button can be fully working -->
-                                                <ng-container *ngIf="date.dateHasStarted">
-                                                    <button class="button-small" (click)="joinMeetingZoom(date.zoomMeetingid, date.zoomMeetingPassword)">
-                                                        <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                        <span style="vertical-align: middle; margin-left: 2px;">Join In App</span>
-                                                    </button>
-
-                                                    <button class="button-small ml-8" (click)="openInBrowser(date.zoomRegistrationUrl)">
-                                                        <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                        <span style="vertical-align: middle; margin-left: 2px;">Join In Browser</span>
-                                                    </button>
-                                                </ng-container>
+                                                <button class="button-small ml-8" (click)="openInBrowser(date.zoomRegistrationUrl)">
+                                                    <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
+                                                    <span style="vertical-align: middle; margin-left: 2px;">Join In Browser</span>
+                                                </button>
                                             </p>
                                         </ng-container>
                                     </ng-container>
@@ -157,17 +145,17 @@
                                             <div class="card-item-icon">
                                                 <ion-icon name="time"></ion-icon>
                                             </div>
-                                            <div class="card-item-text">{{ session.fullDateTimeTextCombined }}</div>
+                                            <div class="card-item-text">{{ session.sessionTimeRange }}</div>
                                         </div>
 
-                                        <div *ngIf="session.zoomMeeting != 1" class="card-item">
+                                        <div *ngIf="session.zoomMeeting != '1'" class="card-item">
                                             <div class="card-item-icon">
                                                 <ion-icon name="map"></ion-icon>
                                             </div>
                                             <div class="card-item-text">{{ session.venue }}</div>
                                         </div>
 
-                                        <div *ngIf="session.zoomMeeting == 1" class="card-item">
+                                        <div *ngIf="session.zoomMeeting == '1'" class="card-item">
                                             <div class="card-item-icon">
                                                 <ion-icon name="desktop"></ion-icon>
                                             </div>
@@ -215,20 +203,7 @@
                 <ng-container *ngFor="let session of pageData.sessions; let i = index">
                     <!-- progress card for enrolled course -->
                     <ng-container *ngIf="session.userEnrolment == '2'">
-                        <div *ngIf="!session.sessionHasEnded" class="pl-cs pr-cs mt-cst mb-cst">
-                            <p *ngIf="session.unavailableMessage == ''" class="mt-cs">
-                                <button (click)="leaveSession(session)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
-                                    <span *ngIf="!loading"><b class="color-red">Withdraw</b></span>
-                                    <ion-spinner *ngIf="loading"></ion-spinner>
-                                </button>
-                            </p>
-
-                            <div *ngIf="session.unavailableMessage != ''" class="no-break text-center pl-12 pt-12 pr-12 pb-12 background-red color-white" style="border-radius: 12px;">
-                                {{ session.unavailableMessage }}
-                            </div>
-                        </div>
-
-                        <div *ngIf="session.zoomMeeting != 1 || (session.zoomMeeting == 1 && session.retainQrCodeChecklog == 1)" class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
+                        <div *ngIf="session.zoomMeeting != '1' || (session.zoomMeeting == '1' && session.retainQrCodeChecklog == '1')" class="main-font text-left" class="pl-cs pr-cs mt-28 text-left" style="font-size: 16px;">
                             Progress
                             <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
                                 <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : 'dark-grey' }}">
@@ -240,7 +215,7 @@
                             <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
                         </div>
 
-                        <ion-card *ngIf="session.zoomMeeting != 1 || (session.zoomMeeting == 1 && session.retainQrCodeChecklog == 1)">
+                        <ion-card *ngIf="session.zoomMeeting != '1' || (session.zoomMeeting == '1' && session.retainQrCodeChecklog == '1')">
                             <ion-card-content>
                                 <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pt-cs pb-cs mb-cs">
                                     <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true" (onZero)="timeHasCome($event, i)"></cq_will_start_in>
@@ -285,6 +260,19 @@
                                 </table>
                             </ion-card-content>
                         </ion-card>
+
+                        <div *ngIf="!session.sessionHasEnded" class="pl-cs pr-cs mt-cs mb-cs">
+                            <p *ngIf="session.unavailableMessage == ''" class="mt-cs">
+                                <button (click)="leaveSession(session)" class="button button-small {{ loading ? 'active' : '' }}" style="width: 100%;">
+                                    <span *ngIf="!loading"><b class="color-red">Withdraw</b></span>
+                                    <ion-spinner *ngIf="loading"></ion-spinner>
+                                </button>
+                            </p>
+
+                            <div *ngIf="session.unavailableMessage != ''" class="no-break text-center pl-12 pt-12 pr-12 pb-12 neumorphism-shadow color-red" style="border-radius: 12px;">
+                                {{ session.unavailableMessage }}
+                            </div>
+                        </div>
                     </ng-container>
                 </ng-container>
             </ng-container>

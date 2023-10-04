@@ -66,13 +66,6 @@ export class CqOfflineCourse extends CqPage implements OnInit
             this.pageData.course.venue = this.pageData.course.venue ? this.pageData.course.venue : '-';
             this.pageData.sessions = this.CH.toArray(data.ctSessionData).reverse();
             this.pageData.sessions.map((session) => {
-                let tempDateTime: string[] = [];
-                session.fullDateTimeText.forEach((dateTime: any) => {
-                    let temp: string = this.CH.time24To12Batch(dateTime);
-                    tempDateTime.push(temp);
-                });
-
-                session.fullDateTimeTextCombined = tempDateTime.join(', ');
                 session.willStartInDegradated = session.willStartIn;
             });
 
@@ -166,19 +159,6 @@ export class CqOfflineCourse extends CqPage implements OnInit
             handler: (): void => {
             }
         });
-    }
-
-    alertZoomNotStarted(date: any): void
-    {
-        this.CH.alert(
-            'Oops!',
-            'Zoom meeting hasn\'t started. ' +
-            'It will be available at ' + 
-            date.dateText + ' ' + 
-            this.CH.time24To12(
-                this.CH.timeRemoveSeconds(date.startTime)
-            ) + '.'
-        );
     }
 
     timeHasCome(data: any, index: number): void

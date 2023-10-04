@@ -39,7 +39,7 @@
                     <p class="no-break">{{ pageData.course.cpdHours }} CPD Hour{{ s(pageData.course.cpdHours) }}</p>
 
                     <!-- enrolled -->
-                    <ng-container *ngIf="pageData.course.hasOneBatchEnrolled == '1'">
+                    <ng-container *ngIf="pageData.course.hasOneBatchEnrolled">
                         <ng-container *ngFor="let session of pageData.sessions; let i = index">
 
                             <ng-container *ngIf="session.userEnrolment == '1'">
@@ -60,7 +60,7 @@
                                 <p class="mt-cs"><b>Withdrawal Deadline</b></p>
                                 <p class="no-break">{{ session.withdrawalDeadlineText }}</p>
 
-                                <ng-container *ngIf="session.zoomMeeting != '1'">
+                                <ng-container *ngIf="!session.zoomMeeting">
                                     <p class="mt-cs"><b>Location</b></p>
                                     <p class="no-break">{{ session.venue }}</p>
 
@@ -75,7 +75,7 @@
 
                             <!-- information for ongoing course -->
                             <ng-container *ngIf="session.userEnrolment == '2' && !session.sessionHasEnded">
-                                <ng-container *ngIf="session.zoomMeeting == '1'">
+                                <ng-container *ngIf="session.zoomMeeting">
                                     <ng-container *ngFor="let date of session.dates">
                                         <ng-container *ngIf="date.dateHasNextTime">
                                             <p class="mt-cs"><b>Zoom Meeting</b></p>
@@ -120,9 +120,9 @@
             </ion-card>
 
             <!-- not enrolled -->
-            <ng-container *ngIf="pageData.course.hasOneBatchEnrolled == '0'">
+            <ng-container *ngIf="!pageData.course.hasOneBatchEnrolled">
                 <!-- has batch -->
-                <ng-container *ngIf="pageData.course.hasBatch == '1'">
+                <ng-container *ngIf="pageData.course.hasBatch">
                     <div class="main-font text-left" class="pl-20 pr-20 mt-28 text-left" style="font-size: 16px;">
                         Choose Your Intake
                         <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
@@ -148,14 +148,14 @@
                                             <div class="card-item-text">{{ session.sessionTimeRange }}</div>
                                         </div>
 
-                                        <div *ngIf="session.zoomMeeting != '1'" class="card-item">
+                                        <div *ngIf="!session.zoomMeeting" class="card-item">
                                             <div class="card-item-icon">
                                                 <ion-icon name="map"></ion-icon>
                                             </div>
                                             <div class="card-item-text">{{ session.venue }}</div>
                                         </div>
 
-                                        <div *ngIf="session.zoomMeeting == '1'" class="card-item">
+                                        <div *ngIf="session.zoomMeeting" class="card-item">
                                             <div class="card-item-icon">
                                                 <ion-icon name="desktop"></ion-icon>
                                             </div>
@@ -191,7 +191,7 @@
                 </ng-container>
 
                 <!-- no batch -->
-                <ion-card *ngIf="pageData.course.hasBatch == '0'">
+                <ion-card *ngIf="!pageData.course.hasBatch">
                     <ion-card-content>
                         <div class="pt-15 pb-15">This course has no batch</div>
                     </ion-card-content>
@@ -199,67 +199,69 @@
             </ng-container>
 
             <!-- enrolled -->
-            <ng-container *ngIf="pageData.course.hasOneBatchEnrolled == '1'">
+            <ng-container *ngIf="pageData.course.hasOneBatchEnrolled">
                 <ng-container *ngFor="let session of pageData.sessions; let i = index">
                     <!-- progress card for enrolled course -->
                     <ng-container *ngIf="session.userEnrolment == '2'">
-                        <div *ngIf="session.zoomMeeting != '1' || (session.zoomMeeting == '1' && session.retainQrCodeChecklog == '1')" class="main-font text-left" class="pl-cs pr-cs mt-28 text-left" style="font-size: 16px;">
-                            Progress
-                            <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
-                                <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : 'dark-grey' }}">
-                                    <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
-                                    {{ session.userAttendanceText }}
-                                </div>
-                            </div>
-
-                            <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
-                        </div>
-
-                        <ion-card *ngIf="session.zoomMeeting != '1' || (session.zoomMeeting == '1' && session.retainQrCodeChecklog == '1')">
-                            <ion-card-content>
-                                <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pt-cs pb-cs mb-cs">
-                                    <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true" (onZero)="timeHasCome($event, i)"></cq_will_start_in>
-                                </div>
-
-                                <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated <= 3600" class="qr-scanner-button mb-cs">
-                                    <div class="button">
-                                        <ion-icon class="button-big pl-10 pr-10" name='scan-outline' (click)="scanQRCode(session)"></ion-icon>
-                                        <ion-icon class="button-small" name='qr-code-outline'></ion-icon>
+                        <ng-container *ngIf="!session.zoomMeeting || (session.zoomMeeting && session.retainQrCodeChecklog)">
+                            <div class="main-font text-left" class="pl-cs pr-cs mt-28 text-left" style="font-size: 16px;">
+                                Progress
+                                <div class="cq-tag-wrapper" style="float: right; margin-top: -8px;">
+                                    <div class="cq-tag {{ session.userAttendance == 'accredited' ? 'green' : 'dark-grey' }}">
+                                        <ion-icon *ngIf="session.userAttendance == 'accredited'" name="checkmark-circle" style="vertical-align: text-bottom; padding-right: 2px;"></ion-icon>
+                                        {{ session.userAttendanceText }}
                                     </div>
                                 </div>
 
-                                <table style="max-width: 100%; margin: 0px auto">
-                                    <tr *ngFor="let checklog of session.checklogs; let i = index">
-                                        <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
-                                            CHECKLOG {{ checklog.inOut }}<br />
-                                            <small>{{ checklog.date }} {{ time24To12(checklog.time) }}</small>
+                                <div class="gradient-background" style="height: 4px;border-radius: 0px 2px 2px 0px;margin-top: 12px;margin-left: -20px;"></div>
+                            </div>
 
-                                            <!-- this is only for development -->
-                                            <div *ngIf="isDevelopment()" class="mt-cst text-center">
-                                                <button (click)="fakeScanQRCode(session, checklog)">
-                                                    Fake Check {{ checklog.inOut }}
-                                                </button>
-                                                <button (click)="fakeChecklogBanner(checklog)">
-                                                    Fake Banner
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td class="pl-20 pr-20 text-center {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">:</td>
-                                        <td class="text-right {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
-                                            <span *ngIf="checklog.status == '-1' && session.userAttendance != 'accredited'">{{checklog.statusText}}</span>
+                            <ion-card>
+                                <ion-card-content>
+                                    <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated > 0" class="pt-cs pb-cs mb-cs">
+                                        <cq_will_start_in [unixtimestamp]="session.willStartIn" [big]="session.willStartInDegradated > 3600" [animation]="true" (onZero)="timeHasCome($event, i)"></cq_will_start_in>
+                                    </div>
 
-                                            <span *ngIf="checklog.status == '0' && session.userAttendance != 'accredited'">
-                                                <ion-icon name="close-circle" (click)="showRejectedReason(checklog.message)" class="color-red" style="font-size: 20px;"></ion-icon>
-                                            </span>
+                                    <div *ngIf="!session.sessionHasEnded && session.willStartInDegradated <= 3600" class="qr-scanner-button mb-cs">
+                                        <div class="button">
+                                            <ion-icon class="button-big pl-10 pr-10" name='scan-outline' (click)="scanQRCode(session)"></ion-icon>
+                                            <ion-icon class="button-small" name='qr-code-outline'></ion-icon>
+                                        </div>
+                                    </div>
 
-                                            <span *ngIf="checklog.status == '1' || session.userAttendance == 'accredited'">
-                                                <ion-icon name="checkmark-circle" class="color-green" style="font-size: 20px;"></ion-icon>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </ion-card-content>
-                        </ion-card>
+                                    <table style="max-width: 100%; margin: 0px auto">
+                                        <tr *ngFor="let checklog of session.checklogs; let i = index">
+                                            <td class="{{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
+                                                CHECKLOG {{ checklog.inOut }}<br />
+                                                <small>{{ checklog.date }} {{ time24To12(checklog.time) }}</small>
+
+                                                <!-- this is only for development -->
+                                                <div *ngIf="isDevelopment()" class="mt-cst text-center">
+                                                    <button (click)="fakeScanQRCode(session, checklog)">
+                                                        Fake Check {{ checklog.inOut }}
+                                                    </button>
+                                                    <button (click)="fakeChecklogBanner(checklog)">
+                                                        Fake Banner
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td class="pl-20 pr-20 text-center {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">:</td>
+                                            <td class="text-right {{ i ? 'pt-12' : '' }}" style="vertical-align: top;">
+                                                <span *ngIf="checklog.status == '-1' && session.userAttendance != 'accredited'">{{checklog.statusText}}</span>
+
+                                                <span *ngIf="checklog.status == '0' && session.userAttendance != 'accredited'">
+                                                    <ion-icon name="close-circle" (click)="showRejectedReason(checklog.message)" class="color-red" style="font-size: 20px;"></ion-icon>
+                                                </span>
+
+                                                <span *ngIf="checklog.status == '1' || session.userAttendance == 'accredited'">
+                                                    <ion-icon name="checkmark-circle" class="color-green" style="font-size: 20px;"></ion-icon>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </ion-card-content>
+                            </ion-card>
+                        </ng-container>
 
                         <div *ngIf="!session.sessionHasEnded" class="pl-cs pr-cs mt-cs mb-cs">
                             <p *ngIf="session.unavailableMessage == ''" class="mt-cs">

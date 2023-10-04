@@ -209,7 +209,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
     }
     scanQRCode(session: any): void
     {
-        if (session.venueCheck == 1)
+        if (session.venueCheck)
         {
             navigator.geolocation.getCurrentPosition((position) => {
                 this.QRCodeScanner(session, position.coords.latitude, position.coords.longitude);
@@ -227,7 +227,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
     {
         let fakeQRCodeData = checklog.identifier + "|" + checklog.type;
 
-        if (session.venueCheck == 1)
+        if (session.venueCheck)
         {
             navigator.geolocation.getCurrentPosition((position) => {
                 this.QRCodeSender(session, fakeQRCodeData, position.coords.latitude, position.coords.longitude)

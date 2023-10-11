@@ -85,9 +85,13 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
                 this.finalTags.push({text, class: "dark-grey"});
             }
         }
+        if (!hideList.includes("attendanceMethods"))
+        {
+            this.item.attendanceMethods.forEach((text) => this.finalTags.push({text, class: "dark-grey"}));
+        }
         if (this.item.tags && Array.isArray(this.item.tags) && this.item.tags.length > 0)
         {
-            this.item.tags.forEach((tag) => this.finalTags.push({text: tag}));
+            this.item.tags.forEach((text) => this.finalTags.push({text}));
         }
     }
 }

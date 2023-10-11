@@ -66,12 +66,20 @@ export class CqOfflineCourse extends CqPage implements OnInit
             this.pageData.course.venue = this.pageData.course.venue ? this.pageData.course.venue : '-';
             this.pageData.sessions = this.CH.toArray(data.ctSessionData).reverse();
             this.pageData.sessions.map((session) => {
-                session.willStartInDegradated = session.willStartIn;
+                session.willStartInMoving = session.willStartIn;
+                session.hasEndedAtMoving = session.hasEndedAt;
+                session.buttonIsAlive = (!session.sessionHasStarted && session.willStartInMoving <= 3600) ||
+                                        (session.sessionHasStarted && !session.sessionHasEnded) ||
+                                        (session.sessionHasEnded && session.hasEndedAtMoving < 1800);
             });
 
             this.agent = setInterval(() => {
                 this.pageData.sessions.map((session) => {
-                    session.willStartInDegradated--;
+                    session.willStartInMoving--;
+                    session.hasEndedAtMoving++;
+                    session.buttonIsAlive = (!session.sessionHasStarted && session.willStartInMoving <= 3600) ||
+                                            (session.sessionHasStarted && !session.sessionHasEnded) ||
+                                            (session.sessionHasEnded && session.hasEndedAtMoving < 1800);
                 });
             }, 1000);
 
@@ -144,6 +152,18 @@ export class CqOfflineCourse extends CqPage implements OnInit
             confirmationText += "Once withdrawn, you will still be able to enrol to this course again until " + session.closeRegistrationText + ".";
             confirmationText += "<br /><br />";
         }
+        else if (timeDifference <= (1000 * 60 * 60 * 24 * 2))
+        {
+            confirmationText += "Registration Period will end in less than two days. ";
+            confirmationText += "Once withdrawn, you will still be able to enrol to this course again until " + session.closeRegistrationText + ".";
+            confirmationText += "<br /><br />";
+        }
+        else if (timeDifference <= (1000 * 60 * 60 * 24 * 3))
+        {
+            confirmationText += "Registration Period will end in less than three days. ";
+            confirmationText += "Once withdrawn, you will still be able to enrol to this course again until " + session.closeRegistrationText + ".";
+            confirmationText += "<br /><br />";
+        }
 
         confirmationText += "Are you sure to withdraw from this course?";
 
@@ -163,7 +183,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
 
     timeHasCome(data: any, index: number): void
     {
-        this.pageData.sessions[index].willStartInDegradated = 0;
+        this.pageData.sessions[index].willStartInMoving = 0;
     }
 
     QRCodeScanner(session: any, latitude?: number, longitude?: number): void
@@ -299,6 +319,14 @@ export class CqOfflineCourse extends CqPage implements OnInit
     showRejectedReason(message?: string): void
     {
         if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
+    }
+    openZoomInvitation(invitation?: string): void
+    {
+        if (!this.CH.isEmpty(invitation) && typeof invitation != "undefined")
+        {
+            invitation = '<div class="text-left">' + invitation.replace(/\n/g, "<br />") + '</div>';
+            this.CH.alert('Zoom Invitation', invitation);
+        }
     }
 
     /* *a/

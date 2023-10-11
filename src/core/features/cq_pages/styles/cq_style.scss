@@ -672,7 +672,7 @@ body
 				}
 			}
 
-		    .sessions
+		    .session-wrapper
 		    {
 		    	margin: -20px;
 
@@ -1354,6 +1354,10 @@ body
 			cursor: default;
 		    opacity: .4;
 		    pointer-events: none;
+		}
+		&.full
+		{
+			width: 100%;
 		}
 	}
 	ion-back-button

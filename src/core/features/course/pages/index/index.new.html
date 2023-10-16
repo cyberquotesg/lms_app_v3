@@ -103,7 +103,7 @@
                     <ion-card>
                         <ion-card-content>
                             <div class="sessions">
-                                <ng-container *ngFor="let module of section.modules">
+                                <ng-container *ngFor="let module of section.modules; let i = index">
 
                                     <!-- 
                                         * visible Visible setting (0 or 1; if this is 0, students cannot see/access the activity) - from
@@ -112,7 +112,7 @@
                                         * visibleoncoursepage Visible on course page setting - from course_modules table, adjusted to
                                         *    whether course format allows this module to have the "stealth" mode
                                      -->
-                                    <div *ngIf="module.visible == 1 && module.visibleoncoursepage == 1" class="session {{ getModuleClass(section, module) }}" (click)="moduleClicked($event, section, module)">
+                                    <div *ngIf="module.visible == 1 && module.visibleoncoursepage == 1" class="session {{ getModuleClass(section, module) }} {{ i && 'mt-cst' }}" (click)="moduleClicked($event, section, module)">
                                         <div class="session-info">
                                             <div class="card-item">
                                                 <div class="card-item-icon">

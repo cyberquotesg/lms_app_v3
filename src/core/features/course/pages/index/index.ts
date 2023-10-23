@@ -436,16 +436,16 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         if (modeArray.includes("course"))
         {
             params.calls.course = {
-                class: 'CqCourseLib',
-                function: 'view_e_learning',
+                cluster: 'CqCourseLib',
+                endpoint: 'view_e_learning',
                 course_id: this.course!.id,
             };
         }
         if (modeArray.includes("additionals"))
         {
             params.calls.additionals = {
-                class: 'CqCourseLib',
-                function: 'additionals_e_learning',
+                cluster: 'CqCourseLib',
+                endpoint: 'additionals_e_learning',
                 course_id: this.course!.id,
             };
         }
@@ -608,8 +608,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 try
                 {
                     const params = {
-                        class: 'CqCourseLib',
-                        function: 'unenrol_e_learning',
+                        cluster: 'CqCourseLib',
+                        endpoint: 'unenrol_e_learning',
                         course_id: this.course.id,
                     };
                     await this.CH.callApi(params);
@@ -644,8 +644,12 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     moduleClicked(event: Event, courseSection: any, courseModule: any): void
     {
         if (!this.course) return;
-
-        if (this.isModuleDisabled(courseSection, courseModule))
+        
+        if (!this.course.hasEnrolled)
+        {
+            this.CH.alert('Oops!', "You are not enrolled to this course");
+        }
+        else if (this.isModuleDisabled(courseSection, courseModule))
         {
             if (courseModule.availabilityinfo) this.CH.alert('Oops!', courseModule.availabilityinfo);
             else this.CH.alert('Oops!', "This course module is not available");

@@ -17,10 +17,9 @@ export class CqAvailableCourses extends CqPage implements OnInit
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
     pageParams: any = {
-        media: "online",
+        media: "",
     };
     pageDefaults: any = {
-        medias: ["online", "offline"],
         online: {
             initiated: false,
             reachedEndOfList: false,
@@ -43,7 +42,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
         },
     };
     pageJob: any = {
-        filterMultiple: {
+        getCqConfig: {
             value: 0,
             next: {
                 courses: 0,
@@ -94,38 +93,30 @@ export class CqAvailableCourses extends CqPage implements OnInit
         });
     }
 
-    ngOnInit(): void
-    {
-        this.usuallyOnInit(() => {
-            this.pageData.media = this.pageParams.media;
-            this.pageData.sliderOptions = {
-                initialSlide: this.pageParams.media == "online" ? 0 : 1,
-                speed: 400,
-                centerInsufficientSlides: true,
-                centeredSlides: true,
-                centeredSlidesBounds: true,
-                slidesPerView: 1,
-            };
-        });
-    }
+    ngOnInit(): void { this.usuallyOnInit(); }
     ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
 
-    filterMultiple(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
+    getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
             calls: {
                 onlineFilter: {
-                    class: 'CqLib',
-                    function: 'get_filter_multiple',
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
                     page: 'e_learning_list',
                 },
                 offlineFilter: {
-                    class: 'CqLib',
-                    function: 'get_filter_multiple',
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
                     page: 'classroom_training_list',
+                },
+                mobileCourseMedia: {
+                    cluster: 'CqLib',
+                    endpoint: 'get_cq_config',
+                    name: 'mobile_course_media',
                 },
             },
         };
@@ -144,6 +135,17 @@ export class CqAvailableCourses extends CqPage implements OnInit
             {
                 this.pageData.offline.filterMultiple = allData.offlineFilter;
             }
+
+            this.pageData.medias = Array.isArray(allData.mobileCourseMedia[0].value) ? allData.mobileCourseMedia[0].value : [allData.mobileCourseMedia[0].value];
+            this.pageData.media = this.pageParams.media != "" ? this.pageParams.media : this.pageData.medias[0];
+            this.pageData.sliderOptions = {
+                initialSlide: this.pageData.medias.indexOf(this.pageData.media),
+                speed: 400,
+                centerInsufficientSlides: true,
+                centeredSlides: true,
+                centeredSlidesBounds: true,
+                slidesPerView: 1,
+            };
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -178,8 +180,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
         if (media == "online")
         {
             const params: any = {
-                class: "CqCourseLib",
-                function: "get_e_learning_list",
+                cluster: "CqCourseLib",
+                endpoint: "get_e_learning_list",
                 page: page,
                 length: length,
                 search: this.pageData.online.filterText,
@@ -211,8 +213,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
         else if (media == "offline")
         {
             const params: any = {
-                class: "CqCourseLib",
-                function: "get_classroom_training_list",
+                cluster: "CqCourseLib",
+                endpoint: "get_classroom_training_list",
                 page: page,
                 length: length,
                 search: this.pageData.offline.filterText,

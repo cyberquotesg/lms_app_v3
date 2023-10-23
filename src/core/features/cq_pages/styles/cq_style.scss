@@ -672,7 +672,7 @@ body
 				}
 			}
 
-		    .sessions
+		    .session-wrapper
 		    {
 		    	margin: -20px;
 
@@ -1355,6 +1355,10 @@ body
 		    opacity: .4;
 		    pointer-events: none;
 		}
+		&.full
+		{
+			width: 100%;
+		}
 	}
 	ion-back-button
 	{
@@ -1705,6 +1709,10 @@ body
         border: 20px solid $base_background_no_image;
         box-shadow: $neumorphism_shadow;
 
+        &.as-shield
+        {
+        	border-radius: 10% 10% 50% 50%;
+        }
         &.plain
         {
         	background: #c0c0c0 !important;

@@ -48,8 +48,8 @@ export class CqMyCourses extends CqPage implements OnInit
     filterMultiple(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqLib',
-            function: 'get_filter_multiple',
+            cluster: 'CqLib',
+            endpoint: 'get_filter_multiple',
             page: 'my_courses_list',
         };
 
@@ -91,8 +91,8 @@ export class CqMyCourses extends CqPage implements OnInit
         }
 
         const params: any = {
-            class: "CqCourseLib",
-            function: "get_my_courses_list",
+            cluster: "CqCourseLib",
+            endpoint: "get_my_courses_list",
             page: page,
             length: length,
             search: this.pageData.filterText ? this.pageData.filterText : null,

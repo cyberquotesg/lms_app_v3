@@ -75,6 +75,27 @@ export class CqGeneral
     {
         return Number(value) > 1 ? 's' : '';
     }
+    to_comma_separated_text(data: string[], oxford_comma?: boolean)
+    {
+        let length = data.length;
+
+        if (!length) return "";
+        else if (length == 1) return data[0];
+        else if (length == 2) return data.join(" and ");
+        else
+        {
+            let lastIndex = length - 1;
+            data[lastIndex] = "and " + data[lastIndex];
+
+            if (!oxford_comma)
+            {
+                data[lastIndex - 1] = data[lastIndex - 1] + " " + data[lastIndex];
+                data.splice(lastIndex, 1);
+            }
+
+            return data.join(", ");
+        }
+    }
     beautifulNumber(value: number): string
     {
         return this.CH.beautifulNumber(value);

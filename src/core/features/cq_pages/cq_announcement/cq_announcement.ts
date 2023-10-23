@@ -61,13 +61,13 @@ export class CqAnnouncement extends CqPage implements OnInit
         const params: any = {
             calls: {
                 announcement: {
-                    class: "CqLib",
-                    function: "get_announcement",
+                    cluster: "CqLib",
+                    endpoint: "get_announcement",
                     discussion_id: this.pageParams.discussion_id,
                 },
                 setRead: {
-                    class: "CqLib",
-                    function: "read_announcement",
+                    cluster: "CqLib",
+                    endpoint: "read_announcement",
                     discussion_id: this.pageParams.discussion_id,
                 },
             },

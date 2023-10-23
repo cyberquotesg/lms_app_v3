@@ -23,7 +23,7 @@
     "web_reinstall": "npm run web_uninstall && npm run android_install",
     "web_prepare": "npm i && npm run web_install && ionic build && ionic cordova prepare web",
     "web_dev": "ionic serve",
-    "android_install": "ionic cordova platform add android@10.1.1",
+    "android_install": "ionic cordova platform add android@12.0.1",
     "android_uninstall": "ionic cordova platform remove android",
     "android_reinstall": "npm run android_uninstall && npm run android_install",
     "android_prepare": "npm i && npm run android_install && ionic build && ionic cordova prepare android",
@@ -141,7 +141,7 @@
     "ogv": "1.8.9",
     "rxjs": "6.5.5",
     "ts-md5": "1.2.7",
-    "tslib": "2.3.1",
+    "tslib": "^2.4.1",
     "video.js": "7.21.1",
     "zone.js": "0.10.3"
   },
@@ -170,7 +170,7 @@
     "@typescript-eslint/parser": "4.22.0",
     "check-es-compat": "1.1.1",
     "compare-versions": "4.1.4",
-    "cordova-android": "^10.1.1",
+    "cordova-android": "^12.0.1",
     "cordova-ios": "^6.3.0",
     "cordova.plugin.zoom": "github:cyberquotesg/zoom-sdk-ionic#cyberquote",
     "cross-env": "7.0.3",
@@ -204,7 +204,7 @@
     "typescript": "3.9.9"
   },
   "engines": {
-    "node": ">=14.15.0 <15"
+    "node": ">=16.13.0 <17"
   },
   "cordova": {
     "platforms": [

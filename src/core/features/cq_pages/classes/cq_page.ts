@@ -1,5 +1,6 @@
 import { Renderer2 } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
+import { Params } from '@angular/router';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CqGeneral } from './cq_general';
 import { CqHelper } from '../services/cq_helper';
@@ -57,7 +58,11 @@ export class CqPage extends CqGeneral
         else
         {
             this.CH.logout().then(() => {
-                CoreNavigator.navigateToLoginCredentials();
+                const params: Params = {
+                    siteUrl: this.CH.getSiteUrl(),
+                    siteId: this.CH.getSiteId(),
+                };
+                CoreNavigator.navigateToLoginCredentials(params);
             });
         }
     }
@@ -198,11 +203,16 @@ export class CqPage extends CqGeneral
             else callback(response);
         })
         .catch((error) => {
-            this.CH.setPageJobNumbers(this.pageJob, jobName, -1);
-            this.CH.errorLog('failed to call api', {jobName, params, error});
+            const note = error.status == 404 ? "the error code is 404 which actually quite odd, this perhaps because of calling API which requires $user_id when the ws is expired" : "";
 
-            if (error.message) this.CH.alert('Oops!', error.message);
-            else this.CH.alert('Oops!', 'We have trouble, please try again');
+            this.CH.setPageJobNumbers(this.pageJob, jobName, -1);
+            this.CH.errorLog('failed to call api', {jobName, params, error, note});
+
+            if (!(this.CH.isProduction() && error.status == 404))
+            {
+                if (error.message) this.CH.alert('Oops!', error.message);
+                else this.CH.alert('Oops!', 'We have trouble, please try again');
+            }
         })
         .finally(() => {
             this.pageJobFinally(moreloader, refresher, finalCallback);
@@ -244,6 +254,9 @@ export class CqPage extends CqGeneral
         this.CH.log('numbers', numbers);
         this.CH.handlePageStatus(numbers)
         .then((status) => {
+            // if actually it is not done, then stop
+            if (!status.done) return;
+            
             this.CH.log('page status', status);
             this.CH.log('page params', this.pageParams);
             this.CH.log('final data', this.pageData);

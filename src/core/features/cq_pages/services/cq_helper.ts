@@ -97,8 +97,8 @@ export class CqHelper
 		if (this.config().sendErrorLog)
 		{
 			this.callApi({
-				class: "CqLib",
-				function: "mobile_error_log",
+				cluster: "CqLib",
+				endpoint: "mobile_error_log",
 				data: {
 					data1, data2,
 					country: this.getCountry(),
@@ -367,13 +367,8 @@ export class CqHelper
 		else return String(value);
 	}
 
-	secureWithRecaptchaOrToken(name: string, callback: (captchaOrToken: string) => void): void
-	{
-	    if (this.config().catpchaOrToken == 'captcha') this.getRecaptcha(name, callback);
-	    else if (this.config().catpchaOrToken == 'token') this.requestToken(name, callback);
-	}
 	// warning! recaptcha is not ready
-	getRecaptcha(action: string, callback: (captchaOrToken: string) => void): void
+	getRecaptcha(action: string, callback: (captchaOrCsrfToken: string) => void): void
 	{
 	    // grecaptcha.ready(() => {
 	    //     grecaptcha.execute(this.config().recaptchaSiteKey, {action}).then((captcha) => {
@@ -383,14 +378,14 @@ export class CqHelper
 
 	    if (typeof callback == 'function') callback('');
 	}
-	requestToken = function(tokenName: string, callback: (captchaOrToken: string) => void): void
+	requestCsrfToken = function(tokenName: string, callback: (captchaOrCsrfToken: string) => void): void
 	{
 		var saltIndexes = [1, 4, 5, 8, 9];
 	    var salt = Math.random().toString(36).substr(2, saltIndexes.length);
 	    var saltIterator = -1;
 
 	    // the salt must be sent to server to generate token
-	    this.http.get(this.config().siteurl + '/cq_lib/call.php?function=request_csrf_token&params[]=300&params[]=' + salt + "&params[]=" + this.getDeviceInfoString(), {
+	    this.http.get(this.config().siteurl + '/cq_api/index.php?apptoken=' + this.config().appToken + '&cluster=CqSecurityLib&endpoint=request_csrf_token&salt=' + salt + "&device_info=" + this.getDeviceInfoString(), {
 	    	observe: 'body', responseType: 'text'
     	}).subscribe((data) => {
     		let jsonData = this.toJson(data);
@@ -454,48 +449,49 @@ export class CqHelper
     /*
      * list: contains result for each api call, like [0, 0, 1, -1]
      * summary: the lowest number in list, for quick consideration
-     * final: the final result, whether all apis are okay or not
-     * done: the call completion, whether all apis have been called or not
+     * done: the call, whether all apis have been called or not
+     * result: the final result, whether all apis are okay or not
     */
     calculatePageStatus(numbers: number[]): any
     {
-    	var error = 0, idle = 0, success = 0, n,
-    		result: any = {
+    	var n, data: any = {
+    			error: 0,
+    			idle: 0,
+    			success: 0,
     			list: [],
     			summary: 0,
-    			final: false,
-    			done: false
+    			done: false,
+    			result: false,
     		};
 
     	for (n of numbers)
     	{
-    		if (n == -1) error++;
-    		else if (n == 0) idle++;
-    		else if (n == 1) success++;
+    		if (n == -1) data.error++;
+    		else if (n == 0) data.idle++;
+    		else if (n == 1) data.success++;
     		else continue;
 
-    		result.list.push(n);
+    		data.list.push(n);
     	}
 
-    	result.summary = error > 0 ? -1 : idle > 0 ? 0 : success > 0 ? 1 : numbers.length > 0 ? 0 : 1;
-    	result.final = result.summary == 1;
-    	result.done = idle == 0;
+    	data.summary = data.error > 0 ? -1 : data.idle > 0 ? 0 : data.success > 0 ? 1 : numbers.length > 0 ? 0 : 1;
+    	data.done = data.idle == 0;
+    	data.result = data.summary == 1;
 
-    	// this.log('numbers', numbers);
-    	// this.log('status number', resultNumber);
-    	// this.log('status', result);
+    	this.log('numbers', numbers);
+    	this.log('data', data);
 
-    	return result;
+    	return data;
     }
     /*
-     * ok if only all apis have been called
+     * ok if only no error on any api call
     */
     handlePageStatus(numbers: number[]): Promise<any>
     {
     	return new Promise((ok, ko) => {
     		var status = this.calculatePageStatus(numbers);
 
-    		if (status.done) ok(status);
+    		if (status.result > -1) ok(status);
     		else ko(status);
     	});
     }
@@ -883,17 +879,17 @@ export class CqHelper
     }
     callApi(params: any): Promise<any>
     {
-    	const url = this.config().siteurl + '/cq_lib/call.php';
+    	const url = this.config().siteurl + '/cq_api/index.php';
 		const headers = new HttpHeaders().set('Content-Type', 'text/plain; charset=utf-8');
 
+		// app token
+		params.apptoken = this.config().appToken;
+
     	// make sure wstoken is included at the end of sent data
-    	if (!params.wstoken && this.getSite() && this.getWsToken())
-    	{
-	    	params.wstoken = this.getWsToken();
-    	}
+    	if (!params.wstoken && this.getSite() && this.getWsToken()) params.wstoken = this.getWsToken();
 
     	// api version
-    	params.api_version = "2.0";
+    	params.api_version = this.config().apiVersion;
 		
     	return this.http.post(url, params, {headers, responseType: 'text'}).toPromise();
     }
@@ -1002,8 +998,8 @@ export class CqHelper
     	let targets = this.toArray(target);
     	let params: any = { calls: {} };
 
-    	if (targets.includes("notification")) params.calls.notification = { class: "CqLib", function: "ping_notifications" };
-    	if (targets.includes("announcement")) params.calls.announcement = { class: "CqLib", function: "ping_announcements" };
+    	if (targets.includes("notification")) params.calls.notification = { cluster: "CqLib", endpoint: "ping_notifications" };
+    	if (targets.includes("announcement")) params.calls.announcement = { cluster: "CqLib", endpoint: "ping_announcements" };
 
     	this.callApi(params).then((data) => {
     	    let allData = this.toJson(data);
@@ -1032,6 +1028,10 @@ export class CqHelper
     	return CoreSites.logout();
     }
 
+    getSiteUrl(): string
+    {
+        return this.getSite().getURL();
+    }
     getSiteId(): string
     {
         return this.getSite().getId();
@@ -1116,8 +1116,8 @@ export class CqHelper
     	if (this.zoomInitiated) return true;
 
     	const zoomKeysParams = {
-    	    class: "CqLib",
-    	    function: "get_zoom_keys",
+    	    cluster: "CqLib",
+    	    endpoint: "get_zoom_keys",
     	};
     	let data = await this.callApi(zoomKeysParams);
     	let jsonData = this.toJson(data);

@@ -55,8 +55,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
     course(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqCourseLib',
-            function: 'view_classroom_training',
+            cluster: 'CqCourseLib',
+            endpoint: 'view_classroom_training',
             course_id: this.pageParams.courseId,
         };
         this.pageJobExecuter(jobName, params, (data) => {
@@ -66,19 +66,20 @@ export class CqOfflineCourse extends CqPage implements OnInit
             this.pageData.course.venue = this.pageData.course.venue ? this.pageData.course.venue : '-';
             this.pageData.sessions = this.CH.toArray(data.ctSessionData).reverse();
             this.pageData.sessions.map((session) => {
-                let tempDateTime: string[] = [];
-                session.fullDateTimeText.forEach((dateTime: any) => {
-                    let temp: string = this.CH.time24To12Batch(dateTime);
-                    tempDateTime.push(temp);
-                });
-
-                session.fullDateTimeTextCombined = tempDateTime.join(', ');
-                session.willStartInDegradated = session.willStartIn;
+                session.willStartInMoving = session.willStartIn;
+                session.hasEndedAtMoving = session.hasEndedAt;
+                session.buttonIsAlive = (!session.sessionHasStarted && session.willStartInMoving <= 3600) ||
+                                        (session.sessionHasStarted && !session.sessionHasEnded) ||
+                                        (session.sessionHasEnded && session.hasEndedAtMoving < 1800);
             });
 
             this.agent = setInterval(() => {
                 this.pageData.sessions.map((session) => {
-                    session.willStartInDegradated--;
+                    session.willStartInMoving--;
+                    session.hasEndedAtMoving++;
+                    session.buttonIsAlive = (!session.sessionHasStarted && session.willStartInMoving <= 3600) ||
+                                            (session.sessionHasStarted && !session.sessionHasEnded) ||
+                                            (session.sessionHasEnded && session.hasEndedAtMoving < 1800);
                 });
             }, 1000);
 
@@ -90,8 +91,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
     {
         this.loading = true;
         const params: any = {
-            class: 'CqCourseLib',
-            function: purpose + '_classroom_training',
+            cluster: 'CqCourseLib',
+            endpoint: purpose + '_classroom_training',
             session_id: sessionId,
         };
         this.CH.callApi(params)
@@ -151,6 +152,18 @@ export class CqOfflineCourse extends CqPage implements OnInit
             confirmationText += "Once withdrawn, you will still be able to enrol to this course again until " + session.closeRegistrationText + ".";
             confirmationText += "<br /><br />";
         }
+        else if (timeDifference <= (1000 * 60 * 60 * 24 * 2))
+        {
+            confirmationText += "Registration Period will end in less than two days. ";
+            confirmationText += "Once withdrawn, you will still be able to enrol to this course again until " + session.closeRegistrationText + ".";
+            confirmationText += "<br /><br />";
+        }
+        else if (timeDifference <= (1000 * 60 * 60 * 24 * 3))
+        {
+            confirmationText += "Registration Period will end in less than three days. ";
+            confirmationText += "Once withdrawn, you will still be able to enrol to this course again until " + session.closeRegistrationText + ".";
+            confirmationText += "<br /><br />";
+        }
 
         confirmationText += "Are you sure to withdraw from this course?";
 
@@ -168,22 +181,9 @@ export class CqOfflineCourse extends CqPage implements OnInit
         });
     }
 
-    alertZoomNotStarted(date: any): void
-    {
-        this.CH.alert(
-            'Oops!',
-            'Zoom meeting hasn\'t started. ' +
-            'It will be available at ' + 
-            date.dateText + ' ' + 
-            this.CH.time24To12(
-                this.CH.timeRemoveSeconds(date.startTime)
-            ) + '.'
-        );
-    }
-
     timeHasCome(data: any, index: number): void
     {
-        this.pageData.sessions[index].willStartInDegradated = 0;
+        this.pageData.sessions[index].willStartInMoving = 0;
     }
 
     QRCodeScanner(session: any, latitude?: number, longitude?: number): void
@@ -197,8 +197,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
         let data = this.CH.readQRCode(QRCodeData);
         this.CH.loading('Please wait...', (loading) => {
             const params: any = {
-                class: 'CqCourseLib',
-                function: 'checklog_classroom_training',
+                cluster: 'CqCourseLib',
+                endpoint: 'checklog_classroom_training',
                 identifier: data[0],
                 type: data[1],
                 course_id: this.pageData.course.id,
@@ -229,7 +229,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
     }
     scanQRCode(session: any): void
     {
-        if (session.venueCheck == 1)
+        if (session.venueCheck)
         {
             navigator.geolocation.getCurrentPosition((position) => {
                 this.QRCodeScanner(session, position.coords.latitude, position.coords.longitude);
@@ -247,7 +247,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
     {
         let fakeQRCodeData = checklog.identifier + "|" + checklog.type;
 
-        if (session.venueCheck == 1)
+        if (session.venueCheck)
         {
             navigator.geolocation.getCurrentPosition((position) => {
                 this.QRCodeSender(session, fakeQRCodeData, position.coords.latitude, position.coords.longitude)
@@ -320,6 +320,14 @@ export class CqOfflineCourse extends CqPage implements OnInit
     {
         if (!this.CH.isEmpty(message) && typeof message != "undefined") this.CH.alert('Info!', message);
     }
+    openZoomInvitation(invitation?: string): void
+    {
+        if (!this.CH.isEmpty(invitation) && typeof invitation != "undefined")
+        {
+            invitation = '<div class="text-left">' + invitation.replace(/\n/g, "<br />") + '</div>';
+            this.CH.alert('Zoom Invitation', invitation);
+        }
+    }
 
     /* *a/
     joinMeetingZoomWeb(meetingNumber, meetingPassword): void
@@ -348,8 +356,8 @@ export class CqOfflineCourse extends CqPage implements OnInit
             }
 
             const params: any = {
-                class: 'CqLib',
-                function: 'get_zoom_jwt',
+                cluster: 'CqLib',
+                endpoint: 'get_zoom_jwt',
                 meeting_number: meetingNumber,
             };
             this.CH.callApi(params)

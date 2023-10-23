@@ -24,9 +24,9 @@
             <ion-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
                 <div *ngIf="pageData[availableYear]" class="pb-8">
                     <div class="text-center">
-                        <h5 class="mt-0 mb-20 text-center"><b>My Training Hours in {{ availableYear }}</b></h5>
+                        <h5 class="mt-0 mb-20 text-center"><b>Total Training Hours</b></h5>
                         
-                        <span class="dot mt-8 mb-8">
+                        <span class="dot as-shield mt-8 mb-8">
                             <div class="time-inside-dot second-font">
                                 <div class="part">
                                     <div class="number">{{ pageData[availableYear].totalCPDInHours }}</div>
@@ -41,7 +41,7 @@
 
                         <ion-card *ngIf="isAvailable(pageData[availableYear].chartData)" class="mb-28">
                             <ion-card-content>
-                                <cq_chart [type]="pageData.CqConfig.mobile_chart_type" [stacked]="pageData.CqConfig.mobile_chart_stacked" [data]="pageData[availableYear].chartData"></cq_chart>
+                                <cq_chart [type]="pageData.CqConfig.mobile_chart_type" [stacked]="pageData.CqConfig.mobile_chart_stacked" [lineTension]="pageData.CqConfig.mobile_chart_line_tension" [data]="pageData[availableYear].chartData"></cq_chart>
                             </ion-card-content>
                         </ion-card>
                     </div>
@@ -84,8 +84,10 @@
                                                     <span *ngIf="!course.completionDate">-</span>
                                                 </p>
                                                 <p *ngIf="course.media == 'online'" class="no-break">
-                                                    Grade: {{ course.grade }}
-                                                    <span *ngIf="course.gradeInPercent">({{ course.gradeInPercent }})</span>
+                                                    Grade: {{ course.grade }} ({{ course.gradeInPercent }})
+                                                </p>
+                                                <p *ngIf="course.media == 'offline'" class="no-break">
+                                                    Checklog: {{ course.checklogHaveBeenDone }}/{{ course.checklogMustBeDone }} ({{ course.checklogInPercent }})
                                                 </p>
                                             </div>
                                             <div class="text-left pt-8" style="clear: both;">

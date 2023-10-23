@@ -5,7 +5,6 @@ import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { ChartData } from 'chart.js';
-import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grades';
 
 @Component({
     selector: 'cq_my_reports',
@@ -72,24 +71,24 @@ export class CqMyReports extends CqPage implements OnInit
         const params: any = {
             calls: {
                 courseTypes: {
-                    class: 'CqCourseLib',
-                    function: 'get_course_type_of_user',
+                    cluster: 'CqCourseLib',
+                    endpoint: 'get_course_types_of_user',
                     include_non_cpd_hours: true,
                     include_empty_option: true,
                 },
                 cqConfig: {
-                    class: 'CqLib',
-                    function: 'get_cq_config',
-                    name: 'mobile_chart_type,mobile_chart_stacked',
+                    cluster: 'CqLib',
+                    endpoint: 'get_cq_config',
+                    name: 'mobile_chart_type,mobile_chart_stacked,mobile_chart_line_tension',
                 },
                 years: {
-                    class: 'CqCourseLib',
-                    function: 'get_years_that_have_reports',
+                    cluster: 'CqCourseLib',
+                    endpoint: 'get_years_that_have_reports',
                     mode: 'full',
                 },
                 filterMultiple: {
-                    class: 'CqLib',
-                    function: 'get_filter_multiple',
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
                     page: 'my_reports',
                 },
             },
@@ -152,8 +151,8 @@ export class CqMyReports extends CqPage implements OnInit
     getCoursesReports(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            class: 'CqCourseLib',
-            function: 'get_courses_reports',
+            cluster: 'CqCourseLib',
+            endpoint: 'get_courses_reports',
             year: this.pageData.selectedYear,
             include_monthly_data: true,
         };
@@ -167,35 +166,19 @@ export class CqMyReports extends CqPage implements OnInit
             let thisYearData: any = {};
 
             data = this.CH.toJson(data);
-
-            // go through course list, and if it is e-learning, put grade
-            for (let item of data.list)
-            {
-                if (item.media != "online") continue;
-                
-                let grades = await CoreGrades.getGradeItems(item.id, 0, 0, "", true);
-                for (let grade of grades)
-                {
-                    if (grade.itemtype != "course") continue;
-
-                    item.grade = grade.gradeformatted === "" ? "-" : grade.gradeformatted;
-                    item.gradeInPercent = grade.percentageformatted != "" && grade.percentageformatted != "-" ? grade.percentageformatted : "";
-                }
-            }
-
-            thisYearData.perCourseType = data.hours.courseTypes;
             thisYearData.courses = data.list;
             thisYearData.coursesFiltered = this.CH.getFilteredData(thisYearData.courses, thisYearData.filterText, thisYearData.filterMultiple);
             thisYearData.totalCPD = data.hours.decimal;
             thisYearData.totalCPDInHours = this.CH.beautifulNumber(data.hours.hours);
             thisYearData.totalCPDInMinutes = this.CH.beautifulNumber(data.hours.minutes);
 
+            thisYearData.perCourseType = data.hours.courseTypes;
             for (let courseType of this.pageData.courseTypes.array)
             {
                 if (!thisYearData.perCourseType[courseType.jsIdentifier]) continue;
                 if (!thisYearData.perCourseType[courseType.jsIdentifier].courses) thisYearData.perCourseType[courseType.jsIdentifier].courses = [];
                 let temp = thisYearData.coursesFiltered.filter((course) => {
-                    return (course.type && course.type == courseType.id) || (course.courseType && course.courseType == courseType.id);
+                    return (typeof course.type != "undefined" && course.type == courseType.id) || (typeof course.courseType != "undefined" && course.courseType == courseType.id);
                 });
 
                 thisYearData.perCourseType[courseType.jsIdentifier].courses = thisYearData.perCourseType[courseType.jsIdentifier].courses.concat(temp);
@@ -248,6 +231,32 @@ export class CqMyReports extends CqPage implements OnInit
                 datasets.push(dataset);
                 index++;
             }
+
+            datasets.sort(function(a, b){
+                let i, a_index = 0, b_index = 0;
+
+                for (i in a.data)
+                {
+                    if (a.data[i] != 0)
+                    {
+                        a_index = Number(i);
+                        break;
+                    }
+                }
+
+                for (i in b.data)
+                {
+                    if (b.data[i] != 0)
+                    {
+                        b_index = Number(i);
+                        break;
+                    }
+                }
+
+                if (a_index > b_index) return 1;
+                else if (a_index < b_index) return -1;
+                else return 0;
+            });
 
             chartData.datasets = datasets;
             thisYearData.chartData = chartData;

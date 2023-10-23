@@ -476,7 +476,7 @@ export class CoreSitesProvider {
         retry?: boolean,
 
         // by rachmad
-        captchaOrToken?: string,
+        captchaOrCsrfToken?: string,
         value?: string,
     ): Promise<CoreSiteUserTokenResponse> {
         if (!CoreNetwork.isOnline()) {
@@ -493,7 +493,7 @@ export class CoreSitesProvider {
         let data: CoreSitesLoginTokenResponse;
 
         // by rachmad
-        if (captchaOrToken && value) params[captchaOrToken] = value;
+        if (captchaOrCsrfToken && value) params[captchaOrCsrfToken] = value;
 
         try {
             data = await Http.post(loginUrl, params).pipe(timeout(CoreWS.getRequestTimeout())).toPromise();
@@ -527,7 +527,7 @@ export class CoreSitesProvider {
 
             // by rachmad
             // return this.getUserToken(siteUrl, username, password, service, true);
-            return this.getUserToken(siteUrl, username, password, service, true, captchaOrToken, value);
+            return this.getUserToken(siteUrl, username, password, service, true, captchaOrCsrfToken, value);
         }
 
         if (data.errorcode == 'missingparam') {

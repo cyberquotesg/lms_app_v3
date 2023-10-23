@@ -16,13 +16,14 @@ export class CqDashboard extends CqPage implements OnInit
     };
     pageDefaults: any = {
         filterMultiple: [],
+        mobileCourseMedia: [],
         userFullName: '',
         dashHours: '00',
         dashMinutes: '00',
         title: '',
     };
     pageJob: any = {
-        filterMultiple: {
+        getCqConfig: {
             value: 0,
             next: {
                 getAllData: 0,
@@ -67,16 +68,27 @@ export class CqDashboard extends CqPage implements OnInit
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
 
-    filterMultiple(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
+    getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         const params: any = {
-            cluster: 'CqLib',
-            endpoint: 'get_filter_multiple',
-            page: 'dashboard',
+            calls: {
+                filterMultiple: {
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
+                    page: 'dashboard',
+                },
+                mobileCourseMedia: {
+                    cluster: 'CqLib',
+                    endpoint: 'get_cq_config',
+                    name: 'mobile_course_media',
+                },
+            },
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            this.pageData.filterMultiple = this.CH.toJson(data);
+            let allData = this.CH.toJson(data);
+            this.pageData.filterMultiple = allData.filterMultiple;
+            this.pageData.mobileCourseMedia = Array.isArray(allData.mobileCourseMedia[0].value) ? allData.mobileCourseMedia[0].value : [allData.mobileCourseMedia[0].value];
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -98,18 +110,6 @@ export class CqDashboard extends CqPage implements OnInit
                     page: 1,
                     length: 5,
                 },
-                eLearningList: {
-                    cluster: "CqCourseLib",
-                    endpoint: "get_e_learning_list",
-                    page: 1,
-                    length: 5,
-                },
-                classroomTrainingList: {
-                    cluster: "CqCourseLib",
-                    endpoint: "get_classroom_training_list",
-                    page: 1,
-                    length: 5,
-                },
                 additionalContents: {
                     cluster: 'CqLib',
                     endpoint: 'get_contents_additional',
@@ -117,6 +117,25 @@ export class CqDashboard extends CqPage implements OnInit
                 },
             },
         };
+
+        if (this.pageData.mobileCourseMedia.includes("offline"))
+        {
+            params.calls.offline = {
+                cluster: "CqCourseLib",
+                endpoint: "get_classroom_training_list",
+                page: 1,
+                length: 5,
+            };
+        }
+        if (this.pageData.mobileCourseMedia.includes("online"))
+        {
+            params.calls.online = {
+                cluster: "CqCourseLib",
+                endpoint: "get_e_learning_list",
+                page: 1,
+                length: 5,
+            };
+        }
 
         // because dashboard calls APIs which need filter multiple, but doesn't have button to select the filter items
         // so system should auto select them all
@@ -128,8 +147,8 @@ export class CqDashboard extends CqPage implements OnInit
             let bucketTexted = bucket.join(",");
 
             params.calls.myCourses[item.plural] = bucketTexted;
-            params.calls.eLearningList[item.plural] = bucketTexted;
-            params.calls.classroomTrainingList[item.plural] = bucketTexted;
+            params.calls.online[item.plural] = bucketTexted;
+            params.calls.offline[item.plural] = bucketTexted;
         });
 
         this.pageJobExecuter(jobName, params, (data) => {
@@ -147,18 +166,32 @@ export class CqDashboard extends CqPage implements OnInit
                 this.pageData.myCourses = allData.myCourses;
             }
 
-            // classroomTrainingList
-            temp = this.CH.toArray(allData.classroomTrainingList);
-            if (!this.CH.isSame(this.pageData.classroomTrainingList, temp))
+            // offline
+            if (this.pageData.mobileCourseMedia.includes("offline"))
             {
-                this.pageData.classroomTrainingList = temp;
+                temp = this.CH.toArray(allData.offline);
+                if (!this.CH.isSame(this.pageData.offline, temp))
+                {
+                    this.pageData.offline = temp;
+                }
+            }
+            else
+            {
+                this.pageData.offline = [];
             }
 
-            // eLearningList
-            temp = this.CH.toArray(allData.eLearningList);
-            if (!this.CH.isSame(this.pageData.eLearningList, temp))
+            // online
+            if (this.pageData.mobileCourseMedia.includes("online"))
             {
-                this.pageData.eLearningList = temp;
+                temp = this.CH.toArray(allData.online);
+                if (!this.CH.isSame(this.pageData.online, temp))
+                {
+                    this.pageData.online = temp;
+                }
+            }
+            else
+            {
+                this.pageData.online = [];
             }
 
             // additionalContents
@@ -167,10 +200,10 @@ export class CqDashboard extends CqPage implements OnInit
         }, moreloader, refresher, finalCallback);
     }
 
-    goToAvailableCourses(mediaList): void
+    goToAvailableCourses(media): void
     {
         const stateParams: any = {
-            media: mediaList == "eLearningList" ? "online" : "offline",
+            media,
         };
         CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
             params: stateParams,

@@ -71,19 +71,19 @@
             </ion-card-content>
         </ion-card>
 
-        <div *ngFor="let mediaList of ['eLearningList', 'classroomTrainingList']">
-            <div *ngIf="isAvailable(pageData[mediaList])">
+        <div *ngFor="let media of pageData.mobileCourseMedia">
+            <div *ngIf="isAvailable(pageData[media])">
                 <div class="pl-24 pt-40 pr-24 pb-20" style="font-weight: 900;">
-                    <span *ngIf="mediaList == 'eLearningList'">E-Learning You May Like</span>
-                    <span *ngIf="mediaList == 'classroomTrainingList'">Classroom Training You May Like</span>
+                    <span *ngIf="media == 'online'">E-Learning You May Like</span>
+                    <span *ngIf="media == 'offline'">Classroom Training You May Like</span>
                 </div>
                 <ion-slides class="pl-24 pr-24" [options]="pageData.sliderOptions">
-                    <ion-slide *ngFor="let course of pageData[mediaList]" class="mb-24">
+                    <ion-slide *ngFor="let course of pageData[media]" class="mb-24">
                        <cq_items [items]="course" (onSelectItem)="openCourse($event)"></cq_items>
                     </ion-slide>
 
                     <ion-slide class="mb-24">
-                        <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses(mediaList)">
+                        <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses(media)">
                             <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
                                 More Courses
                                 <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>

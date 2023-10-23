@@ -38,7 +38,7 @@ import { CorePlatform } from '@services/platform';
 
 // by rachmad
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
-import { Zoom } from '@awesome-cordova-plugins/zoom';
+// import { Zoom } from '@awesome-cordova-plugins/zoom';
 import Color from 'color';
 import { AddonNotifications } from '@addons/notifications/services/notifications';
 
@@ -59,7 +59,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     // by rachmad
     constructor(protected renderer: Renderer2, protected CH: CqHelper)
     {
-        this.CH.zoom = Zoom;
+        // this.CH.zoom = Zoom;
     }
 
     /**

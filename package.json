@@ -258,7 +258,7 @@
       "@moodlehq/cordova-plugin-file-transfer": {},
       "cordova-plugin-prevent-override": {},
       "cordova-plugin-androidx-adapter": {},
-      "cordova-plugin-screen-orientation": {},
+      "cordova-plugin-screen-orientation": {}
     }
   },
   "optionalDependencies": {

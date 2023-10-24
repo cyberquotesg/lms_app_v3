@@ -36,8 +36,8 @@ $bar_background: $gradient_background;
 {
     $properties: p, m;
     $directions: l, t, r, b;
-    $min: -48;
-    $max: 48;
+    $min: -60;
+    $max: 60;
     $multiplier: 1;
     $dictionary: ("p": padding, "m": margin, "l": left, "t": top, "r": right, "b": bottom);
 

@@ -89,6 +89,8 @@ export class CqDashboard extends CqPage implements OnInit
             let allData = this.CH.toJson(data);
             this.pageData.filterMultiple = allData.filterMultiple;
             this.pageData.mobileCourseMedia = Array.isArray(allData.mobileCourseMedia[0].value) ? allData.mobileCourseMedia[0].value : [allData.mobileCourseMedia[0].value];
+            this.pageData.offlineCourse = this.pageData.mobileCourseMedia.includes("offline");
+            this.pageData.onlineCourse = this.pageData.mobileCourseMedia.includes("online");
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -118,7 +120,7 @@ export class CqDashboard extends CqPage implements OnInit
             },
         };
 
-        if (this.pageData.mobileCourseMedia.includes("offline"))
+        if (this.pageData.offlineCourse)
         {
             params.calls.offline = {
                 cluster: "CqCourseLib",
@@ -127,7 +129,7 @@ export class CqDashboard extends CqPage implements OnInit
                 length: 5,
             };
         }
-        if (this.pageData.mobileCourseMedia.includes("online"))
+        if (this.pageData.onlineCourse)
         {
             params.calls.online = {
                 cluster: "CqCourseLib",
@@ -147,8 +149,8 @@ export class CqDashboard extends CqPage implements OnInit
             let bucketTexted = bucket.join(",");
 
             params.calls.myCourses[item.plural] = bucketTexted;
-            params.calls.online[item.plural] = bucketTexted;
-            params.calls.offline[item.plural] = bucketTexted;
+            if (this.pageData.offlineCourse) params.calls.offline[item.plural] = bucketTexted;
+            if (this.pageData.onlineCourse) params.calls.online[item.plural] = bucketTexted;
         });
 
         this.pageJobExecuter(jobName, params, (data) => {
@@ -167,7 +169,7 @@ export class CqDashboard extends CqPage implements OnInit
             }
 
             // offline
-            if (this.pageData.mobileCourseMedia.includes("offline"))
+            if (this.pageData.offlineCourse)
             {
                 temp = this.CH.toArray(allData.offline);
                 if (!this.CH.isSame(this.pageData.offline, temp))
@@ -175,13 +177,10 @@ export class CqDashboard extends CqPage implements OnInit
                     this.pageData.offline = temp;
                 }
             }
-            else
-            {
-                this.pageData.offline = [];
-            }
+            else this.pageData.offline = [];
 
             // online
-            if (this.pageData.mobileCourseMedia.includes("online"))
+            if (this.pageData.onlineCourse)
             {
                 temp = this.CH.toArray(allData.online);
                 if (!this.CH.isSame(this.pageData.online, temp))
@@ -189,10 +188,7 @@ export class CqDashboard extends CqPage implements OnInit
                     this.pageData.online = temp;
                 }
             }
-            else
-            {
-                this.pageData.online = [];
-            }
+            else this.pageData.online = [];
 
             // additionalContents
             this.pageData.additionalContents = this.CH.toArray(allData.additionalContents);

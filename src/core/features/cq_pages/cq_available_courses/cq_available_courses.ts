@@ -45,7 +45,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
         getCqConfig: {
             value: 0,
             next: {
-                courses: 0,
+                getCourses: 0,
             },
         },
     };
@@ -150,7 +150,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
     }
-    courses(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
+    getCourses(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
         // don't use modeData.mode, but use it's own duplicated functionality
         let page, length, media = this.pageData.media;

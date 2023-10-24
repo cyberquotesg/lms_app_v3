@@ -73,7 +73,7 @@
 
         <div *ngFor="let media of pageData.mobileCourseMedia">
             <div *ngIf="isAvailable(pageData[media])">
-                <div class="pl-24 pt-40 pr-24 pb-20" style="position: relative; font-weight: 900;">
+                <div class="pl-24 pt-24 pr-24 pb-20" style="position: relative; font-weight: 900;">
                     <span *ngIf="media == 'online'">E-Learning You May Like</span>
                     <span *ngIf="media == 'offline'">Classroom Training You May Like</span>
                     <ion-icon class="this-is-swiping" name="chevron-forward" style="position: absolute; top: 38px; right: 24px; font-size: 22px;"></ion-icon>

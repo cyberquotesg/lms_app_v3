@@ -127,6 +127,7 @@ export class CqDashboard extends CqPage implements OnInit
                 endpoint: "get_classroom_training_list",
                 page: 1,
                 length: 5,
+                order_by: "rand()",
             };
         }
         if (this.pageData.onlineCourse)
@@ -136,6 +137,7 @@ export class CqDashboard extends CqPage implements OnInit
                 endpoint: "get_e_learning_list",
                 page: 1,
                 length: 5,
+                order_by: "rand()",
             };
         }
 

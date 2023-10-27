@@ -20,6 +20,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
         media: "",
     };
     pageDefaults: any = {
+        medias: [],
         online: {
             initiated: false,
             reachedEndOfList: false,
@@ -50,7 +51,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
         },
     };
     pageJobRefresh: any = {
-        courses: 0,
+        getCourses: 0,
     };
 
     constructor(renderer: Renderer2, CH: CqHelper, private router: Router)

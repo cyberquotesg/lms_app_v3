@@ -138,7 +138,16 @@ export class CqAvailableCourses extends CqPage implements OnInit
             }
 
             this.pageData.medias = Array.isArray(allData.mobileCourseMedia[0].value) ? allData.mobileCourseMedia[0].value : [allData.mobileCourseMedia[0].value];
-            this.pageData.media = this.pageParams.media != "" ? this.pageParams.media : this.pageData.medias[0];
+
+            if (this.pageParams.media && this.pageData.medias.includes(this.pageParams.media))
+            {
+                this.pageData.media = this.pageParams.media
+            }
+            else
+            {
+                this.pageData.media = this.pageData.medias[0];
+            }
+
             this.pageData.sliderOptions = {
                 initialSlide: this.pageData.medias.indexOf(this.pageData.media),
                 speed: 400,

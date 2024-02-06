@@ -22,6 +22,8 @@ import { CoreEventObserver } from '@singletons/events';
  */
 export class CoreDom {
 
+    static fontSizeZoom: number | null = null;
+
     // Avoid creating singleton instances.
     private constructor() {
         // Nothing to do.
@@ -88,21 +90,23 @@ export class CoreDom {
      *
      * @param element Element to check.
      * @param intersectionRatio Intersection ratio (From 0 to 1).
+     * @param container Container where element is located
      * @returns True if in viewport.
      */
-    static isElementInViewport(element: HTMLElement, intersectionRatio = 1): boolean {
+    static isElementInViewport(element: HTMLElement, intersectionRatio = 1, container: HTMLElement | null = null): boolean {
         const elementRectangle = element.getBoundingClientRect();
-
+        const containerRectangle = container?.getBoundingClientRect();
         const elementArea = elementRectangle.width * elementRectangle.height;
+
         if (elementArea == 0) {
             return false;
         }
 
         const intersectionRectangle = {
-            top: Math.max(0, elementRectangle.top),
-            left: Math.max(0, elementRectangle.left),
-            bottom: Math.min(window.innerHeight, elementRectangle.bottom),
-            right: Math.min(window.innerWidth, elementRectangle.right),
+            top: Math.max(containerRectangle?.top ?? 0, elementRectangle.top),
+            left: Math.max(containerRectangle?.left ?? 0, elementRectangle.left),
+            bottom: Math.min(containerRectangle?.bottom ?? window.innerHeight, elementRectangle.bottom),
+            right: Math.min(containerRectangle?.right ?? window.innerWidth, elementRectangle.right),
         };
 
         const intersectionArea = (intersectionRectangle.right - intersectionRectangle.left) *
@@ -119,8 +123,12 @@ export class CoreDom {
      * @returns True if element is visible inside the DOM.
      */
     static isElementVisible(element: HTMLElement, checkSize = true): boolean {
-        if (checkSize && (element.clientWidth === 0 || element.clientHeight === 0)) {
-            return false;
+        if (checkSize) {
+            const dimensions = element.getBoundingClientRect();
+
+            if (dimensions.width === 0 || dimensions.height === 0) {
+                return false;
+            }
         }
 
         const style = getComputedStyle(element);
@@ -534,9 +542,15 @@ export class CoreDom {
         element: HTMLElement & {disabled?: boolean},
         callback: (event: MouseEvent | KeyboardEvent) => void,
     ): void {
-        element.addEventListener('click', (event) => callback(event));
+        const enabled = () => !CoreUtils.isTrueOrOne(element.dataset.disabledA11yClicks ?? 'false');
+
+        element.addEventListener('click', (event) => enabled() && callback(event));
 
         element.addEventListener('keydown', (event) => {
+            if (!enabled()) {
+                return;
+            }
+
             if (event.key === ' ' || event.key === 'Enter') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -544,6 +558,10 @@ export class CoreDom {
         });
 
         element.addEventListener('keyup', (event) => {
+            if (!enabled()) {
+                return;
+            }
+
             if (event.key === ' ' || event.key === 'Enter') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -565,6 +583,38 @@ export class CoreDom {
 
             element.classList.add('clickable');
         }
+    }
+
+    /**
+     * Get CSS property value from computed styles.
+     *
+     * @param styles Computed styles.
+     * @param property Property name.
+     * @returns Property CSS value (may not be the same as the computed value).
+     */
+    static getCSSPropertyValue(styles: CSSStyleDeclaration, property: string): string {
+        const value = styles.getPropertyValue(property);
+
+        if (property === 'font-size') {
+            if (this.fontSizeZoom === null) {
+                const baseFontSize = 20;
+                const span = document.createElement('span');
+                span.style.opacity = '0';
+                span.style.fontSize = `${baseFontSize}px`;
+
+                document.body.append(span);
+
+                this.fontSizeZoom = baseFontSize / Number(getComputedStyle(span).fontSize.slice(0, -2));
+
+                span.remove();
+            }
+
+            if (this.fontSizeZoom !== 1) {
+                return `calc(${this.fontSizeZoom} * ${value})`;
+            }
+        }
+
+        return value;
     }
 
 }

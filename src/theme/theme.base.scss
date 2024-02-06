@@ -120,15 +120,15 @@ body {
 }
 
 // Correctly inherit ion-text-wrap onto labels.
-.item ion-label core-format-text > *,
-.fake-ion-item core-format-text > * {
+.item ion-label core-format-text > *:not(pre),
+.fake-ion-item core-format-text > *:not(pre) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.item.ion-text-wrap > ion-label core-format-text > *,
-.fake-ion-item.ion-text-wrap core-format-text > * {
+.item.ion-text-wrap > ion-label core-format-text > *:not(pre),
+.fake-ion-item.ion-text-wrap core-format-text > *:not(pre) {
     white-space: normal;
     overflow: inherit;
 }
@@ -166,11 +166,16 @@ ion-header {
             --color: var(--core-header-buttons-color);
             --background: var(--core-header-buttons-background);
             --ion-toolbar-color: var(--core-header-buttons-color);
-            --border-radius: var(--huge-radius);
+            --border-radius: var(--radius-xl);
             --primary: var(--core-header-buttons-color);
         }
         ion-back-button::part(text) {
             display: none;
+        }
+
+        // Style fake back button like the original ones.
+        ion-button.ion-back-button {
+            width: 48px !important;
         }
 
         .button.button-clear.button-has-icon-only,
@@ -251,10 +256,6 @@ ion-header {
 
 ion-tabs.hide-header ion-header {
     display: none;
-}
-
-ion-footer ion-toolbar.ion-color-contrast {
-    background-color: var(--contrast-background);
 }
 
 ion-footer {
@@ -375,7 +376,7 @@ ion-button:not(.button-has-icon-only):not(.button-small) > ion-icon {
 }
 
 ion-button.button.button-clear.button-has-icon-only {
-    --border-radius: var(--huge-radius);
+    --border-radius: var(--radius-xl);
 }
 
 ion-button.button.button-clear {
@@ -386,6 +387,27 @@ ion-button.button.button-clear {
 ion-button.button.button-solid,
 ion-button.button.button-outline {
     --border-radius: var(--core-input-radius);
+}
+
+ion-button .select-icon {
+    margin: var(--icon-margin);
+    width: 19px;
+    height: 19px;
+    position: relative;
+
+    .select-icon-inner {
+        left: 5px;
+        top: 50%;
+        margin-top: -2px;
+        position: absolute;
+        width: 0px;
+        height: 0px;
+        color: currentcolor;
+        pointer-events: none;
+        border-top: 5px solid;
+        border-right: 5px solid transparent;
+        border-left: 5px solid transparent;
+    }
 }
 
 [role="button"],
@@ -451,8 +473,8 @@ div.core-iframe-network-error {
         width: 50%;
         height: 50%;
         background-color: var(--danger);
-        -webkit-mask: url("/assets/fonts/font-awesome/solid/exclamation-triangle.svg") no-repeat 50% 50%;
-        mask: url("/assets/fonts/font-awesome/solid/exclamation-triangle.svg") no-repeat 50% 50%;
+        -webkit-mask: url("/assets/fonts/font-awesome/solid/triangle-exclamation.svg") no-repeat 50% 50%;
+        mask: url("/assets/fonts/font-awesome/solid/triangle-exclamation.svg") no-repeat 50% 50%;
     }
 }
 
@@ -462,10 +484,9 @@ div.core-iframe-network-error {
     left: -15%;
 }
 
-ion-alert.core-nohead {
-    .alert-head {
-        padding-bottom: 0;
-    }
+ion-alert.core-nohead .alert-head,
+ion-alert .alert-head:empty {
+    padding-bottom: 0;
 }
 
 @keyframes scaleFrom0 {
@@ -497,7 +518,7 @@ ion-alert .alert-button.timed-button{
 }
 
 ion-alert {
-    --border-radius: var(--huge-radius);
+    --border-radius: var(--radius-xl);
 
     &.md, &.ios {
         --max-width: 80%;
@@ -524,7 +545,7 @@ ion-alert {
 }
 
 ion-loading {
-    --border-radius: var(--huge-radius);
+    --border-radius: var(--radius-xl);
 
     .loading-wrapper {
         border-radius: var(--border-radius) !important;
@@ -733,6 +754,21 @@ body.core-iframe-fullscreen ion-router-outlet {
     }
 }
 
+.core-password-modal {
+    --border-radius: var(--radius-sm);
+    --min-width: auto;
+    --min-height: 300px;
+    --width: 384px;
+    --height: auto;
+
+    form {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-between;
+    }
+}
+
 // Hidden submit button.
 .core-submit-hidden-enter {
     position: absolute;
@@ -764,7 +800,7 @@ body.core-iframe-fullscreen ion-router-outlet {
 
 .item.item-file {
     ion-thumbnail {
-        --size: 24px;
+        --size: 32px;
         width: var(--size);
         height: var(--size);
     }
@@ -798,6 +834,9 @@ body.core-iframe-fullscreen ion-router-outlet {
 .item-dimmed {
     opacity: 0.7;
     --background: var(--light);
+    ion-item {
+        --background: var(--light);
+    }
 }
 
 // Extra text colors.
@@ -815,6 +854,7 @@ body.core-iframe-fullscreen ion-router-outlet {
         --border-width: 0;
 
         --border-color: var(--color-tint);
+        --border-radius: var(--radius-sm);
         --background: var(--color-tint);
         --color: var(--color-shade);
 
@@ -874,10 +914,7 @@ img.large-avatar,
     height: var(--core-large-avatar-size);
     max-width: var(--core-large-avatar-size);
     max-height: var(--core-large-avatar-size);
-    margin-bottom: 10px;
-    border-radius : 50%;
-    padding: 4px;
-    border: 1px solid var(--stroke);
+    border-radius: 50%;
     background-color: transparent;
 }
 
@@ -921,6 +958,10 @@ ion-card {
     display: inline !important;
 }
 
+.section-summary core-format-text img {
+    border-radius: var(--radius-lg);
+}
+
 ion-list.core-course-module-list-wrapper,
 .list-item-limited-width,
 .core-course-module-list-wrapper,
@@ -939,6 +980,7 @@ ion-content.limited-width > :not([slot]) {
 ion-toolbar h1 img.core-bar-button-image,
 ion-toolbar h1 .core-bar-button-image img {
     padding: 4px;
+    --userpicture-padding: 4px;
     width: var(--core-header-toolbar-button-image-size);
     height: var(--core-header-toolbar-button-image-size);
     max-width: var(--core-header-toolbar-button-image-size);
@@ -959,7 +1001,7 @@ ion-action-sheet.md {
     }
 
     .action-sheet-group:first-child {
-        border-radius: var(--big-radius) var(--big-radius) 0 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
 
     .action-sheet-group-cancel {
@@ -1106,11 +1148,11 @@ ion-select-popover {
 ion-badge {
     line-height: 1.1;
     padding: 2px 8px;
-    border-radius: var(--big-radius);
+    border-radius: var(--radius-lg);
 }
 
 ion-chip,
-ion-button.chip {
+ion-button.button.chip {
     line-height: 1.1;
     font-size: 12px;
     min-height: 24px;
@@ -1129,7 +1171,11 @@ ion-button.chip {
     }
 }
 
-ion-button.chip {
+ion-button.button.chip {
+    --border-radius: var(--radius-md);
+    min-height: 32px;
+    font-size: 14px;
+
     ion-icon[slot=start] {
         @include margin(0, 8px, 0, 0);
     }
@@ -1188,6 +1234,7 @@ ion-chip {
 
 ion-searchbar {
     height: var(--height) !important;
+    --border-radius: var(--radius-xs);
 
     .searchbar-input-container {
         color: var(--color) !important;
@@ -1195,6 +1242,8 @@ ion-searchbar {
     }
 
     .searchbar-input {
+        --border-radius: var(--radius-xs);
+
         height: var(--height) !important;
         border: 1px solid var(--border-color) !important;
         box-shadow: none !important;
@@ -1313,6 +1362,25 @@ ion-fab[core-fab] {
     ion-fab-button::part(close-icon) {
         display: none;
     }
+}
+
+// The following 4 selectors can probably be removed after Ionic migration to 7+
+ion-fab.fab-horizontal-start {
+    left: calc(10px + var(--ion-safe-area-right, 0px));
+}
+
+[dir=rtl] ion-fab.fab-horizontal-start {
+    right: calc(10px + var(--ion-safe-area-right, 0px));
+    left: unset
+}
+
+ion-fab.fab-horizontal-end {
+    right: calc(10px + var(--ion-safe-area-right, 0px));
+}
+
+[dir=rtl] ion-fab.fab-horizontal-end {
+    left: calc(10px + var(--ion-safe-area-right, 0px));
+    right: unset
 }
 
 ion-content.has-collapsible-footer ion-fab {
@@ -1801,12 +1869,59 @@ video::-webkit-media-text-track-display {
     white-space: normal !important;
 }
 
-ion-modal.core-modal-no-background {
-    --background: transparent;
-    --box-shadow: none !important;
-    pointer-events: none;
-
-    ion-backdrop {
-        display: none;
+ion-modal {
+    &.show-modal {
+        @media only screen and (min-width: 768px) and (min-height: 600px) {
+            --border-radius: var(--modal-radius);
+        }
     }
+
+    &.core-modal-lateral,
+    &.core-modal-fullscreen {
+        --border-radius: 0px;
+    }
+
+    &.core-modal-no-background {
+        --background: transparent;
+        --box-shadow: none !important;
+        pointer-events: none;
+
+        ion-backdrop {
+            display: none;
+        }
+    }
+}
+
+ion-popover {
+    .popover-wrapper .popover-content {
+        border-radius: var(--modal-radius);
+    }
+    &.md {
+        margin-top: 2px;
+        margin-bottom: 2px;
+
+        // Never show backdrop on popovers on Android
+        // @todo Apply box shadow on ios and make it transparent too. The main problem is the box arrow.
+        ion-backdrop {
+            background: transparent;
+        }
+    }
+}
+
+/*
+* This is to solve popver issue in chrome 114
+* For more info see: https://github.com/ionic-team/ionic-framework/issues/27599
+*/
+[popover].popover-viewport {
+    display: initial;
+    position: initial;
+    margin: initial;
+    border: initial;
+    background: initial;
+    padding: initial;
+    width: initial;
+    height: initial;
+    overflow: initial;
+    inset: initial;
+    color: initial;
 }

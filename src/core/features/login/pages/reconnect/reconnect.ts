@@ -17,11 +17,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { CoreApp } from '@services/app';
 import { CoreNetwork } from '@services/network';
-import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
+import { CoreSiteBasicInfo, CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
-import { CoreSite, CoreSiteIdentityProvider, CoreSitePublicConfigResponse } from '@classes/site';
+import { CoreSite, CoreSitePublicConfigResponse } from '@classes/site';
 import { CoreEvents } from '@singletons/events';
 import { CoreError } from '@classes/errors/error';
 import { CoreNavigator, CoreRedirectPayload } from '@services/navigator';
@@ -50,29 +50,25 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
 
     credForm: FormGroup;
     siteUrl!: string;
-    username!: string;
-    userFullName!: string;
-    userAvatar?: string;
-    siteName!: string;
     logoUrl?: string;
-    identityProviders?: CoreSiteIdentityProvider[];
     showForgottenPassword = true;
-    showSiteAvatar = false;
+    showUserAvatar = false;
     isBrowserSSO = false;
-    isOAuth = false;
     isLoggedOut: boolean;
     siteId!: string;
+    siteInfo?: CoreSiteBasicInfo;
     showScanQR = false;
     showLoading = true;
     reconnectAttempts = 0;
     supportConfig?: CoreUserSupportConfig;
     exceededAttemptsHTML?: SafeHtml | string | null;
+    siteConfig?: CoreSitePublicConfigResponse;
+    redirectData?: CoreRedirectPayload;
 
-    protected siteConfig?: CoreSitePublicConfigResponse;
     protected viewLeft = false;
     protected eventThrown = false;
-    protected redirectData?: CoreRedirectPayload;
     protected loginSuccessful = false;
+    protected username = '';
 
     constructor(
         protected fb: FormBuilder,
@@ -119,20 +115,29 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
                 throw new CoreError('Invalid site');
             }
 
+            this.siteUrl = site.getURL();
+
+            this.siteInfo = {
+                id: this.siteId,
+                siteUrl: this.siteUrl,
+                siteUrlWithoutProtocol: this.siteUrl.replace(/^https?:\/\//, '').toLowerCase(),
+                fullname: site.infos.fullname,
+                firstname: site.infos.firstname,
+                lastname: site.infos.lastname,
+                siteName: await site.getSiteName(),
+                userpictureurl: site.infos.userpictureurl,
+                loggedOut: true, // Not used.
+            };
+
             this.username = site.infos.username;
-            this.userFullName = site.infos.fullname;
-            this.userAvatar = site.infos.userpictureurl;
-            this.siteUrl = site.infos.siteurl;
-            this.siteName = site.getSiteName();
             this.supportConfig = new CoreUserAuthenticatedSupportConfig(site);
 
-            // If login was OAuth we should only reach this page if the OAuth method ID has changed.
-            this.isOAuth = site.isOAuth();
+            const availableSites = await CoreLoginHelper.getAvailableSites();
 
             // Show logo instead of avatar if it's a fixed site.
-            this.showSiteAvatar = !!this.userAvatar && !CoreLoginHelper.getFixedSites();
+            this.showUserAvatar = !availableSites.length;
 
-            this.checkSiteConfig(site);
+            await this.checkSiteConfig(site);
 
             this.showLoading = false;
         } catch (error) {
@@ -143,7 +148,7 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
     }
 
     /**
-     * Component destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.viewLeft = true;
@@ -180,9 +185,6 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
             return;
         }
 
-        const disabledFeatures = CoreLoginHelper.getDisabledFeatures(this.siteConfig);
-
-        this.identityProviders = CoreLoginHelper.getValidIdentityProviders(this.siteConfig, disabledFeatures);
         this.showForgottenPassword = !CoreLoginHelper.isForgottenPasswordDisabled(this.siteConfig);
         this.exceededAttemptsHTML = CoreLoginHelper.buildExceededAttemptsHTML(
             !!this.supportConfig?.canContactSupport(),
@@ -194,16 +196,10 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
             CoreEvents.trigger(CoreEvents.LOGIN_SITE_CHECKED, { config: this.siteConfig });
         }
 
-        this.isBrowserSSO = !this.isOAuth && CoreLoginHelper.isSSOLoginNeeded(this.siteConfig.typeoflogin);
-        this.showScanQR = CoreLoginHelper.displayQRInSiteScreen() ||
-            CoreLoginHelper.displayQRInCredentialsScreen(this.siteConfig.tool_mobile_qrcodetype);
+        this.isBrowserSSO = CoreLoginHelper.isSSOLoginNeeded(this.siteConfig.typeoflogin);
 
         await CoreSites.checkApplication(this.siteConfig);
 
-        // Check logoURL if user avatar is not set.
-        if (this.userAvatar?.startsWith(this.siteUrl + '/theme/image.php')) {
-            this.showSiteAvatar = false;
-        }
         this.logoUrl = CoreLoginHelper.getLogoUrl(this.siteConfig);
     }
 
@@ -320,46 +316,13 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
             return;
         }
 
-        CoreLoginHelper.confirmAndOpenBrowserForSSOLogin(
+        CoreLoginHelper.openBrowserForSSOLogin(
             this.siteUrl,
             this.siteConfig.typeoflogin,
             undefined,
             this.siteConfig.launchurl,
             this.redirectData,
         );
-    }
-
-    /**
-     * An OAuth button was clicked.
-     *
-     * @param provider The provider that was clicked.
-     */
-    oauthClicked(provider: CoreSiteIdentityProvider): void {
-        const result = CoreLoginHelper.openBrowserForOAuthLogin(
-            this.siteUrl,
-            provider,
-            this.siteConfig?.launchurl,
-            this.redirectData,
-        );
-
-        if (!result) {
-            CoreDomUtils.showErrorModal('Invalid data.');
-        }
-    }
-
-    /**
-     * Show instructions and scan QR code.
-     *
-     * @returns Promise resolved when done.
-     */
-    async showInstructionsAndScanQR(): Promise<void> {
-        try {
-            await CoreLoginHelper.showScanQRInstructions();
-
-            await CoreLoginHelper.scanQR();
-        } catch {
-            // Ignore errors.
-        }
     }
 
     /**

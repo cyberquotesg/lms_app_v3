@@ -77,6 +77,13 @@ html.dark {
         }
     }
 
+    ion-popover,
+    ion-popover ion-content {
+        --background: var(--gray-800);
+        --ion-item-background: var(--background);
+        --ion-background-color: var(--background);
+    }
+
     --core-link-color: var(--info-tint);
 
     --core-header-toolbar-background:   var(--gray-900);
@@ -122,6 +129,8 @@ html.dark {
     --core-login-text-color: var(--white);
     --core-login-input-background: var(--core-login-background);
     --core-login-input-color: var(--core-login-text-color);
+
+    --module-icon-filter: brightness(0) invert(1);
 
     --core-question-correct-color: var(--success-tint);
     --core-question-correct-color-bg: var(--success-shade);

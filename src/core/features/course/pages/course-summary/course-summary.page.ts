@@ -19,7 +19,6 @@ import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import {
     CoreCourseCustomField,
-    CoreCourseEnrolmentMethod,
     CoreCourses,
     CoreCourseSearchedData,
     CoreCoursesProvider,
@@ -31,17 +30,18 @@ import {
 } from '@features/course/services/course-options-delegate';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { ActionSheetController, ModalController, NgZone, Translate } from '@singletons';
-import { CoreCoursesSelfEnrolPasswordComponent } from '../../../courses/components/self-enrol-password/self-enrol-password';
 import { CoreNavigator } from '@services/navigator';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreCoursesHelper, CoreCourseWithImageAndColor } from '@features/courses/services/courses-helper';
 import { Subscription } from 'rxjs';
 import { CoreColors } from '@singletons/colors';
 import { CorePath } from '@singletons/path';
-import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
-
-const ENROL_BROWSER_METHODS = ['fee', 'paypal'];
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreEnrolHelper } from '@features/enrol/services/enrol-helper';
+import { CoreEnrolDelegate } from '@features/enrol/services/enrol-delegate';
+import { CoreEnrol, CoreEnrolEnrolmentMethod } from '@features/enrol/services/enrol';
 
 /**
  * Page that shows the summary of a course including buttons to enrol and other available options.
@@ -59,29 +59,28 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
     @ViewChild('courseThumb') courseThumb?: ElementRef;
 
     isEnrolled = false;
+
     canAccessCourse = true;
-    selfEnrolInstances: CoreCourseEnrolmentMethod[] = [];
-    otherEnrolments = false;
+    useGuestAccess = false;
+
+    selfEnrolInstances: CoreEnrolEnrolmentMethod[] = [];
+    guestEnrolInstances: CoreEnrolEnrolmentMethod[] = [];
+    hasBrowserEnrolments = false;
     dataLoaded = false;
     isModal = false;
     contactsExpanded = false;
-
     courseUrl = '';
     progress?: number;
-
-    protected actionSheet?: HTMLIonActionSheetElement;
-
     courseMenuHandlers: CoreCourseOptionsMenuHandlerToDisplay[] = [];
 
-    protected useGuestAccess = false;
-    protected guestInstanceId = new CorePromisedValue<number | undefined>();
-    protected courseData = new CorePromisedValue<CoreCourseSummaryData | undefined>();
+    protected actionSheet?: HTMLIonActionSheetElement;
     protected waitStart = 0;
     protected enrolUrl = '';
     protected pageDestroyed = false;
     protected courseStatusObserver?: CoreEventObserver;
     protected appResumeSubscription: Subscription;
     protected waitingForBrowserEnrol = false;
+    protected logView: () => void;
 
     constructor() {
         // Refresh the view when the app is resumed.
@@ -95,6 +94,20 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
                 this.dataLoaded = false;
 
                 await this.refreshData();
+            });
+        });
+
+        this.logView = CoreTime.once(async () => {
+            if (!this.course || this.isModal) {
+                return;
+            }
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'core_course_get_courses',
+                name: this.course.fullname,
+                data: { id: this.course.id, category: 'course' },
+                url: `/enrol/index.php?id=${this.course.id}`,
             });
         });
     }
@@ -129,37 +142,15 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
     }
 
     /**
-     * Check if the user can access as guest.
-     *
-     * @returns Promise resolved if can access as guest, rejected otherwise. Resolve param indicates if
-     *         password is required for guest access.
-     */
-    protected async canAccessAsGuest(): Promise<boolean> {
-        const guestInstanceId = await this.guestInstanceId;
-        if (guestInstanceId === undefined) {
-            return false;
-        }
-
-        const info = await CoreCourses.getCourseGuestEnrolmentInfo(guestInstanceId);
-
-        // Guest access with password is not supported by the app.
-        return !!info.status && !info.passwordrequired;
-    }
-
-    /**
      * Convenience function to get course. We use this to determine if a user can see the course or not.
      *
      * @param refresh If it's refreshing content.
      */
     protected async getCourse(refresh = false): Promise<void> {
-        this.otherEnrolments = false;
-
         try {
-            await Promise.all([
-                this.getEnrolmentMethods(),
-                this.getCourseData(),
-                this.loadCourseExtraData(),
-            ]);
+            await this.getCourseData();
+
+            this.logView();
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error getting enrolment data');
         }
@@ -183,39 +174,12 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
     }
 
     /**
-     * Get course enrolment methods.
-     */
-    protected async getEnrolmentMethods(): Promise<void> {
-        this.selfEnrolInstances = [];
-        this.guestInstanceId.reset();
-
-        const enrolmentMethods = await CoreCourses.getCourseEnrolmentMethods(this.courseId);
-
-        enrolmentMethods.forEach((method) => {
-            if (!method.status) {
-                return;
-            }
-
-            if (method.type === 'self') {
-                this.selfEnrolInstances.push(method);
-            } else if (method.type === 'guest') {
-                this.guestInstanceId.resolve(method.id);
-            } else {
-                // Other enrolments that comes from that WS should need user action.
-                this.otherEnrolments = true;
-            }
-        });
-
-        if (!this.guestInstanceId.isSettled()) {
-            // No guest instance found.
-            this.guestInstanceId.resolve(undefined);
-        }
-    }
-
-    /**
      * Get course data.
      */
     protected async getCourseData(): Promise<void> {
+        this.canAccessCourse = false;
+        this.useGuestAccess = false;
+
         try {
             // Check if user is enrolled in the course.
             try {
@@ -231,40 +195,53 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
             this.canAccessCourse = true;
             this.useGuestAccess = false;
         } catch {
-            // The user is not an admin/manager. Check if we can provide guest access to the course.
-            this.canAccessCourse = await this.canAccessAsGuest();
-            this.useGuestAccess = this.canAccessCourse;
+            // Ignore errors.
         }
 
-        this.courseData.resolve(this.course);
+        const courseByField = await CoreUtils.ignoreErrors(CoreCourses.getCourseByField('id', this.courseId));
+        if (courseByField) {
+            if (this.course) {
+                this.course.customfields = courseByField.customfields;
+                this.course.contacts = courseByField.contacts;
+                this.course.displayname = courseByField.displayname;
+                this.course.categoryname = courseByField.categoryname;
+                this.course.overviewfiles = courseByField.overviewfiles;
+            } else  {
+                this.course = courseByField;
+            }
+        }
+
+        await this.getEnrolmentInfo(courseByField?.enrollmentmethods);
     }
 
     /**
-     * Load some extra data for the course.
+     * Get course enrolment info.
+     *
+     * @param enrolmentMethods Enrolment methods.
      */
-    protected async loadCourseExtraData(): Promise<void> {
-        try {
-            const courseByField = await CoreCourses.getCourseByField('id', this.courseId);
-            const courseData = await this.courseData;
+    protected async getEnrolmentInfo(enrolmentMethods?: string[]): Promise<void> {
+        if (this.isEnrolled) {
+            return;
+        }
 
-            if (courseData) {
-                courseData.customfields = courseByField.customfields;
-                courseData.contacts = courseByField.contacts;
-                courseData.displayname = courseByField.displayname;
-                courseData.categoryname = courseByField.categoryname;
-                courseData.overviewfiles = courseByField.overviewfiles;
-            } else  {
-                this.course = courseByField;
-                this.courseData.resolve(courseByField);
-            }
+        const enrolByType = await CoreEnrolHelper.getEnrolmentsByType(this.courseId, enrolmentMethods);
 
-            // enrollmentmethods contains ALL enrolment methods including manual.
-            if (!this.isEnrolled && courseByField.enrollmentmethods?.some((method) => ENROL_BROWSER_METHODS.includes(method))) {
-                this.otherEnrolments = true;
-            }
+        this.hasBrowserEnrolments = enrolByType.hasBrowser;
+        this.selfEnrolInstances = enrolByType.self;
+        this.guestEnrolInstances = enrolByType.guest;
 
-        } catch {
-            // Ignore errors.
+        if (!this.canAccessCourse) {
+            // The user is not an admin/manager. Check if we can provide guest access to the course.
+            const promises = this.guestEnrolInstances.map(async (method) => {
+                const { canAccess } = await CoreEnrolDelegate.canAccess(method);
+                if (canAccess) {
+                    this.canAccessCourse = true;
+                }
+            });
+
+            await Promise.all(promises);
+
+            this.useGuestAccess = this.canAccessCourse;
         }
     }
 
@@ -284,12 +261,69 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
     }
 
     /**
+     * Validates if the user has access to the course and opens it.
+     *
+     * @param enrolMethod The enrolment method.
+     * @param replaceCurrentPage If current place should be replaced in the navigation stack.
+     */
+    async validateAccessAndOpen(enrolMethod: CoreEnrolEnrolmentMethod, replaceCurrentPage: boolean): Promise<void> {
+        if (!this.canAccessCourse || !this.course || this.isModal) {
+            return;
+        }
+
+        let validated = false;
+        try {
+            validated = await CoreEnrolDelegate.validateAccess(enrolMethod);
+        } catch {
+            this.refreshData();
+
+            return;
+        }
+
+        if (!validated) {
+            return;
+        }
+
+        CoreCourseHelper.openCourse(this.course, { params: { isGuest: this.useGuestAccess }, replace: replaceCurrentPage });
+    }
+
+    /**
      * Open the course.
      *
      * @param replaceCurrentPage If current place should be replaced in the navigation stack.
      */
-    openCourse(replaceCurrentPage = false): void {
+    async openCourse(replaceCurrentPage = false): Promise<void> {
         if (!this.canAccessCourse || !this.course || this.isModal) {
+            return;
+        }
+
+        const hasAccess = await CoreCourseHelper.userHasAccessToCourse(this.courseId);
+        if (!hasAccess && this.guestEnrolInstances.length) {
+            if (this.guestEnrolInstances.length == 1) {
+                this.validateAccessAndOpen(this.guestEnrolInstances[0], replaceCurrentPage);
+
+                return;
+            }
+
+            const buttons: ActionSheetButton[] = this.guestEnrolInstances.map((enrolMethod) => ({
+                text: enrolMethod.name,
+                handler: (): void => {
+                    this.validateAccessAndOpen(enrolMethod, replaceCurrentPage);
+                },
+            }));
+
+            buttons.push({
+                text: Translate.instant('core.cancel'),
+                role: 'cancel',
+            });
+
+            this.actionSheet = await ActionSheetController.create({
+                header:  Translate.instant('core.course.viewcourse'),
+                buttons: buttons,
+            });
+
+            await this.actionSheet.present();
+
             return;
         }
 
@@ -324,79 +358,41 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
     }
 
     /**
-     * Confirm user to Self enrol in course.
+     * Self enrol in a course.
      *
      * @param enrolMethod The enrolment method.
      */
-    async selfEnrolConfirm(enrolMethod: CoreCourseEnrolmentMethod): Promise<void> {
+    async selfEnrolInCourse(enrolMethod: CoreEnrolEnrolmentMethod): Promise<void> {
+        let enrolled = false;
         try {
-            await CoreDomUtils.showConfirm(Translate.instant('core.courses.confirmselfenrol'), enrolMethod.name);
-
-            this.selfEnrolInCourse(enrolMethod.id);
+            enrolled = await CoreEnrolDelegate.enrol(enrolMethod);
         } catch {
-            // User cancelled.
+            this.refreshData();
+
+            return;
         }
-    }
 
-    /**
-     * Self enrol in a course.
-     *
-     * @param instanceId The instance ID.
-     * @param password Password to use.
-     * @returns Promise resolved when self enrolled.
-     */
-    async selfEnrolInCourse(instanceId: number, password = ''): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading('core.loading', true);
-
-        try {
-            await CoreCourses.selfEnrol(this.courseId, password, instanceId);
-
-            // Close modal and refresh data.
-            this.isEnrolled = true;
-            this.dataLoaded = false;
-
-            // Sometimes the list of enrolled courses takes a while to be updated. Wait for it.
-            await this.waitForEnrolled(true);
-
-            await this.refreshData().finally(() => {
-                // My courses have been updated, trigger event.
-                CoreEvents.trigger(CoreCoursesProvider.EVENT_MY_COURSES_UPDATED, {
-                    courseId: this.courseId,
-                    course: this.course,
-                    action: CoreCoursesProvider.ACTION_ENROL,
-                }, CoreSites.getCurrentSiteId());
-            });
-
-            this.openCourse(true);
-
-            modal?.dismiss();
-        } catch (error) {
-            modal?.dismiss();
-
-            if (error && error.errorcode === CoreCoursesProvider.ENROL_INVALID_KEY) {
-                // Initialize the self enrol modal.
-                // Invalid password, show the modal to enter the password.
-                const modalData = await CoreDomUtils.openModal<string>(
-                    {
-                        component: CoreCoursesSelfEnrolPasswordComponent,
-                        componentProps: { password },
-                    },
-                );
-
-                if (modalData !== undefined) {
-                    this.selfEnrolInCourse(instanceId, modalData);
-
-                    return;
-                }
-
-                if (!password) {
-                    // No password entered, don't show error.
-                    return;
-                }
-            }
-
-            CoreDomUtils.showErrorModalDefault(error, 'core.courses.errorselfenrol', true);
+        if (!enrolled) {
+            return;
         }
+
+        // Refresh data.
+        this.isEnrolled = true;
+        this.dataLoaded = false;
+
+        // Sometimes the list of enrolled courses takes a while to be updated. Wait for it.
+        await this.waitForEnrolled(true);
+
+        await this.refreshData().finally(() => {
+            // My courses have been updated, trigger event.
+            CoreEvents.trigger(CoreCoursesProvider.EVENT_MY_COURSES_UPDATED, {
+                courseId: this.courseId,
+                course: this.course,
+                action: CoreCoursesProvider.ACTION_ENROL,
+            }, CoreSites.getCurrentSiteId());
+        });
+
+        this.openCourse(true);
     }
 
     /**
@@ -409,12 +405,17 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
 
         promises.push(CoreCourses.invalidateUserCourses());
         promises.push(CoreCourses.invalidateCourse(this.courseId));
-        promises.push(CoreCourses.invalidateCourseEnrolmentMethods(this.courseId));
         promises.push(CoreCourseOptionsDelegate.clearAndInvalidateCoursesOptions(this.courseId));
         promises.push(CoreCourses.invalidateCoursesByField('id', this.courseId));
-        if (this.guestInstanceId.value) {
-            promises.push(CoreCourses.invalidateCourseGuestEnrolmentInfo(this.guestInstanceId.value));
-        }
+        promises.push(CoreEnrol.invalidateCourseEnrolmentMethods(this.courseId));
+
+        this.selfEnrolInstances.forEach((method) => {
+            promises.push(CoreEnrolDelegate.invalidate(method));
+        });
+
+        this.guestEnrolInstances.forEach((method) => {
+            promises.push(CoreEnrolDelegate.invalidate(method));
+        });
 
         await Promise.all(promises).finally(() => this.getCourse()).finally(() => {
             refresher?.complete();
@@ -467,6 +468,20 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
     }
 
     /**
+     * Removes the course image set because it cannot be loaded and set the fallback icon color.
+     */
+    loadFallbackCourseIcon(): void {
+        if (!this.course) {
+            return;
+        }
+
+        this.course.courseimage = undefined;
+
+        // Set the color because it won't be set at this point.
+        this.setCourseColor();
+    }
+
+    /**
      * Set course color.
      */
     protected async setCourseColor(): Promise<void> {
@@ -494,13 +509,13 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
      * Open enrol action sheet.
      */
     async enrolMe(): Promise<void> {
-        if (this.selfEnrolInstances.length == 1 && !this.otherEnrolments) {
-            this.selfEnrolConfirm(this.selfEnrolInstances[0]);
+        if (this.selfEnrolInstances.length == 1 && !this.hasBrowserEnrolments) {
+            this.selfEnrolInCourse(this.selfEnrolInstances[0]);
 
             return;
         }
 
-        if (this.selfEnrolInstances.length == 0 && this.otherEnrolments) {
+        if (this.selfEnrolInstances.length == 0 && this.hasBrowserEnrolments) {
             this.browserEnrol();
 
             return;
@@ -509,11 +524,11 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
         const buttons: ActionSheetButton[] = this.selfEnrolInstances.map((enrolMethod) => ({
             text: enrolMethod.name,
             handler: (): void => {
-                this.selfEnrolConfirm(enrolMethod);
+                this.selfEnrolInCourse(enrolMethod);
             },
         }));
 
-        if (this.otherEnrolments) {
+        if (this.hasBrowserEnrolments) {
             buttons.push({
                 text: Translate.instant('core.courses.completeenrolmentbrowser'),
                 handler: (): void => {

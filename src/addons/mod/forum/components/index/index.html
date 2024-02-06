@@ -1,5 +1,8 @@
 <!-- Buttons to add to the header. -->
 <core-navbar-buttons slot="end">
+    <ion-button fill="clear" (click)="openSearch()" [attr.aria-label]="'core.search' | translate">
+        <ion-icon name="fas-magnifying-glass" slot="icon-only" aria-hidden="true"></ion-icon>
+    </ion-button>
     <ion-button fill="clear" (click)="openModuleSummary()" aria-haspopup="true" [attr.aria-label]="'core.info' | translate">
         <ion-icon name="fas-circle-info" slot="icon-only" aria-hidden="true"></ion-icon>
     </ion-button>
@@ -25,7 +28,8 @@
             </ion-item>
         </core-course-module-info>
 
-        <core-group-selector *ngIf="supportsChangeGroup" [groupInfo]="groupInfo" [(selected)]="groupId" (selectedChange)="groupChanged()">
+        <core-group-selector *ngIf="supportsChangeGroup" [groupInfo]="groupInfo" [(selected)]="groupId" (selectedChange)="groupChanged()"
+            [courseId]="courseId">
         </core-group-selector>
 
         <!-- Cut-off date or due date message -->
@@ -79,7 +83,7 @@
                     <p class="addon-mod-forum-discussion-title ion-text-wrap item-heading">
                         <ion-icon name="fas-map-pin" *ngIf="discussion.pinned"
                             [attr.aria-label]="'addon.mod_forum.discussionpinned' | translate"></ion-icon>
-                        <ion-icon name="fas-star" class="addon-forum-star" *ngIf="!discussion.pinned && discussion.starred"
+                        <ion-icon name="fas-star" class="addon-forum-star" *ngIf="discussion.starred"
                             [attr.aria-label]="'addon.mod_forum.favourites' | translate"></ion-icon>
                         <core-format-text [text]="discussion.subject" contextLevel="module" [contextInstanceId]="module && module.id"
                             [courseId]="courseId">
@@ -92,10 +96,13 @@
                             [linkProfile]="false">
                         </core-user-avatar>
                         <div class="addon-mod-forum-discussion-author">
-                            <span *ngIf="discussion.userfullname">{{discussion.userfullname}}</span>
+                            <span *ngIf="discussion.userfullname" class="core-discussionusername">{{discussion.userfullname}}</span>
                             <p *ngIf="discussion.groupname" class="core-groupname">
                                 <ion-icon name="fas-users" [attr.aria-label]="'addon.mod_forum.group' | translate">
-                                </ion-icon> {{ discussion.groupname }}
+                                </ion-icon>
+                                <core-format-text [text]="discussion.groupname" contextLevel="course" [contextInstanceId]="courseId"
+                                    [wsNotFiltered]="true">
+                                </core-format-text>
                             </p>
                             <p *ngIf="isOnlineDiscussion(discussion)">
                                 {{discussion.created * 1000 | coreFormatDate: "strftimerecentfull"}}

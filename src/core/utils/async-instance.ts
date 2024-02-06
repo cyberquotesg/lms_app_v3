@@ -20,12 +20,21 @@ import { CorePromisedValue } from '@classes/promised-value';
  * @param lazyConstructor Constructor to use the first time the instance is needed.
  * @returns Asynchronous instance wrapper.
  */
-function createAsyncInstanceWrapper<T>(lazyConstructor?: () => T | Promise<T>): AsyncInstanceWrapper<T> {
-    let promisedInstance: CorePromisedValue<T> | null = null;
+function createAsyncInstanceWrapper<
+    TLazyInstance extends TEagerInstance,
+    TEagerInstance extends AsyncObject = Partial<TLazyInstance>
+>(
+    lazyConstructor?: () => TLazyInstance | Promise<TLazyInstance>,
+): AsyncInstanceWrapper<TLazyInstance, TEagerInstance> {
+    let promisedInstance: CorePromisedValue<TLazyInstance> | null = null;
+    let eagerInstance: TEagerInstance;
 
     return {
         get instance() {
             return promisedInstance?.value ?? undefined;
+        },
+        get eagerInstance() {
+            return eagerInstance;
         },
         async getInstance() {
             if (!promisedInstance) {
@@ -54,6 +63,9 @@ function createAsyncInstanceWrapper<T>(lazyConstructor?: () => T | Promise<T>): 
 
             promisedInstance.resolve(instance);
         },
+        setEagerInstance(instance) {
+            eagerInstance = instance;
+        },
         setLazyConstructor(constructor) {
             if (!promisedInstance) {
                 lazyConstructor = constructor;
@@ -79,16 +91,34 @@ function createAsyncInstanceWrapper<T>(lazyConstructor?: () => T | Promise<T>): 
 }
 
 /**
+ * Check whether the given value is a method.
+ *
+ * @param value Value.
+ * @returns Whether the given value is a method.
+ */
+function isMethod(value: unknown): value is (...args: unknown[]) => unknown {
+    return typeof value === 'function';
+}
+
+/**
  * Asynchronous instance wrapper.
  */
-export interface AsyncInstanceWrapper<T> {
-    instance?: T;
-    getInstance(): Promise<T>;
-    getProperty<P extends keyof T>(property: P): Promise<T[P]>;
-    setInstance(instance: T): void;
-    setLazyConstructor(lazyConstructor: () => T | Promise<T>): void;
+export interface AsyncInstanceWrapper<
+    TLazyInstance extends TEagerInstance,
+    TEagerInstance extends AsyncObject = Partial<TLazyInstance>
+> {
+    instance?: TLazyInstance;
+    eagerInstance?: TEagerInstance;
+    getInstance(): Promise<TLazyInstance>;
+    getProperty<P extends keyof TLazyInstance>(property: P): Promise<TLazyInstance[P]>;
+    setInstance(instance: TLazyInstance): void;
+    setEagerInstance(eagerInstance: TEagerInstance): void;
+    setLazyConstructor(lazyConstructor: () => TLazyInstance | Promise<TLazyInstance>): void;
     resetInstance(): void;
 }
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type AsyncObject = object;
 
 /**
  * Asynchronous version of a method.
@@ -107,9 +137,10 @@ export type AsyncMethod<T> =
  * All methods are converted to their asynchronous version, and properties are available asynchronously using
  * the getProperty method.
  */
-export type AsyncInstance<T> = AsyncInstanceWrapper<T> & {
-    [k in keyof T]: AsyncMethod<T[k]>;
-};
+export type AsyncInstance<TLazyInstance extends TEagerInstance, TEagerInstance extends AsyncObject = Partial<TLazyInstance>> =
+    AsyncInstanceWrapper<TLazyInstance, TEagerInstance> & {
+        [k in keyof TLazyInstance]: AsyncMethod<TLazyInstance[k]>;
+    };
 
 /**
  * Create an asynchronous instance proxy, where all methods will be callable directly but will become asynchronous. If the
@@ -118,8 +149,10 @@ export type AsyncInstance<T> = AsyncInstanceWrapper<T> & {
  * @param lazyConstructor Constructor to use the first time the instance is needed.
  * @returns Asynchronous instance.
  */
-export function asyncInstance<T>(lazyConstructor?: () => T | Promise<T>): AsyncInstance<T> {
-    const wrapper = createAsyncInstanceWrapper<T>(lazyConstructor);
+export function asyncInstance<TLazyInstance extends TEagerInstance, TEagerInstance extends AsyncObject = Partial<TLazyInstance>>(
+    lazyConstructor?: () => TLazyInstance | Promise<TLazyInstance>,
+): AsyncInstance<TLazyInstance, TEagerInstance> {
+    const wrapper = createAsyncInstanceWrapper<TLazyInstance, TEagerInstance>(lazyConstructor);
 
     return new Proxy(wrapper, {
         get: (target, property, receiver) => {
@@ -127,11 +160,28 @@ export function asyncInstance<T>(lazyConstructor?: () => T | Promise<T>): AsyncI
                 return Reflect.get(target, property, receiver);
             }
 
+            if (wrapper.instance) {
+                const value = Reflect.get(wrapper.instance, property, receiver);
+
+                return isMethod(value)
+                    ? async (...args: unknown[]) => value.call(wrapper.instance, ...args)
+                    : value;
+            }
+
+            if (wrapper.eagerInstance && property in wrapper.eagerInstance) {
+                return Reflect.get(wrapper.eagerInstance, property, receiver);
+            }
+
             return async (...args: unknown[]) => {
                 const instance = await wrapper.getInstance();
+                const method = Reflect.get(instance, property, receiver);
 
-                return instance[property](...args);
+                if (!isMethod(method)) {
+                    throw new Error(`'${property.toString()}' is not a function`);
+                }
+
+                return method.call(instance, ...args);
             };
         },
-    }) as AsyncInstance<T>;
+    }) as AsyncInstance<TLazyInstance, TEagerInstance>;
 }

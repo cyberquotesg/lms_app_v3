@@ -28,11 +28,12 @@ import {
     CoreWSExternalWarning,
     CoreWSUploadFileResult,
     CoreWSPreSetsSplitRequest,
+    CoreWSTypeExpected,
 } from '@services/ws';
 import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreTimeUtils } from '@services/utils/time';
-import { CoreUrlUtils, CoreUrlParams } from '@services/utils/url';
+import { CoreUrlUtils } from '@services/utils/url';
 import { CoreUtils, CoreUtilsOpenInBrowserOptions } from '@services/utils/utils';
 import { CoreConstants } from '@/core/constants';
 import { SQLiteDB } from '@classes/sqlitedb';
@@ -41,7 +42,7 @@ import { CoreWSError } from '@classes/errors/wserror';
 import { CoreLogger } from '@singletons/logger';
 import { Translate } from '@singletons';
 import { CoreIonLoadingElement } from './ion-loading';
-import { CoreLang } from '@services/lang';
+import { CoreLang, CoreLangFormat } from '@services/lang';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { asyncInstance, AsyncInstance } from '../utils/async-instance';
 import { CoreDatabaseTable } from './database/database-table';
@@ -61,6 +62,8 @@ import { finalize, map, mergeMap } from 'rxjs/operators';
 import { firstValueFrom } from '../utils/rxjs';
 import { CoreSiteError } from '@classes/errors/siteerror';
 import { CoreUserAuthenticatedSupportConfig } from '@features/user/classes/support/authenticated-support-config';
+import { CoreLoginHelper } from '@features/login/services/login-helper';
+import { CorePath } from '@singletons/path';
 
 /**
  * QR Code type enumeration.
@@ -107,7 +110,8 @@ export class CoreSite {
         '3.11': 2021051700,
         '4.0': 2022041900,
         '4.1': 2022112800,
-        '4.2': 2023011300, // @todo [4.2] replace with right value when released. Using a tmp value to be able to test new things.
+        '4.2': 2023042400,
+        '4.3': 2023100900,
     };
 
     // Possible cache update frequencies.
@@ -289,13 +293,21 @@ export class CoreSite {
      *
      * @returns Site name.
      */
-    getSiteName(): string {
-        if (CoreConstants.CONFIG.sitename) {
-            // Overridden by config.
-            return CoreConstants.CONFIG.sitename;
-        } else {
-            return this.infos?.sitename || '';
+    async getSiteName(): Promise<string> {
+        if (this.infos?.sitename) {
+            return this.infos?.sitename;
         }
+
+        // Fallback.
+        const isSigleFixedSite = await CoreLoginHelper.isSingleFixedSite();
+
+        if (isSigleFixedSite) {
+            const sites = await CoreLoginHelper.getAvailableSites();
+
+            return sites[0].name;
+        }
+
+        return '';
     }
 
     /**
@@ -958,7 +970,7 @@ export class CoreSite {
         // Moodle uses underscore instead of dash.
         data = {
             ...data,
-            moodlewssettinglang: (preSets.lang ?? await CoreLang.getCurrentLanguage()).replace('-', '_'),
+            moodlewssettinglang: CoreLang.formatLanguage(preSets.lang ?? await CoreLang.getCurrentLanguage(), CoreLangFormat.LMS),
         };
 
         try {
@@ -1587,16 +1599,17 @@ export class CoreSite {
      * @param anchor Anchor text if needed.
      * @returns URL with params.
      */
-    createSiteUrl(path: string, params?: CoreUrlParams, anchor?: string): string {
-        return CoreUrlUtils.addParamsToUrl(this.siteUrl + path, params, anchor);
+    createSiteUrl(path: string, params?: Record<string, unknown>, anchor?: string): string {
+        return CoreUrlUtils.addParamsToUrl(CorePath.concatenatePaths(this.siteUrl, path), params, anchor);
     }
 
     /**
      * Check if the local_mobile plugin is installed in the Moodle site.
      *
      * @returns Promise resolved when the check is done.
-     * @deprecated since app 4.0
+     * @deprecated since 4.0.
      */
+    // eslint-disable-next-line deprecation/deprecation
     async checkLocalMobilePlugin(): Promise<LocalMobileResponse> {
         // Not used anymore.
         return { code: 0, coreSupported: true };
@@ -1606,7 +1619,7 @@ export class CoreSite {
      * Check if local_mobile has been installed in Moodle.
      *
      * @returns Whether the App is able to use local_mobile plugin for this site.
-     * @deprecated since app 4.0
+     * @deprecated since 4.0.
      */
     checkIfAppUsesLocalMobile(): boolean {
         return false;
@@ -1616,7 +1629,7 @@ export class CoreSite {
      * Check if local_mobile has been installed in Moodle but the app is not using it.
      *
      * @returns Promise resolved it local_mobile was added, rejected otherwise.
-     * @deprecated since app 4.0
+     * @deprecated since 4.0.
      */
     async checkIfLocalMobileInstalledAndNotUsed(): Promise<void> {
         throw new CoreError('Deprecated.');
@@ -1880,12 +1893,12 @@ export class CoreSite {
             options.showBrowserWarning = false; // A warning already shown, no need to show another.
         }
 
+        options.originalUrl = url;
+
         // Open the URL.
         if (inApp) {
             return CoreUtils.openInApp(autoLoginUrl, options);
         } else {
-            options.browserWarningUrl = url;
-
             return CoreUtils.openInBrowser(autoLoginUrl, options);
         }
     }
@@ -2113,7 +2126,7 @@ export class CoreSite {
                 CoreConstants.SECONDS_MINUTE * 6,
             );
 
-            if (CoreTimeUtils.timestamp() - this.lastAutoLogin < timeBetweenRequests) {
+            if (CoreTimeUtils.timestamp() - this.lastAutoLogin < Number(timeBetweenRequests)) {
                 // Not enough time has passed since last auto login.
                 return url;
             }
@@ -2562,7 +2575,7 @@ export type CoreSiteWSPreSets = {
     /**
      * Defaults to 'object'. Use it when you expect a type that's not an object|array.
      */
-    typeExpected?: string;
+    typeExpected?: CoreWSTypeExpected;
 
     /**
      * Wehther a pending request in the queue matching the same function and arguments can be reused instead of adding
@@ -2614,7 +2627,7 @@ export type CoreSiteWSPreSets = {
 /**
  * Response of checking local_mobile status.
  *
- * @deprecated since app 4.0
+ * @deprecated since 4.0.
  */
 export type LocalMobileResponse = {
     /**
@@ -2735,6 +2748,8 @@ export const enum CoreSiteConfigSupportAvailability {
  */
 export type CoreSiteConfig = Record<string, string> & {
     supportavailability?: string; // String representation of CoreSiteConfigSupportAvailability.
+    searchbanner?: string; // Search banner text.
+    searchbannerenable?: string; // Whether search banner is enabled.
 };
 
 /**
@@ -2757,7 +2772,7 @@ export type CoreSitePublicConfigResponse = {
     maintenancemessage: string; // Maintenance message.
     logourl?: string; // The site logo URL.
     compactlogourl?: string; // The site compact logo URL.
-    typeoflogin: number; // The type of login. 1 for app, 2 for browser, 3 for embedded.
+    typeoflogin: TypeOfLogin; // The type of login. 1 for app, 2 for browser, 3 for embedded.
     launchurl?: string; // SSO login launch URL.
     mobilecssurl?: string; // Mobile custom CSS theme.
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -2854,4 +2869,13 @@ export type WSObservable<T> = Observable<T>;
 enum OngoingRequestType {
     STANDARD = 0,
     UPDATE_IN_BACKGROUND = 1,
+}
+
+/**
+ * The type of login. 1 for app, 2 for browser, 3 for embedded.
+ */
+export enum TypeOfLogin {
+    APP = 1,
+    BROWSER = 2, // SSO in browser window is required.
+    EMBEDDED = 3, // SSO in embedded browser is required.
 }

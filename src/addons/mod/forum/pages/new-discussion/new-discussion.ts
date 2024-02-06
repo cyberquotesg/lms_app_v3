@@ -44,6 +44,8 @@ import { AddonModForumDiscussionsSwipeManager } from '../../classes/forum-discus
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { AddonModForumDiscussionsSource } from '../../classes/forum-discussions-source';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 type NewDiscussionData = {
     subject: string;
@@ -92,7 +94,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
     advanced = false; // Display all form fields.
     accessInfo: AddonModForumAccessInformation = {};
     courseId!: number;
-    groupName?: string;
+    postInGroupMessage?: string;
 
     discussions?: AddonModForumNewDiscussionDiscussionsSwipeManager;
 
@@ -105,8 +107,19 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
     protected originalData?: Partial<NewDiscussionData>;
     protected forceLeave = false;
     protected initialGroupId?: number;
+    protected logView: () => void;
 
-    constructor(protected route: ActivatedRoute, @Optional() protected splitView: CoreSplitViewComponent) {}
+    constructor(protected route: ActivatedRoute, @Optional() protected splitView: CoreSplitViewComponent) {
+        this.logView = CoreTime.once(() => {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'mod_forum_add_discussion',
+                name: Translate.instant('addon.mod_forum.addanewdiscussion'),
+                data: { id: this.forumId, category: 'forum' },
+                url: '/mod/forum/post.php',
+            });
+        });
+    }
 
     /**
      * @inheritdoc
@@ -190,14 +203,14 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
                             }
 
                             // eslint-disable-next-line promise/no-nesting
-                            return promise.then((forumGroups) => {
+                            return promise.then(async (forumGroups) => {
                                 if (forumGroups.length > 0) {
                                     this.groups = forumGroups;
                                     this.groupIds = forumGroups.map((group) => group.id).filter((id) => id > 0);
                                     // Do not override group id.
                                     this.newDiscussion.groupId = this.newDiscussion.groupId || this.getInitialGroupId();
                                     this.showGroups = true;
-                                    this.calculateGroupName();
+                                    await this.calculateGroupName();
                                     if (this.groupIds.length <= 1) {
                                         this.newDiscussion.postToAllGroups = false;
                                     }
@@ -271,7 +284,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
                             this.newDiscussion.subscribe = !!discussion.options.discussionsubscribe;
                             this.newDiscussion.pin = !!discussion.options.discussionpinned;
                             this.messageControl.setValue(discussion.message);
-                            this.calculateGroupName();
+                            await this.calculateGroupName();
 
                             // Treat offline attachments if any.
                             if (typeof discussion.options.attachmentsid === 'object' && discussion.options.attachmentsid.offline) {
@@ -309,6 +322,8 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
             }
 
             this.showForm = true;
+
+            this.logView();
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'addon.mod_forum.errorgetgroups', true);
 
@@ -496,8 +511,8 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
      *
      * @param text The new text.
      */
-    onMessageChange(text: string): void {
-        this.newDiscussion.message = text;
+    onMessageChange(text?: string | null): void {
+        this.newDiscussion.message = text ?? null;
     }
 
     /**
@@ -611,11 +626,13 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
     /**
      * Calculate current group's name.
      */
-    calculateGroupName(): void {
+    async calculateGroupName(): Promise<void> {
         if (this.newDiscussion.groupId <= 0) {
-            this.groupName = undefined;
+            this.postInGroupMessage = undefined;
         } else {
-            this.groupName = this.groups.find(group => group.id === this.newDiscussion.groupId)?.name;
+            const groupName = this.groups.find(group => group.id === this.newDiscussion.groupId)?.name;
+
+            this.postInGroupMessage = groupName && Translate.instant('addon.mod_forum.postingroup', { groupname: groupName });
         }
     }
 

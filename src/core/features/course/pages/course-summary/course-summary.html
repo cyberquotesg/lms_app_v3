@@ -18,8 +18,8 @@
     </ion-refresher>
     <core-loading [hideUntil]="dataLoaded">
         <div *ngIf="course" class="core-course-thumb" #courseThumb>
-            <img *ngIf="course.courseImage" [src]="course.courseImage" core-external-content alt="" />
-            <ion-icon *ngIf="!course.courseImage" name="fas-graduation-cap" class="course-icon" aria-hidden="true">
+            <img *ngIf="course.courseimage" [src]="course.courseimage" core-external-content alt="" (error)="loadFallbackCourseIcon()" />
+            <ion-icon *ngIf="!course.courseimage" name="fas-graduation-cap" class="course-icon" aria-hidden="true">
             </ion-icon>
         </div>
         <div *ngIf="course" class="course-container">
@@ -138,19 +138,18 @@
                 <ion-label>{{item.data.title | translate }}</ion-label>
             </ion-button>
         </ng-container>
+        <ng-container *ngIf="!isEnrolled">
+            <ion-button expand="block" (click)="enrolMe()" *ngIf="selfEnrolInstances.length || hasBrowserEnrolments" class="ion-text-wrap">
+                {{ 'core.courses.enrolme' | translate }}
+            </ion-button>
 
-        <ion-button expand="block" (click)="enrolMe()" *ngIf="!isEnrolled && (selfEnrolInstances.length > 0 || otherEnrolments)"
-            class="ion-text-wrap">
-            {{ 'core.courses.enrolme' | translate }}
-        </ion-button>
-
-        <ion-card class="core-info-card ion-text-wrap" *ngIf="!isEnrolled && !selfEnrolInstances.length && !otherEnrolments">
-            <ion-item>
-                <ion-icon name="fas-circle-info" slot="start" aria-hidden="true"></ion-icon>
-                <ion-label>{{ 'core.courses.notenrollable' | translate }}</ion-label>
-            </ion-item>
-        </ion-card>
-
+            <ion-card class="core-info-card ion-text-wrap" *ngIf="!selfEnrolInstances.length && !hasBrowserEnrolments">
+                <ion-item>
+                    <ion-icon name="fas-circle-info" slot="start" aria-hidden="true"></ion-icon>
+                    <ion-label>{{ 'core.courses.notenrollable' | translate }}</ion-label>
+                </ion-item>
+            </ion-card>
+        </ng-container>
         <ion-button (click)="openCourse()" *ngIf="!isModal && canAccessCourse" expand="block" fill="outline" class="ion-text-wrap">
             <ion-icon name="fas-eye" slot="start" aria-hidden="true"></ion-icon>
             {{ 'core.course.viewcourse' | translate }}

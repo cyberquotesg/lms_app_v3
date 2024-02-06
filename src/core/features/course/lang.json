@@ -3,7 +3,7 @@
     "activitynotyetviewableremoteaddon": "Your organisation installed a plugin that is not yet supported.",
     "allsections": "All sections",
     "aria:sectionprogress": "Section progress:",
-    "availablespace": " You currently have about {{available}} free space.",
+    "availablespace": "You currently have about {{available}} free space.",
     "cannotdeletewhiledownloading": "Files cannot be deleted while the activity is being downloaded. Please wait for the download to finish.",
     "completion_automatic:done": "Done:",
     "completion_automatic:failed": "Failed:",
@@ -16,11 +16,12 @@
     "completion_setby:auto:todo": "To do: {{$a.condition}} (set by {{$a.setby}})",
     "completion_setby:manual:done": "{{$a.activityname}} is marked by {{$a.setby}} as done. Press to undo.",
     "completion_setby:manual:markdone": "{{$a.activityname}} is marked by {{$a.setby}} as not done. Press to mark as done.",
+    "completionmenuitem": "Completion",
     "completionrequirements": "Completion requirements for {{$a}}",
     "confirmdownload": "You are about to download {{size}}.{{availableSpace}} Are you sure you want to continue?",
     "confirmdownloadunknownsize": "It was not possible to calculate the size of the download.{{availableSpace}} Are you sure you want to continue?",
     "confirmdownloadzerosize": "You are about to start downloading.{{availableSpace}} Are you sure you want to continue?",
-    "confirmlimiteddownload": "You are not currently connected to Wi-Fi. ",
+    "confirmlimiteddownload": "You are not currently connected to Wi-Fi.",
     "confirmpartialdownloadsize": "You are about to download <strong>at least</strong> {{size}}.{{availableSpace}} Are you sure you want to continue?",
     "couldnotloadsectioncontent": "Could not load the section content. Please try again later.",
     "couldnotloadsections": "Could not load the sections. Please try again later.",
@@ -54,6 +55,7 @@
     "relativedatessubmissionduedatebefore": "{{$a.datediffstr}} before course start",
     "section": "Section",
     "startdate": "Course start date",
+    "studentsmust": "Students must",
     "thisweek": "This week",
     "todo": "To do",
     "tour_navigation_course_index_student_content": "Browse through activities and track your progress.",
@@ -61,5 +63,6 @@
     "useactivityonbrowser": "You can still use it using your device's web browser.",
     "viewcourse": "View course",
     "warningmanualcompletionmodified": "The manual completion of an activity was modified on the site.",
-    "warningofflinemanualcompletiondeleted": "Some offline manual completion of course '{{name}}' has been deleted. {{error}}"
+    "warningofflinemanualcompletiondeleted": "Some offline manual completion of course '{{name}}' has been deleted. {{error}}",
+    "youmust": "You must"
 }

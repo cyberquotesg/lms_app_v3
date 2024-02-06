@@ -27,6 +27,7 @@ import { makeSingleton, Translate } from '@singletons';
 import { CoreFormFields } from '@singletons/form';
 import { AddonModWorkshopOffline } from './workshop-offline';
 import { AddonModWorkshopAutoSyncData, AddonModWorkshopSyncProvider } from './workshop-sync';
+import { ADDON_MOD_WORKSHOP_COMPONENT } from '@addons/mod/workshop/constants';
 
 const ROOT_CACHE_KEY = 'mmaModWorkshop:';
 
@@ -88,7 +89,6 @@ declare module '@singletons/events' {
 @Injectable({ providedIn: 'root' })
 export class AddonModWorkshopProvider {
 
-    static readonly COMPONENT = 'mmaModWorkshop';
     static readonly PER_PAGE = 10;
 
     static readonly SUBMISSION_CHANGED = 'addon_mod_workshop_submission_changed';
@@ -248,7 +248,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getWorkshopDataCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
         const response = await site.read<AddonModWorkshopGetWorkshopsByCoursesWSResponse>(
@@ -345,7 +345,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getWorkshopAccessInformationDataCacheKey(workshopId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -390,7 +390,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getUserPlanDataCacheKey(workshopId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -437,7 +437,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSubmissionsDataCacheKey(workshopId, userId, groupId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -483,7 +483,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSubmissionDataCacheKey(workshopId, submissionId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -523,7 +523,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getGradesDataCacheKey(workshopId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -567,7 +567,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getGradesReportDataCacheKey(workshopId, options.groupId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -663,7 +663,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSubmissionAssessmentsDataCacheKey(workshopId, submissionId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -967,7 +967,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getReviewerAssessmentsDataCacheKey(workshopId, options.userId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -1017,7 +1017,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getAssessmentDataCacheKey(workshopId, assessmentId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -1065,7 +1065,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getAssessmentFormDataCacheKey(workshopId, assessmentId, mode),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -1100,23 +1100,25 @@ export class AddonModWorkshopProvider {
             const args: string[] = field.name.split('_');
             const name = args[0];
             const idx = args[3];
-            const idy = args[6] || false;
+            const idy = args[6];
+            const idxNumber = parseInt(args[3], 10);
+            const idyNumber = parseInt(args[6], 10);
 
-            if (parseInt(idx, 10) + '' == idx) {
+            if (!isNaN(idxNumber)) {
                 if (!parsedFields[idx]) {
                     parsedFields[idx] = {
-                        number: idx + 1, // eslint-disable-line id-blacklist
+                        number: idxNumber + 1, // eslint-disable-line id-blacklist
                     };
                 }
 
-                if (idy && parseInt(idy, 10) + '' == idy) {
+                if (!isNaN(idyNumber)) {
                     if (!parsedFields[idx].fields) {
                         parsedFields[idx].fields = [];
                     }
 
                     if (!parsedFields[idx].fields[idy]) {
                         parsedFields[idx].fields[idy] = {
-                            number: idy + 1, // eslint-disable-line id-blacklist
+                            number: idyNumber + 1, // eslint-disable-line id-blacklist
                         };
                     }
                     parsedFields[idx].fields[idy][name] = field.value;
@@ -1443,23 +1445,19 @@ export class AddonModWorkshopProvider {
      * Report the workshop as being viewed.
      *
      * @param id Workshop ID.
-     * @param name Name of the workshop.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModWorkshopViewWorkshopWSParams = {
             workshopid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_workshop_view_workshop',
             params,
-            AddonModWorkshopProvider.COMPONENT,
+            ADDON_MOD_WORKSHOP_COMPONENT,
             id,
-            name,
-            'workshop',
-            {},
             siteId,
         );
     }
@@ -1469,23 +1467,19 @@ export class AddonModWorkshopProvider {
      *
      * @param id Submission ID.
      * @param workshopId Workshop ID.
-     * @param name Name of the workshop.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logViewSubmission(id: number, workshopId: number, name?: string, siteId?: string): Promise<void> {
+    async logViewSubmission(id: number, workshopId: number, siteId?: string): Promise<void> {
         const params: AddonModWorkshopViewSubmissionWSParams = {
             submissionid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_workshop_view_submission',
             params,
-            AddonModWorkshopProvider.COMPONENT,
+            ADDON_MOD_WORKSHOP_COMPONENT,
             workshopId,
-            name,
-            'workshop',
-            params,
             siteId,
         );
     }
@@ -1774,9 +1768,9 @@ export type AddonModWorkshoGradesReportData = {
 
 export type AddonModWorkshopGradesData = {
     userid: number; // The id of the user being displayed in the report.
-    submissionid: number; // Submission id.
-    submissiontitle: string; // Submission title.
-    submissionmodified: number; // Timestamp submission was updated.
+    submissionid?: number; // Submission id.
+    submissiontitle?: string; // Submission title.
+    submissionmodified?: number; // Timestamp submission was updated.
     submissiongrade?: number; // Aggregated grade for the submission.
     gradinggrade?: number; // Computed grade for the assessment.
     submissiongradeover?: number; // Grade for the assessment overrided by the teacher.

@@ -19,7 +19,10 @@
 
         <ion-card class="wholecourse">
             <ion-card-header>
-                <ion-card-title>{{ title }}</ion-card-title>
+                <ion-card-title>
+                    <core-format-text [text]="title" contextLevel="course" [contextInstanceId]="courseId" [adaptImg]="false">
+                    </core-format-text>
+                </ion-card-title>
                 <ion-item class="size ion-text-wrap ion-no-padding">
                     <ion-label>
                         <p class="item-heading ion-text-wrap">{{ 'addon.storagemanager.totaldownloads' | translate }}</p>
@@ -136,6 +139,9 @@
                                             [attr.aria-label]="'addon.storagemanager.deletedatafrom' | translate: { name: module.name }">
                                         </ion-icon>
                                     </ion-button>
+                                    <p *ngIf="!downloadEnabled || !module.handlerData?.showDownloadButton" class="sr-only">
+                                        {{ 'core.notdownloadable' | translate }}
+                                    </p>
                                 </div>
                             </ion-item>
                         </ng-container>

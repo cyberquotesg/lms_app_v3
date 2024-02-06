@@ -71,9 +71,8 @@ export class CoreLocalNotificationsProvider {
     async initialize(): Promise<void> {
         await CorePlatform.ready();
 
-        if (!this.isAvailable()) {
-            return;
-        }
+        // Request permission when the app starts.
+        LocalNotifications.requestPermission();
 
         // Listen to events.
         this.triggerSubscription = LocalNotifications.on('trigger').subscribe((notification: ILocalNotification) => {
@@ -155,9 +154,7 @@ export class CoreLocalNotificationsProvider {
      * @returns Promise resolved when the notifications are cancelled.
      */
     async cancelSiteNotifications(siteId: string): Promise<void> {
-        if (!this.isAvailable()) {
-            return;
-        } else if (!siteId) {
+        if (!siteId) {
             throw new Error('No site ID supplied.');
         }
 

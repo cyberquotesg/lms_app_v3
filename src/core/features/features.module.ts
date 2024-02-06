@@ -21,6 +21,7 @@ import { CoreCourseModule } from './course/course.module';
 import { CoreCoursesModule } from './courses/courses.module';
 import { CoreEditorModule } from './editor/editor.module';
 import { CoreEmulatorModule } from './emulator/emulator.module';
+import { CoreEnrolModule } from './enrol/enrol.module';
 import { CoreFileUploaderModule } from './fileuploader/fileuploader.module';
 import { CoreFilterModule } from './filter/filter.module';
 import { CoreGradesModule } from './grades/grades.module';
@@ -55,6 +56,7 @@ import { CQPagesModule } from './cq_pages/cq_pages.module';
         CoreCourseModule,
         CoreCoursesModule,
         CoreEditorModule,
+        CoreEnrolModule,
         CoreFileUploaderModule,
         CoreFilterModule,
         CoreGradesModule,

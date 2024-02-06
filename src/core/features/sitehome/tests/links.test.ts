@@ -15,6 +15,7 @@
 import { mock, mockSingleton } from '@/testing/utils';
 import { CoreSite } from '@classes/site';
 import { CoreContentLinksDelegate } from '@features/contentlinks/services/contentlinks-delegate';
+import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { CoreSiteHomeIndexLinkHandlerService } from '@features/sitehome/services/handlers/index-link';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
@@ -33,6 +34,8 @@ describe('Site Home link handlers', () => {
             getSiteIdsFromUrl: () => Promise.resolve([siteId]),
         }));
 
+        mockSingleton(CoreLoginHelper, { getAvailableSites: async () => [{ url: siteUrl, name: 'Example Campus' }] });
+
         CoreContentLinksDelegate.registerHandler(new CoreSiteHomeIndexLinkHandlerService());
 
         // Act.
@@ -42,6 +45,7 @@ describe('Site Home link handlers', () => {
         expect(CoreNavigator.navigateToSitePath).toHaveBeenCalledWith('/home/site', {
             siteId,
             preferCurrentTab: false,
+            params: {},
         });
     });
 

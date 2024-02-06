@@ -26,14 +26,15 @@ import extToMime from '@/assets/exttomime.json';
 import mimeToExt from '@/assets/mimetoext.json';
 import { CoreFileEntry, CoreFileHelper } from '@services/file-helper';
 import { CoreUrl } from '@singletons/url';
+import { CoreSites } from '@services/sites';
 
 interface MimeTypeInfo {
     type: string;
     icon?: string;
     groups?: string[];
-
     // eslint-disable-next-line id-blacklist
     string?: string;
+    deprecated?: string; // Deprecated mimetype name.
 }
 
 interface MimeTypeGroupInfo {
@@ -282,7 +283,11 @@ export class CoreMimetypeUtilsProvider {
      * @returns The path to a folder icon.
      */
     getFolderIcon(): string {
-        return 'assets/img/files/folder-64.png';
+        if (CoreSites.getCurrentSite() === undefined || CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.0')) {
+            return 'assets/img/files/folder.svg';
+        }
+
+        return 'assets/img/files_legacy/folder-64.png';
     }
 
     /**
@@ -292,7 +297,11 @@ export class CoreMimetypeUtilsProvider {
      * @returns The icon path.
      */
     getFileIconForType(type: string): string {
-        return 'assets/img/files/' + type + '-64.png';
+        if (CoreSites.getCurrentSite() === undefined || CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.0')) {
+            return 'assets/img/files/' + type + '.svg';
+        }
+
+        return 'assets/img/files_legacy/' + type + '-64.png';
     }
 
     /**
@@ -392,6 +401,18 @@ export class CoreMimetypeUtilsProvider {
         if (this.extToMime[extension] && this.extToMime[extension].type) {
             return this.extToMime[extension].type;
         }
+    }
+
+    /**
+     * Get the deprecated mimetype of an extension. Returns undefined if not found or no deprecated mimetype.
+     *
+     * @param extension Extension.
+     * @returns Deprecated mimetype.
+     */
+    getDeprecatedMimeType(extension: string): string | undefined {
+        extension = this.cleanExtension(extension);
+
+        return this.extToMime[extension]?.deprecated;
     }
 
     /**

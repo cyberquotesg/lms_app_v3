@@ -13,10 +13,12 @@
 // limitations under the License.
 
 import { CoreConstants, ModPurpose } from '@/core/constants';
-import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChange } from '@angular/core';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { CoreSites } from '@services/sites';
+import { CoreTextUtils } from '@services/utils/text';
+import { CoreUrlUtils } from '@services/utils/url';
 
 const assetsPath = 'assets/img/';
 const fallbackModName = 'external-tool';
@@ -35,18 +37,16 @@ export class CoreModIconComponent implements OnInit, OnChanges {
     @Input() fallbackTranslation = ''; // Fallback translation string if cannot auto translate.
     @Input() componentId?: number; // Component Id for external icons.
     @Input() modicon?: string; // Module icon url or local url.
-    @Input() noFilter?: boolean; // Whether to disable filters.
     @Input() showAlt = true; // Show alt otherwise it's only presentation icon.
     @Input() purpose: ModPurpose = ModPurpose.MOD_PURPOSE_OTHER; // Purpose of the module.
 
-    @Output() failedLoading = new EventEmitter<void>();
-
     icon = '';
+    noFilter = false;
     modNameTranslated = '';
     isLocalUrl = true;
     linkIconWithComponent = false;
 
-    protected legacyIcon = true; // @deprecatedonmoodle since Moodle 3.11.
+    protected legacyIcon = true; // @deprecatedonmoodle since 3.11.
 
     constructor(protected el: ElementRef) { }
 
@@ -56,12 +56,7 @@ export class CoreModIconComponent implements OnInit, OnChanges {
     async ngOnInit(): Promise<void> {
         if (!this.modname && this.modicon) {
             // Guess module from the icon url.
-            const matches = this.modicon.match('/theme/image.php/[^/]+/([^/]+)/[-0-9]*/');
-            this.modname = (matches && matches[1]) || '';
-
-            if (this.modname.startsWith('mod_')) {
-                this.modname = this.modname.substring(4);
-            }
+            this.modname = this.getComponentNameFromIconUrl(this.modicon);
         }
 
         this.modNameTranslated = CoreCourse.translateModuleName(this.modname, this.fallbackTranslation);
@@ -81,22 +76,22 @@ export class CoreModIconComponent implements OnInit, OnChanges {
             }
         }
 
-        this.setIcon();
+        await this.setIcon();
     }
 
     /**
      * @inheritdoc
      */
-    ngOnChanges(changes: { [name: string]: SimpleChange }): void {
+    async ngOnChanges(changes: { [name: string]: SimpleChange }): Promise<void> {
         if (changes && changes.modicon && changes.modicon.previousValue !== undefined) {
-            this.setIcon();
+            await this.setIcon();
         }
     }
 
     /**
      * Set icon.
      */
-    setIcon(): void {
+    async setIcon(): Promise<void> {
         this.icon = this.modicon || this.icon;
         this.isLocalUrl = this.icon.startsWith(assetsPath);
 
@@ -107,13 +102,15 @@ export class CoreModIconComponent implements OnInit, OnChanges {
             !!this.modname &&
             !!this.componentId &&
             !this.isLocalUrl &&
-            !this.icon.match('/theme/image.php/[^/]+/' + this.modname + '/[-0-9]*/');
+            this.getComponentNameFromIconUrl(this.icon) != this.modname;
+
+        this.noFilter = await this.getIconNoFilter();
     }
 
     /**
      * Icon to load on error.
      */
-    loadFallbackIcon(): void {
+    async loadFallbackIcon(): Promise<void> {
         this.isLocalUrl = true;
         const moduleName = !this.modname || CoreCourse.CORE_MODULES.indexOf(this.modname) < 0
             ? fallbackModName
@@ -121,13 +118,82 @@ export class CoreModIconComponent implements OnInit, OnChanges {
 
         let path = assetsPath + 'mod/';
         if (this.legacyIcon) {
-            // @deprecatedonmoodle since Moodle 3.11.
+            // @deprecatedonmoodle since 3.11.
             path = assetsPath + 'mod_legacy/';
         }
 
         this.icon = path + moduleName + '.svg';
+        this.noFilter = await this.getIconNoFilter();
+    }
 
-        this.failedLoading.emit();
+    /**
+     * Returns if the icon does not need to be filtered.
+     *
+     * @returns wether the icon does not need to be filtered.
+     */
+    protected async getIconNoFilter(): Promise<boolean> {
+        // Earlier 4.0, icons were never filtered.
+        if (this.legacyIcon) {
+            return true;
+        }
+
+        // No icon or local icon (not legacy), filter it.
+        if (!this.icon || this.isLocalUrl) {
+            return false;
+        }
+
+        this.icon = CoreTextUtils.decodeHTMLEntities(this.icon);
+
+        // If it's an Moodle Theme icon, check if filtericon is set and use it.
+        if (this.icon && CoreUrlUtils.isThemeImageUrl(this.icon)) {
+            const iconParams = CoreUrlUtils.extractUrlParams(this.icon);
+            if (iconParams['filtericon'] === '1') {
+                return false;
+            }
+
+            // filtericon was introduced in 4.2 and backported to 4.1.3 and 4.0.8.
+            if (this.modname && !CoreSites.getCurrentSite()?.isVersionGreaterEqualThan(['4.0.8', '4.1.3', '4.2'])) {
+                // If version is prior to that, check if the url is a module icon and filter it.
+                if (this.getComponentNameFromIconUrl(this.icon) === this.modname) {
+                    return false;
+                }
+            }
+        }
+
+        // External icons, or non monologo, do not filter.
+        return true;
+    }
+
+    /**
+     * Guesses the mod name form the url.
+     *
+     * @param iconUrl Icon url.
+     * @returns Guessed modname.
+     */
+    protected getComponentNameFromIconUrl(iconUrl: string): string {
+        if (!CoreUrlUtils.isThemeImageUrl(this.icon)) {
+            // Cannot be guessed.
+            return '';
+        }
+
+        const iconParams = CoreUrlUtils.extractUrlParams(iconUrl);
+        let component = iconParams['component'];
+
+        if (!component) {
+            const matches = iconUrl.match('/theme/image.php/[^/]+/([^/]+)/[-0-9]*/');
+            component = (matches && matches[1]) || '';
+        }
+
+        // Some invalid components (others may be added later on).
+        if (component === 'core' || component === 'theme') {
+            return '';
+        }
+
+        if (component.startsWith('mod_')) {
+            component = component.substring(4);
+        }
+
+        return component;
     }
 
 }

@@ -39,6 +39,9 @@ import {
 import { AddonModWorkshopHelper, AddonModWorkshopSubmissionAssessmentWithFormData } from '../../services/workshop-helper';
 import { AddonModWorkshopOffline } from '../../services/workshop-offline';
 import { AddonModWorkshopSyncProvider } from '../../services/workshop-sync';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { ADDON_MOD_WORKSHOP_COMPONENT } from '@addons/mod/workshop/constants';
 
 /**
  * Page that displays a workshop assessment.
@@ -89,6 +92,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
     protected siteId: string;
     protected currentUserId: number;
     protected forceLeave = false;
+    protected logView: () => void;
 
     constructor(
         protected fb: FormBuilder,
@@ -111,6 +115,20 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
                 this.refreshAllData();
             }
         }, this.siteId);
+
+        this.logView = CoreTime.once(async () => {
+            if (!this.workshop) {
+                return;
+            }
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'mod_workshop_get_assessment',
+                name: this.workshop.name,
+                data: { id: this.workshop.id, assessmentid: this.assessment.id, category: 'workshop' },
+                url: `/mod/workshop/assessment.php?asid=${this.assessment.id}`,
+            });
+        });
     }
 
     /**
@@ -181,7 +199,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
             if (this.assessmentId && (this.access.canallocate || this.access.canoverridegrades)) {
                 if (!this.isDestroyed) {
                     // Block the workshop.
-                    CoreSync.blockOperation(AddonModWorkshopProvider.COMPONENT, this.workshopId);
+                    CoreSync.blockOperation(ADDON_MOD_WORKSHOP_COMPONENT, this.workshopId);
                 }
 
                 this.evaluating = true;
@@ -396,7 +414,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
 
         this.syncObserver?.off();
         // Restore original back functions.
-        CoreSync.unblockOperation(AddonModWorkshopProvider.COMPONENT, this.workshopId);
+        CoreSync.unblockOperation(ADDON_MOD_WORKSHOP_COMPONENT, this.workshopId);
     }
 
 }

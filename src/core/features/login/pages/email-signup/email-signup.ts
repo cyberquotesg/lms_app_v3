@@ -20,7 +20,6 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreCountry, CoreUtils } from '@services/utils/utils';
 import { CoreWS, CoreWSExternalWarning } from '@services/ws';
-import { CoreConstants } from '@/core/constants';
 import { Translate } from '@singletons';
 import { CoreSitePublicConfigResponse } from '@classes/site';
 import { CoreUserProfileFieldDelegate } from '@features/user/services/user-profile-field-delegate';
@@ -61,6 +60,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
     settingsLoaded = false;
     allRequiredSupported = true;
     signupUrl?: string;
+    formSubmitClicked = false;
     captcha = {
         recaptcharesponse: '',
     };
@@ -235,7 +235,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
      */
     protected treatSiteConfig(): boolean {
         if (this.siteConfig?.registerauth == 'email' && !CoreLoginHelper.isEmailSignupDisabled(this.siteConfig)) {
-            this.siteName = CoreConstants.CONFIG.sitename ? CoreConstants.CONFIG.sitename : this.siteConfig.sitename;
+            this.siteName = this.siteConfig.sitename;
             this.authInstructions = this.siteConfig.authinstructions;
             this.ageDigitalConsentVerification = this.siteConfig.agedigitalconsentverification;
             this.supportName = this.siteConfig.supportname;
@@ -265,6 +265,8 @@ export class CoreLoginEmailSignupPage implements OnInit {
     async create(e: Event): Promise<void> {
         e.preventDefault();
         e.stopPropagation();
+
+        this.formSubmitClicked = true;
 
         if (!this.signupForm.valid || (this.settings?.recaptchapublickey && !this.captcha.recaptcharesponse)) {
             // Form not valid. Mark all controls as dirty to display errors.

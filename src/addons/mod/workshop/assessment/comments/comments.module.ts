@@ -15,13 +15,9 @@
 import { CoreSharedModule } from '@/core/shared.module';
 import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { AddonWorkshopAssessmentStrategyDelegate } from '../../services/assessment-strategy-delegate';
-import { AddonModWorkshopAssessmentStrategyCommentsComponent } from './component/comments';
-import { AddonModWorkshopAssessmentStrategyCommentsHandler } from './services/handler';
+import { AddonModWorkshopAssessmentStrategyCommentsHandler } from '@addons/mod/workshop/assessment/comments/services/handler-lazy';
 
 @NgModule({
-    declarations: [
-        AddonModWorkshopAssessmentStrategyCommentsComponent,
-    ],
     imports: [
         CoreSharedModule,
     ],
@@ -30,14 +26,12 @@ import { AddonModWorkshopAssessmentStrategyCommentsHandler } from './services/ha
             provide: APP_INITIALIZER,
             multi: true,
             useValue: () => {
-                AddonWorkshopAssessmentStrategyDelegate.registerHandler(
-                    AddonModWorkshopAssessmentStrategyCommentsHandler.instance,
-                );
+                // TODO use async instances
+                // AddonWorkshopAssessmentStrategyDelegate.registerHandler(getAssessmentStrategyHandlerInstance());
+
+                AddonWorkshopAssessmentStrategyDelegate.registerHandler(AddonModWorkshopAssessmentStrategyCommentsHandler.instance);
             },
         },
-    ],
-    exports: [
-        AddonModWorkshopAssessmentStrategyCommentsComponent,
     ],
 })
 export class AddonModWorkshopAssessmentStrategyCommentsModule {}

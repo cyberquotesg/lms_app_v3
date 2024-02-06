@@ -42,7 +42,6 @@ import { Translate } from '@singletons';
 import { CoreNavigator } from '@services/navigator';
 import { CoreIonLoadingElement } from '@classes/ion-loading';
 import { ActivatedRoute } from '@angular/router';
-import { AddonMessagesConversationInfoComponent } from '../../components/conversation-info/conversation-info';
 import { CoreConstants } from '@/core/constants';
 import { CoreDom } from '@singletons/dom';
 
@@ -59,14 +58,13 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
     @ViewChild(IonContent) content?: IonContent;
     @ViewChild(CoreInfiniteLoadingComponent) infinite?: CoreInfiniteLoadingComponent;
 
-    siteId: string;
     protected fetching = false;
     protected polling?: number;
     protected logger: CoreLogger;
 
     protected messagesBeingSent = 0;
     protected pagesLoaded = 1;
-    protected lastMessage = { text: '', timecreated: 0 };
+    protected lastMessage?: { text: string; timecreated: number };
     protected keepMessageMap: {[hash: string]: boolean} = {};
     protected syncObserver: CoreEventObserver;
     protected oldContentHeight = 0;
@@ -80,6 +78,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
     conversation?: AddonMessagesConversationFormatted; // The conversation object (if it exists).
     userId?: number; // User ID you're talking to (only if group messaging not enabled or it's a new individual conversation).
     currentUserId: number;
+    siteId: string;
     title?: string;
     showInfo = false;
     conversationImage?: string;
@@ -131,7 +130,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
 
                 // Show first warning if any.
                 if (data.warnings && data.warnings[0]) {
-                    CoreDomUtils.showErrorModal(data.warnings[0]);
+                    CoreDomUtils.showAlert(undefined, data.warnings[0]);
                 }
             }
         }, this.siteId);
@@ -252,7 +251,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
         try {
             const syncResult = await AddonMessagesSync.syncDiscussion(this.conversationId, this.userId);
             if (syncResult.warnings && syncResult.warnings[0]) {
-                CoreDomUtils.showErrorModal(syncResult.warnings[0]);
+                CoreDomUtils.showAlert(undefined, syncResult.warnings[0]);
             }
         } catch {
             // Ignore errors;
@@ -466,7 +465,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
 
         // If we received a new message while using group messaging, force mark messages as read.
         const last = this.messages[this.messages.length - 1];
-        const forceMark = this.groupMessagingEnabled && last && last.useridfrom != this.currentUserId && this.lastMessage.text != ''
+        const forceMark = this.groupMessagingEnabled && last && last.useridfrom !== this.currentUserId && !!this.lastMessage
                     && (last.text !== this.lastMessage.text || last.timecreated !== this.lastMessage.timecreated);
 
         // Notify that there can be a new message.
@@ -774,14 +773,14 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
      * Notify the last message found so discussions list controller can tell if last message should be updated.
      */
     protected notifyNewMessage(): void {
-        const last = this.messages[this.messages.length - 1];
+        const last = this.messages[this.messages.length - 1] as AddonMessagesConversationMessageFormatted | undefined;
 
         let trigger = false;
 
         if (!last) {
-            this.lastMessage = { text: '', timecreated: 0 };
+            this.lastMessage = undefined;
             trigger = true;
-        } else if (last.text !== this.lastMessage.text || last.timecreated !== this.lastMessage.timecreated) {
+        } else if (last.text !== this.lastMessage?.text || last.timecreated !== this.lastMessage?.timecreated) {
             this.lastMessage = { text: last.text || '', timecreated: last.timecreated };
             trigger = true;
         }
@@ -791,8 +790,9 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
             CoreEvents.trigger(AddonMessagesProvider.NEW_MESSAGE_EVENT, {
                 conversationId: this.conversationId,
                 userId: this.userId,
-                message: this.lastMessage.text,
-                timecreated: this.lastMessage.timecreated,
+                message: this.lastMessage?.text,
+                timecreated: this.lastMessage?.timecreated ?? 0,
+                userFrom: last?.useridfrom ? this.members[last.useridfrom] : undefined,
                 isfavourite: !!this.conversation?.isfavourite,
                 type: this.conversation?.type,
             }, this.siteId);
@@ -1245,6 +1245,9 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
      */
     async viewInfo(): Promise<void> {
         if (this.isGroup) {
+            const { AddonMessagesConversationInfoComponent } =
+                await import('@addons/messages/components/conversation-info/conversation-info.module');
+
             // Display the group information.
             const userId = await CoreDomUtils.openSideModal<number>({
                 component: AddonMessagesConversationInfoComponent,

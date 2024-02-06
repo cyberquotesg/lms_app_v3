@@ -358,7 +358,7 @@ export class AddonModFeedbackProvider {
     async getAttempt(
         feedbackId: number,
         attemptId: number,
-        options: CoreCourseCommonModWSOptions = {},
+        options: AddonModFeedbackGroupOptions = {},
         previous?: AddonModFeedbackGetAttemptPreviousData,
     ): Promise<AddonModFeedbackWSAttempt | AddonModFeedbackWSAnonAttempt> {
         options.siteId = options.siteId || CoreSites.getCurrentSiteId();
@@ -370,7 +370,6 @@ export class AddonModFeedbackProvider {
 
         const responses = await this.getResponsesAnalysis(feedbackId, {
             page: previous.page,
-            groupId: 0,
             ...options, // Include all options.
         });
 
@@ -1093,25 +1092,21 @@ export class AddonModFeedbackProvider {
      * Report the feedback as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the feedback.
      * @param formViewed True if form was viewed.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, formViewed: boolean = false, siteId?: string): Promise<void> {
+    async logView(id: number, formViewed: boolean = false, siteId?: string): Promise<void> {
         const params: AddonModFeedbackViewFeedbackWSParams = {
             feedbackid: id,
             moduleviewed: formViewed,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_feedback_view_feedback',
             params,
             AddonModFeedbackProvider.COMPONENT,
             id,
-            name,
-            'feedback',
-            { moduleviewed: params.moduleviewed },
             siteId,
         );
     }

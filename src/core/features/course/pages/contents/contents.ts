@@ -58,12 +58,14 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
     sections?: CoreCourseSection[];
     sectionId?: number;
     sectionNumber?: number;
+    blockInstanceId?: number;
     dataLoaded = false;
     updatingData = false;
     downloadCourseEnabled = false;
     moduleId?: number;
     displayEnableDownload = false;
     displayRefresher = false;
+    isGuest?: boolean;
 
     protected formatOptions?: Record<string, unknown>;
     protected completionObserver?: CoreEventObserver;
@@ -91,7 +93,9 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
 
         this.sectionId = CoreNavigator.getRouteNumberParam('sectionId');
         this.sectionNumber = CoreNavigator.getRouteNumberParam('sectionNumber');
+        this.blockInstanceId = CoreNavigator.getRouteNumberParam('blockInstanceId');
         this.moduleId = CoreNavigator.getRouteNumberParam('moduleId');
+        this.isGuest = CoreNavigator.getRouteBooleanParam('isGuest');
 
         this.debouncedUpdateCachedCompletion = CoreUtils.debounce(() => {
             if (this.modulesHaveCompletion) {
@@ -152,7 +156,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
             this.showLoadingAndRefresh(false, false);
 
             if (data.warnings && data.warnings[0]) {
-                CoreDomUtils.showErrorModal(data.warnings[0]);
+                CoreDomUtils.showAlert(undefined, data.warnings[0].message);
             }
         });
     }
@@ -183,7 +187,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
                 this.course.displayname || this.course.fullname,
             ));
             if (result?.warnings?.length) {
-                CoreDomUtils.showErrorModal(result.warnings[0]);
+                CoreDomUtils.showAlert(undefined, result.warnings[0].message);
             }
         }
 
@@ -294,7 +298,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
             await this.loadData(true, true);
         } finally {
             // Do not call doRefresh on the format component if the refresher is defined in the format component
-            // to prevent an inifinite loop.
+            // to prevent an infinite loop.
             if (this.displayRefresher && this.formatComponent) {
                 await CoreUtils.ignoreErrors(this.formatComponent.doRefresh(refresher));
             }
@@ -353,6 +357,10 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
      * @returns Promise resolved when done.
      */
     protected async showLoadingAndRefresh(sync = false, invalidateData = true): Promise<void> {
+        // Try to keep current scroll position.
+        const scrollElement = await CoreUtils.ignoreErrors(this.content?.getScrollElement());
+        const scrollTop = scrollElement?.scrollTop ?? -1;
+
         this.updatingData = true;
         this.changeDetectorRef.detectChanges();
 
@@ -367,6 +375,11 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
         } finally {
             this.updatingData = false;
             this.changeDetectorRef.detectChanges();
+
+            if (scrollTop > 0) {
+                await CoreUtils.nextTick();
+                this.content?.scrollToPoint(0, scrollTop, 0);
+            }
         }
     }
 

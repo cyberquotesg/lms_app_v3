@@ -53,7 +53,7 @@ import { WebView as WebViewService } from '@ionic-native/ionic-webview/ngx';
 import { Keyboard as KeyboardService } from '@ionic-native/keyboard/ngx';
 import { LocalNotifications as LocalNotificationsService } from '@ionic-native/local-notifications/ngx';
 import { MediaCapture as MediaCaptureService } from '@ionic-native/media-capture/ngx';
-import { Push as PushService } from '@ionic-native/push/ngx';
+import { Push as PushService } from '@moodlehq/ionic-native-push/ngx';
 import { QRScanner as QRScannerService } from '@ionic-native/qr-scanner/ngx';
 import { StatusBar as StatusBarService } from '@ionic-native/status-bar/ngx';
 import { SplashScreen as SplashScreenService } from '@ionic-native/splash-screen/ngx';
@@ -142,6 +142,8 @@ export function makeSingleton<Service extends object = object>( // eslint-disabl
                 throw new Error('Can\'t resolve a singleton instance without an injector');
             }
 
+            // @todo Check type to avoid deprecation.
+            // eslint-disable-next-line deprecation/deprecation
             const instance = injector.get(injectionToken);
 
             singleton.setInstance(instance);

@@ -33,11 +33,11 @@ import { CoreCourseOffline } from './course-offline';
 import { CoreError } from '@classes/errors/error';
 import {
     CoreCourseAnyCourseData,
+    CoreCourses,
     CoreCoursesProvider,
 } from '../../courses/services/courses';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreWSError } from '@classes/errors/wserror';
-import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
 import { CoreCourseHelper, CoreCourseModuleData, CoreCourseModuleCompletionData } from './course-helper';
 import { CoreCourseFormatDelegate } from './format-delegate';
 import { CoreCronDelegate } from '@services/cron';
@@ -81,6 +81,9 @@ export enum CoreCourseModuleCompletionStatus {
     COMPLETION_COMPLETE_FAIL = 3,
 }
 
+/**
+ * @deprecated since 4.3 Not used anymore.
+ */
 export enum CoreCourseCompletionMode {
     FULL = 'full',
     BASIC = 'basic',
@@ -248,6 +251,28 @@ export class CoreCourseProvider {
     isIncompleteAutomaticCompletion(completion: CoreCourseModuleCompletionData): boolean {
         return completion.tracking === CoreCourseModuleCompletionTracking.COMPLETION_TRACKING_AUTOMATIC &&
             completion.state === CoreCourseModuleCompletionStatus.COMPLETION_INCOMPLETE;
+    }
+
+    /**
+     * Check whether a course has indentation enabled.
+     *
+     * @param site Site.
+     * @param courseId Course id.
+     * @returns Whether indentation is enabled.
+     */
+    async isCourseIndentationEnabled(site: CoreSite, courseId: number): Promise<boolean> {
+        if (!site.isVersionGreaterEqualThan('4.0')) {
+            return false;
+        }
+
+        const course = await CoreCourses.getCourseByField('id', courseId, site.id);
+        const formatOptions = CoreUtils.objectToKeyValueMap<{ indentation?: string }>(
+            course.courseformatoptions ?? [],
+            'name',
+            'value',
+        );
+
+        return formatOptions.indentation === '1';
     }
 
     /**
@@ -682,6 +707,7 @@ export class CoreCourseProvider {
             course: courseId,
             section: sectionId,
             completiondata: completionData,
+            availabilityinfo: this.treatAvailablityInfo(module.availabilityinfo),
         };
     }
 
@@ -829,7 +855,7 @@ export class CoreCourseProvider {
 
         let path = 'assets/img/mod/';
         if (!CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.0')) {
-            // @deprecatedonmoodle since Moodle 3.11.
+            // @deprecatedonmoodle since 3.11.
             path = 'assets/img/mod_legacy/';
         }
 
@@ -840,10 +866,10 @@ export class CoreCourseProvider {
     /**
      * Get the section ID a module belongs to.
      *
-     * @deprecated since 4.0.
      * @param moduleId The module ID.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved with the section ID.
+     * @deprecated since 4.0.
      */
     async getModuleSectionId(moduleId: number, siteId?: string): Promise<number> {
         // Try to get the section using getModuleBasicInfo.
@@ -976,6 +1002,7 @@ export class CoreCourseProvider {
                     // Add course to all modules.
                     return sections.map((section) => ({
                         ...section,
+                        availabilityinfo: this.treatAvailablityInfo(section.availabilityinfo),
                         modules: section.modules.map((module) => this.addAdditionalModuleData(module, courseId, section.id)),
                     }));
                 }),
@@ -1168,22 +1195,19 @@ export class CoreCourseProvider {
      * @param courseId Course ID.
      * @param sectionNumber Section number.
      * @param siteId Site ID. If not defined, current site.
-     * @param name Name of the course.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(courseId: number, sectionNumber?: number, siteId?: string, name?: string): Promise<void> {
+    async logView(courseId: number, sectionNumber?: number, siteId?: string): Promise<void> {
         const params: CoreCourseViewCourseWSParams = {
             courseid: courseId,
         };
-        const wsName = 'core_course_view_course';
 
         if (sectionNumber !== undefined) {
             params.sectionnumber = sectionNumber;
         }
 
         const site = await CoreSites.getSite(siteId);
-        CorePushNotifications.logViewEvent(courseId, name, 'course', wsName, { sectionnumber: sectionNumber }, siteId);
-        const response: CoreStatusWithWarningsWSResponse = await site.write(wsName, params);
+        const response: CoreStatusWithWarningsWSResponse = await site.write('core_course_view_course', params);
 
         if (!response.status) {
             throw Error('WS core_course_view_course failed.');
@@ -1536,6 +1560,21 @@ export class CoreCourseProvider {
         }, siteId);
     }
 
+    /**
+     * Treat availability info HTML.
+     *
+     * @param availabilityInfo HTML to treat.
+     * @returns Treated HTML.
+     */
+    protected treatAvailablityInfo(availabilityInfo?: string): string | undefined {
+        if (!availabilityInfo) {
+            return availabilityInfo;
+        }
+
+        // Remove "Show more" option in 4.2 or older sites.
+        return CoreDomUtils.removeElementFromHtml(availabilityInfo, 'li[data-action="showmore"]');
+    }
+
 }
 
 export const CoreCourse = makeSingleton(CoreCourseProvider);
@@ -1745,6 +1784,7 @@ export type CoreCourseGetContentsWSModule = {
     completion?: CoreCourseModuleCompletionTracking; // Type of completion tracking: 0 means none, 1 manual, 2 automatic.
     completiondata?: CoreCourseModuleWSCompletionData; // Module completion data.
     contents?: CoreCourseModuleContentFile[];
+    groupmode?: number; // @since 4.3. Group mode value
     downloadcontent?: number; // @since 4.0 The download content value.
     dates?: {
         label: string;

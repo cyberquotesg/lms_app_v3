@@ -57,7 +57,7 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
     @Input() autoPlayData?: AddonModScormAutoPlayData; // Data to use to play the SCORM automatically.
 
     component = AddonModScormProvider.COMPONENT;
-    moduleName = 'scorm';
+    pluginName = 'scorm';
 
     scorm?: AddonModScormScorm; // The SCORM object.
     currentOrganization: Partial<AddonModScormOrganization> & { identifier: string} = {
@@ -301,12 +301,7 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
             return;
         }
 
-        const grade = await AddonModScorm.getAttemptGrade(this.scorm, attempt, offline);
-
-        attempts[attempt] = {
-            num: attempt,
-            grade: grade,
-        };
+        attempts[attempt] = await AddonModScorm.getAttemptGrade(this.scorm, attempt, offline);
     }
 
     /**
@@ -344,10 +339,10 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
 
         // Now format the grades.
         this.onlineAttempts.forEach((attempt) => {
-            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.grade);
+            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.score);
         });
         this.offlineAttempts.forEach((attempt) => {
-            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.grade);
+            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.score);
         });
 
         this.gradeFormatted = AddonModScorm.formatGrade(scorm, this.grade);
@@ -361,7 +356,9 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
             return; // Shouldn't happen.
         }
 
-        await AddonModScorm.logView(this.scorm.id, this.scorm.name);
+        await CoreUtils.ignoreErrors(AddonModScorm.logView(this.scorm.id));
+
+        this.analyticsLogEvent('mod_scorm_view_scorm');
     }
 
     /**

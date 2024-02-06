@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { CoreConstants } from '@/core/constants';
+import { safeNumber, SafeNumber } from '@/core/utils/types';
 import { Component, OnDestroy, OnInit, Optional } from '@angular/core';
 
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
@@ -56,7 +57,7 @@ import {
 export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit, OnDestroy {
 
     component = AddonModQuizProvider.COMPONENT;
-    moduleName = 'quiz';
+    pluginName = 'quiz';
     quiz?: AddonModQuizQuizData; // The quiz.
     now?: number; // Current time.
     syncTime?: string; // Last synchronization time.
@@ -88,7 +89,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
     protected attemptAccessInfo?: AddonModQuizGetAttemptAccessInformationWSResponse; // Last attempt access info.
     protected moreAttempts = false; // Whether user can create/continue attempts.
     protected options?: AddonModQuizCombinedReviewOptions; // Combined review options.
-    protected gradebookData?: { grade?: number; feedback?: string }; // The gradebook grade and feedback.
+    protected gradebookData?: { grade?: SafeNumber; feedback?: string }; // The gradebook grade and feedback.
     protected overallStats = false; // Equivalent to overallstats in mod_quiz_view_object in Moodle.
     protected finishedObserver?: CoreEventObserver; // It will observe attempt finished events.
     protected hasPlayed = false; // Whether the user has gone to the quiz player (attempted).
@@ -385,7 +386,9 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
             return; // Shouldn't happen.
         }
 
-        await AddonModQuiz.logViewQuiz(this.quiz.id, this.quiz.name);
+        await CoreUtils.ignoreErrors(AddonModQuiz.logViewQuiz(this.quiz.id));
+
+        this.analyticsLogEvent('mod_quiz_view_quiz');
     }
 
     /**
@@ -403,6 +406,7 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
 
         // Verify that user can see the review.
         const attemptId = this.autoReview.attemptId;
+        this.autoReview = undefined;
 
         if (this.quizAccessInfo?.canreviewmyattempts) {
             try {
@@ -449,7 +453,6 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
         // Check if we need to go to review an attempt automatically.
         if (this.autoReview && this.autoReview.synced) {
             promise = this.goToAutoReview();
-            this.autoReview = undefined;
         }
 
         // Refresh data.
@@ -591,7 +594,6 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
             if (!this.isDestroyed && this.isCurrentView) {
                 openReview = true;
             }
-            this.autoReview = undefined;
         }
 
         const [options] = await Promise.all([
@@ -633,8 +635,10 @@ export class AddonModQuizIndexComponent extends CoreCourseModuleMainActivityComp
             const data = await AddonModQuiz.getGradeFromGradebook(this.courseId, this.module.id);
 
             if (data) {
+                const grade = data.graderaw ?? (data.grade !== undefined && data.grade !== null ? Number(data.grade) : undefined);
+
                 this.gradebookData = {
-                    grade: data.graderaw ?? (data.grade !== undefined && data.grade !== null ? Number(data.grade) : undefined),
+                    grade: safeNumber(grade),
                     feedback: data.feedback,
                 };
             }

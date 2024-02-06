@@ -146,23 +146,19 @@ export class AddonModResourceProvider {
      * Report the resource as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the resource.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModResourceViewResourceWSParams = {
             resourceid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_resource_view_resource',
             params,
             AddonModResourceProvider.COMPONENT,
             id,
-            name,
-            'resource',
-            {},
             siteId,
         );
     }
@@ -204,12 +200,20 @@ export type AddonModResourceResource = {
 };
 
 export type AddonModResourceCustomData = {
-    showsize?: boolean;
     filedetails?: {
-        size: number;
-        modifieddate: number;
-        uploadeddate: number;
+        isref?: boolean; // If file is a reference the 'size' or 'date' attribute can not be cached.
+        // If showsize is true.
+        size?: number; // Size in bytes.
+        // If showtype is true.
+        type?: string; // Mimetype description (already translated).
+        mimetype?: string; // @since LMS 3.7
+        extension?: string; // @since LMS 4.3
+        // If showdate is true.
+        modifieddate?: number; // Only if file has been modified.
+        uploadeddate?: number; // Only if file has NOT been modified.
+
     };
+    showsize?: boolean;
     showtype?: boolean;
     showdate?: boolean;
     printintro?: boolean;

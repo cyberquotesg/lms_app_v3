@@ -47,6 +47,7 @@ import { CORE_CONTENTLINKS_SERVICES } from '@features/contentlinks/contentlinks.
 import { CORE_COURSE_SERVICES } from '@features/course/course.module';
 import { CORE_COURSES_SERVICES } from '@features/courses/courses.module';
 import { CORE_EDITOR_SERVICES } from '@features/editor/editor.module';
+import { CORE_ENROL_SERVICES } from '@features/enrol/enrol.module';
 import { CORE_NATIVE_SERVICES } from '@features/native/native.module';
 import { CORE_FILEUPLOADER_SERVICES } from '@features/fileuploader/fileuploader.module';
 import { CORE_FILTER_SERVICES } from '@features/filter/filter.module';
@@ -148,16 +149,16 @@ import { ADDON_MOD_SCORM_SERVICES } from '@addons/mod/scorm/scorm.module';
 import { ADDON_MOD_SURVEY_SERVICES } from '@addons/mod/survey/survey.module';
 import { ADDON_MOD_URL_SERVICES } from '@addons/mod/url/url.module';
 import { ADDON_MOD_WIKI_SERVICES } from '@addons/mod/wiki/wiki.module';
-import { ADDON_MOD_WORKSHOP_SERVICES } from '@addons/mod/workshop/workshop.module';
+import { getWorkshopComponentModules, getWorkshopServices } from '@addons/mod/workshop/workshop.module';
 import { ADDON_NOTES_SERVICES } from '@addons/notes/notes.module';
 import { ADDON_NOTIFICATIONS_SERVICES } from '@addons/notifications/notifications.module';
 import { ADDON_PRIVATEFILES_SERVICES } from '@addons/privatefiles/privatefiles.module';
 
 // Import some addon modules that define components, directives and pipes. Only import the important ones.
 import { AddonModAssignComponentsModule } from '@addons/mod/assign/components/components.module';
-import { AddonModWorkshopComponentsModule } from '@addons/mod/workshop/components/components.module';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
+import { CoreAutoLogoutService } from '@features/autologout/services/autologout';
 
 /**
  * Service to provide functionalities regarding compiling dynamic HTML and Javascript.
@@ -179,7 +180,10 @@ export class CoreCompileProvider {
         CoreSharedModule, CoreCourseComponentsModule, CoreCoursesComponentsModule, CoreUserComponentsModule,
         CoreCourseDirectivesModule, CoreQuestionComponentsModule, AddonModAssignComponentsModule,
         CoreBlockComponentsModule, CoreEditorComponentsModule, CoreSearchComponentsModule, CoreSitePluginsDirectivesModule,
-        AddonModWorkshopComponentsModule,
+    ];
+
+    protected readonly LAZY_IMPORTS = [
+        getWorkshopComponentModules,
     ];
 
     constructor(protected injector: Injector, compilerFactory: JitCompilerFactory) {
@@ -204,7 +208,9 @@ export class CoreCompileProvider {
         // Create the component using the template and the class.
         const component = Component({ template })(componentClass);
 
+        const lazyImports = await Promise.all(this.LAZY_IMPORTS.map(getModules => getModules()));
         const imports = [
+            ...CoreArray.flatten(lazyImports),
             ...this.IMPORTS,
             ...extraImports,
         ];
@@ -263,12 +269,14 @@ export class CoreCompileProvider {
     injectLibraries(instance: any, extraProviders: Type<unknown>[] = []): void {
         const providers = [
             ...CORE_SERVICES,
+            CoreAutoLogoutService,
             ...CORE_BLOCK_SERVICES,
             ...CORE_COMMENTS_SERVICES,
             ...CORE_CONTENTLINKS_SERVICES,
             ...CORE_COURSE_SERVICES,
             ...CORE_COURSES_SERVICES,
             ...CORE_EDITOR_SERVICES,
+            ...CORE_ENROL_SERVICES,
             ...CORE_FILEUPLOADER_SERVICES,
             ...CORE_FILTER_SERVICES,
             ...CORE_GRADES_SERVICES,
@@ -315,7 +323,6 @@ export class CoreCompileProvider {
             ...ADDON_MOD_SURVEY_SERVICES,
             ...ADDON_MOD_URL_SERVICES,
             ...ADDON_MOD_WIKI_SERVICES,
-            ...ADDON_MOD_WORKSHOP_SERVICES,
             ...ADDON_NOTES_SERVICES,
             ...ADDON_NOTIFICATIONS_SERVICES,
             ...ADDON_PRIVATEFILES_SERVICES,
@@ -346,10 +353,11 @@ export class CoreCompileProvider {
         instance['CoreLoggerProvider'] = CoreLogger;
         instance['moment'] = moment;
         instance['Md5'] = Md5;
-        instance['Network'] = CoreNetwork.instance; // @deprecated on 4.1, plugins should use CoreNetwork instead.
-        instance['Platform'] = CorePlatform.instance; // @deprecated on 4.1, plugins should use CorePlatform instead.
+        instance['Network'] = CoreNetwork.instance; // @deprecated since 4.1, plugins should use CoreNetwork instead.
+        instance['Platform'] = CorePlatform.instance; // @deprecated since 4.1, plugins should use CorePlatform instead.
         instance['CoreSyncBaseProvider'] = CoreSyncBaseProvider;
         instance['CoreArray'] = CoreArray;
+        // eslint-disable-next-line deprecation/deprecation
         instance['CoreComponentsRegistry'] = CoreComponentsRegistry;
         instance['CoreDirectivesRegistry'] = CoreDirectivesRegistry;
         instance['CoreNetwork'] = CoreNetwork.instance;
@@ -384,6 +392,19 @@ export class CoreCompileProvider {
         CORE_ERRORS_CLASSES.forEach((classDef) => {
             instance[classDef.name] = classDef;
         });
+    }
+
+    /**
+     * Get lazy libraries to inject.
+     *
+     * @returns Lazy libraries.
+     */
+    async getLazyLibraries(): Promise<Type<unknown>[]> {
+        const ADDON_MOD_WORKSHOP_SERVICES = await getWorkshopServices();
+
+        return [
+            ...ADDON_MOD_WORKSHOP_SERVICES,
+        ];
     }
 
     /**

@@ -78,7 +78,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         const currentSite = CoreSites.getRequiredCurrentSite();
         this.siteId = currentSite.getId();
         this.siteInfo = currentSite.getInfo();
-        this.siteName = currentSite.getSiteName();
+        this.siteName = await currentSite.getSiteName();
         this.siteUrl = currentSite.getURL();
 
         // by rachmad

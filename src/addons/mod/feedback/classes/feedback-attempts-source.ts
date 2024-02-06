@@ -22,6 +22,7 @@ import {
     AddonModFeedbackWSFeedback,
 } from '../services/feedback';
 import { AddonModFeedbackHelper } from '../services/feedback-helper';
+import { Params } from '@angular/router';
 
 /**
  * Feedback attempts.
@@ -37,8 +38,7 @@ export class AddonModFeedbackAttemptsSource extends CoreRoutedItemsManagerSource
     anonymous?: AddonModFeedbackWSAnonAttempt[];
     anonymousTotal?: number;
     groupInfo?: CoreGroupInfo;
-
-    protected feedback?: AddonModFeedbackWSFeedback;
+    feedback?: AddonModFeedbackWSFeedback;
 
     constructor(courseId: number, cmId: number) {
         super();
@@ -52,6 +52,15 @@ export class AddonModFeedbackAttemptsSource extends CoreRoutedItemsManagerSource
      */
     getItemPath(attempt: AddonModFeedbackAttemptItem): string {
         return attempt.id.toString();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    getItemQueryParams(): Params {
+        return {
+            groupId: this.selectedGroup,
+        };
     }
 
     /**

@@ -8,11 +8,11 @@
         </ion-title>
     </ion-toolbar>
 </ion-header>
-<ion-content [core-swipe-navigation]="courses">
+<ion-content [core-swipe-navigation]="swipeManager">
     <ion-refresher slot="fixed" [disabled]="!columns || !rows" (ionRefresh)="refreshGrades($event.target)">
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
     </ion-refresher>
-    <core-loading [hideUntil]="columns && rows">
+    <core-loading [hideUntil]="loaded">
         <core-empty-box *ngIf="!rows.length" icon="fas-chart-bar" [message]="'core.grades.nogradesreturned' | translate">
         </core-empty-box>
         <div *ngIf="rows.length" class="core-grades-container">
@@ -48,8 +48,7 @@
                                     <img *ngIf="row.image && !row.itemmodule" [src]="row.image" slot="start" class="core-module-icon"
                                         [alt]="row.iconAlt" />
                                     <core-mod-icon *ngIf="row.image && row.itemmodule" [modicon]="row.image" slot="start"
-                                        [modname]="row.itemmodule" [noFilter]="row.imageIsShape === false"
-                                        (failedLoading)="failedLoadingRowImage(row)">
+                                        [modname]="row.itemmodule">
                                     </core-mod-icon>
                                     <span [innerHTML]="row.gradeitem"></span>
                                 </th>

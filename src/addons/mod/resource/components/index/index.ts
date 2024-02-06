@@ -47,6 +47,7 @@ import { CorePlatform } from '@services/platform';
 export class AddonModResourceIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit, OnDestroy {
 
     component = AddonModResourceProvider.COMPONENT;
+    pluginName = 'resource';
 
     mode = '';
     src = '';
@@ -110,6 +111,8 @@ export class AddonModResourceIndexComponent extends CoreCourseModuleMainResource
         if (!contents.length) {
             throw new CoreError(Translate.instant('core.filenotfound'));
         }
+
+        this.module.afterlink = await AddonModResourceHelper.getAfterLinkDetails(this.module, this.courseId);
 
         // Get the resource instance to get the latest name/description and to know if it's embedded.
         const resource = await AddonModResource.getResourceData(this.courseId, this.module.id);
@@ -188,7 +191,9 @@ export class AddonModResourceIndexComponent extends CoreCourseModuleMainResource
      * @inheritdoc
      */
     protected async logActivity(): Promise<void> {
-        await AddonModResource.logView(this.module.instance, this.module.name);
+        await CoreUtils.ignoreErrors(AddonModResource.logView(this.module.instance));
+
+        this.analyticsLogEvent('mod_resource_view_resource');
     }
 
     /**

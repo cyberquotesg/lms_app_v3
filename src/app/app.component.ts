@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// by rachmad
-// import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { AfterViewInit, Component, OnInit, ViewChild, Renderer2 } from '@angular/core';
-
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { IonRouterOutlet } from '@ionic/angular';
 import { BackButtonEvent, ScrollDetail } from '@ionic/core';
 
@@ -35,13 +32,11 @@ import { CoreSitePlugins } from '@features/siteplugins/services/siteplugins';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreDom } from '@singletons/dom';
 import { CorePlatform } from '@services/platform';
+import { CoreUrl } from '@singletons/url';
+import { CoreLogger } from '@singletons/logger';
+import { CorePromisedValue } from '@classes/promised-value';
 
-// by rachmad
-import { CqHelper } from '@features/cq_pages/services/cq_helper';
-import { Zoom } from '@awesome-cordova-plugins/zoom';
-import Color from 'color';
-import { AddonNotifications } from '@addons/notifications/services/notifications';
-
+const MOODLE_SITE_URL_PREFIX = 'url-';
 const MOODLE_VERSION_PREFIX = 'version-';
 const MOODLEAPP_VERSION_PREFIX = 'moodleapp-';
 
@@ -53,14 +48,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     @ViewChild(IonRouterOutlet) outlet?: IonRouterOutlet;
 
-    // by rachmad
-    notificationAnnouncementCountAgent: any;
-
-    // by rachmad
-    constructor(protected renderer: Renderer2, protected CH: CqHelper)
-    {
-        this.CH.zoom = Zoom;
-    }
+    protected logger = CoreLogger.getInstance('AppComponent');
 
     /**
      * @inheritdoc
@@ -68,7 +56,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     ngOnInit(): void {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = <any> window;
-        CoreDomUtils.toggleModeClass('ionic5', true);
+        CoreDomUtils.toggleModeClass('ionic5', true, { includeLegacy: true });
         this.addVersionClass(MOODLEAPP_VERSION_PREFIX, CoreConstants.CONFIG.versionname.replace('-dev', ''));
 
         CoreEvents.on(CoreEvents.LOGOUT, async () => {
@@ -76,7 +64,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             CoreLang.clearCustomStrings();
 
             // Remove version classes from body.
-            this.removeVersionClass(MOODLE_VERSION_PREFIX);
+            this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
 
             // Go to sites page when user is logged out.
             await CoreNavigator.navigate('/login/sites', { reset: true });
@@ -85,9 +73,6 @@ export class AppComponent implements OnInit, AfterViewInit {
                 // Temporary fix. Reload the page to unload all plugins.
                 window.location.reload();
             }
-
-            // by rachmad
-            this.ifLoggedOut();
         });
 
         // Listen to scroll to add style when scroll is not 0.
@@ -134,44 +119,43 @@ export class AppComponent implements OnInit, AfterViewInit {
                 const info = site.getInfo();
                 if (info) {
                     // Add version classes to body.
-                    this.removeVersionClass(MOODLE_VERSION_PREFIX);
+                    this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
+
                     this.addVersionClass(MOODLE_VERSION_PREFIX, CoreSites.getReleaseNumber(info.release || ''));
+                    this.addSiteUrlClass(info.siteurl);
                 }
             }
 
             this.loadCustomStrings();
-
-            // by rachmad
-            this.ifLoggedOut();
-            this.ifLoggedIn();
         });
 
-        CoreEvents.on(CoreEvents.SITE_UPDATED, (data) => {
-            if (data.siteId == CoreSites.getCurrentSiteId()) {
+        // Site config is checked in login.
+        CoreEvents.on(CoreEvents.LOGIN_SITE_CHECKED, (data) => {
+            this.addSiteUrlClass(data.config.httpswwwroot);
+        });
+
+        CoreEvents.on(CoreEvents.SITE_UPDATED, async (data) => {
+            if (data.siteId === CoreSites.getCurrentSiteId()) {
                 this.loadCustomStrings();
 
                 // Add version classes to body.
-                this.removeVersionClass(MOODLE_VERSION_PREFIX);
+                this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
+
                 this.addVersionClass(MOODLE_VERSION_PREFIX, CoreSites.getReleaseNumber(data.release || ''));
+                this.addSiteUrlClass(data.siteurl);
             }
         });
 
         CoreEvents.on(CoreEvents.SITE_ADDED, (data) => {
-            if (data.siteId == CoreSites.getCurrentSiteId()) {
+            if (data.siteId === CoreSites.getCurrentSiteId()) {
                 this.loadCustomStrings();
 
                 // Add version classes to body.
-                this.removeVersionClass(MOODLE_VERSION_PREFIX);
-                this.addVersionClass(MOODLE_VERSION_PREFIX, CoreSites.getReleaseNumber(data.release || ''));
-            }
-        });
+                this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
 
-        // by rachmad
-        CoreEvents.on(CoreEvents.SESSION_EXPIRED, (data) => {
-            this.ifLoggedOut();
-        });
-        CoreEvents.on(CoreEvents.USER_NO_LOGIN, (data) => {
-            this.ifLoggedOut();
+                this.addVersionClass(MOODLE_VERSION_PREFIX, CoreSites.getReleaseNumber(data.release || ''));
+                this.addSiteUrlClass(data.siteurl);
+            }
         });
 
         this.onPlatformReady();
@@ -216,107 +200,44 @@ export class AppComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        CoreSubscriptions.once(this.outlet.activateEvents, () => SplashScreen.hide());
-    }
+        this.logger.debug('App component initialized');
 
-    ifLoggedIn(): void {
-        this.CH.updateCount("notification, announcement");
-        this.notificationAnnouncementCountAgent = setInterval(() => { this.CH.updateCount("notification, announcement") }, 10 * 1000);
+        CoreSubscriptions.once(this.outlet.activateEvents, async () => {
+            await CorePlatform.ready();
 
-        const institutionParams: any = {
-            calls: {
-                country: {
-                    cluster: "CqInstitutionLib",
-                    endpoint: "get_country_by_user",
-                },
-                organization: {
-                    cluster: "CqInstitutionLib",
-                    endpoint: "get_organization_by_user",
-                },
-            },
-        };
-        this.CH.callApi(institutionParams)
-        .then((data) => {
-            let allData = this.CH.toJson(data);
-            this.CH.log("country data", allData.country);
-            this.CH.log("organization data", allData.organization);
-
-            let country = allData.country ? JSON.stringify(allData.country) : "{}";
-            let organization = allData.organization ? JSON.stringify(allData.organization) : "{}";
-
-            localStorage.setItem('cqCountry', country);
-            localStorage.setItem('cqOrganization', organization);
-
-            // Set cssVars
-            if (allData.organization)
-            {
-                const properties = [
-                    'headerBackgroundColor',
-                    'headerTextColor',
-                    'footerBackgroundColor',
-                    'footerTextColor',
-                    'menuBackgroundColor',
-                    'menuTextColor',
-                    'selectedMenuBackgroundColor',
-                    'selectedMenuTextColor',
-                    'selectedMenuHoverBackgroundColor',
-                    'selectedMenuHoverTextColor',
-                    'buttonColor',
-                    'buttonBorderColor',
-                    'buttonTextColor',
-                    'buttonHoverColor',
-                    'buttonHoverBorderColor',
-                    'buttonHoverTextColor',
-                    'mobileBackgroundColor',
-                    'mobileBackgroundImage',
-                ];
-                let cssVars: string[] = [];
-                properties.forEach((property) => {
-                    if (this.CH.isEmpty(allData.organization[property]) || allData.organization[property] == 'null') return;
-
-                    let cssVar = '';
-
-                    // color
-                    if (property.toLowerCase().indexOf("color") > -1)
-                    {
-                        cssVar = '--' + property + ': #' + allData.organization[property] + ";";
-                        cssVar += '--' + property.replace("Color", "LightenColor") + ': ' + Color('#' + allData.organization[property]).lighten(0.4).hex() + ";";
-                        cssVar += '--' + property.replace("Color", "DarkenColor") + ': ' + Color('#' + allData.organization[property]).darken(0.4).hex() + ";";
-                        cssVar += '--' + property.replace("Color", "LeftenColor") + ': ' + Color('#' + allData.organization[property]).rotate(-15).hex() + ";";
-                        cssVar += '--' + property.replace("Color", "RightenColor") + ': ' + Color('#' + allData.organization[property]).rotate(15).hex();
-                    }
-
-                    // image
-                    else if (property == 'mobileBackgroundImage')
-                    {
-                        cssVar = '--' + property + ': url(\'/assets/img/background/' + allData.organization[property] + '\')';
-                    }
-
-                    // anything else
-                    else cssVar = '--' + property + ': ' + allData.organization[property];
-
-                    // this.log('cssVar', cssVar);
-                    cssVars.push(cssVar);
-                });
-
-                this.renderer.addClass(this.CH.getBody(), 'logged-in');
-                this.renderer.setProperty(this.CH.getBody(), 'style', cssVars.join(';'));
-            }
-        })
-        .catch((error) => {
-            this.CH.errorLog("institution information error", {institutionParams, error});
+            this.logger.debug('Hide splash screen');
+            SplashScreen.hide();
+            this.setSystemUIColorsAfterSplash();
         });
-
-        // zoom
-        this.CH.initiateZoom();
     }
-    ifLoggedOut(): void {
-        clearInterval(this.notificationAnnouncementCountAgent);
 
-        this.renderer.removeClass(this.CH.getBody(), 'logged-in');
-        this.renderer.setProperty(this.CH.getBody(), 'style', '');
+    /**
+     * Set the system UI Colors after hiding the splash to ensure it's correct.
+     *
+     * @returns Promise resolved when done.
+     */
+    protected async setSystemUIColorsAfterSplash(): Promise<void> {
+        // When the app starts and the splash is hidden, the color of the bars changes from transparent to black.
+        // We have to set the current color but we don't know when the change will be made.
+        // This problem is only related to Android, so on iOS it will be only set once.
+        if (!CorePlatform.isAndroid()) {
+            CoreApp.setSystemUIColors();
 
-        this.CH.zoomInitiated = false;
+            return;
+        }
+
+        const promise = new CorePromisedValue<void>();
+
+        const interval = window.setInterval(() => {
+            CoreApp.setSystemUIColors();
+        });
+        setTimeout(() => {
+            clearInterval(interval);
+            promise.resolve();
+
+        }, 1000);
+
+        return promise;
     }
 
     /**
@@ -325,6 +246,8 @@ export class AppComponent implements OnInit, AfterViewInit {
     protected async onPlatformReady(): Promise<void> {
         await CorePlatform.ready();
 
+        this.logger.debug('Platform is ready');
+
         // Refresh online status when changes.
         CoreNetwork.onChange().subscribe(() => {
             // Execute the callback in the Angular zone, so change detection doesn't stop working.
@@ -332,25 +255,22 @@ export class AppComponent implements OnInit, AfterViewInit {
                 const isOnline = CoreNetwork.isOnline();
                 const hadOfflineMessage = CoreDomUtils.hasModeClass('core-offline');
 
-                CoreDomUtils.toggleModeClass('core-offline', !isOnline);
+                CoreDomUtils.toggleModeClass('core-offline', !isOnline, { includeLegacy: true });
 
                 if (isOnline && hadOfflineMessage) {
-                    CoreDomUtils.toggleModeClass('core-online', true);
+                    CoreDomUtils.toggleModeClass('core-online', true, { includeLegacy: true });
 
                     setTimeout(() => {
-                        CoreDomUtils.toggleModeClass('core-online', false);
+                        CoreDomUtils.toggleModeClass('core-online', false, { includeLegacy: true });
                     }, 3000);
                 } else if (!isOnline) {
-                    CoreDomUtils.toggleModeClass('core-online', false);
+                    CoreDomUtils.toggleModeClass('core-online', false, { includeLegacy: true });
                 }
             });
         });
 
         const isOnline = CoreNetwork.isOnline();
-        CoreDomUtils.toggleModeClass('core-offline', !isOnline);
-
-        // Set StatusBar properties.
-        CoreApp.setStatusBarColor();
+        CoreDomUtils.toggleModeClass('core-offline', !isOnline, { includeLegacy: true });
     }
 
     /**
@@ -365,7 +285,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * Convenience function to add version to body classes.
+     * Convenience function to add version to html classes.
      *
      * @param prefix Prefix to add to the class.
      * @param release Current release number of the site.
@@ -376,24 +296,65 @@ export class AppComponent implements OnInit, AfterViewInit {
         parts[1] = parts[1] || '0';
         parts[2] = parts[2] || '0';
 
-        CoreDomUtils.toggleModeClass(prefix + parts[0], true);
-        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1], true);
-        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1] + '-' + parts[2], true);
+        CoreDomUtils.toggleModeClass(prefix + parts[0], true, { includeLegacy: true });
+        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1], true, { includeLegacy: true });
+        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1] + '-' + parts[2], true, { includeLegacy: true });
     }
 
     /**
-     * Convenience function to remove all version classes form body.
+     * Convenience function to remove all mode classes form body.
      *
-     * @param prefix Prefix of to the class.
+     * @param prefixes Prefixes of the class mode to be removed.
      */
-    protected removeVersionClass(prefix: string): void {
-        for (const versionClass of CoreDomUtils.getModeClasses()) {
-            if (!versionClass.startsWith(prefix)) {
+    protected removeModeClasses(prefixes: string[]): void {
+        for (const modeClass of CoreDomUtils.getModeClasses()) {
+            if (!prefixes.some((prefix) => modeClass.startsWith(prefix))) {
                 continue;
             }
 
-            CoreDomUtils.toggleModeClass(versionClass, false);
+            CoreDomUtils.toggleModeClass(modeClass, false, { includeLegacy: true });
         }
+    }
+
+    /**
+     * Converts the provided URL into a CSS class that be used within the page.
+     * This is primarily used to add the siteurl to the body tag as a CSS class.
+     * Extracted from LMS url_to_class_name function.
+     *
+     * @param url Url.
+     * @returns Class name
+     */
+    protected urlToClassName(url: string): string {
+        const parsedUrl = CoreUrl.parse(url);
+
+        if (!parsedUrl) {
+            return '';
+        }
+
+        let className = parsedUrl.domain?.replace(/\./g, '-') || '';
+
+        if (parsedUrl.port) {
+            className += `--${parsedUrl.port}`;
+        }
+        if (parsedUrl.path) {
+            const leading = new RegExp('^/+');
+            const trailing = new RegExp('/+$');
+            const path = parsedUrl.path.replace(leading, '').replace(trailing, '');
+            if (path) {
+                className += '--' + path.replace(/\//g, '-') || '';
+            }
+        }
+
+        return className;
+    }
+
+    /**
+     * Convenience function to add site url to html classes.
+     */
+    protected addSiteUrlClass(siteUrl: string): void {
+        const className = this.urlToClassName(siteUrl);
+
+        CoreDomUtils.toggleModeClass(MOODLE_SITE_URL_PREFIX + className, true);
     }
 
 }

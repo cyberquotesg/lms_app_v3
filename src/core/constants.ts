@@ -62,7 +62,6 @@ export class CoreConstants {
     static readonly DOWNLOAD_THRESHOLD = 10485760; // 10MB.
     static readonly MINIMUM_FREE_SPACE = 10485760; // 10MB.
     static readonly IOS_FREE_SPACE_THRESHOLD = 524288000; // 500MB.
-    static readonly DONT_SHOW_ERROR = 'CoreDontShowError'; // @deprecated since 3.9.5. Use CoreSilentError instead.
     static readonly NO_SITE_ID = 'NoSite';
 
     // Settings constants.
@@ -79,10 +78,19 @@ export class CoreConstants {
     // WS constants.
     static readonly WS_TIMEOUT = 30000; // Timeout when not in WiFi.
     static readonly WS_TIMEOUT_WIFI = 30000; // Timeout when in WiFi.
-    static readonly WS_PREFIX = 'local_mobile_'; // @deprecated since app 4.0.
+    /**
+     * @deprecated since 4.0. Not used anymore.
+     */
+    static readonly WS_PREFIX = 'local_mobile_';
 
     // Login constants.
+    /**
+     * @deprecated since 4.3 Use TypeOfLogin.BROWSER instead.
+     */
     static readonly LOGIN_SSO_CODE = 2; // SSO in browser window is required.
+    /**
+     * @deprecated since 4.3 Use TypeOfLogin.EMBEDDED instead.
+     */
     static readonly LOGIN_SSO_INAPP_CODE = 3; // SSO in embedded browser is required.
     static readonly LOGIN_LAUNCH_DATA = 'CoreLoginLaunchData';
 

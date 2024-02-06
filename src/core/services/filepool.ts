@@ -55,6 +55,7 @@ import { lazyMap, LazyMap } from '../utils/lazy-map';
 import { asyncInstance, AsyncInstance } from '../utils/async-instance';
 import { CorePath } from '@singletons/path';
 import { CorePromisedValue } from '@classes/promised-value';
+import { CoreAnalytics, CoreAnalyticsEventType } from './analytics';
 
 /*
  * Factory for handling downloading files and retrieve downloaded files.
@@ -150,7 +151,7 @@ export class CoreFilepoolProvider {
             this.checkQueueProcessing();
 
             // Start queue when device goes online.
-            CoreNetwork.onConnect().subscribe(() => {
+            CoreNetwork.onConnectShouldBeStable().subscribe(() => {
                 // Execute the callback in the Angular zone, so change detection doesn't stop working.
                 NgZone.run(() => this.checkQueueProcessing());
             });
@@ -762,6 +763,11 @@ export class CoreFilepoolProvider {
                 repositorytype: options.repositorytype,
                 path: fileEntry.path,
                 extension: fileEntry.extension,
+            });
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.DOWNLOAD_FILE,
+                fileUrl: CoreUrlUtils.unfixPluginfileURL(fileUrl, site.getURL()),
             });
 
             // Add the anchor again to the local URL.
@@ -2831,27 +2837,6 @@ export class CoreFilepoolProvider {
     shouldDownload(size: number): boolean {
         return size <= CoreFilepoolProvider.DOWNLOAD_THRESHOLD ||
             (CoreNetwork.isWifi() && size <= CoreFilepoolProvider.WIFI_DOWNLOAD_THRESHOLD);
-    }
-
-    /**
-     * Convenience function to check if a file should be downloaded before opening it.
-     *
-     * @param url File online URL.
-     * @param size File size.
-     * @returns Promise resolved if should download before open, rejected otherwise.
-     * @deprecated since 3.9.5. Please use shouldDownloadFileBeforeOpen instead.
-     */
-    async shouldDownloadBeforeOpen(url: string, size: number): Promise<void> {
-        if (size >= 0 && size <= CoreFilepoolProvider.DOWNLOAD_THRESHOLD) {
-            // The file is small, download it.
-            return;
-        }
-
-        const mimetype = await CoreUtils.getMimeTypeFromUrl(url);
-        // If the file is streaming (audio or video) we reject.
-        if (CoreMimetypeUtils.isStreamedMimetype(mimetype)) {
-            throw new CoreError('File is audio or video.');
-        }
     }
 
     /**

@@ -15,13 +15,11 @@
 import { CoreSharedModule } from '@/core/shared.module';
 import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { AddonWorkshopAssessmentStrategyDelegate } from '../../services/assessment-strategy-delegate';
-import { AddonModWorkshopAssessmentStrategyNumErrorsComponent } from './component/numerrors';
-import { AddonModWorkshopAssessmentStrategyNumErrorsHandler } from './services/handler';
+import {
+    AddonModWorkshopAssessmentStrategyNumErrorsHandler,
+} from '@addons/mod/workshop/assessment/numerrors/services/handler-lazy';
 
 @NgModule({
-    declarations: [
-        AddonModWorkshopAssessmentStrategyNumErrorsComponent,
-    ],
     imports: [
         CoreSharedModule,
     ],
@@ -30,14 +28,14 @@ import { AddonModWorkshopAssessmentStrategyNumErrorsHandler } from './services/h
             provide: APP_INITIALIZER,
             multi: true,
             useValue: () => {
+                // TODO use async instances
+                // AddonWorkshopAssessmentStrategyDelegate.registerHandler(getAssessmentStrategyHandlerInstance());
+
                 AddonWorkshopAssessmentStrategyDelegate.registerHandler(
                     AddonModWorkshopAssessmentStrategyNumErrorsHandler.instance,
                 );
             },
         },
-    ],
-    exports: [
-        AddonModWorkshopAssessmentStrategyNumErrorsComponent,
     ],
 })
 export class AddonModWorkshopAssessmentStrategyNumErrorsModule {}

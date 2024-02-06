@@ -37,6 +37,9 @@ import {
     AddonNotificationsPreferencesProcessorFormatted,
 } from '@addons/notifications/services/notifications-helper';
 import { CoreNavigator } from '@services/navigator';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { Translate } from '@singletons';
 
 /**
  * Page that displays notifications settings.
@@ -58,12 +61,23 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
     loggedInOffLegacyMode = false;
 
     protected updateTimeout?: number;
+    protected logView: () => void;
 
     constructor() {
         this.canChangeSound = CoreLocalNotifications.canDisableSound();
 
         const currentSite = CoreSites.getRequiredCurrentSite();
         this.loggedInOffLegacyMode = !currentSite.isVersionGreaterEqualThan('4.0');
+
+        this.logView = CoreTime.once(async () => {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'core_message_get_user_notification_preferences',
+                name: Translate.instant('addon.notifications.notificationpreferences'),
+                data: { category: 'notifications' },
+                url: '/message/notificationpreferences.php',
+            });
+        });
     }
 
     /**
@@ -100,6 +114,8 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
             preferences.enableall = !preferences.disableall;
             this.preferences = AddonNotificationsHelper.formatPreferences(preferences);
             this.loadProcessor(currentProcessor);
+
+            this.logView();
         } catch (error) {
             CoreDomUtils.showErrorModal(error);
         } finally {
@@ -316,7 +332,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
     }
 
     /**
-     * Page destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         // If there is a pending action to update preferences, execute it right now.
@@ -331,7 +347,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
 /**
  * State in notification processor in notification preferences component with some calculated data.
  *
- * @deprecated 4.0
+ * @deprecatedonmoodle since 4.0
  */
 type ProcessorStateFormatted = AddonNotificationsPreferencesNotificationProcessorState & {
     updating?: boolean; // Calculated in the app. Whether the state is being updated.

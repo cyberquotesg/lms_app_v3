@@ -16,8 +16,13 @@ import { Injectable } from '@angular/core';
 
 import { CoreLogger } from '@singletons/logger';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreCourses, CoreEnrolledCourseData, CoreCourseSearchedData } from '@features/courses/services/courses';
-import { CoreCourse } from '@features/course/services/course';
+import {
+    CoreCourses,
+    CoreEnrolledCourseData,
+    CoreCourseSearchedData,
+    CoreCourseUserAdminOrNavOptionIndexed,
+} from '@features/courses/services/courses';
+import { CoreCourse, CoreCourseProvider } from '@features/course/services/course';
 import {
     CoreGrades,
     CoreGradesGradeItem,
@@ -38,8 +43,10 @@ import { CoreError } from '@classes/errors/error';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CoreAppProvider } from '@services/app';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
+import { CoreCourseAccess } from '@features/course/services/course-options-delegate';
 
 export const GRADES_PAGE_NAME = 'grades';
+export const GRADES_PARTICIPANTS_PAGE_NAME = 'participant-grades';
 
 /**
  * Service that provides some features regarding grades information.
@@ -58,7 +65,7 @@ export class CoreGradesHelperProvider {
      *
      * @param tableRow JSON object representing row of grades table data.
      * @returns Formatted row object.
-     * @deprecated since app 4.0
+     * @deprecated since 4.0.
      */
     protected async formatGradeRow(tableRow: CoreGradesTableRow): Promise<CoreGradesFormattedRow> {
         const row: CoreGradesFormattedRow = {
@@ -355,7 +362,7 @@ export class CoreGradesHelperProvider {
      * @param siteId Site ID. If not defined, current site.
      * @param ignoreCache True if it should ignore cached data (it will always fail in offline or server down).
      * @returns Promise to be resolved when the grades are retrieved.
-     * @deprecated since app 4.0
+     * @deprecated since 4.0.
      */
     async getGradeItem(
         courseId: number,
@@ -370,6 +377,7 @@ export class CoreGradesHelperProvider {
             throw new CoreError('Couldn\'t get grade item');
         }
 
+        // eslint-disable-next-line deprecation/deprecation
         return this.getGradesTableRow(grades, gradeId);
     }
 
@@ -458,7 +466,7 @@ export class CoreGradesHelperProvider {
      * @param table JSON object representing a table with data.
      * @param gradeId Grade Object identifier.
      * @returns Formatted HTML table.
-     * @deprecated since app 4.0
+     * @deprecated since 4.0.
      */
     async getGradesTableRow(table: CoreGradesTable, gradeId: number): Promise<CoreGradesFormattedRow | null> {
         if (table.tabledata) {
@@ -471,6 +479,7 @@ export class CoreGradesHelperProvider {
             );
 
             if (selectedRow) {
+                // eslint-disable-next-line deprecation/deprecation
                 return await this.formatGradeRow(selectedRow);
             }
         }
@@ -484,7 +493,7 @@ export class CoreGradesHelperProvider {
      * @param table JSON object representing a table with data.
      * @param moduleId Grade Object identifier.
      * @returns Formatted HTML table.
-     * @deprecated since app 4.0
+     * @deprecated since 4.0.
      */
     async getModuleGradesTableRows(table: CoreGradesTable, moduleId: number): Promise<CoreGradesFormattedRow[]> {
         if (!table.tabledata) {
@@ -506,6 +515,7 @@ export class CoreGradesHelperProvider {
             }
 
             return false;
+        // eslint-disable-next-line deprecation/deprecation
         }).map((row) => this.formatGradeRow(row)));
     }
 
@@ -693,7 +703,6 @@ export class CoreGradesHelperProvider {
                 row.itemmodule = modname;
                 row.iconAlt = CoreCourse.translateModuleName(row.itemmodule) || '';
                 row.image = await CoreCourseModuleDelegate.getModuleIconSrc(modname, modicon);
-                row.imageIsShape = await CoreCourseModuleDelegate.moduleIconIsShape(modname, modicon);
             }
         } else {
             if (row.rowspan && row.rowspan > 1) {
@@ -788,6 +797,30 @@ export class CoreGradesHelperProvider {
         return 'outcomeid' in item;
     }
 
+    /**
+     * Check whether to show the gradebook to this user.
+     *
+     * @param courseId The course ID.
+     * @param accessData Access type and data. Default, guest, ...
+     * @param navOptions Course navigation options for current user. See CoreCoursesProvider.getUserNavigationOptions.
+     * @returns Whether to show the gradebook to this user.
+     */
+    async showGradebook(
+        courseId: number,
+        accessData: CoreCourseAccess,
+        navOptions?: CoreCourseUserAdminOrNavOptionIndexed,
+    ): Promise<boolean> {
+        if (accessData && accessData.type == CoreCourseProvider.ACCESS_GUEST) {
+            return false; // Not enabled for guests.
+        }
+
+        if (navOptions && navOptions.grades !== undefined) {
+            return navOptions.grades;
+        }
+
+        return CoreGrades.isPluginEnabledForCourse(courseId);
+    }
+
 }
 
 export const CoreGradesHelper = makeSingleton(CoreGradesHelperProvider);
@@ -806,7 +839,6 @@ export type CoreGradesFormattedRowCommonData = {
     rowclass?: string;
     itemtype?: string;
     image?: string;
-    imageIsShape?: boolean;
     itemmodule?: string;
     iconAlt?: string;
     rowspan?: number;

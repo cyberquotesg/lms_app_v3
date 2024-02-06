@@ -14,7 +14,7 @@
 
 import { Component, Input, OnInit } from '@angular/core';
 
-import { CoreLang } from '@services/lang';
+import { CoreLang, CoreLangFormat } from '@services/lang';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CorePath } from '@singletons/path';
@@ -32,6 +32,7 @@ export class CoreRecaptchaComponent implements OnInit {
     @Input() publicKey?: string; // The site public key.
     @Input() modelValueName = 'recaptcharesponse'; // Name of the model property where to store the response.
     @Input() siteUrl = ''; // The site URL. If not defined, current site.
+    @Input() showRequiredError = false; // Whether to display the required error if recaptcha hasn't been answered.
 
     expired = false;
 
@@ -52,7 +53,7 @@ export class CoreRecaptchaComponent implements OnInit {
      * Initialize the lang property.
      */
     protected async initLang(): Promise<void> {
-        this.lang = await CoreLang.getCurrentLanguage();
+        this.lang = await CoreLang.getCurrentLanguage(CoreLangFormat.LMS);
     }
 
     /**

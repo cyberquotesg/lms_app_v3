@@ -1,8 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="43001" id="com.moodle.moodlemobile" ios-CFBundleVersion="4.3.0.1" version="4.3.0" versionCode="43001" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Moodle</name>
-    <description>Moodle official app</description>
-    <author email="mobile@moodle.com" href="http://moodle.com">Moodle Mobile team</author>
+<widget
+    id="com.moodle.cyberquote"
+    versionCode="33000"
+    android-versionCode="33000"
+    ios-CFBundleVersion="3.3.000"
+    version="3.3.000"
+    xmlns="http://www.w3.org/ns/widgets"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:cdv="http://cordova.apache.org/ns/1.0"
+>
+    <name>CQ Academy</name>
+    <description>Official CyberQuote App</description>
+    <author email="rachmadherdiyanto@cyberquote.co.id" href="https://lms.cyberquote.com">CyberQuote</author>
     <content src="index.html" />
     <access origin="*" />
     <access launch-external="yes" origin="tel:*" />
@@ -37,8 +46,15 @@
     <preference name="LoadUrlTimeoutValue" value="60000" />
     <preference name="load-url-timeout" value="60000" />
     <preference name="AutoHideSplashScreen" value="false" />
-    <preference name="android-minSdkVersion" value="22" />
+    <preference name="SplashScreen" value="screen" />
+    <preference name="SplashScreenDelay" value="15000" />
+    <preference name="SplashMaintainAspectRatio" value="true" />
+    <preference name="SplashShowOnlyFirstTime" value="false" />
+    <preference name="android-minSdkVersion" value="24" />
     <preference name="android-targetSdkVersion" value="33" />
+    <preference name="GradleVersion" value="7.6" />
+    <preference name="AndroidGradlePluginVersion" value="7.4.2" />
+    <preference name="GradlePluginKotlinVersion" value="1.7.21" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
     <preference name="AndroidInsecureFileModeEnabled" value="true" />
     <preference name="CustomURLSchemePluginClearsAndroidIntent" value="true" />
@@ -220,7 +236,7 @@
             <true />
         </edit-config>
         <edit-config file="*-Info.plist" mode="merge" target="CFBundleShortVersionString">
-            <string>4.3.0</string>
+            <string>3.3.000</string>
         </edit-config>
         <edit-config file="*-Info.plist" mode="overwrite" target="CFBundleLocalizations">
             <array>

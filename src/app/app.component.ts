@@ -36,6 +36,12 @@ import { CoreUrl } from '@singletons/url';
 import { CoreLogger } from '@singletons/logger';
 import { CorePromisedValue } from '@classes/promised-value';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { Zoom } from '@awesome-cordova-plugins/zoom';
+import Color from 'color';
+import { AddonNotifications } from '@addons/notifications/services/notifications';
+
 const MOODLE_SITE_URL_PREFIX = 'url-';
 const MOODLE_VERSION_PREFIX = 'version-';
 const MOODLEAPP_VERSION_PREFIX = 'moodleapp-';
@@ -49,6 +55,15 @@ export class AppComponent implements OnInit, AfterViewInit {
     @ViewChild(IonRouterOutlet) outlet?: IonRouterOutlet;
 
     protected logger = CoreLogger.getInstance('AppComponent');
+
+    // by rachmad
+    notificationAnnouncementCountAgent: any;
+
+    // by rachmad
+    constructor(protected renderer: Renderer2, protected CH: CqHelper)
+    {
+        this.CH.zoom = Zoom;
+    }
 
     /**
      * @inheritdoc

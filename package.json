@@ -73,6 +73,7 @@
     "@awesome-cordova-plugins/sqlite": "^6.6.0",
     "@awesome-cordova-plugins/status-bar": "^6.6.0",
     "@awesome-cordova-plugins/web-intent": "^6.6.0",
+    "@awesome-cordova-plugins/zoom": "^6.6.0",
     "@ionic/angular": "^7.6.5",
     "@ionic/cordova-builders": "^10.1.1",
     "@moodlehq/cordova-plugin-advanced-http": "3.3.1-moodle.1",
@@ -154,6 +155,7 @@
     "check-es-compat": "3.2.0",
     "concurrently": "^8.2.0",
     "cordova-plugin-moodleapp": "file:cordova-plugin-moodleapp",
+    "cordova.plugin.zoom": "github:cyberquotesg/zoom-sdk-ionic#cyberquote",
     "cross-env": "^7.0.3",
     "eslint": "^8.0.0",
     "eslint-plugin-deprecation": "^2.0.0",
@@ -235,6 +237,7 @@
       "cordova-plugin-wkuserscript": {},
       "cordova-plugin-wkwebview-cookies": {},
       "cordova-sqlite-storage": {},
+      "cordova.plugin.zoom": {},
       "nl.kingsquare.cordova.background-audio": {}
     }
   }

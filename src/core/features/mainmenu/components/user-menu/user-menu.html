@@ -25,7 +25,10 @@
                     <p class="core-usermenu-sitename">
                         <core-format-text [text]="siteName" contextLevel="system" [contextInstanceId]="0" [wsNotFiltered]="true" />
                     </p>
+
+                    <!-- by rachmad -s->
                     <a [href]="siteUrl" core-link auto-login="yes" class="core-usermenu-siteurl">{{ siteUrl }}</a>
+                    <!-s- / by rachmad -->
                 </ion-label>
             </ion-item>
             <!-- Site info without URL and not clickable. -->
@@ -100,6 +103,7 @@
                 </ion-label>
             </ion-item>
 
+            <!-- by rachmad -s->
             <ion-item *ngIf="displayContactSupport" button (click)="contactSupport($event)"
                 [attr.aria-label]="'core.user.support' | translate" [detail]="true" detailIcon="open-outline"
                 class="core-user-menu-support">
@@ -108,16 +112,19 @@
                     <p class="item-heading">{{ 'core.user.support' | translate }}</p>
                 </ion-label>
             </ion-item>
+            <!-s- / by rachmad -->
         </ion-list>
     </core-loading>
 </ion-content>
 <ion-footer>
+    <!-- by rachmad -s->
     <ion-item *ngIf="displaySwitchAccount" button lines="full" (click)="switchAccounts($event)" [detail]="true" class="ion-text-wrap">
         <ion-icon name="fas-right-left" slot="start" aria-hidden="true" />
         <ion-label>
             <p class="item-heading">{{ 'core.mainmenu.switchaccount' | translate }}</p>
         </ion-label>
     </ion-item>
+    <!-s- / by rachmad -->
     <div class="ion-padding">
         <ion-button (click)="logout($event)" expand="block" color="danger" [attr.aria-label]="'core.mainmenu.logout' | translate"
             class="ion-text-wrap">

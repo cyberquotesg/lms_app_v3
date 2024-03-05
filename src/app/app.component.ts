@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+// by rachmad
+// import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, Renderer2 } from '@angular/core';
+
 import { IonRouterOutlet } from '@ionic/angular';
 import { BackButtonEvent } from '@ionic/core';
 
@@ -28,6 +31,13 @@ import { CoreLogger } from '@singletons/logger';
 import { CorePromisedValue } from '@classes/promised-value';
 import { register } from 'swiper/element/bundle';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { Zoom } from '@awesome-cordova-plugins/zoom';
+import { CoreEvents } from '@singletons/events';
+import Color from 'color';
+import { AddonNotifications } from '@addons/notifications/services/notifications';
+
 register();
 
 @Component({
@@ -39,6 +49,13 @@ export class AppComponent implements OnInit, AfterViewInit {
     @ViewChild(IonRouterOutlet) outlet?: IonRouterOutlet;
 
     protected logger = CoreLogger.getInstance('AppComponent');
+
+    // by rachmad
+    notificationAnnouncementCountAgent: any;
+    constructor(protected renderer: Renderer2, protected CH: CqHelper)
+    {
+        this.CH.zoom = Zoom;
+    }
 
     /**
      * @inheritdoc
@@ -97,6 +114,21 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         // @todo Pause Youtube videos in Android when app is put in background or screen is locked?
         // See: https://github.com/moodlehq/moodleapp/blob/ionic3/src/app/app.component.ts#L312
+
+        // by rachmad
+        CoreEvents.on(CoreEvents.USER_NO_LOGIN, (data) => {
+            this.ifLoggedOut();
+        });
+        CoreEvents.on(CoreEvents.SESSION_EXPIRED, (data) => {
+            this.ifLoggedOut();
+        });
+        CoreEvents.on(CoreEvents.LOGOUT, async () => {
+            this.ifLoggedOut();
+        });
+        CoreEvents.on(CoreEvents.LOGIN, async (data) => {
+            this.ifLoggedOut();
+            this.ifLoggedIn();
+        });
     }
 
     /**

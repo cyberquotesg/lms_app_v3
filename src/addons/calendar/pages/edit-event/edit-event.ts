@@ -14,7 +14,6 @@
 
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormControl, FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { IonRefresher } from '@ionic/angular';
 import { CoreEvents } from '@singletons/events';
 import { CoreGroup, CoreGroups } from '@services/groups';
 import { CoreSites } from '@services/sites';
@@ -35,7 +34,7 @@ import {
 import { AddonCalendarOffline } from '../../services/calendar-offline';
 import { AddonCalendarEventTypeOption, AddonCalendarHelper } from '../../services/calendar-helper';
 import { AddonCalendarSync, AddonCalendarSyncProvider } from '../../services/calendar-sync';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { Translate } from '@singletons';
 import { CoreFilterHelper } from '@features/filter/services/filter-helper';
 import { AddonCalendarOfflineEventDBRecord } from '../../services/database/calendar-offline';
@@ -46,7 +45,6 @@ import { CoreForms } from '@singletons/form';
 import { CoreReminders, CoreRemindersService, CoreRemindersUnits } from '@features/reminders/services/reminders';
 import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
 import moment from 'moment-timezone';
-import { CoreAppProvider } from '@services/app';
 
 /**
  * Page that displays a form to create/edit an event.
@@ -62,7 +60,6 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
     @ViewChild('editEventForm') formElement!: ElementRef;
 
     title = 'addon.calendar.newevent';
-    dateFormat: string;
     component = AddonCalendarProvider.COMPONENT;
     loaded = false;
     hasOffline = false;
@@ -72,20 +69,18 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
     groups: CoreGroup[] = [];
     loadingGroups = false;
     courseGroupSet = false;
-    errors: Record<string, string>;
     error = false;
     eventRepeatId?: number;
     otherEventsCount = 0;
     eventId?: number;
     maxDate: string;
     minDate: string;
-    displayTimezone?: string;
 
     // Form variables.
     form: FormGroup;
-    typeControl: FormControl;
-    groupControl: FormControl;
-    descriptionControl: FormControl;
+    typeControl: FormControl<AddonCalendarEventType | null>;
+    groupControl: FormControl<number | null>;
+    descriptionControl: FormControl<string>;
 
     // Reminders.
     remindersEnabled = false;
@@ -104,21 +99,13 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
     ) {
         this.currentSite = CoreSites.getRequiredCurrentSite();
         this.remindersEnabled = CoreReminders.isEnabled();
-        this.errors = {
-            required: Translate.instant('core.required'),
-        };
-
-        // Calculate format to use. ion-datetime doesn't support escaping characters ([]), so we remove them.
-        this.dateFormat = CoreTimeUtils.convertPHPToMoment(Translate.instant('core.strftimedatetimeshort'))
-            .replace(/[[\]]/g, '');
-        this.displayTimezone = CoreAppProvider.getForcedTimezone();
 
         this.form = new FormGroup({});
 
         // Initialize form variables.
-        this.typeControl = this.fb.control('', Validators.required);
-        this.groupControl = this.fb.control('');
-        this.descriptionControl = this.fb.control('');
+        this.typeControl = this.fb.control(null, Validators.required);
+        this.groupControl = this.fb.control(null);
+        this.descriptionControl = this.fb.control('', { nonNullable: true });
         this.form.addControl('name', this.fb.control('', Validators.required));
         this.form.addControl('eventtype', this.typeControl);
         this.form.addControl('categoryid', this.fb.control(''));
@@ -335,11 +322,11 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
 
         this.form.controls.name.setValue(event.name);
         this.form.controls.timestart.setValue(CoreTimeUtils.toDatetimeFormat(event.timestart * 1000));
-        this.form.controls.eventtype.setValue(event.eventtype);
+        this.typeControl.setValue(event.eventtype as AddonCalendarEventType);
         this.form.controls.categoryid.setValue(event.categoryid || '');
         this.form.controls.courseid.setValue(courseId || '');
         this.form.controls.groupcourseid.setValue(courseId || '');
-        this.form.controls.groupid.setValue(event.groupid || '');
+        this.groupControl.setValue(event.groupid || null);
         this.form.controls.description.setValue(event.description);
         this.form.controls.location.setValue(event.location);
 
@@ -383,7 +370,7 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
      *
      * @param refresher Refresher.
      */
-    refreshData(refresher?: IonRefresher): void {
+    refreshData(refresher?: HTMLIonRefresherElement): void {
         const promises = [
             AddonCalendar.invalidateAccessInformation(this.courseId),
             AddonCalendar.invalidateAllowedEventTypes(this.courseId),
@@ -423,7 +410,7 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
         try {
             await this.loadGroups(courseId);
 
-            this.groupControl.setValue('');
+            this.groupControl.setValue(null);
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error getting data.');
         }
@@ -563,7 +550,7 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
      *
      * @param event Event.
      */
-    protected returnToList(event?: AddonCalendarEvent | AddonCalendarOfflineEventDBRecord): void {
+    protected returnToList(event: AddonCalendarEvent | AddonCalendarOfflineEventDBRecord): void {
         // Unblock the sync because the view will be destroyed and the sync process could be triggered before ngOnDestroy.
         this.unblockSync();
 
@@ -575,48 +562,18 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
                 this.currentSite.getId(),
             );
         } else {
-            if (event) {
-                CoreEvents.trigger(
-                    AddonCalendarProvider.NEW_EVENT_EVENT,
-                    {
-                        eventId: event.id,
-                        oldEventId: this.eventId,
-                    },
-                    this.currentSite.getId(),
-                );
-            } else {
-                CoreEvents.trigger(AddonCalendarProvider.NEW_EVENT_DISCARDED_EVENT, {}, this.currentSite.getId());
-            }
+            CoreEvents.trigger(
+                AddonCalendarProvider.NEW_EVENT_EVENT,
+                {
+                    eventId: event.id,
+                    oldEventId: this.eventId,
+                },
+                this.currentSite.getId(),
+            );
         }
 
         this.originalData = undefined; // Avoid asking for confirmation.
         CoreNavigator.back();
-    }
-
-    /**
-     * Discard an offline saved discussion.
-     */
-    async discard(): Promise<void> {
-        if (!this.eventId) {
-            return;
-        }
-
-        try {
-            await CoreDomUtils.showConfirm(Translate.instant('core.areyousure'));
-
-            try {
-                await AddonCalendarOffline.deleteEvent(this.eventId);
-
-                CoreForms.triggerFormCancelledEvent(this.formElement, this.currentSite.getId());
-
-                this.returnToList();
-            } catch {
-                // Shouldn't happen.
-                CoreDomUtils.showErrorModal('Error discarding event.');
-            }
-        } catch {
-            // Ignore errors
-        }
     }
 
     /**
@@ -676,7 +633,7 @@ export class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
      */
     async addReminder(): Promise<void> {
         const formData = this.form.value;
-        const eventTime = CoreTimeUtils.convertToTimestamp(formData.timestart, true);
+        const eventTime = moment(formData.timestart).unix();
 
         const reminderTime = await CoreDomUtils.openPopover<{timeBefore: number}>({
             component: CoreRemindersSetReminderMenuComponent,

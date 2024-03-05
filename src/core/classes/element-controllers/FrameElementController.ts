@@ -14,7 +14,10 @@
 
 import { ElementController } from './ElementController';
 
-export type FrameElement = HTMLIFrameElement | HTMLFrameElement | HTMLObjectElement | HTMLEmbedElement;
+/**
+ * Possible types of frame elements.
+ */
+export type FrameElement = HTMLIFrameElement | HTMLObjectElement | HTMLEmbedElement;
 
 /**
  * Wrapper class to control the interactivity of a frame element.

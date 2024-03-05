@@ -15,7 +15,7 @@
 import { CoreConstants } from '@/core/constants';
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreFilepool } from '@services/filepool';
@@ -31,6 +31,7 @@ import { CoreEvents } from '@singletons/events';
 import { CorePath } from '@singletons/path';
 import { AddonModScormOffline } from './scorm-offline';
 import { AddonModScormAutoSyncEventData, AddonModScormSyncProvider } from './scorm-sync';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 // Private constants.
 const VALID_STATUSES = ['notattempted', 'passed', 'completed', 'failed', 'incomplete', 'browsed', 'suspend'];
@@ -119,17 +120,22 @@ export class AddonModScormProvider {
 
         switch (scorm.whatgrade) {
             case AddonModScormProvider.FIRSTATTEMPT:
-                return onlineAttempts[1] ? onlineAttempts[1].grade : -1;
+                return onlineAttempts[1] ? onlineAttempts[1].score : -1;
 
             case AddonModScormProvider.LASTATTEMPT: {
-                // Search the last attempt number.
-                let max = 0;
-                Object.keys(onlineAttempts).forEach((attemptNumber) => {
-                    max = Math.max(Number(attemptNumber), max);
-                });
+                // Search the last completed attempt number.
+                let lastCompleted = 0;
+                for (const attemptNumber in onlineAttempts) {
+                    if (onlineAttempts[attemptNumber].hasCompletedPassedSCO) {
+                        lastCompleted = Math.max(onlineAttempts[attemptNumber].num, lastCompleted);
+                    }
+                }
 
-                if (max > 0) {
-                    return onlineAttempts[max].grade;
+                if (lastCompleted > 0) {
+                    return onlineAttempts[lastCompleted].score;
+                } else if (onlineAttempts[1]) {
+                    // If no completed attempt found, use the first attempt for consistency with LMS.
+                    return onlineAttempts[1].score;
                 }
 
                 return -1;
@@ -139,7 +145,7 @@ export class AddonModScormProvider {
                 // Search the highest grade.
                 let grade = 0;
                 for (const attemptNumber in onlineAttempts) {
-                    grade = Math.max(onlineAttempts[attemptNumber].grade, grade);
+                    grade = Math.max(onlineAttempts[attemptNumber].score, grade);
                 }
 
                 return grade;
@@ -151,7 +157,7 @@ export class AddonModScormProvider {
                 let total = 0;
 
                 for (const attemptNumber in onlineAttempts) {
-                    sumGrades += onlineAttempts[attemptNumber].grade;
+                    sumGrades += onlineAttempts[attemptNumber].score;
                     total++;
                 }
 
@@ -331,7 +337,7 @@ export class AddonModScormProvider {
 
                 const re = /^(\d+)\*\{(.+)\}$/; // Sets like 3*{S34, S36, S37, S39}.
                 const reOther = /^(.+)(=|<>)(.+)$/; // Other symbols.
-                let matches = element.match(re);
+                const matches = element.match(re);
 
                 if (matches) {
                     const repeat = Number(matches[1]);
@@ -357,18 +363,18 @@ export class AddonModScormProvider {
                     element = '!';
                 } else if (reOther.test(element)) {
                     // Other symbols = | <> .
-                    matches = element.match(reOther) ?? [];
-                    element = matches[1]?.trim();
+                    const otherMatches = element.match(reOther) ?? [];
+                    element = otherMatches[1]?.trim();
 
                     if (trackData[element] !== undefined) {
-                        let value = matches[3].trim().replace(/('|")/gi, '');
+                        let value = otherMatches[3].trim().replace(/('|")/gi, '');
                         let oper: string;
 
                         if (STATUSES[value] !== undefined) {
                             value = STATUSES[value];
                         }
 
-                        if (matches[2] == '<>') {
+                        if (otherMatches[2] == '<>') {
                             oper = '!=';
                         } else {
                             oper = '==';
@@ -589,8 +595,8 @@ export class AddonModScormProvider {
     }
 
     /**
-     * Get the grade for a certain SCORM and attempt.
-     * Based on Moodle's scorm_grade_user_attempt.
+     * Get the grade data for a certain attempt.
+     * Mostly based on Moodle's scorm_grade_user_attempt.
      *
      * @param scorm SCORM.
      * @param attempt Attempt number.
@@ -598,7 +604,12 @@ export class AddonModScormProvider {
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved with the grade. If the attempt hasn't reported grade/completion, it will be -1.
      */
-    async getAttemptGrade(scorm: AddonModScormScorm, attempt: number, offline?: boolean, siteId?: string): Promise<number> {
+    async getAttemptGrade(
+        scorm: AddonModScormScorm,
+        attempt: number,
+        offline?: boolean,
+        siteId?: string,
+    ): Promise<AddonModScormAttemptGrade> {
         const attemptScore = {
             scos: 0,
             values: 0,
@@ -654,7 +665,11 @@ export class AddonModScormProvider {
                 score = attemptScore.max; // Remote Learner GRADEHIGHEST is default.
         }
 
-        return score;
+        return {
+            num: attempt,
+            score,
+            hasCompletedPassedSCO: attemptScore.scos > 0,
+        };
     }
 
     /**
@@ -1124,6 +1139,14 @@ export class AddonModScormProvider {
             currentScorm.warningMessage = warning?.message;
         }
 
+        if (response.options) {
+            const scormOptions = CoreUtils.objectToKeyValueMap(response.options, 'name', 'value');
+
+            if (scormOptions.scormstandard) {
+                currentScorm.scormStandard = Number(scormOptions.scormstandard);
+            }
+        }
+
         currentScorm.moduleurl = options.moduleUrl;
 
         return currentScorm;
@@ -1420,24 +1443,20 @@ export class AddonModScormProvider {
      *
      * @param scormId SCORM ID.
      * @param scoId SCO ID.
-     * @param name Name of the SCORM.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logLaunchSco(scormId: number, scoId: number, name?: string, siteId?: string): Promise<void> {
+    logLaunchSco(scormId: number, scoId: number, siteId?: string): Promise<void> {
         const params: AddonModScormLaunchScoWSParams = {
             scormid: scormId,
             scoid: scoId,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_scorm_launch_sco',
             params,
             AddonModScormProvider.COMPONENT,
             scormId,
-            name,
-            'scorm',
-            { scoid: scoId },
             siteId,
         );
     }
@@ -1446,23 +1465,19 @@ export class AddonModScormProvider {
      * Report a SCORM as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the SCORM.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logView(id: number, name?: string, siteId?: string): Promise<void> {
+    logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModScormViewScormWSParams = {
             scormid: id,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_scorm_view_scorm',
             params,
             AddonModScormProvider.COMPONENT,
             id,
-            name,
-            'scorm',
-            {},
             siteId,
         );
     }
@@ -1873,8 +1888,17 @@ export type AddonModScormGetScormsByCoursesWSParams = {
  * Data returned by mod_scorm_get_scorms_by_courses WS.
  */
 export type AddonModScormGetScormsByCoursesWSResponse = {
+    options?: AddonModScormOptions[]; // @since v4.3. Scorm options
     scorms: AddonModScormScormWSData[];
     warnings?: CoreWSExternalWarning[];
+};
+
+/**
+ * Scorm options returned by mod_scorm_get_scorms_by_courses WS.
+ */
+export type AddonModScormOptions = {
+    name: string;
+    value: string;
 };
 
 /**
@@ -1939,6 +1963,7 @@ export type AddonModScormScormWSData = {
 export type AddonModScormScorm = AddonModScormScormWSData & {
     warningMessage?: string;
     moduleurl?: string;
+    scormStandard?: number;
 };
 
 /**
@@ -2042,11 +2067,12 @@ export type AddonModScormOrganization = {
 };
 
 /**
- * Grade for an attempt.
+ * Grade data for an attempt.
  */
 export type AddonModScormAttemptGrade = {
     num: number;
-    grade: number;
+    score: number;
+    hasCompletedPassedSCO: boolean; // Whether it has at least 1 SCO with status completed or passed.
 };
 
 /**

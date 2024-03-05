@@ -15,7 +15,7 @@
 import { Injectable } from '@angular/core';
 
 import { CoreDB } from '@services/db';
-import { CoreEvents } from '@singletons/events';
+import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { SQLiteDB, SQLiteDBTableSchema } from '@classes/sqlitedb';
 
 import { makeSingleton, Keyboard, StatusBar } from '@singletons';
@@ -31,6 +31,7 @@ import { CorePromisedValue } from '@classes/promised-value';
 import { Subscription } from 'rxjs';
 import { CorePlatform } from '@services/platform';
 import { CoreNetwork, CoreNetworkConnection } from '@services/network';
+import { CoreMainMenuProvider } from '@features/mainmenu/services/mainmenu';
 
 /**
  * Factory to provide some global functionalities, like access to the global app database.
@@ -56,18 +57,24 @@ export class CoreAppProvider {
     protected keyboardClosing = false;
     protected redirect?: CoreRedirectData;
     protected schemaVersionsTable = asyncInstance<CoreDatabaseTable<SchemaVersionsDBEntry, 'name'>>();
+    protected mainMenuListener?: CoreEventObserver;
 
     constructor() {
         this.logger = CoreLogger.getInstance('CoreAppProvider');
+        if (CorePlatform.isAndroid()) {
+            this.mainMenuListener =
+                CoreEvents.on(CoreMainMenuProvider.MAIN_MENU_VISIBILITY_UPDATED, () => this.setAndroidNavigationBarColor());
+        }
     }
 
     /**
      * Returns whether the user agent is controlled by automation. I.e. Behat testing.
      *
+     * @deprecated since 4.4. Use CorePlatform.isAutomated() instead.
      * @returns True if the user agent is controlled by automation, false otherwise.
      */
     static isAutomated(): boolean {
-        return !!navigator.webdriver;
+        return CorePlatform.isAutomated();
     }
 
     /**
@@ -76,7 +83,7 @@ export class CoreAppProvider {
      * @returns Timezone. Undefined to use the user's timezone.
      */
     static getForcedTimezone(): string | undefined {
-        if (CoreAppProvider.isAutomated()) {
+        if (CorePlatform.isAutomated()) {
             // Use the same timezone forced for LMS in tests.
             return 'Australia/Perth';
         }
@@ -184,23 +191,13 @@ export class CoreAppProvider {
     }
 
     /**
-     * Get an ID for a main menu.
-     *
-     * @returns Main menu ID.
-     * @deprecated since 3.9.5. No longer supported.
-     */
-    getMainMenuId(): number {
-        return 0;
-    }
-
-    /**
      * Get app store URL.
      *
      * @param storesConfig Config params to send the user to the right place.
      * @returns Store URL.
      */
     getAppStoreUrl(storesConfig: CoreStoreConfig): string | undefined {
-        if (this.isIOS() && storesConfig.ios) {
+        if (CorePlatform.isIOS() && storesConfig.ios) {
             return 'itms-apps://itunes.apple.com/app/' + storesConfig.ios;
         }
 
@@ -226,16 +223,6 @@ export class CoreAppProvider {
     }
 
     /**
-     * Checks if the app is running in a 64 bits desktop environment (not browser).
-     *
-     * @returns false.
-     * @deprecated since 3.9.5 Desktop support has been removed.
-     */
-    is64Bits(): boolean {
-        return false;
-    }
-
-    /**
      * Checks if the app is running in an Android mobile or tablet device.
      *
      * @returns Whether the app is running in an Android mobile or tablet device.
@@ -243,16 +230,6 @@ export class CoreAppProvider {
      */
     isAndroid(): boolean {
         return CorePlatform.isAndroid();
-    }
-
-    /**
-     * Checks if the app is running in a desktop environment (not browser).
-     *
-     * @returns false.
-     * @deprecated since 3.9.5 Desktop support has been removed.
-     */
-    isDesktop(): boolean {
-        return false;
     }
 
     /**
@@ -293,40 +270,10 @@ export class CoreAppProvider {
     }
 
     /**
-     * Check if the app is running in a Linux environment.
-     *
-     * @returns false.
-     * @deprecated since 3.9.5 Desktop support has been removed.
-     */
-    isLinux(): boolean {
-        return false;
-    }
-
-    /**
-     * Check if the app is running in a Mac OS environment.
-     *
-     * @returns false.
-     * @deprecated since 3.9.5 Desktop support has been removed.
-     */
-    isMac(): boolean {
-        return false;
-    }
-
-    /**
-     * Check if the main menu is open.
-     *
-     * @returns Whether the main menu is open.
-     * @deprecated since 3.9.5. No longer supported.
-     */
-    isMainMenuOpen(): boolean {
-        return false;
-    }
-
-    /**
      * Checks if the app is running in a mobile or tablet device (Cordova).
      *
      * @returns Whether the app is running in a mobile or tablet device.
-     * @deprecated since 4.1. use CorePlatform instead.
+     * @deprecated since 4.1. Use CorePlatform instead.
      */
     isMobile(): boolean {
         return CorePlatform.isMobile();
@@ -345,7 +292,7 @@ export class CoreAppProvider {
      * Returns whether we are online.
      *
      * @returns Whether the app is online.
-     * @deprecated since 4.1.0. Use CoreNetwork instead.
+     * @deprecated since 4.1. Use CoreNetwork instead.
      */
     isOnline(): boolean {
         return CoreNetwork.isOnline();
@@ -355,7 +302,7 @@ export class CoreAppProvider {
      * Check if device uses a limited connection.
      *
      * @returns Whether the device uses a limited connection.
-     * @deprecated since 4.1.0. Use CoreNetwork instead.
+     * @deprecated since 4.1. Use CoreNetwork instead.
      */
     isNetworkAccessLimited(): boolean {
         return CoreNetwork.isNetworkAccessLimited();
@@ -365,20 +312,10 @@ export class CoreAppProvider {
      * Check if device uses a wifi connection.
      *
      * @returns Whether the device uses a wifi connection.
-     * @deprecated since 4.1.0. Use CoreNetwork instead.
+     * @deprecated since 4.1. Use CoreNetwork instead.
      */
     isWifi(): boolean {
         return CoreNetwork.isWifi();
-    }
-
-    /**
-     * Check if the app is running in a Windows environment.
-     *
-     * @returns false.
-     * @deprecated since 3.9.5 Desktop support has been removed.
-     */
-    isWindows(): boolean {
-        return false;
     }
 
     /**
@@ -552,6 +489,11 @@ export class CoreAppProvider {
 
         this.forgetRedirect();
 
+        if (redirect && (!redirect.timemodified || Date.now() - redirect.timemodified > 300000)) {
+            // Redirect data is only valid for 5 minutes, discard it.
+            return null;
+        }
+
         return redirect;
     }
 
@@ -604,18 +546,11 @@ export class CoreAppProvider {
     }
 
     /**
-     * Register a back button action.
-     * This function is deprecated and no longer works. You should now use Ionic events directly, please see:
-     * https://ionicframework.com/docs/developing/hardware-back-button
-     *
-     * @param callback Called when the back button is pressed.
-     * @param priority Priority.
-     * @returns A function that, when called, will unregister the back button action.
-     * @deprecated since 3.9.5
+     * Set System UI Colors.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    registerBackButtonAction(callback: () => boolean, priority = 0): () => boolean {
-        return () => false;
+    setSystemUIColors(): void {
+        this.setStatusBarColor();
+        this.setAndroidNavigationBarColor();
     }
 
     /**
@@ -635,32 +570,14 @@ export class CoreAppProvider {
 
         this.logger.debug(`Set status bar color ${color}`);
 
-        const useLightText = CoreColors.isWhiteContrastingBetter(color);
-
-        // styleDefault will use white text on iOS when darkmode is on. Force the background to black.
-        if (this.isIOS() && !useLightText && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            StatusBar.backgroundColorByHexString('#000000');
-            StatusBar.styleLightContent();
-        } else {
-            StatusBar.backgroundColorByHexString(color);
-            useLightText ? StatusBar.styleLightContent() : StatusBar.styleDefault();
-        }
-    }
-
-    /**
-     * Reset StatusBar color if any was set.
-     *
-     * @deprecated since 3.9.5. Use setStatusBarColor passing the color of the new statusbar color, or no color to reset.
-     */
-    resetStatusBarColor(): void {
-        this.setStatusBarColor();
+        StatusBar.backgroundColorByHexString(color);
     }
 
     /**
      * Set value of forceOffline flag. If true, the app will think the device is offline.
      *
      * @param value Value to set.
-     * @deprecated since 4.1.0. Use CoreNetwork.setForceConnectionMode instead.
+     * @deprecated since 4.1. Use CoreNetwork.setForceConnectionMode instead.
      */
     setForceOffline(value: boolean): void {
         CoreNetwork.setForceConnectionMode(value ? CoreNetworkConnection.NONE : CoreNetworkConnection.WIFI);
@@ -682,6 +599,27 @@ export class CoreAppProvider {
             // No installed version yet.
             return 0;
         }
+    }
+
+    /**
+     * Set NavigationBar color for Android
+     *
+     * @param color RGB color to use as background. If not set the css variable will be read.
+     */
+    protected setAndroidNavigationBarColor(color?: string): void {
+        if (!CorePlatform.isAndroid()) {
+            return;
+        }
+
+        if (!color) {
+            // Get the default color to change it.
+            color = CoreColors.getBottomPageBackgroundColor();
+        }
+
+        this.logger.debug(`Set navigation bar color ${color}`);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (<any> window).StatusBar.navigationBackgroundColorByHexString(color);
     }
 
 }

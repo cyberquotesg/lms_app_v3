@@ -17,14 +17,13 @@ import {
     Injector,
     Component,
     NgModule,
-    Compiler,
-    ComponentFactory,
     ComponentRef,
-    NgModuleRef,
     NO_ERRORS_SCHEMA,
     Type,
+    Provider,
+    createNgModule,
+    ViewContainerRef,
 } from '@angular/core';
-import { JitCompilerFactory } from '@angular/platform-browser-dynamic';
 import {
     ActionSheetController,
     AlertController,
@@ -34,6 +33,7 @@ import {
     ToastController,
 } from '@ionic/angular';
 import { TranslateService } from '@ngx-translate/core';
+import { TranslatePipeForCompile } from '../pipes/translate';
 
 import { CoreLogger } from '@singletons/logger';
 import { CoreEvents } from '@singletons/events';
@@ -42,11 +42,12 @@ import { makeSingleton } from '@singletons';
 // Import core services.
 import { CORE_SERVICES } from '@/core/core.module';
 import { CORE_BLOCK_SERVICES } from '@features/block/block.module';
-import { CORE_COMMENTS_SERVICES } from '@features/comments/comments.module';
+import { getCommentsServices } from '@features/comments/comments.module';
 import { CORE_CONTENTLINKS_SERVICES } from '@features/contentlinks/contentlinks.module';
 import { CORE_COURSE_SERVICES } from '@features/course/course.module';
 import { CORE_COURSES_SERVICES } from '@features/courses/courses.module';
 import { CORE_EDITOR_SERVICES } from '@features/editor/editor.module';
+import { CORE_ENROL_SERVICES } from '@features/enrol/enrol.module';
 import { CORE_NATIVE_SERVICES } from '@features/native/native.module';
 import { CORE_FILEUPLOADER_SERVICES } from '@features/fileuploader/fileuploader.module';
 import { CORE_FILTER_SERVICES } from '@features/filter/filter.module';
@@ -61,7 +62,7 @@ import { CORE_RATING_SERVICES } from '@features/rating/rating.module';
 import { CORE_SEARCH_SERVICES } from '@features/search/search.module';
 import { CORE_SETTINGS_SERVICES } from '@features/settings/settings.module';
 import { CORE_SITEHOME_SERVICES } from '@features/sitehome/sitehome.module';
-import { CORE_TAG_SERVICES } from '@features/tag/tag.module';
+import { getTagServices } from '@features/tag/tag.module';
 import { CORE_STYLE_SERVICES } from '@features/styles/styles.module';
 import { CORE_USER_SERVICES } from '@features/user/user.module';
 import { CORE_XAPI_SERVICES } from '@features/xapi/xapi.module';
@@ -125,7 +126,7 @@ import { CoreSitePluginsAssignSubmissionComponent } from '@features/siteplugins/
 // Import addon providers. Do not import database module because it causes circular dependencies.
 import { ADDON_BADGES_SERVICES } from '@addons/badges/badges.module';
 import { ADDON_CALENDAR_SERVICES } from '@addons/calendar/calendar.module';
-import { ADDON_COURSECOMPLETION_SERVICES } from '@addons/coursecompletion/coursecompletion.module';
+import { getCourseCompletionServices } from '@addons/coursecompletion/coursecompletion.module';
 import { ADDON_COMPETENCY_SERVICES } from '@addons/competency/competency.module';
 import { ADDON_MESSAGEOUTPUT_SERVICES } from '@addons/messageoutput/messageoutput.module';
 import { ADDON_MESSAGES_SERVICES } from '@addons/messages/messages.module';
@@ -148,16 +149,16 @@ import { ADDON_MOD_SCORM_SERVICES } from '@addons/mod/scorm/scorm.module';
 import { ADDON_MOD_SURVEY_SERVICES } from '@addons/mod/survey/survey.module';
 import { ADDON_MOD_URL_SERVICES } from '@addons/mod/url/url.module';
 import { ADDON_MOD_WIKI_SERVICES } from '@addons/mod/wiki/wiki.module';
-import { ADDON_MOD_WORKSHOP_SERVICES } from '@addons/mod/workshop/workshop.module';
+import { getWorkshopComponentModules, getWorkshopServices } from '@addons/mod/workshop/workshop.module';
 import { ADDON_NOTES_SERVICES } from '@addons/notes/notes.module';
 import { ADDON_NOTIFICATIONS_SERVICES } from '@addons/notifications/notifications.module';
 import { ADDON_PRIVATEFILES_SERVICES } from '@addons/privatefiles/privatefiles.module';
 
 // Import some addon modules that define components, directives and pipes. Only import the important ones.
 import { AddonModAssignComponentsModule } from '@addons/mod/assign/components/components.module';
-import { AddonModWorkshopComponentsModule } from '@addons/mod/workshop/components/components.module';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
+import { CoreAutoLogoutService } from '@features/autologout/services/autologout';
 
 /**
  * Service to provide functionalities regarding compiling dynamic HTML and Javascript.
@@ -166,7 +167,6 @@ import { CorePlatform } from '@services/platform';
 export class CoreCompileProvider {
 
     protected logger: CoreLogger;
-    protected compiler: Compiler;
 
     // Other Ionic/Angular providers that don't depend on where they are injected.
     protected readonly OTHER_SERVICES: unknown[] = [
@@ -179,13 +179,14 @@ export class CoreCompileProvider {
         CoreSharedModule, CoreCourseComponentsModule, CoreCoursesComponentsModule, CoreUserComponentsModule,
         CoreCourseDirectivesModule, CoreQuestionComponentsModule, AddonModAssignComponentsModule,
         CoreBlockComponentsModule, CoreEditorComponentsModule, CoreSearchComponentsModule, CoreSitePluginsDirectivesModule,
-        AddonModWorkshopComponentsModule,
     ];
 
-    constructor(protected injector: Injector, compilerFactory: JitCompilerFactory) {
-        this.logger = CoreLogger.getInstance('CoreCompileProvider');
+    protected readonly LAZY_IMPORTS = [
+        getWorkshopComponentModules,
+    ];
 
-        this.compiler = compilerFactory.createCompiler();
+    constructor(protected injector: Injector) {
+        this.logger = CoreLogger.getInstance('CoreCompileProvider');
     }
 
     /**
@@ -193,31 +194,45 @@ export class CoreCompileProvider {
      *
      * @param template The template of the component.
      * @param componentClass The JS class of the component.
+     * @param viewContainerRef View container reference to inject the component.
      * @param extraImports Extra imported modules if needed and not imported by this class.
-     * @returns Promise resolved with the factory to instantiate the component.
+     * @returns Promise resolved with the component reference.
      */
     async createAndCompileComponent<T = unknown>(
         template: string,
         componentClass: Type<T>,
+        viewContainerRef: ViewContainerRef,
         extraImports: any[] = [], // eslint-disable-line @typescript-eslint/no-explicit-any
-    ): Promise<ComponentFactory<T> | undefined> {
+    ): Promise<ComponentRef<T> | undefined> {
+        // Import the Angular compiler to be able to compile components in runtime.
+        await import('@angular/compiler');
+
         // Create the component using the template and the class.
         const component = Component({ template })(componentClass);
 
+        const lazyImports = await Promise.all(this.LAZY_IMPORTS.map(getModules => getModules()));
         const imports = [
+            ...CoreArray.flatten(lazyImports),
             ...this.IMPORTS,
             ...extraImports,
+            TranslatePipeForCompile,
         ];
 
-        // Now create the module containing the component.
-        const module = NgModule({ imports, declarations: [component], schemas: [NO_ERRORS_SCHEMA] })(class {});
-
         try {
-            // Compile the module and the component.
-            const factories = await this.compiler.compileModuleAndAllComponentsAsync(module);
+            viewContainerRef.clear();
 
-            // Search and return the factory of the component we just created.
-            return factories.componentFactories.find(factory => factory.componentType == component);
+            // Now create the module containing the component.
+            const ngModuleRef = createNgModule(
+                NgModule({ imports, declarations: [component], schemas: [NO_ERRORS_SCHEMA] })(class {}),
+                this.injector,
+            );
+
+            return viewContainerRef.createComponent(
+                component,
+                {
+                    environmentInjector: ngModuleRef,
+                },
+            );
         } catch (error) {
             this.logger.error('Error compiling template', template);
             this.logger.error(error);
@@ -263,12 +278,13 @@ export class CoreCompileProvider {
     injectLibraries(instance: any, extraProviders: Type<unknown>[] = []): void {
         const providers = [
             ...CORE_SERVICES,
+            CoreAutoLogoutService,
             ...CORE_BLOCK_SERVICES,
-            ...CORE_COMMENTS_SERVICES,
             ...CORE_CONTENTLINKS_SERVICES,
             ...CORE_COURSE_SERVICES,
             ...CORE_COURSES_SERVICES,
             ...CORE_EDITOR_SERVICES,
+            ...CORE_ENROL_SERVICES,
             ...CORE_FILEUPLOADER_SERVICES,
             ...CORE_FILTER_SERVICES,
             ...CORE_GRADES_SERVICES,
@@ -283,7 +299,6 @@ export class CoreCompileProvider {
             ...CORE_SHAREDFILES_SERVICES,
             ...CORE_SITEHOME_SERVICES,
             CoreSitePluginsProvider,
-            ...CORE_TAG_SERVICES,
             ...CORE_STYLE_SERVICES,
             ...CORE_USER_SERVICES,
             ...CORE_XAPI_SERVICES,
@@ -292,7 +307,6 @@ export class CoreCompileProvider {
             ...extraProviders,
             ...ADDON_BADGES_SERVICES,
             ...ADDON_CALENDAR_SERVICES,
-            ...ADDON_COURSECOMPLETION_SERVICES,
             ...ADDON_COMPETENCY_SERVICES,
             ...ADDON_MESSAGEOUTPUT_SERVICES,
             ...ADDON_MESSAGES_SERVICES,
@@ -315,7 +329,6 @@ export class CoreCompileProvider {
             ...ADDON_MOD_SURVEY_SERVICES,
             ...ADDON_MOD_URL_SERVICES,
             ...ADDON_MOD_WIKI_SERVICES,
-            ...ADDON_MOD_WORKSHOP_SERVICES,
             ...ADDON_NOTES_SERVICES,
             ...ADDON_NOTIFICATIONS_SERVICES,
             ...ADDON_PRIVATEFILES_SERVICES,
@@ -324,10 +337,10 @@ export class CoreCompileProvider {
         // We cannot inject anything to this constructor. Use the Injector to inject all the providers into the instance.
         for (const i in providers) {
             const providerDef = providers[i];
-            if (typeof providerDef == 'function' && providerDef.name) {
+            if (typeof providerDef === 'function' && providerDef.name) {
                 try {
                     // Inject the provider to the instance. We use the class name as the property name.
-                    instance[providerDef.name.replace(/DelegateService$/, 'Delegate')] = this.injector.get(providerDef);
+                    instance[providerDef.name.replace(/DelegateService$/, 'Delegate')] = this.injector.get<Provider>(providerDef);
                 } catch (ex) {
                     this.logger.error('Error injecting provider', providerDef.name, ex);
                 }
@@ -346,10 +359,11 @@ export class CoreCompileProvider {
         instance['CoreLoggerProvider'] = CoreLogger;
         instance['moment'] = moment;
         instance['Md5'] = Md5;
-        instance['Network'] = CoreNetwork.instance; // @deprecated on 4.1, plugins should use CoreNetwork instead.
-        instance['Platform'] = CorePlatform.instance; // @deprecated on 4.1, plugins should use CorePlatform instead.
+        instance['Network'] = CoreNetwork.instance; // @deprecated since 4.1, plugins should use CoreNetwork instead.
+        instance['Platform'] = CorePlatform.instance; // @deprecated since 4.1, plugins should use CorePlatform instead.
         instance['CoreSyncBaseProvider'] = CoreSyncBaseProvider;
         instance['CoreArray'] = CoreArray;
+        // eslint-disable-next-line deprecation/deprecation
         instance['CoreComponentsRegistry'] = CoreComponentsRegistry;
         instance['CoreDirectivesRegistry'] = CoreDirectivesRegistry;
         instance['CoreNetwork'] = CoreNetwork.instance;
@@ -360,7 +374,7 @@ export class CoreCompileProvider {
         instance['CoreTime'] = CoreTime;
         instance['CoreUrl'] = CoreUrl;
         instance['CoreWindow'] = CoreWindow;
-        instance['CoreCache'] = CoreCache;
+        instance['CoreCache'] = CoreCache; // @deprecated since 4.4, plugins should use plain objects instead.
         instance['CoreDelegate'] = CoreDelegate;
         instance['CorePromisedValue'] = CorePromisedValue;
         instance['CoreContentLinksHandlerBase'] = CoreContentLinksHandlerBase;
@@ -387,26 +401,23 @@ export class CoreCompileProvider {
     }
 
     /**
-     * Instantiate a dynamic component.
+     * Get lazy libraries to inject.
      *
-     * @param template The template of the component.
-     * @param componentClass The JS class of the component.
-     * @param injector The injector to use. It's recommended to pass it so NavController and similar can be injected.
-     * @returns Promise resolved with the component instance.
+     * @returns Lazy libraries.
      */
-    async instantiateDynamicComponent<T = unknown>(
-        template: string,
-        componentClass: Type<T>,
-        injector?: Injector,
-    ): Promise<ComponentRef<T> | undefined> {
-        injector = injector || this.injector;
+    async getLazyLibraries(): Promise<Type<unknown>[]> {
+        const ADDON_MOD_WORKSHOP_SERVICES = await getWorkshopServices();
+        const ADDON_COURSECOMPLETION_SERVICES = await getCourseCompletionServices();
 
-        const factory = await this.createAndCompileComponent(template, componentClass);
+        const CORE_COMMENTS_SERVICES = await getCommentsServices();
+        const CORE_TAG_SERVICES = await getTagServices();
 
-        if (factory) {
-            // Create and return the component.
-            return factory.create(injector, undefined, undefined, injector.get(NgModuleRef));
-        }
+        return [
+            ...ADDON_MOD_WORKSHOP_SERVICES,
+            ...ADDON_COURSECOMPLETION_SERVICES,
+            ...CORE_COMMENTS_SERVICES,
+            ...CORE_TAG_SERVICES,
+        ];
     }
 
 }

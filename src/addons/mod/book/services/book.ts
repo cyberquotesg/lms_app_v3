@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreTagItem } from '@features/tag/services/tag';
 import { CoreWSExternalWarning, CoreWSExternalFile, CoreWS } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
@@ -26,6 +26,7 @@ import { CoreTextUtils } from '@services/utils/text';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreFile } from '@services/file';
 import { CoreError } from '@classes/errors/error';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 /**
  * Constants to define how the chapters and subchapters of a book should be displayed in that table of contents.
@@ -359,24 +360,20 @@ export class AddonModBookProvider {
      *
      * @param id Module ID.
      * @param chapterId Chapter ID.
-     * @param name Name of the book.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, chapterId?: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, chapterId?: number, siteId?: string): Promise<void> {
         const params: AddonModBookViewBookWSParams = {
             bookid: id,
             chapterid: chapterId,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_book_view_book',
             params,
             AddonModBookProvider.COMPONENT,
             id,
-            name,
-            'book',
-            { chapterid: chapterId },
             siteId,
         );
     }

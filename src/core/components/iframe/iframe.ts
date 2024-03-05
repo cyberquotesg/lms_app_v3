@@ -28,6 +28,8 @@ import { CoreScreen, CoreScreenOrientation } from '@services/screen';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { NavigationStart } from '@angular/router';
+import { CoreSites } from '@services/sites';
+import { CoreUrl } from '@singletons/url';
 
 @Component({
     selector: 'core-iframe',
@@ -40,17 +42,20 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
 
     @ViewChild('iframe') iframe?: ElementRef;
     @Input() src?: string;
+    @Input() id: string | null = null;
     @Input() iframeWidth?: string;
     @Input() iframeHeight?: string;
     @Input() allowFullscreen?: boolean | string;
     @Input() showFullscreenOnToolbar?: boolean | string;
     @Input() autoFullscreenOnRotate?: boolean | string;
+    @Input() allowAutoLogin = true;
     @Output() loaded: EventEmitter<HTMLIFrameElement> = new EventEmitter<HTMLIFrameElement>();
 
     loading?: boolean;
     safeUrl?: SafeResourceUrl;
     displayHelp = false;
     fullscreen = false;
+    launchExternalLabel?: string; // Text to set to the button to launch external app.
 
     initialized = false;
 
@@ -80,12 +85,6 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
         }
 
         this.initialized = true;
-
-        this.iframeWidth = (this.iframeWidth && CoreDomUtils.formatPixelsSize(this.iframeWidth)) || '100%';
-        this.iframeHeight = (this.iframeHeight && CoreDomUtils.formatPixelsSize(this.iframeHeight)) || '100%';
-        this.allowFullscreen = CoreUtils.isTrueOrOne(this.allowFullscreen);
-        this.showFullscreenOnToolbar = CoreUtils.isTrueOrOne(this.showFullscreenOnToolbar);
-        this.autoFullscreenOnRotate = CoreUtils.isTrueOrOne(this.autoFullscreenOnRotate);
 
         if (this.showFullscreenOnToolbar || this.autoFullscreenOnRotate) {
             // Leave fullscreen when navigating.
@@ -153,19 +152,66 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
      * Detect changes on input properties.
      */
     async ngOnChanges(changes: {[name: string]: SimpleChange }): Promise<void> {
-        if (changes.src) {
-            const url = CoreUrlUtils.getYoutubeEmbedUrl(changes.src.currentValue) || changes.src.currentValue;
+        if (changes.iframeWidth) {
+            this.iframeWidth = (this.iframeWidth && CoreDomUtils.formatPixelsSize(this.iframeWidth)) || '100%';
+        }
+        if (changes.iframeHeight) {
+            this.iframeHeight = (this.iframeHeight && CoreDomUtils.formatPixelsSize(this.iframeHeight)) || '100%';
+        }
+        if (changes.allowFullscreen) {
+            this.allowFullscreen = CoreUtils.isTrueOrOne(this.allowFullscreen);
+        }
+        if (changes.showFullscreenOnToolbar) {
+            this.showFullscreenOnToolbar = CoreUtils.isTrueOrOne(this.showFullscreenOnToolbar);
+        }
+        if (changes.autoFullscreenOnRotate) {
+            this.autoFullscreenOnRotate = CoreUtils.isTrueOrOne(this.autoFullscreenOnRotate);
+        }
+
+        if (!changes.src) {
+            return;
+        }
+
+        let url = this.src;
+
+        if (url) {
+            const { launchExternal, label } = CoreIframeUtils.frameShouldLaunchExternal(url);
+
+            if (launchExternal) {
+                this.launchExternalLabel = label;
+                this.loading = false;
+
+                return;
+            }
+        }
+
+        this.launchExternalLabel = undefined;
+
+        if (url && !CoreUrlUtils.isLocalFileUrl(url)) {
+            url = CoreUrlUtils.getYoutubeEmbedUrl(url) || url;
             this.displayHelp = CoreIframeUtils.shouldDisplayHelpForUrl(url);
 
+            const currentSite = CoreSites.getCurrentSite();
+            if (this.allowAutoLogin && currentSite) {
+                // Format the URL to add auto-login if needed.
+                url = await currentSite.getAutoLoginUrl(url, false);
+            }
+
+            if (currentSite?.isVersionGreaterEqualThan('3.7') && CoreUrl.isVimeoVideoUrl(url)) {
+                // Only treat the Vimeo URL if site is 3.7 or bigger. In older sites the width and height params were mandatory,
+                // and there was no easy way to make the iframe responsive.
+                url = CoreUrl.getVimeoPlayerUrl(url, currentSite) ?? url;
+            }
+
             await CoreIframeUtils.fixIframeCookies(url);
-
-            this.safeUrl = DomSanitizer.bypassSecurityTrustResourceUrl(CoreFile.convertFileSrc(url));
-
-            // Now that the URL has been set, initialize the iframe. Wait for the iframe to the added to the DOM.
-            setTimeout(() => {
-                this.init();
-            });
         }
+
+        this.safeUrl = DomSanitizer.bypassSecurityTrustResourceUrl(url ? CoreFile.convertFileSrc(url) : '');
+
+        // Now that the URL has been set, initialize the iframe. Wait for the iframe to the added to the DOM.
+        setTimeout(() => {
+            this.init();
+        });
     }
 
     /**
@@ -226,6 +272,19 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
         } else if (event.data == 'exitFullScreen' && this.fullscreen) {
             this.toggleFullscreen(false, false);
         }
+    }
+
+    /**
+     * Launch content in an external app.
+     */
+    launchExternal(): void {
+        if (!this.src) {
+            return;
+        }
+
+        CoreIframeUtils.frameLaunchExternal(this.src, {
+            site: CoreSites.getCurrentSite(),
+        });
     }
 
 }

@@ -25,8 +25,8 @@ import {
 } from '../services/scorm';
 
 // Standard Data Type Definition.
-const CMI_STRING_256 = '^[\\u0000-\\uFFFF]{0,255}$';
-const CMI_STRING_4096 = '^[\\u0000-\\uFFFF]{0,4096}$';
+let CMI_STRING_256 = '^[\\u0000-\\uFFFF]{0,255}$';
+let CMI_STRING_4096 = '^[\\u0000-\\uFFFF]{0,4096}$';
 const CMI_TIME = '^([0-2]{1}[0-9]{1}):([0-5]{1}[0-9]{1}):([0-5]{1}[0-9]{1})(.[0-9]{1,2})?$';
 const CMI_TIMESPAN = '^([0-9]{2,4}):([0-9]{2}):([0-9]{2})(.[0-9]{1,2})?$';
 const CMI_INTEGER = '^\\d+$'; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -81,7 +81,6 @@ const ERROR_STRINGS = {
 /**
  * SCORM data model implementation for version 1.2.
  */
-/* eslint-disable @typescript-eslint/naming-convention */
 export class AddonModScormDataModel12 {
 
     protected currentUserData: AddonModScormUserDataMap = {}; // Current user data.
@@ -255,6 +254,11 @@ export class AddonModScormDataModel12 {
      * @param userData The user default data.
      */
     protected init(userData: AddonModScormUserDataMap): void {
+        if (!this.scorm.scormStandard) {
+            CMI_STRING_256 = '^[\\u0000-\\uFFFF]{0,64000}$';
+            CMI_STRING_4096 = CMI_STRING_256;
+        }
+
         // Prepare the definition array containing the default values.
         for (const scoId in userData) {
             const sco = userData[scoId];

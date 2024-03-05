@@ -39,10 +39,10 @@ import { CoreLogger } from '@singletons/logger';
 })
 export class AddonBlockTimelineComponent implements OnInit, ICoreBlockComponent {
 
-    sort = new FormControl();
+    sort = new FormControl(AddonBlockTimelineSort.ByDates);
     sort$!: Observable<AddonBlockTimelineSort>;
     sortOptions!: AddonBlockTimelineOption<AddonBlockTimelineSort>[];
-    filter = new FormControl();
+    filter = new FormControl(AddonBlockTimelineFilter.Next30Days);
     filter$!: Observable<AddonBlockTimelineFilter>;
     statusFilterOptions!: AddonBlockTimelineOption<AddonBlockTimelineFilter>[];
     dateFilterOptions!: AddonBlockTimelineOption<AddonBlockTimelineFilter>[];
@@ -56,7 +56,7 @@ export class AddonBlockTimelineComponent implements OnInit, ICoreBlockComponent 
 
     constructor() {
         this.logger = CoreLogger.getInstance('AddonBlockTimelineComponent');
-        this.search$ = new BehaviorSubject(null);
+        this.search$ = new BehaviorSubject<string | null>(null);
         this.initializeSort();
         this.initializeFilter();
         this.initializeSections();
@@ -252,29 +252,32 @@ export class AddonBlockTimelineComponent implements OnInit, ICoreBlockComponent 
         const courseIds = courses.map(course => course.id);
         const gracePeriod = await this.getCoursesGracePeriod();
         const courseEvents = await AddonBlockTimeline.getActionEventsByCourses(courseIds, search ?? '');
+        const sectionObservables = courses
+            .filter(
+                course =>
+                    !course.hidden &&
+                !CoreCoursesHelper.isPastCourse(course, gracePeriod.after) &&
+                !CoreCoursesHelper.isFutureCourse(course, gracePeriod.after, gracePeriod.before) &&
+                courseEvents[course.id].events.length > 0,
+            )
+            .map(course => {
+                const section = new AddonBlockTimelineSection(
+                    search,
+                    overdue,
+                    dateRange,
+                    course,
+                    courseEvents[course.id].events,
+                    courseEvents[course.id].canLoadMore,
+                );
 
-        return combineLatest(
-            courses
-                .filter(
-                    course =>
-                        !course.hidden &&
-                        !CoreCoursesHelper.isPastCourse(course, gracePeriod.after) &&
-                        !CoreCoursesHelper.isFutureCourse(course, gracePeriod.after, gracePeriod.before) &&
-                        courseEvents[course.id].events.length > 0,
-                )
-                .map(course => {
-                    const section = new AddonBlockTimelineSection(
-                        search,
-                        overdue,
-                        dateRange,
-                        course,
-                        courseEvents[course.id].events,
-                        courseEvents[course.id].canLoadMore,
-                    );
+                return section.data$.pipe(map(({ events }) => events.length > 0 ? section : null));
+            });
 
-                    return section.data$.pipe(map(({ events }) => events.length > 0 ? section : null));
-                }),
-        ).pipe(
+        if (sectionObservables.length === 0) {
+            return of([]);
+        }
+
+        return combineLatest(sectionObservables).pipe(
             map(sections => sections.filter(
                 (section: AddonBlockTimelineSection | null): section is AddonBlockTimelineSection => !!section,
             )),

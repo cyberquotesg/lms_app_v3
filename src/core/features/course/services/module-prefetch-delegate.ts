@@ -24,7 +24,7 @@ import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreCourse, CoreCourseAnyModuleData, CoreCourseModuleContentFile } from './course';
 import { CoreCache } from '@classes/cache';
-import { CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreConstants } from '@/core/constants';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
 import { makeSingleton } from '@singletons';
@@ -75,16 +75,6 @@ export class CoreCourseModulePrefetchDelegateService extends CoreDelegate<CoreCo
 
             this.statusCache.invalidate(CoreFilepool.getPackageId(data.component, data.componentId));
         }, CoreSites.getCurrentSiteId());
-    }
-
-    /**
-     * Check if current site can check updates using core_course_check_updates.
-     *
-     * @returns True if can check updates, false otherwise.
-     * @deprecated since app 4.0
-     */
-    canCheckUpdates(): boolean {
-        return true;
     }
 
     /**
@@ -704,7 +694,8 @@ export class CoreCourseModulePrefetchDelegateService extends CoreDelegate<CoreCo
 
         await Promise.all(modules.map(async (module) => {
             const handler = this.getPrefetchHandlerFor(module.modname);
-            if (!handler || (onlyToDisplay && handler.skipListStatus)) {
+
+            if (!handler) {
                 return;
             }
 
@@ -1361,14 +1352,6 @@ export interface CoreCourseModulePrefetchHandler extends CoreDelegateHandler {
      * as outdated. This RegExp is ignored if hasUpdates function is defined.
      */
     updatesNames?: RegExp;
-
-    /**
-     * If true, this module will be treated as not downloadable when determining the status of a list of modules. The module will
-     * still be downloaded when downloading the section/course, it only affects whether the button should be displayed.
-     *
-     * @deprecated since app 4.0.
-     */
-    skipListStatus?: boolean;
 
     /**
      * Get the download size of a module.

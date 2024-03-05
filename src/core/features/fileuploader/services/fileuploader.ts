@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CameraOptions } from '@ionic-native/camera/ngx';
-import { FileEntry } from '@ionic-native/file/ngx';
-import { MediaFile, CaptureError, CaptureVideoOptions } from '@ionic-native/media-capture/ngx';
+import { CameraOptions } from '@awesome-cordova-plugins/camera/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
+import { MediaFile, CaptureError, CaptureVideoOptions } from '@awesome-cordova-plugins/media-capture/ngx';
 import { Subject } from 'rxjs';
 
 import { CoreFile, CoreFileProvider } from '@services/file';
@@ -28,7 +28,7 @@ import { CoreWSFile, CoreWSFileUploadOptions, CoreWSUploadFileResult } from '@se
 import { makeSingleton, Translate, MediaCapture, Camera } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreFileEntry, CoreFileHelper } from '@services/file-helper';
 import { CorePath } from '@singletons/path';
 import { CorePlatform } from '@services/platform';
@@ -195,7 +195,10 @@ export class CoreFileUploaderProvider {
     clearTmpFiles(files: (CoreWSFile | FileEntry)[]): void {
         // Delete the temporary files.
         files.forEach((file) => {
-            if ('remove' in file && CoreFile.removeBasePath(file.toURL()).startsWith(CoreFileProvider.TMPFOLDER)) {
+            if (
+                'remove' in file &&
+                CoreFile.removeBasePath(CoreFile.getFileEntryURL(file)).startsWith(CoreFileProvider.TMPFOLDER)
+            ) {
                 // Pass an empty function to prevent missing parameter error.
                 file.remove(() => {
                     // Nothing to do.
@@ -446,17 +449,6 @@ export class CoreFileUploaderProvider {
     }
 
     /**
-     * Mark files as offline.
-     *
-     * @param files Files to mark as offline.
-     * @returns Files marked as offline.
-     * @deprecated since 3.9.5. Now stored files no longer have an offline property.
-     */
-    markOfflineFiles(files: FileEntry[]): FileEntry[] {
-        return files;
-    }
-
-    /**
      * Parse filetypeList to get the list of allowed mimetypes and the data to render information.
      *
      * @param filetypeList Formatted string list where the mimetypes can be checked.
@@ -579,7 +571,7 @@ export class CoreFileUploaderProvider {
                 const destFile = CorePath.concatenatePaths(folderPath, file.name);
                 result.offline++;
 
-                await CoreFile.copyFile(file.toURL(), destFile);
+                await CoreFile.copyFile(CoreFile.getFileEntryURL(file), destFile);
             }
         }));
 
@@ -653,9 +645,10 @@ export class CoreFileUploaderProvider {
             usedNames[name] = file;
 
             // Now upload the file.
-            const options = this.getFileUploadOptions(file.toURL(), name, undefined, false, 'draft', itemId);
+            const filePath = CoreFile.getFileEntryURL(file);
+            const options = this.getFileUploadOptions(filePath, name, undefined, false, 'draft', itemId);
 
-            await this.uploadFile(file.toURL(), options, undefined, siteId);
+            await this.uploadFile(filePath, options, undefined, siteId);
         }));
     }
 
@@ -712,9 +705,10 @@ export class CoreFileUploaderProvider {
         // Now upload the file.
         const extension = CoreMimetypeUtils.getFileExtension(fileName);
         const mimetype = extension ? CoreMimetypeUtils.getMimeType(extension) : undefined;
-        const options = this.getFileUploadOptions(fileEntry.toURL(), fileName, mimetype, isOnline, 'draft', itemId);
+        const filePath = CoreFile.getFileEntryURL(fileEntry);
+        const options = this.getFileUploadOptions(filePath, fileName, mimetype, isOnline, 'draft', itemId);
 
-        const result = await this.uploadFile(fileEntry.toURL(), options, undefined, siteId);
+        const result = await this.uploadFile(filePath, options, undefined, siteId);
 
         return result.itemid;
     }

@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host {
     --message-background: var(--core-messages-message-bg);
@@ -18,7 +18,7 @@
         position: relative;
 
         border: 0;
-        border-radius: var(--medium-radius);
+        border-radius: var(--radius-sm);
         margin: 8px;
         width: 90%;
         max-width: var(--list-item-max-width);
@@ -83,7 +83,7 @@
         }
 
         .extra {
-            flex-shrink: 1;
+            flex-shrink: 0;
             display: flex;
             flex-direction: row;
             padding-left: 8px;

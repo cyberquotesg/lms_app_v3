@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef, Input } from '@angular/core';
-import { MediaFile } from '@ionic-native/media-capture/ngx';
+import { MediaFile } from '@awesome-cordova-plugins/media-capture/ngx';
 
 import { CoreFile, CoreFileProvider } from '@services/file';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -324,7 +324,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
             const fileEntry = await CoreFile.writeFile(this.getFilePath(), this.mediaBlob);
 
             if (this.isImage && !this.isCaptureImage) {
-                this.dismissWithData(fileEntry.toURL());
+                this.dismissWithData(CoreFile.getFileEntryURL(fileEntry));
             } else {
                 // The capture plugin should return a MediaFile, not a FileEntry. Convert it.
                 const metadata = await CoreFile.getMetadata(fileEntry);

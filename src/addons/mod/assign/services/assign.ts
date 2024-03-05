@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreInterceptor } from '@classes/interceptor';
 import { CoreWSExternalWarning, CoreWSExternalFile, CoreWSFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
@@ -35,6 +35,7 @@ import { AddonModAssignAutoSyncData, AddonModAssignManualSyncData, AddonModAssig
 import { CoreFormFields } from '@singletons/form';
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreIonicColorNames } from '@singletons/colors';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 const ROOT_CACHE_KEY = 'mmaModAssign:';
 
@@ -878,23 +879,19 @@ export class AddonModAssignProvider {
      * Report an assignment submission as being viewed.
      *
      * @param assignid Assignment ID.
-     * @param name Name of the assign.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logSubmissionView(assignid: number, name?: string, siteId?: string): Promise<void> {
+    async logSubmissionView(assignid: number, siteId?: string): Promise<void> {
         const params: AddonModAssignViewSubmissionStatusWSParams = {
             assignid,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_assign_view_submission_status',
             params,
             AddonModAssignProvider.COMPONENT,
             assignid,
-            name,
-            'assign',
-            {},
             siteId,
         );
     }
@@ -903,23 +900,19 @@ export class AddonModAssignProvider {
      * Report an assignment grading table is being viewed.
      *
      * @param assignid Assignment ID.
-     * @param name Name of the assign.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logGradingView(assignid: number, name?: string, siteId?: string): Promise<void> {
+    async logGradingView(assignid: number, siteId?: string): Promise<void> {
         const params: AddonModAssignViewGradingTableWSParams = {
             assignid,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_assign_view_grading_table',
             params,
             AddonModAssignProvider.COMPONENT,
             assignid,
-            name,
-            'assign',
-            {},
             siteId,
         );
     }
@@ -928,23 +921,19 @@ export class AddonModAssignProvider {
      * Report an assign as being viewed.
      *
      * @param assignid Assignment ID.
-     * @param name Name of the assign.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(assignid: number, name?: string, siteId?: string): Promise<void> {
+    async logView(assignid: number, siteId?: string): Promise<void> {
         const params: AddonModAssignViewAssignWSParams = {
             assignid,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_assign_view_assign',
             params,
             AddonModAssignProvider.COMPONENT,
             assignid,
-            name,
-            'assign',
-            {},
             siteId,
         );
     }
@@ -1559,6 +1548,7 @@ export type AddonModAssignParticipant = {
     customfields?: { // User custom fields (also known as user profile fields).
         type: string; // The type of the custom field - text field, checkbox...
         value: string; // The value of the custom field.
+        displayvalue: string; // @since 4.2.Formatted value of the custom field.
         name: string; // The name of the custom field.
         shortname: string; // The shortname of the custom field - to be able to build the field class in the code.
     }[];

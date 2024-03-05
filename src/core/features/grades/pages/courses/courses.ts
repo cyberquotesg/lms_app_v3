@@ -19,9 +19,11 @@ import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { CoreGradesCoursesSource } from '@features/grades/classes/grades-courses-source';
 import { CoreGrades } from '@features/grades/services/grades';
-import { IonRefresher } from '@ionic/angular';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
+import { Translate } from '@singletons';
 
 /**
  * Page that displays courses grades (main menu option).
@@ -63,7 +65,7 @@ export class CoreGradesCoursesPage implements OnDestroy, AfterViewInit {
      *
      * @param refresher Refresher.
      */
-    async refreshCourses(refresher: IonRefresher): Promise<void> {
+    async refreshCourses(refresher: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(CoreGrades.invalidateCoursesGradesData());
         await CoreUtils.ignoreErrors(this.courses.reload());
 
@@ -93,6 +95,14 @@ class CoreGradesCoursesManager extends CoreListItemsManager {
      */
     protected async logActivity(): Promise<void> {
         await CoreGrades.logCoursesGradesView();
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+            ws: 'gradereport_overview_view_grade_report',
+            name: Translate.instant('core.grades.grades'),
+            data: { courseId: CoreSites.getCurrentSiteHomeId(), category: 'grades' },
+            url: '/grade/report/overview/index.php',
+        });
     }
 
 }

@@ -20,7 +20,7 @@ import {
     CoreReportBuilderRetrieveReportMapped,
     REPORT_ROWS_LIMIT,
 } from '@features/reportbuilder/services/reportbuilder';
-import { IonRefresher } from '@ionic/angular';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
 import { CoreSites } from '@services/sites';
@@ -28,6 +28,7 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreTextErrorObject } from '@services/utils/text';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
+import { CoreTime } from '@singletons/time';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -49,19 +50,22 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
         return this.layout === 'card' || (CoreScreen.isMobile && this.layout === 'adaptative');
     }
 
-    state$: Readonly<BehaviorSubject<CoreReportBuilderReportDetailState>> = new BehaviorSubject({
-        report: null,
-        loaded: false,
-        canLoadMoreRows: true,
-        errorLoadingRows: false,
-        cardviewShowFirstTitle: false,
-        cardVisibleColumns: 1,
-        page: 0,
-    });
+    state$: Readonly<BehaviorSubject<CoreReportBuilderReportDetailState>> =
+        new BehaviorSubject<CoreReportBuilderReportDetailState>({
+            report: null,
+            loaded: false,
+            canLoadMoreRows: true,
+            errorLoadingRows: false,
+            cardviewShowFirstTitle: false,
+            cardVisibleColumns: 1,
+            page: 0,
+        });
 
     source$: Observable<string>;
 
     isString = (value: unknown): boolean => CoreReportBuilder.isString(value);
+
+    protected logView: (report: CoreReportBuilderRetrieveReportMapped) => void;
 
     constructor() {
         this.source$ = this.state$.pipe(
@@ -72,6 +76,18 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
                 return source ?? 'system';
             }),
         );
+
+        this.logView = CoreTime.once(async (report) => {
+            await CoreUtils.ignoreErrors(CoreReportBuilder.viewReport(this.reportId));
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'core_reportbuilder_view_report',
+                name: report.details.name,
+                data: { id: this.reportId, category: 'reportbuilder' },
+                url: `/reportbuilder/view.php?id=${this.reportId}`,
+            });
+        });
     }
 
     /**
@@ -105,14 +121,13 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
                 return;
             }
 
-            await CoreReportBuilder.viewReport(this.reportId);
-
             this.updateState({
                 report,
                 cardVisibleColumns: report.details.settingsdata.cardviewVisibleColumns,
                 cardviewShowFirstTitle: report.details.settingsdata.cardviewShowFirstTitle,
             });
 
+            this.logView(report);
             this.onReportLoaded.emit(report.details);
         } catch {
             const errorConfig: CoreTextErrorObject = {
@@ -154,7 +169,7 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
      *
      * @param ionRefresher ionic refresher.
      */
-    async refreshReport(ionRefresher?: IonRefresher): Promise<void> {
+    async refreshReport(ionRefresher?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(CoreReportBuilder.invalidateReport());
         this.updateState({ page: 0, canLoadMoreRows: false });
         await CoreUtils.ignoreErrors(this.getReport());

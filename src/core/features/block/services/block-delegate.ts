@@ -15,7 +15,7 @@
 import { Injectable, Type } from '@angular/core';
 import { CoreSites } from '@services/sites';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { Subject } from 'rxjs';
 import { CoreCourseBlock } from '@features/course/services/course';
 import { Params } from '@angular/router';
@@ -45,7 +45,7 @@ export interface CoreBlockHandler extends CoreDelegateHandler {
         block: CoreCourseBlock,
         contextLevel: string,
         instanceId: number,
-    ): undefined | CoreBlockHandlerData | Promise<CoreBlockHandlerData>;
+    ): undefined | CoreBlockHandlerData | Promise<undefined | CoreBlockHandlerData>;
 }
 
 /**

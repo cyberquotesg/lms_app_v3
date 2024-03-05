@@ -89,6 +89,10 @@ export class CoreUpdateManagerProvider {
             promises.push(this.upgradeFontSizeNames());
         }
 
+        if (versionCode >= 43000 && versionApplied < 43000 && versionApplied > 0) {
+            promises.push(CoreSites.moveTokensToSecureStorage());
+        }
+
         try {
             await Promise.all(promises);
 
@@ -109,7 +113,9 @@ export class CoreUpdateManagerProvider {
      * @returns Promise resolved when done.
      */
     protected async checkCurrentSiteAllowed(): Promise<void> {
-        if (!CoreLoginHelper.getFixedSites()) {
+        const sites = await CoreLoginHelper.getAvailableSites();
+
+        if (!sites.length) {
             return;
         }
 

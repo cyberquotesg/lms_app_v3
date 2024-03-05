@@ -15,12 +15,12 @@
 import { Injectable } from '@angular/core';
 
 import { CoreConstants } from '@/core/constants';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseAnyModuleData } from '@features/course/services/course';
 import { CoreCourses } from '@features/courses/services/courses';
 import { CoreApp } from '@services/app';
 import { CoreFilepool } from '@services/filepool';
-import { CoreLang } from '@services/lang';
+import { CoreLang, CoreLangFormat } from '@services/lang';
 import { CoreSites } from '@services/sites';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreUtils } from '@services/utils/utils';
@@ -31,6 +31,9 @@ import { CoreLogger } from '@singletons/logger';
 import { CoreSitePluginsModuleHandler } from '../classes/handlers/module-handler';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
+import { CoreEnrolAction, CoreEnrolInfoIcon } from '@features/enrol/services/enrol-delegate';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreUserProfileHandlerType } from '@features/user/services/user-delegate';
 
 const ROOT_CACHE_KEY = 'CoreSitePlugins:';
 
@@ -81,7 +84,7 @@ export class CoreSitePluginsProvider {
         args = args || {};
         site = site || CoreSites.getCurrentSite();
 
-        const lang = await CoreLang.getCurrentLanguage();
+        const lang = await CoreLang.getCurrentLanguage(CoreLangFormat.LMS);
 
         const defaultArgs: CoreSitePluginsDefaultArgs = {
             userid: <number> args.userid ?? site?.getUserId(),
@@ -388,16 +391,6 @@ export class CoreSitePluginsProvider {
         const site = await CoreSites.getSite(siteId);
 
         await site.invalidateWsCacheForKey(this.getContentCacheKey(component, callback, args || {}));
-    }
-
-    /**
-     * Check if the get content WS is available.
-     *
-     * @returns If get content WS is available.
-     * @deprecated since app 4.0
-     */
-    isGetContentAvailable(): boolean {
-        return true;
     }
 
     /**
@@ -825,7 +818,7 @@ export type CoreSitePluginsPlugin = CoreSitePluginsWSPlugin & {
 export type CoreSitePluginsHandlerData = CoreSitePluginsInitHandlerData | CoreSitePluginsCourseOptionHandlerData |
 CoreSitePluginsMainMenuHandlerData | CoreSitePluginsCourseModuleHandlerData | CoreSitePluginsCourseFormatHandlerData |
 CoreSitePluginsUserHandlerData | CoreSitePluginsSettingsHandlerData | CoreSitePluginsMessageOutputHandlerData |
-CoreSitePluginsBlockHandlerData | CoreSitePluginsMainMenuHomeHandlerData;
+CoreSitePluginsBlockHandlerData | CoreSitePluginsMainMenuHomeHandlerData | CoreSitePluginsEnrolHandlerData;
 
 /**
  * Plugin handler data common to all delegates.
@@ -894,6 +887,7 @@ export type CoreSitePluginsCourseModuleHandlerData = CoreSitePluginsHandlerCommo
     supportedfeatures?: Record<string, unknown>;
     manualcompletionalwaysshown?: boolean;
     nolinkhandlers?: boolean;
+    hascustomcmlistitem?: boolean;
 };
 
 /**
@@ -902,10 +896,6 @@ export type CoreSitePluginsCourseModuleHandlerData = CoreSitePluginsHandlerCommo
 export type CoreSitePluginsCourseFormatHandlerData = CoreSitePluginsHandlerCommonData & {
     canviewallsections?: boolean;
     displayenabledownload?: boolean;
-    /**
-     * @deprecated on 4.0, use displaycourseindex instead.
-     */
-    displaysectionselector?: boolean;
     displaycourseindex?: boolean;
 };
 
@@ -918,7 +908,7 @@ export type CoreSitePluginsUserHandlerData = CoreSitePluginsHandlerCommonData & 
         icon?: string;
         class?: string;
     };
-    type?: string;
+    type?: CoreUserProfileHandlerType;
     priority?: number;
     ptrenabled?: boolean;
 };
@@ -958,6 +948,14 @@ export type CoreSitePluginsBlockHandlerData = CoreSitePluginsHandlerCommonData &
         type?: string;
     };
     fallback?: string;
+};
+
+/**
+ * Enrol handler specific data.
+ */
+export type CoreSitePluginsEnrolHandlerData = CoreSitePluginsHandlerCommonData & {
+    enrolmentAction?: CoreEnrolAction;
+    infoIcons?: CoreEnrolInfoIcon[];
 };
 
 /**

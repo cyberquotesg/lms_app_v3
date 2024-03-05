@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreCanceledError } from '@classes/errors/cancelederror';
 import { CoreFileUploader } from '@features/fileuploader/services/fileuploader';
@@ -227,7 +227,7 @@ export class CoreSharedFilesHelperProvider {
             } else if (siteIds.length == 1) {
                 return this.storeSharedFileInSite(fileEntry, siteIds[0], !path);
             } else if (!this.isChoosingSite()) {
-                this.goToChooseSite(fileEntry.toURL(), !path);
+                this.goToChooseSite(CoreFile.getFileEntryURL(fileEntry), !path);
             }
         } catch (error) {
             if (error) {

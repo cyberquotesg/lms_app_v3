@@ -27,6 +27,7 @@ import {
     AddonModLessonProvider,
 } from './lesson';
 import { CoreTime } from '@singletons/time';
+import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Helper service that provides some features for quiz.
@@ -200,17 +201,14 @@ export class AddonModLessonHelperProvider {
             return question;
         }
 
-        let type = 'text';
-
         switch (pageData.page?.qtype) {
             case AddonModLessonProvider.LESSON_PAGE_TRUEFALSE:
             case AddonModLessonProvider.LESSON_PAGE_MULTICHOICE:
                 return this.getMultiChoiceQuestionData(questionForm, question, fieldContainer);
 
             case AddonModLessonProvider.LESSON_PAGE_NUMERICAL:
-                type = 'number';
             case AddonModLessonProvider.LESSON_PAGE_SHORTANSWER:
-                return this.getInputQuestionData(questionForm, question, fieldContainer, type);
+                return this.getInputQuestionData(questionForm, question, fieldContainer, pageData.page.qtype);
 
             case AddonModLessonProvider.LESSON_PAGE_ESSAY: {
                 return this.getEssayQuestionData(questionForm, question, fieldContainer);
@@ -272,7 +270,7 @@ export class AddonModLessonHelperProvider {
             if (option.checked || multiChoiceQuestion.multi) {
                 // Add the control.
                 const value = multiChoiceQuestion.multi ?
-                    { value: option.checked, disabled: option.disabled } : option.value;
+                    { value: option.checked, disabled: option.disabled } : option.checked;
                 questionForm.addControl(option.name, this.formBuilder.control(value));
                 controlAdded = true;
             }
@@ -301,21 +299,21 @@ export class AddonModLessonHelperProvider {
      * @param questionForm The form group where to add the controls.
      * @param question Basic question data.
      * @param fieldContainer HTMLElement containing the data.
-     * @param type Type of the input.
+     * @param questionType Type of the question.
      * @returns Question data.
      */
     protected getInputQuestionData(
         questionForm: FormGroup,
         question: AddonModLessonQuestion,
         fieldContainer: HTMLElement,
-        type: string,
+        questionType: number,
     ): AddonModLessonInputQuestion {
 
         const inputQuestion = <AddonModLessonInputQuestion> question;
         inputQuestion.template = 'shortanswer';
 
         // Get the input.
-        const input = <HTMLInputElement> fieldContainer.querySelector('input[type="text"], input[type="number"]');
+        const input = fieldContainer.querySelector<HTMLInputElement>('input[type="text"], input[type="number"]');
         if (!input) {
             return inputQuestion;
         }
@@ -324,11 +322,14 @@ export class AddonModLessonHelperProvider {
             id: input.id,
             name: input.name,
             maxlength: input.maxLength,
-            type,
+            type: 'text', // Use text for numerical questions too to allow different decimal separators.
         };
 
         // Init the control.
-        questionForm.addControl(input.name, this.formBuilder.control({ value: input.value, disabled: input.readOnly }));
+        questionForm.addControl(input.name, this.formBuilder.control({
+            value: questionType === AddonModLessonProvider.LESSON_PAGE_NUMERICAL ? CoreUtils.formatFloat(input.value) : input.value,
+            disabled: input.readOnly,
+        }));
 
         return inputQuestion;
     }
@@ -368,7 +369,7 @@ export class AddonModLessonHelperProvider {
             };
 
             // Init the control.
-            essayQuestion.control = this.formBuilder.control('');
+            essayQuestion.control = this.formBuilder.control('', { nonNullable: true });
             questionForm.addControl(essayQuestion.textarea.name, essayQuestion.control);
         }
 
@@ -460,25 +461,28 @@ export class AddonModLessonHelperProvider {
         const element = CoreDomUtils.convertToElement(html);
 
         // Check if it has a checkbox.
-        let input = <HTMLInputElement> element.querySelector('input[type="checkbox"][name*="answer"]');
+        let input = element.querySelector<HTMLInputElement>('input[type="checkbox"][name*="answer"]');
         if (input) {
             // Truefalse or multichoice.
+            const successBadge = element.querySelector<HTMLElement>('.badge.badge-success');
             const data: AddonModLessonCheckboxAnswerData = {
                 isCheckbox: true,
                 checked: !!input.checked,
                 name: input.name,
                 highlight: !!element.querySelector('.highlight'),
                 content: '',
+                successBadge: successBadge?.innerText,
             };
 
             input.remove();
+            successBadge?.remove();
             data.content = element.innerHTML.trim();
 
             return data;
         }
 
         // Check if it has an input text or number.
-        input = <HTMLInputElement> element.querySelector('input[type="number"],input[type="text"]');
+        input = element.querySelector<HTMLInputElement>('input[type="number"],input[type="text"]');
         if (input) {
             // Short answer or numeric.
             return {
@@ -631,7 +635,7 @@ export type AddonModLessonInputQuestion = AddonModLessonQuestionBasicData & {
 export type AddonModLessonEssayQuestion = AddonModLessonQuestionBasicData & {
     useranswer?: string; // User answer, for reviewing.
     textarea?: AddonModLessonTextareaData; // Data for the textarea.
-    control?: FormControl; // Form control.
+    control?: FormControl<string>; // Form control.
 };
 
 /**
@@ -699,6 +703,7 @@ export type AddonModLessonCheckboxAnswerData = {
     name: string;
     highlight: boolean;
     content: string;
+    successBadge?: string;
 };
 
 /**

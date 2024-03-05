@@ -14,12 +14,11 @@
 
 import { AfterViewInit, Directive, ElementRef, Input, OnChanges, SimpleChange } from '@angular/core';
 import { CoreLogger } from '@singletons/logger';
-import { Http } from '@singletons';
-import { CoreConstants } from '@/core/constants';
-import { CorePromisedValue } from '@classes/promised-value';
+import { CoreIcons } from '@singletons/icons';
+import { CoreConstants } from '../constants';
 
 /**
- * Directive to enable font-awesome 6.3 as ionicons.
+ * Directive to enable font-awesome 6.4 as ionicons.
  * Check available icons at https://fontawesome.com/search?o=r&m=free
  *
  * Example usage:
@@ -30,13 +29,6 @@ import { CorePromisedValue } from '@classes/promised-value';
     selector: 'ion-icon[name]',
 })
 export class CoreFaIconDirective implements AfterViewInit, OnChanges {
-
-    /**
-     * Object used to store whether icons exist or not during development.
-     */
-    private static readonly DEV_ICONS_STATUS: Record<string, Promise<boolean>> = {};
-
-    protected static aliases?: CorePromisedValue<Record<string, string>>;
 
     @Input() name = '';
 
@@ -50,65 +42,30 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
     }
 
     /**
-     * Detect icon name and use svg.
+     * Validate icon, e.g. checking if it's using a deprecated name.
      */
-    async setIcon(): Promise<void> {
-        let library = '';
-        let iconName = this.name;
-        let font = 'ionicons';
-        const parts = iconName.split('-', 2);
-        if (parts.length === 2) {
-            switch (parts[0]) {
-                case 'far':
-                    library = 'regular';
-                    font = 'font-awesome';
-                    break;
-                case 'fa':
-                case 'fas':
-                    library = 'solid';
-                    font = 'font-awesome';
-                    break;
-                case 'fab':
-                    library = 'brands';
-                    font = 'font-awesome';
-                    break;
-                case 'moodle':
-                    library = 'moodle';
-                    font = 'moodle';
-                    break;
-                case 'fam':
-                    library = 'font-awesome';
-                    font = 'moodle';
-                    break;
-                default:
-                    break;
+    async validateIcon(): Promise<void> {
+        if (CoreConstants.BUILD.isDevelopment && !CoreIcons.isIconNamePrefixed(this.name)) {
+            this.logger.warn(`Not prefixed icon ${this.name} detected, it could be an Ionic icon. Font-awesome is preferred.`);
+        }
+
+        if (this.name.includes('_')) {
+            // Ionic icons cannot contain a '_' in the name, Ionic doesn't load them, replace it with '-'.
+            this.logger.warn(`Icon ${this.name} contains '_' character and it's not allowed, replacing it with '-'.`);
+            this.updateName(this.name.replace(/_/g, '-'));
+        }
+
+        if (this.name.match(/^fa[brs]?-/)) {
+            // It's a font-awesome icon, check if it's using a deprecated name.
+            const iconName = this.name.substring(this.name.indexOf('-') + 1);
+            const { fileName, newLibrary } = await CoreIcons.getFontAwesomeIconFileName(iconName);
+
+            if (newLibrary) {
+                this.updateName(CoreIcons.prefixIconName('font-awesome', newLibrary, fileName));
+            } else if (fileName !== iconName) {
+                this.updateName(this.name.replace(iconName, fileName));
             }
         }
-
-        if (font === 'ionicons') {
-            this.element.removeAttribute('src');
-            this.logger.warn(`Ionic icon ${this.name} detected`);
-
-            return;
-        }
-
-        iconName = iconName.substring(parts[0].length + 1);
-
-        // Set it here to avoid loading unexisting icon paths (svg/iconName) caused by the tick delay of the checkIconAlias promise.
-        let src = `assets/fonts/${font}/${library}/${iconName}.svg`;
-        this.element.setAttribute('src', src);
-
-        if (font === 'font-awesome') {
-            const iconNameChecked = await this.checkIconAlias(iconName);
-            if (iconNameChecked !== iconName) {
-                src = `assets/fonts/${font}/${library}/${iconName}.svg`;
-                this.element.setAttribute('src', src);
-            }
-        }
-
-        this.element.classList.add('faicon');
-        this.validateIcon(this.name, src);
-
     }
 
     /**
@@ -132,80 +89,17 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
             return;
         }
 
-        this.setIcon();
+        this.validateIcon();
     }
 
     /**
-     * Check icon alias and returns the new icon name.
+     * Update the icon name.
      *
-     * @param iconName Icon name.
-     * @returns New icon name.
+     * @param newName New name to use.
      */
-    protected async checkIconAlias(iconName: string): Promise<string> {
-        const aliases = await CoreFaIconDirective.getIconsAliases();
-
-        if (aliases[iconName]) {
-            this.logger.error(`Icon ${iconName} is an alias of ${aliases[iconName]}, please use the new name.`);
-
-            return aliases[iconName];
-        }
-
-        return iconName;
-    }
-
-    /**
-     * Read the icon aliases json file.
-     *
-     * @returns Promise resolved when loaded.
-     */
-    protected static async getIconsAliases(): Promise<Record<string, string>> {
-        if (CoreFaIconDirective.aliases !== undefined) {
-            return CoreFaIconDirective.aliases;
-        }
-
-        CoreFaIconDirective.aliases = new CorePromisedValue();
-
-        try {
-            const aliases = await Http.get<Record<string, string>>('assets/fonts/font-awesome/aliases.json', {
-                responseType: 'json',
-            }).toPromise();
-
-            CoreFaIconDirective.aliases.resolve(aliases);
-
-            return aliases;
-        } catch {
-            CoreFaIconDirective.aliases.resolve({});
-
-            return {};
-        }
-    }
-
-    /**
-     * Validate that an icon exists, or show warning otherwise (only in development and testing environments).
-     *
-     * @param name Icon name.
-     * @param src Icon source url.
-     */
-    private validateIcon(name: string, src: string): void {
-        if (!CoreConstants.BUILD.isDevelopment && !CoreConstants.BUILD.isTesting) {
-            return;
-        }
-
-        if (!(src in CoreFaIconDirective.DEV_ICONS_STATUS)) {
-            CoreFaIconDirective.DEV_ICONS_STATUS[src] = Http.get(src, { responseType: 'text' })
-                .toPromise()
-                .then(() => true)
-                .catch(() => false);
-        }
-
-        // eslint-disable-next-line promise/catch-or-return
-        CoreFaIconDirective.DEV_ICONS_STATUS[src].then(exists => {
-            if (exists) {
-                return;
-            }
-
-            return this.logger.error(`Icon ${name} not found`);
-        });
+    protected updateName(newName: string): void {
+        this.name = newName;
+        this.element.setAttribute('name', newName);
     }
 
 }

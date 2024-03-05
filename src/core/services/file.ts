@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 
-import { FileEntry, DirectoryEntry, Entry, Metadata, IFile } from '@ionic-native/file/ngx';
+import { FileEntry, DirectoryEntry, Entry, Metadata, IFile } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { CoreTextUtils } from '@services/utils/text';
@@ -23,11 +23,12 @@ import { CoreConstants } from '@/core/constants';
 import { CoreError } from '@classes/errors/error';
 
 import { CoreLogger } from '@singletons/logger';
-import { makeSingleton, File, Zip, WebView } from '@singletons';
+import { makeSingleton, File, WebView } from '@singletons';
 import { CoreFileEntry } from '@services/file-helper';
 import { CoreText } from '@singletons/text';
 import { CorePlatform } from '@services/platform';
 import { CorePath } from '@singletons/path';
+import { Zip } from '@features/native/plugins';
 
 /**
  * Progress event used when writing a file data into a file.
@@ -70,28 +71,6 @@ export const enum CoreFileFormat {
  */
 @Injectable({ providedIn: 'root' })
 export class CoreFileProvider {
-
-    // Formats to read a file.
-    /**
-     * @deprecated since 3.9.5, use CoreFileFormat directly.
-     */
-    static readonly FORMATTEXT = CoreFileFormat.FORMATTEXT;
-    /**
-     * @deprecated since 3.9.5, use CoreFileFormat directly.
-     */
-    static readonly FORMATDATAURL = CoreFileFormat.FORMATDATAURL;
-    /**
-     * @deprecated since 3.9.5, use CoreFileFormat directly.
-     */
-    static readonly FORMATBINARYSTRING = CoreFileFormat.FORMATBINARYSTRING;
-    /**
-     * @deprecated since 3.9.5, use CoreFileFormat directly.
-     */
-    static readonly FORMATARRAYBUFFER = CoreFileFormat.FORMATARRAYBUFFER;
-    /**
-     * @deprecated since 3.9.5, use CoreFileFormat directly.
-     */
-    static readonly FORMATJSON = CoreFileFormat.FORMATJSON;
 
     // Folders.
     static readonly SITESFOLDER = 'sites';
@@ -240,7 +219,7 @@ export class CoreFileProvider {
 
             const newDirEntry = await File.createDir(base, firstDir, true);
 
-            return this.create(isDirectory, restOfPath, failIfExists, newDirEntry.toURL());
+            return this.create(isDirectory, restOfPath, failIfExists, this.getFileEntryURL(newDirEntry));
         }
     }
 
@@ -895,10 +874,27 @@ export class CoreFileProvider {
     getInternalURL(fileEntry: FileEntry): string {
         if (!fileEntry.toInternalURL) {
             // File doesn't implement toInternalURL, use toURL.
-            return fileEntry.toURL();
+            return this.getFileEntryURL(fileEntry);
         }
 
         return fileEntry.toInternalURL();
+    }
+
+    /**
+     * Get the URL (absolute path) of a file.
+     * Use this function instead of doing fileEntry.toURL because the latter causes problems with WebView and other plugins.
+     *
+     * @param fileEntry File Entry.
+     * @returns URL.
+     */
+    getFileEntryURL(fileEntry: Entry): string {
+        if (CorePlatform.isAndroid()) {
+            // Cordova plugin file v7 changed the format returned by toURL, the new format it's not compatible with
+            // Ionic WebView or FileTransfer plugin.
+            return fileEntry.nativeURL;
+        }
+
+        return fileEntry.toURL();
     }
 
     /**
@@ -955,7 +951,7 @@ export class CoreFileProvider {
         // If destFolder is not set, use same location as ZIP file. We need to use absolute paths (including basePath).
         destFolder = this.addBasePathIfNeeded(destFolder || CoreMimetypeUtils.removeExtension(path));
 
-        const result = await Zip.unzip(fileEntry.toURL(), destFolder, onProgress);
+        const result = await Zip.unzip(this.getFileEntryURL(fileEntry), destFolder, onProgress);
 
         if (result == -1) {
             throw new CoreError('Unzip failed.');
@@ -1154,6 +1150,38 @@ export class CoreFileProvider {
     async clearTmpFolder(): Promise<void> {
         // Ignore errors because the folder might not exist.
         await CoreUtils.ignoreErrors(this.removeDir(CoreFileProvider.TMPFOLDER));
+    }
+
+    /**
+     * Remove deleted sites folders.
+     *
+     * @returns Promise resolved when done.
+     */
+    async clearDeletedSitesFolder(existingSiteNames: string[]): Promise<void> {
+        // Ignore errors because the folder might not exist.
+        const dirPath = CoreFileProvider.SITESFOLDER;
+
+        // Get the directory contents.
+        try {
+            const contents = await this.getDirectoryContents(dirPath);
+
+            if (!contents.length) {
+                return;
+            }
+
+            const promises: Promise<void>[] = contents.map(async (file) => {
+                if (file.isDirectory) {
+                    if (!existingSiteNames.includes(file.name)) {
+                        // Site does not exist... delete it.
+                        await CoreUtils.ignoreErrors(this.removeDir(this.getSiteFolder(file.name)));
+                    }
+                }
+            });
+
+            await Promise.all(promises);
+        } catch {
+            // Ignore errors, maybe it doesn't exist.
+        }
     }
 
     /**

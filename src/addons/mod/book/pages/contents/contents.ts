@@ -24,7 +24,6 @@ import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import { CoreTag, CoreTagItem } from '@features/tag/services/tag';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -40,6 +39,9 @@ import {
     AddonModBookProvider,
     AddonModBookTocChapter,
 } from '../../services/book';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreUrlUtils } from '@services/utils/url';
+import { IonicSlides } from '@ionic/angular';
 
 /**
  * Page that displays a book contents.
@@ -51,7 +53,7 @@ import {
 })
 export class AddonModBookContentsPage implements OnInit, OnDestroy {
 
-    @ViewChild(CoreSwipeSlidesComponent) slides?: CoreSwipeSlidesComponent;
+    @ViewChild(CoreSwipeSlidesComponent) swipeSlidesComponent?: CoreSwipeSlidesComponent;
 
     title = '';
     cmId!: number;
@@ -62,7 +64,8 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
     warning = '';
     displayNavBar = true;
     navigationItems: CoreNavigationBarItem<AddonModBookTocChapter>[] = [];
-    slidesOpts: CoreSwipeSlidesOptions = {
+    swiperOpts: CoreSwipeSlidesOptions = {
+        modules: [IonicSlides],
         autoHeight: true,
         observer: true,
         observeParents: true,
@@ -221,7 +224,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
             return;
         }
 
-        this.slides?.slideToItem({ id: chapterId });
+        this.swipeSlidesComponent?.slideToItem({ id: chapterId });
     }
 
     /**
@@ -230,7 +233,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
         if (this.manager) {
             await CoreUtils.ignoreErrors(Promise.all([
                 this.manager.getSource().invalidateContent(),
@@ -286,7 +289,15 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
         }
 
         // Chapter loaded, log view.
-        await CoreUtils.ignoreErrors(AddonModBook.logView(this.module.instance, chapterId, this.module.name));
+        await CoreUtils.ignoreErrors(AddonModBook.logView(this.module.instance, chapterId));
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM,
+            ws: 'mod_book_view_book',
+            name: this.module.name,
+            data: { id: this.module.instance, category: 'book', chapterid: chapterId },
+            url: CoreUrlUtils.addParamsToUrl(`/mod/book/view.php?id=${this.module.id}`, { chapterid: chapterId }),
+        });
 
         const currentChapterIndex = this.chapters.findIndex((chapter) => chapter.id == chapterId);
         const isLastChapter = currentChapterIndex < 0 || this.chapters[currentChapterIndex + 1] === undefined;

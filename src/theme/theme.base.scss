@@ -66,75 +66,68 @@ body {
 .font-lg { font-size: 1.7rem; }
 .font-sm { font-size: 1.2rem; }
 
-// Headings.
+// Item Headings.
 // Some styles taken from ion-label
-.md ion-label .item-heading,
-.ios ion-label .item-heading {
-    text-overflow: inherit;
-    overflow: inherit;
-    --color: initial;
-    color: var(--color);
-    line-height: 20px;
-
-    &.item-heading-secondary {
+.item > ion-label,
+.fake-ion-item > ion-label,
+ion-item .in-item {
+    p {
         --color: var(--subdued-text-color);
+        color: var(--color);
+        @include margin(2px, 0);
+        font-size: 0.875rem;
     }
-}
 
-.ios ion-label > p,
-.md ion-label > p {
-    --color: var(--subdued-text-color);
-    color: var(--color);
-}
-
-.md ion-label .item-heading {
-    @include margin(2px, 0);
-
-    font-size: 16px;
-    font-weight: normal;
-
-    &.item-heading-secondary {
+    .item-heading {
         @include margin(2px, 0);
 
-        font-size: var(--text-size);
+        font-size: 1rem;
         font-weight: normal;
 
-        line-height: normal;
-    }
-}
+        text-overflow: inherit;
+        overflow: inherit;
+        --color: initial;
+        color: var(--color);
 
-.ios ion-label .item-heading {
-    @include margin(0, 0, 2px);
+        &.item-heading-secondary {
+            @include margin(2px, 0);
 
-    font-size: 17px;
-    font-weight: normal;
+            font-size: var(--text-size);
+            font-weight: normal;
+            line-height: normal;
 
-    &.item-heading-secondary {
-        @include margin(0, 0, 3px);
-
-        font-size: var(--text-size);
-        font-weight: normal;
-
-        line-height: normal;
+            --color: var(--subdued-text-color);
+        }
     }
 }
 
 // Correctly inherit ion-text-wrap onto labels.
-.item ion-label core-format-text > *,
-.fake-ion-item core-format-text > * {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.item > ion-label,
+.fake-ion-item {
+    core-format-text,
+    core-format-text > *:not(pre) {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
-.item.ion-text-wrap > ion-label core-format-text > *,
-.fake-ion-item.ion-text-wrap core-format-text > * {
-    white-space: normal;
-    overflow: inherit;
+.item.ion-text-wrap > ion-label,
+ion-item > .in-item,
+.fake-ion-item.ion-text-wrap {
+    core-format-text,
+    core-format-text > *:not(pre) {
+        white-space: normal;
+        overflow: inherit;
+    }
 }
 
 .item.ion-text-wrap > ion-label {
     white-space: normal !important;
+}
+
+ion-item .core-input-errors-wrapper {
+    width: 100%;
 }
 
 @each $color-name, $unused in $colors {
@@ -151,7 +144,7 @@ ion-toolbar {
 
 // Header.
 ion-header {
-    z-index: 12; // To hide ion-slides on scroll.
+    z-index: 12; // To hide swiper-container on scroll.
 
     ion-toolbar {
         ion-spinner {
@@ -166,11 +159,16 @@ ion-header {
             --color: var(--core-header-buttons-color);
             --background: var(--core-header-buttons-background);
             --ion-toolbar-color: var(--core-header-buttons-color);
-            --border-radius: var(--huge-radius);
+            --border-radius: var(--radius-xl);
             --primary: var(--core-header-buttons-color);
         }
         ion-back-button::part(text) {
             display: none;
+        }
+
+        // Style fake back button like the original ones.
+        ion-button.ion-back-button {
+            width: 48px !important;
         }
 
         .button.button-clear.button-has-icon-only,
@@ -253,39 +251,10 @@ ion-tabs.hide-header ion-header {
     display: none;
 }
 
-ion-footer ion-toolbar.ion-color-contrast {
-    background-color: var(--contrast-background);
-}
-
 ion-footer {
     background-color: var(--contrast-background);
-}
-
-// Ionic icon.
-ion-icon {
-    position: relative;
-
-    &.icon-slash::after,
-    &.icon-backslash::after {
-        content: " ";
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: var(--danger);
-        -webkit-mask: url("/assets/fonts/font-awesome/solid/slash.svg") no-repeat 50% 50%;
-        mask: url("/assets/fonts/font-awesome/solid/slash.svg") no-repeat 50% 50%;
-    }
-
-    &.icon-slash::after {
-        -webkit-transform: scale(-1, 1);
-        transform: scale(-1, 1);
-    }
-
-    &.fa-fw {
-        text-align: center;
-        width: 1.25em;
+    > ion-toolbar:only-child {
+        top: 1px;
     }
 }
 
@@ -296,6 +265,11 @@ button,
 [role="button"] {
     min-height: var(--a11y-min-target-size);
     min-width: var(--a11y-min-target-size);
+
+    &.button-large {
+        min-height: 2.8em;
+        min-width: 2.8em
+    }
 }
 
 ion-fab-button {
@@ -375,7 +349,7 @@ ion-button:not(.button-has-icon-only):not(.button-small) > ion-icon {
 }
 
 ion-button.button.button-clear.button-has-icon-only {
-    --border-radius: var(--huge-radius);
+    --border-radius: var(--radius-xl);
 }
 
 ion-button.button.button-clear {
@@ -386,6 +360,27 @@ ion-button.button.button-clear {
 ion-button.button.button-solid,
 ion-button.button.button-outline {
     --border-radius: var(--core-input-radius);
+}
+
+ion-button .select-icon {
+    margin: var(--icon-margin);
+    width: 19px;
+    height: 19px;
+    position: relative;
+
+    .select-icon-inner {
+        left: 5px;
+        top: 50%;
+        margin-top: -2px;
+        position: absolute;
+        width: 0px;
+        height: 0px;
+        color: currentcolor;
+        pointer-events: none;
+        border-top: 5px solid;
+        border-right: 5px solid transparent;
+        border-left: 5px solid transparent;
+    }
 }
 
 [role="button"],
@@ -451,8 +446,8 @@ div.core-iframe-network-error {
         width: 50%;
         height: 50%;
         background-color: var(--danger);
-        -webkit-mask: url("/assets/fonts/font-awesome/solid/exclamation-triangle.svg") no-repeat 50% 50%;
-        mask: url("/assets/fonts/font-awesome/solid/exclamation-triangle.svg") no-repeat 50% 50%;
+        -webkit-mask: url("/assets/fonts/font-awesome/solid/triangle-exclamation.svg") no-repeat 50% 50%;
+        mask: url("/assets/fonts/font-awesome/solid/triangle-exclamation.svg") no-repeat 50% 50%;
     }
 }
 
@@ -462,10 +457,9 @@ div.core-iframe-network-error {
     left: -15%;
 }
 
-ion-alert.core-nohead {
-    .alert-head {
-        padding-bottom: 0;
-    }
+ion-alert.core-nohead .alert-head,
+ion-alert .alert-head:empty {
+    padding-bottom: 0;
 }
 
 @keyframes scaleFrom0 {
@@ -497,7 +491,7 @@ ion-alert .alert-button.timed-button{
 }
 
 ion-alert {
-    --border-radius: var(--huge-radius);
+    --border-radius: var(--modal-radius);
 
     &.md, &.ios {
         --max-width: 80%;
@@ -520,11 +514,17 @@ ion-alert {
     .alert-message {
         user-select: text;
         flex-shrink: 0;
+
+        ion-card {
+            margin: 0;
+            margin-top: 10px;
+        }
+
     }
 }
 
 ion-loading {
-    --border-radius: var(--huge-radius);
+    --border-radius: var(--modal-radius);
 
     .loading-wrapper {
         border-radius: var(--border-radius) !important;
@@ -659,7 +659,7 @@ body.core-iframe-fullscreen ion-router-outlet {
 }
 
 // Modals.
-.core-modal-fullscreen .modal-wrapper {
+.core-modal-fullscreen::part(content) {
     position: absolute;
     @include position(0 !important, null, null, 0 !important);
     display: block;
@@ -669,11 +669,11 @@ body.core-iframe-fullscreen ion-router-outlet {
 
 .core-modal-transparent {
 
-    ion-backdrop {
+    &::part(backdrop) {
         backdrop-filter: blur(8px);
     }
 
-    .modal-wrapper {
+    &::part(content) {
         backdrop-filter: blur(12px);
         --background: rgba(10, 10, 10, 0.2);
 
@@ -696,7 +696,7 @@ body.core-iframe-fullscreen ion-router-outlet {
     --ion-safe-area-left: 0px;
     --ion-safe-area-right: 0px;
 
-    .modal-wrapper {
+    &::part(content) {
         @include margin-horizontal(var(--modal-lateral-margin), null);
 
         position: absolute;
@@ -708,7 +708,7 @@ body.core-iframe-fullscreen ion-router-outlet {
         box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
     }
 
-    ion-backdrop {
+    &::part(backdrop) {
         visibility: visible;
     }
 
@@ -719,10 +719,10 @@ body.core-iframe-fullscreen ion-router-outlet {
 
 .core-modal-transparent-no-filter {
     @extend .core-modal-transparent;
-    ion-backdrop {
+    &::part(backdrop) {
         backdrop-filter: none;
     }
-    .modal-wrapper {
+    &::part(content) {
         backdrop-filter: none;
     }
 }
@@ -730,6 +730,21 @@ body.core-iframe-fullscreen ion-router-outlet {
 @each $breakpoint, $width in $screen-breakpoints {
     .core-modal-lateral-#{$breakpoint} {
         --modal-lateral-max-width: #{$width};
+    }
+}
+
+.core-password-modal {
+    --border-radius: var(--radius-sm);
+    --min-width: auto;
+    --min-height: 300px;
+    --width: 384px;
+    --height: auto;
+
+    form {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-between;
     }
 }
 
@@ -764,7 +779,7 @@ body.core-iframe-fullscreen ion-router-outlet {
 
 .item.item-file {
     ion-thumbnail {
-        --size: 24px;
+        --size: 32px;
         width: var(--size);
         height: var(--size);
     }
@@ -798,6 +813,9 @@ body.core-iframe-fullscreen ion-router-outlet {
 .item-dimmed {
     opacity: 0.7;
     --background: var(--light);
+    ion-item {
+        --background: var(--light);
+    }
 }
 
 // Extra text colors.
@@ -815,6 +833,7 @@ body.core-iframe-fullscreen ion-router-outlet {
         --border-width: 0;
 
         --border-color: var(--color-tint);
+        --border-radius: var(--radius-sm);
         --background: var(--color-tint);
         --color: var(--color-shade);
 
@@ -874,10 +893,7 @@ img.large-avatar,
     height: var(--core-large-avatar-size);
     max-width: var(--core-large-avatar-size);
     max-height: var(--core-large-avatar-size);
-    margin-bottom: 10px;
-    border-radius : 50%;
-    padding: 4px;
-    border: 1px solid var(--stroke);
+    border-radius: 50%;
     background-color: transparent;
 }
 
@@ -915,10 +931,33 @@ ion-card {
     ion-card-title {
         font-size: 20px;
     }
+
+    &.core-card-with-buttons .item ion-label {
+        margin-bottom: 0;
+    }
+
+    .core-card-buttons {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        margin: 0 8px 8px 8px;
+
+        ion-button {
+            text-transform: none;
+
+            &[fill="outline"] {
+                --background: transparent;
+            }
+        }
+    }
 }
 
 .core-course-module-handler:not(.addon-mod-label-handler) .item-heading .filter_mathjaxloader_equation div {
     display: inline !important;
+}
+
+.section-summary core-format-text img {
+    border-radius: var(--radius-lg);
 }
 
 ion-list.core-course-module-list-wrapper,
@@ -936,9 +975,19 @@ ion-content.limited-width > :not([slot]) {
     min-height: 100%;
 }
 
+.limited-width > core-loading:not([slot]),
+.menu > core-loading:not([slot]) {
+    &.core-loading-loaded {
+        --contents-display: flex;
+        flex-direction: column;
+    }
+    min-height: 100%;
+}
+
 ion-toolbar h1 img.core-bar-button-image,
 ion-toolbar h1 .core-bar-button-image img {
     padding: 4px;
+    --userpicture-padding: 4px;
     width: var(--core-header-toolbar-button-image-size);
     height: var(--core-header-toolbar-button-image-size);
     max-width: var(--core-header-toolbar-button-image-size);
@@ -959,7 +1008,7 @@ ion-action-sheet.md {
     }
 
     .action-sheet-group:first-child {
-        border-radius: var(--big-radius) var(--big-radius) 0 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
 
     .action-sheet-group-cancel {
@@ -971,15 +1020,18 @@ ion-action-sheet.md {
 ion-radio,
 input[type=radio],
 .select-alert.ios .alert-radio-icon {
-    --color: var(--text-color);
-    --color-checked: var(--color);
     --border-radius: 50%;
     --border-width: 2px;
     --outer-border-width: 2px;
     --border-style: solid;
-    --inner-border-radius: 50%;
     --size: 20px;
+
+    &:not(.ion-color) {
+        --color: var(--text-color);
+        --color-checked: var(--color);
+    }
 }
+
 
 .ios ion-radio,
 .ios input[type=radio],
@@ -989,10 +1041,10 @@ input[type=radio],
 }
 
 .ios ion-radio {
-    width: var(--size);
-    height: var(--size);
-
     &::part(container) {
+        width: var(--size);
+        height: var(--size);
+
         margin: 0px;
         border-radius: var(--border-radius);
         border-width: var(--outer-border-width);
@@ -1064,14 +1116,18 @@ input[type=radio],
 ion-checkbox,
 input[type=checkbox] {
     --border-radius: 2px;
-    --border-color-checked: var(--text-color);
-    --background-checked: var(--text-color);
-    --checkmark-color: var(--contrast-background);
     --border-width: 2px;
     --outer-border-width: 2px;
     --border-style: solid;
     --size: 20px;
+
+    &:not(.ion-color) {
+        --border-color-checked: var(--text-color);
+        --checkbox-background-checked: var(--text-color);
+        --checkmark-color: var(--contrast-background);
+    }
 }
+
 
 .ios input[type=checkbox] {
     --outer-border-width: 1px;
@@ -1082,22 +1138,33 @@ input[type=checkbox] {
 }
 
 // Select.
-ion-select::part(text) {
-    white-space: normal;
-}
-
-ion-select::part(icon) {
-    opacity: 1;
+ion-select {
+    &::part(text) {
+        white-space: normal;
+    }
+    &::part(icon) {
+        opacity: 1;
+    }
+    &::part(label) {
+        max-width: none;
+    }
 }
 
 ion-select-popover {
+    ion-list ion-radio-group ion-item.select-interface-option ion-radio.hydrated::part(container) {
+        opacity: 1;
+    }
+
+    ion-item {
+        font-size: 14px;
+    }
     ion-item.core-select-option-border-bottom {
         border-bottom: 1px solid var(--stroke);
     }
 
     ion-item.core-select-option-title {
         cursor: pointer;
-        ion-radio {
+        ion-radio::part(container) {
             display: none;
         }
     }
@@ -1106,11 +1173,11 @@ ion-select-popover {
 ion-badge {
     line-height: 1.1;
     padding: 2px 8px;
-    border-radius: var(--big-radius);
+    border-radius: var(--radius-lg);
 }
 
 ion-chip,
-ion-button.chip {
+ion-button.button.chip {
     line-height: 1.1;
     font-size: 12px;
     min-height: 24px;
@@ -1129,7 +1196,11 @@ ion-button.chip {
     }
 }
 
-ion-button.chip {
+ion-button.button.chip {
+    --border-radius: var(--radius-md);
+    min-height: 32px;
+    font-size: 14px;
+
     ion-icon[slot=start] {
         @include margin(0, 8px, 0, 0);
     }
@@ -1188,6 +1259,7 @@ ion-chip {
 
 ion-searchbar {
     height: var(--height) !important;
+    --border-radius: var(--radius-xs);
 
     .searchbar-input-container {
         color: var(--color) !important;
@@ -1195,6 +1267,8 @@ ion-searchbar {
     }
 
     .searchbar-input {
+        --border-radius: var(--radius-xs);
+
         height: var(--height) !important;
         border: 1px solid var(--border-color) !important;
         box-shadow: none !important;
@@ -1269,7 +1343,7 @@ mark, .matchtext {
 }
 
 .core-scanning-qr {
-    .ion-page, .modal-wrapper {
+    .ion-page, ion-modal::part(content) {
         background-color: transparent !important;
         --background: transparent;
     }
@@ -1315,6 +1389,25 @@ ion-fab[core-fab] {
     }
 }
 
+// The following 4 selectors can probably be removed after Ionic migration to 7+
+ion-fab.fab-horizontal-start {
+    left: calc(10px + var(--ion-safe-area-right, 0px));
+}
+
+[dir=rtl] ion-fab.fab-horizontal-start {
+    right: calc(10px + var(--ion-safe-area-right, 0px));
+    left: unset
+}
+
+ion-fab.fab-horizontal-end {
+    right: calc(10px + var(--ion-safe-area-right, 0px));
+}
+
+[dir=rtl] ion-fab.fab-horizontal-end {
+    left: calc(10px + var(--ion-safe-area-right, 0px));
+    right: unset
+}
+
 ion-content.has-collapsible-footer ion-fab {
     bottom: calc(var(--core-collapsible-footer-height, 0px) + 10px);
     @include core-transition(all, 200ms);
@@ -1332,23 +1425,27 @@ audio.core-media-adapt-width {
     width: 100%;
 }
 
-ion-item {
-    font-size: var(--text-size);
+ion-item.item-lines-default {
     --inner-border-width: 0px;
-}
-
-ion-item.item-lines-full {
-    --inner-border-width: 0px;
-    --border-width: 0 0 1px 0;
-}
-
-ion-item.item-lines-inset {
-    --inner-border-width: 1px;
     --border-width: 0px;
 }
 
-ion-item.item-input.ios {
+ion-item.ion-valid,
+ion-item.ion-invalid {
     --inner-border-width: 0 0 1px 0;
+
+    &.ion-touched {
+        &.ion-invalid {
+            --ion-item-border-color: var(--highlight-color-invalid);
+            --highlight-background: var(--ion-item-border-color);
+            --border-color: var(--ion-item-border-color);
+        }
+        &.ion-valid {
+            --ion-item-border-color: var(--highlight-color-valid);
+            --highlight-background: var(--ion-item-border-color);
+            --border-color: var(--ion-item-border-color);
+        }
+    }
 }
 
 // Fake item.
@@ -1444,9 +1541,10 @@ html.ios div.fake-ion-item {
 
 // Disabled items.
 ion-item.item-disabled,
+ion-button.button-disabled,
 ion-item.item-interactive-disabled:not(.item-multiple-inputs) ion-label,
 ion-datetime.datetime-disabled {
-    opacity: .8 !important;
+    opacity: .65 !important;
 }
 
 // Hide details on items to align badges.
@@ -1517,37 +1615,6 @@ ion-item.item-input.item-multiple-inputs {
     }
 }
 
-// Focus highlight for accessibility.
-.ion-focused:not(.item-multiple-inputs):not(:focus),
-ion-input.has-focus,
-ion-card:focus {
-    @include core-focus();
-}
-.ion-focused.item-multiple-inputs,
-.ion-focused.ion-activatable {
-    ion-toggle:focus-within,
-    ion-select:focus-within,
-    ion-checkbox:focus-within,
-    ion-radio:focus-within {
-        @include core-focus();
-    }
-}
-
-// Treat cases where there's a focusable element inside an item, like a button.
-ion-item.item-input:not(.item-multiple-inputs):not(:focus),
-ion-item.item-has-focus:not(.item-multiple-inputs):not(:focus),
-ion-item.item-input ion-input.has-focus {
-    position: relative;
-    &::after {
-        box-shadow: revert;
-        opacity: revert;
-        z-index: revert;
-    }
-    .item-highlight, .item-inner-highlight {
-        position: unset;
-    }
-}
-
 ion-item-divider.item,
 ion-item.item.divider {
     min-height: var(--min-height);
@@ -1582,7 +1649,44 @@ ion-item.item {
 // Change default outline.
 :focus-visible {
     @include core-focus-style();
+    border-radius: inherit;
     outline: none;
+}
+
+// Focus highlight for accessibility.
+.ion-focused:not(.item-multiple-inputs):not(:focus),
+ion-input.has-focus,
+ion-card:focus {
+    @include core-focus();
+
+    :focus-visible,
+    .clickable:focus {
+        box-shadow: none;
+    }
+}
+
+.ion-focused.item-multiple-inputs {
+    ion-toggle:focus-within,
+    ion-select:focus-within,
+    ion-checkbox:focus-within,
+    ion-radio:focus-within {
+        @include core-focus();
+    }
+}
+
+// Treat cases where there's a focusable element inside an item, like a button.
+ion-item.item-input:not(.item-multiple-inputs):not(:focus),
+ion-item.item-has-focus:not(.item-multiple-inputs):not(:focus),
+ion-item.item-input ion-input.has-focus {
+    position: relative;
+    &::after {
+        box-shadow: revert;
+        opacity: revert;
+        z-index: revert;
+    }
+    .item-highlight, .item-inner-highlight {
+        position: unset;
+    }
 }
 
 textarea, button, select, input, a, .clickable {
@@ -1590,10 +1694,6 @@ textarea, button, select, input, a, .clickable {
         @include core-focus-style();
         outline: none;
     }
-}
-
-.ion-focused:not(.item-multiple-inputs):not(:focus) .clickable:focus {
-    box-shadow: none;
 }
 
 ion-loading:focus-visible,
@@ -1604,16 +1704,18 @@ ion-modal:focus-visible {
     border-radius: 0;
 }
 
-input {
-    --placeholder-color: var(--ion-placeholder-color);
-    --placeholder-opacity: .85;
-}
-
 ion-input .native-input {
     &:focus, &:focus-visible {
         box-shadow: none;
         outline: none;
     }
+}
+
+ion-input,
+ion-input input,
+ion-textarea {
+    --placeholder-color: var(--ion-placeholder-color);
+    --placeholder-opacity: .65;
 }
 
 // Disable scroll on parent ion contents to enabled PTR on the ones inside the splitview. See split-view component for more info.
@@ -1652,6 +1754,7 @@ ion-grid.core-no-grid > ion-row {
 
 .core-footer-shadow [collapsible-footer] {
     box-shadow: var(--drop-shadow-top, none);
+    clip-path: inset(-8px 0px 0px 0px); // Only show shadow at top.
 }
 [collapsible-footer] {
     transition: box-shadow 0.5s;
@@ -1738,13 +1841,53 @@ ion-header.no-title {
         flex-direction: column;
         flex-grow: 1;
 
-        ion-slides {
+        swiper-container {
             flex-grow: 1;
             max-width: 100%;
         }
     }
+}
 
+swiper-container {
+    --swiper-theme-color: var(--ion-color-primary, #3880ff);
+    --swiper-pagination-bullet-inactive-color: var(--ion-color-step-200, #cccccc);
+    --swiper-pagination-color: var(--swiper-theme-color);
+    --swiper-pagination-progressbar-bg-color: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.25);
+    --swiper-scrollbar-bg-color: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.1);
+    --swiper-scrollbar-drag-bg-color: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.5);
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    // CSS Grid/Flexbox bug size workaround
+    // @see https://github.com/kenwheeler/slick/issues/982
+    // @see https://github.com/nolimits4web/swiper/issues/3599
+    min-height: 0;
+    min-width: 0;
 
+    swiper-slide {
+        display: flex;
+        position: relative;
+
+        flex-direction: column;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+
+        width: 100%;
+        height: 100%;
+
+        font-size: 18px;
+
+        text-align: center;
+        box-sizing: border-box;
+
+        img {
+            width: auto;
+            max-width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+    }
 }
 
 .has-spacer,
@@ -1763,6 +1906,10 @@ ion-header.no-title {
     }
 }
 
+
+.core-flex-no-grow {
+    flex-grow: 0;
+}
 
 // Loader animation.
 .core-loading {
@@ -1801,12 +1948,156 @@ video::-webkit-media-text-track-display {
     white-space: normal !important;
 }
 
-ion-modal.core-modal-no-background {
-    --background: transparent;
-    --box-shadow: none !important;
-    pointer-events: none;
+ion-modal {
+    &.show-modal {
+        @media only screen and (min-width: 768px) and (min-height: 600px) {
+            --border-radius: var(--modal-radius);
+        }
+    }
+    &.ion-datetime-button-overlay {
+        --border-radius: var(--modal-radius);
+    }
 
-    ion-backdrop {
-        display: none;
+    &.core-modal-lateral,
+    &.core-modal-fullscreen {
+        --border-radius: 0px;
+    }
+
+    &.core-modal-no-background {
+        --background: transparent;
+        --box-shadow: none !important;
+        pointer-events: none;
+
+        &::part(backdrop) {
+            display: none;
+        }
+    }
+}
+
+ion-popover {
+    &::part(content) {
+        border-radius: var(--modal-radius);
+    }
+    &.md {
+        margin-top: 2px;
+        margin-bottom: 2px;
+
+        // Never show backdrop on popovers on Android
+        // @todo Apply box shadow on ios and make it transparent too. The main problem is the box arrow.
+        &::part(backdrop) {
+            background: transparent;
+        }
+    }
+}
+
+/*
+* This is to solve popver issue in chrome 114
+* For more info see: https://github.com/ionic-team/ionic-framework/issues/27599
+*/
+[popover].popover-viewport {
+    display: initial;
+    position: initial;
+    margin: initial;
+    border: initial;
+    background: initial;
+    padding: initial;
+    width: initial;
+    height: initial;
+    overflow: initial;
+    inset: initial;
+    color: initial;
+}
+
+/**
+ * https://github.com/ionic-team/ionic-framework/blob/6ffbdbb3b2b69290cf25753d535bc7483bd7c6e8/BREAKING.md#css-utilities
+ */
+[hidden] {
+    display: none !important;
+}
+
+// Ion Datetime
+ion-item.item-label-stacked ion-datetime-button {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    align-self: self-end;
+}
+
+// Table App styles
+table.core-table {
+    border-collapse: collapse;
+    line-height: 20px;
+    width: 98%;
+    margin: 1em auto;
+    color: var(--text-color);
+
+
+    thead th {
+        vertical-align: bottom;
+        font-weight: bold;
+        font-size: 14px;
+        background-color: var(--core-table-header-background);
+    }
+
+    tbody th {
+        font-weight: normal;
+    }
+
+    th, td {
+        padding: 8px;
+        white-space: normal;
+        text-align: start;
+    }
+
+    tr {
+        border-bottom: 1px solid var(--core-table-border-color);
+    }
+
+    tbody td {
+        font-size: 16px;
+    }
+
+    .odd {
+        --cell-background: var(--core-table-odd-cell-background);
+        --cell-hover: var(--core-table-odd-cell-hover);
+    }
+
+    .even {
+        --cell-background: var(--core-table-even-cell-background);
+        --cell-hover: var(--core-table-even-cell-hover);
+    }
+
+    .odd, .even {
+        td, th, th[aria-current="page"] {
+            background-color: var(--cell-background);
+
+            &:hover {
+                background-color: var(--cell-hover);
+            }
+        }
+    }
+
+    tbody.auto-striped tr:nth-child(odd) {
+        background-color: var(--core-table-odd-cell-background);
+
+        &:hover {
+            background-color: var(--core-table-even-odd-hover);
+        }
+    }
+
+    tbody.auto-striped tr:nth-child(even) {
+        background-color: var(--core-table-even-cell-background);
+
+        &:hover {
+            background-color: var(--core-table-even-cell-hover);
+        }
+    }
+
+    .ion-no-border {
+        border: 0 !important;
+    }
+
+    .dimmed_text,
+    .hidden {
+        opacity: .7;
     }
 }

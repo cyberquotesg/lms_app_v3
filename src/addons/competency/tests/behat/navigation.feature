@@ -1,4 +1,4 @@
-@mod @competency @app @javascript
+@addon_competency @app @javascript
 Feature: Test competency navigation
 
   Background:
@@ -299,7 +299,7 @@ Feature: Test competency navigation
 
   Scenario: Tablet navigation (student)
     Given I entered the course "Course 1" as "student1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Course competencies
     When I press "Competencies" in the app
@@ -384,12 +384,12 @@ Feature: Test competency navigation
 
   Scenario: Tablet navigation (teacher)
     Given I entered the course "Course 1" as "teacher1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Participant competencies
     When I press "Participants" in the app
     And I press "Student first" in the app
-    And I press "Competencies" in the app
+    And I press "Competencies" within "Student first" "page-core-user-participants" in the app
     Then I should find "Student first" in the app
     And I should find "Salads are important" in the app
     And I should find "Good" within "salads" "ion-item" in the app

@@ -26,13 +26,14 @@ import {
 import { CoreUtils } from '@services/utils/utils';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreEvents } from '@singletons/events';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton } from '@singletons';
 import { CoreError } from '@classes/errors/error';
 import { AddonMessagesSyncEvents, AddonMessagesSyncProvider } from './messages-sync';
 import { CoreWSError } from '@classes/errors/wserror';
 import { AddonNotificationsPreferencesNotificationProcessorState } from '@addons/notifications/services/notifications';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 const ROOT_CACHE_KEY = 'mmaMessages:';
 
@@ -97,7 +98,7 @@ export class AddonMessagesProvider {
      * @param userId User ID of the person to add.
      * @param siteId Site ID. If not defined, use current site.
      * @returns Resolved when done.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     protected async addContact(userId: number, siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);
@@ -582,7 +583,7 @@ export class AddonMessagesProvider {
      *
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved with the WS data.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     async getAllContacts(siteId?: string): Promise<AddonMessagesGetContactsWSResponse> {
         siteId = siteId || CoreSites.getCurrentSiteId();
@@ -634,7 +635,7 @@ export class AddonMessagesProvider {
      *
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved with the WS data.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     async getContacts(siteId?: string): Promise<AddonMessagesGetContactsWSResponse> {
         const site = await CoreSites.getSite(siteId);
@@ -2120,7 +2121,7 @@ export class AddonMessagesProvider {
      *
      * @param userIdFrom User Id for the sender.
      * @returns Promise resolved with boolean marking success or not.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     async markAllMessagesRead(userIdFrom?: number): Promise<boolean> {
         const params: AddonMessagesMarkAllMessagesAsReadWSParams = {
@@ -2485,7 +2486,7 @@ export class AddonMessagesProvider {
 
         if (response && response[0] && response[0].msgid === -1) {
             // There was an error, and it should be translated already.
-            throw new CoreError(response[0].errormessage);
+            throw new CoreWSError({ message: response[0].errormessage, errorcode: 'sendmessageerror' });
         }
 
         try {
@@ -3049,12 +3050,14 @@ export type AddonMessagesMessagePreferencesNotificationProcessor = {
     lockedmessage?: string; // @since 3.6. Text to display if locked.
     userconfigured: number; // Is configured?.
     enabled?: boolean; // @since 4.0. Processor enabled.
-    loggedin: AddonNotificationsPreferencesNotificationProcessorState; // @deprecated removed on 4.0.
-    loggedoff: AddonNotificationsPreferencesNotificationProcessorState; // @deprecated removed on 4.0.
+    loggedin: AddonNotificationsPreferencesNotificationProcessorState; // @deprecatedonmoodle since 4.0.
+    loggedoff: AddonNotificationsPreferencesNotificationProcessorState; // @deprecatedonmoodle since 4.0.
 };
 
 /**
  * Message discussion (before 3.6).
+ *
+ * @deprecatedonmoodle since 3.6.
  */
 export type AddonMessagesDiscussion = {
     fullname: string; // Full name of the other user in the discussion.
@@ -3669,8 +3672,9 @@ export type AddonMessagesReadChangedEventData = {
 export type AddonMessagesNewMessagedEventData = {
     conversationId?: number;
     userId?: number;
-    message: string;
+    message?: string; // If undefined it means the conversation has no messages, e.g. last message was deleted.
     timecreated: number;
+    userFrom?: AddonMessagesConversationMember;
     isfavourite: boolean;
     type?: number;
 };

@@ -16,13 +16,14 @@ import { Injectable } from '@angular/core';
 
 import { CoreNetwork } from '@services/network';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreWSExternalWarning } from '@services/ws';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreFilterDelegate } from './filter-delegate';
 import { makeSingleton } from '@singletons';
 import { CoreEvents, CoreEventSiteData } from '@singletons/events';
 import { CoreLogger } from '@singletons/logger';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 /**
  * Service to provide filter functionalities.
@@ -58,26 +59,6 @@ export class CoreFilterProvider {
         CoreEvents.on(CoreEvents.SITE_STORAGE_DELETED, (data: CoreEventSiteData) => {
             delete this.contextsCache[data.siteId || ''];
         });
-    }
-
-    /**
-     * Returns whether or not WS get available in context is available.
-     *
-     * @returns Promise resolved with true if ws is available, false otherwise.
-     * @deprecated since app 4.0
-     */
-    async canGetAvailableInContext(): Promise<boolean> {
-        return true;
-    }
-
-    /**
-     * Returns whether or not WS get available in context is available in a certain site.
-     *
-     * @returns Promise resolved with true if ws is available, false otherwise.
-     * @deprecated since app 4.0
-     */
-    canGetAvailableInContextInSite(): boolean {
-        return true;
     }
 
     /**

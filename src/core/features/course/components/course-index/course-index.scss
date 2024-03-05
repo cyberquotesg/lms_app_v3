@@ -1,4 +1,4 @@
-@import '~theme/globals.scss';
+@use "theme/globals" as *;
 core-progress-bar {
     --bar-margin: 8px 0 4px 0;
     --line-height: 20px;
@@ -62,6 +62,11 @@ ion-item.item {
         &.item-hightlighted ion-icon.completioninfo {
             @include padding-horizontal(11px, null);
         }
+
+        &.indented {
+            margin-inline-start: 1rem;
+        }
+
     }
 
     ion-icon {
@@ -75,6 +80,10 @@ ion-item.item {
 
         &.restricted {
             font-size: var(--text-size);
+        }
+        &[role=button] {
+            min-height: auto;
+            min-width: auto;
         }
     }
 }

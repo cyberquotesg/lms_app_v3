@@ -13,12 +13,15 @@
 // limitations under the License.
 
 import { Component, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreTag } from '@features/tag/services/tag';
 import { CoreTagAreaDelegate } from '@features/tag/services/tag-area-delegate';
 import { CoreScreen } from '@services/screen';
 import { CoreNavigator } from '@services/navigator';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { Translate } from '@singletons';
+import { CoreUrlUtils } from '@services/utils/url';
 
 /**
  * Page that displays the tag index.
@@ -41,6 +44,28 @@ export class CoreTagIndexPage implements OnInit {
     hasUnsupportedAreas = false;
 
     areas: CoreTagAreaDisplay[] = [];
+
+    protected logView: () => void;
+
+    constructor() {
+        this.logView = CoreTime.once(async () => {
+            const params = {
+                tc: this.collectionId || undefined,
+                tag: this.tagName || undefined,
+                ta: this.areaId || undefined,
+                from: this.fromContextId || undefined,
+                ctx: this.contextId || undefined,
+            };
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'core_tag_get_tagindex_per_area',
+                name: this.tagName || Translate.instant('core.tag.tag'),
+                data: { id: this.tagId || undefined, ...params, category: 'tag' },
+                url: CoreUrlUtils.addParamsToUrl('/tag/index.php', params),
+            });
+        });
+    }
 
     /**
      * @inheritdoc
@@ -111,6 +136,8 @@ export class CoreTagIndexPage implements OnInit {
 
             this.areas = areasDisplay;
 
+            this.logView();
+
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading tag index');
         }
@@ -121,7 +148,7 @@ export class CoreTagIndexPage implements OnInit {
      *
      * @param refresher Refresher.
      */
-    refreshData(refresher?: IonRefresher): void {
+    refreshData(refresher?: HTMLIonRefresherElement): void {
         CoreTag.invalidateTagIndexPerArea(
             this.tagId,
             this.tagName,

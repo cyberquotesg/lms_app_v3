@@ -14,7 +14,14 @@
 
 import envJson from '@/assets/env.json';
 import { EnvironmentConfig } from '@/types/config';
+import { InjectionToken } from '@angular/core';
 import { CoreBrowser } from '@singletons/browser';
+
+/**
+ * Injection token used for dependencies marked as optional that will never
+ * be resolved by Angular injectors.
+ */
+export const NULL_INJECTION_TOKEN = new InjectionToken('null');
 
 /**
  * Context levels enumeration.
@@ -34,7 +41,8 @@ export const enum ModPurpose {
     MOD_PURPOSE_COLLABORATION = 'collaboration',
     MOD_PURPOSE_CONTENT = 'content',
     MOD_PURPOSE_ADMINISTRATION = 'administration',
-    MOD_PURPOSE_INTERFACE = 'interface',
+    MOD_PURPOSE_INTERFACE = 'interface', // @deprecatedonmoodle since 4.4.
+    MOD_PURPOSE_INTERACTIVECONTENT = 'interactivecontent',
     MOD_PURPOSE_OTHER = 'other',
 }
 
@@ -62,7 +70,6 @@ export class CoreConstants {
     static readonly DOWNLOAD_THRESHOLD = 10485760; // 10MB.
     static readonly MINIMUM_FREE_SPACE = 10485760; // 10MB.
     static readonly IOS_FREE_SPACE_THRESHOLD = 524288000; // 500MB.
-    static readonly DONT_SHOW_ERROR = 'CoreDontShowError'; // @deprecated since 3.9.5. Use CoreSilentError instead.
     static readonly NO_SITE_ID = 'NoSite';
 
     // Settings constants.
@@ -79,10 +86,15 @@ export class CoreConstants {
     // WS constants.
     static readonly WS_TIMEOUT = 30000; // Timeout when not in WiFi.
     static readonly WS_TIMEOUT_WIFI = 30000; // Timeout when in WiFi.
-    static readonly WS_PREFIX = 'local_mobile_'; // @deprecated since app 4.0.
 
     // Login constants.
+    /**
+     * @deprecated since 4.3 Use TypeOfLogin.BROWSER instead.
+     */
     static readonly LOGIN_SSO_CODE = 2; // SSO in browser window is required.
+    /**
+     * @deprecated since 4.3 Use TypeOfLogin.EMBEDDED instead.
+     */
     static readonly LOGIN_SSO_INAPP_CODE = 3; // SSO in embedded browser is required.
     static readonly LOGIN_LAUNCH_DATA = 'CoreLoginLaunchData';
 
@@ -141,6 +153,12 @@ export class CoreConstants {
     static readonly MOD_ARCHETYPE_RESOURCE = 1; // Resource-like type module.
     static readonly MOD_ARCHETYPE_ASSIGNMENT = 2; // Assignment module archetype.
     static readonly MOD_ARCHETYPE_SYSTEM = 3; // System (not user-addable) module archetype.
+
+    // Other constants.
+    static readonly CALENDAR_DEFAULT_STARTING_WEEKDAY = 1;
+    static readonly DONT_SHOW_NOTIFICATIONS_PERMISSION_WARNING = 'CoreDontShowNotificationsPermissionWarning';
+    static readonly DONT_SHOW_EXACT_ALARMS_WARNING = 'CoreDontShowScheduleExactWarning';
+    static readonly EXACT_ALARMS_WARNING_DISPLAYED = 'CoreScheduleExactWarningModalDisplayed';
 
     // Config & environment constants.
     static readonly CONFIG = { ...envJson.config } as unknown as EnvironmentConfig; // Data parsed from config.json files.

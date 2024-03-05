@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { isSafeNumber } from '@/core/utils/types';
 import { Component, OnInit } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNavigator } from '@services/navigator';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
@@ -74,7 +74,7 @@ export class AddonModQuizAttemptPage implements OnInit {
      *
      * @param refresher Refresher.
      */
-    doRefresh(refresher: IonRefresher): void {
+    doRefresh(refresher: HTMLIonRefresherElement): void {
         this.refreshData().finally(() => {
             refresher.complete();
         });
@@ -108,7 +108,7 @@ export class AddonModQuizAttemptPage implements OnInit {
             const grade = Number(this.attempt.rescaledGrade);
 
             if (this.quiz.showFeedbackColumn && AddonModQuiz.isAttemptFinished(this.attempt.state) &&
-                    options.someoptions.overallfeedback && !isNaN(grade)) {
+                    options.someoptions.overallfeedback && isSafeNumber(grade)) {
 
                 // Feedback should be displayed, get the feedback for the grade.
                 const response = await AddonModQuiz.getFeedbackForGrade(this.quiz.id, grade, {

@@ -48,6 +48,8 @@ import { CoreForms } from '@singletons/form';
 import { CoreDom } from '@singletons/dom';
 import { CoreTime } from '@singletons/time';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreWSError } from '@classes/errors/wserror';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 /**
  * Page that allows attempting a quiz.
@@ -140,10 +142,7 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
      * @inheritdoc
      */
     ngOnDestroy(): void {
-        // Stop auto save.
-        this.autoSave.cancelAutoSave();
-        this.autoSave.stopCheckChangesProcess();
-        this.autoSaveErrorSubscription?.unsubscribe();
+        this.stopAutoSave();
 
         if (this.quiz) {
             // Unblock the quiz so it can be synced.
@@ -272,9 +271,12 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
             await this.scrollToQuestion(slot);
 
             return;
-        } else if ((page == this.attempt.currentpage && !this.showSummary) || (fromModal && this.isSequential && page != -1)) {
+        } else if (
+            (page == this.attempt.currentpage && !this.showSummary) ||
+            (fromModal && this.isSequential && page != this.attempt.currentpage)
+        ) {
             // If the user is navigating to the current page we do nothing.
-            // Also, in sequential quizzes we don't allow navigating using the modal except for finishing the quiz (summary).
+            // Also, in sequential quizzes we can only navigate to the current page.
             return;
         } else if (page === -1 && this.showSummary) {
             // Summary already shown.
@@ -407,7 +409,34 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
         try {
             // Show confirm if the user clicked the finish button and the quiz is in progress.
             if (!timeUp && this.attempt.state == AddonModQuizProvider.ATTEMPT_IN_PROGRESS) {
-                await CoreDomUtils.showConfirm(Translate.instant('addon.mod_quiz.confirmclose'));
+                let message = Translate.instant('addon.mod_quiz.confirmclose');
+
+                const unansweredCount = this.summaryQuestions
+                    .filter(question => AddonModQuiz.isQuestionUnanswered(question))
+                    .length;
+
+                if (!this.isSequential && unansweredCount > 0) {
+                    const warning = Translate.instant(
+                        'addon.mod_quiz.submission_confirmation_unanswered',
+                        { $a: unansweredCount },
+                    );
+
+                    message += `
+                        <ion-card class="core-warning-card">
+                            <ion-item>
+                                <ion-label>
+                                    ${ warning }
+                                </ion-label>
+                            </ion-item>
+                        </ion-card>
+                    `;
+                }
+
+                await CoreDomUtils.showConfirm(
+                    message,
+                    Translate.instant('addon.mod_quiz.submitallandfinish'),
+                    Translate.instant('core.submit'),
+                );
             }
 
             modal = await CoreDomUtils.showModalLoading('core.sending', true);
@@ -423,11 +452,31 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
 
             CoreEvents.trigger(CoreEvents.ACTIVITY_DATA_SENT, { module: 'quiz' });
 
-            // Leave the player.
-            this.forceLeave = true;
-            CoreNavigator.back();
+            if (!timeUp || !this.quiz.graceperiod) {
+                // Leave the player.
+                this.forceLeave = true;
+                CoreNavigator.back();
+            } else {
+                // Stay in player to show summary.
+                this.stopAutoSave();
+                this.clearTimer();
+
+                await this.refreshAttempt();
+                await this.loadSummary();
+            }
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.mod_quiz.errorsaveattempt', true);
+            // eslint-disable-next-line promise/catch-or-return
+            CoreDomUtils
+                .showErrorModalDefault(error, 'addon.mod_quiz.errorsaveattempt', true)
+                .then(async alert => {
+                    await alert?.onWillDismiss();
+
+                    if (error instanceof CoreWSError && error.errorcode === 'attemptalreadyclosed') {
+                        CoreNavigator.back();
+                    }
+
+                    return;
+                });
         } finally {
             modal?.dismiss();
         }
@@ -496,6 +545,13 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
     }
 
     /**
+     * Remove timer info.
+     */
+    protected clearTimer(): void {
+        delete this.endTime;
+    }
+
+    /**
      * Load a page questions.
      *
      * @param page The page to load.
@@ -504,6 +560,10 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
     protected async loadPage(page: number): Promise<void> {
         if (!this.quiz || !this.attempt) {
             return;
+        }
+
+        if (this.isSequential) {
+            await this.logViewPage(page);
         }
 
         const data = await AddonModQuiz.getAttemptData(this.attempt.id, page, this.preflightData, {
@@ -534,12 +594,70 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
         });
 
         // Mark the page as viewed.
-        CoreUtils.ignoreErrors(
-            AddonModQuiz.logViewAttempt(this.attempt.id, page, this.preflightData, this.offline, this.quiz),
-        );
+        if (!this.isSequential) {
+            await this.logViewPage(page);
+        }
 
         // Start looking for changes.
         this.autoSave.startCheckChangesProcess(this.quiz, this.attempt, this.preflightData, this.offline);
+    }
+
+    /**
+     * Log view a page.
+     *
+     * @param page Page viewed.
+     */
+    protected async logViewPage(page: number): Promise<void> {
+        if (!this.quiz || !this.attempt) {
+            return;
+        }
+
+        await CoreUtils.ignoreErrors(AddonModQuiz.logViewAttempt(this.attempt.id, page, this.preflightData, this.offline));
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM,
+            ws: 'mod_quiz_view_attempt',
+            name: this.quiz.name,
+            data: { id: this.attempt.id, quizid: this.quiz.id, page, category: 'quiz' },
+            url: `/mod/quiz/attempt.php?attempt=${this.attempt.id}&cmid=${this.cmId}` + (page > 0 ? `&page=${page}` : ''),
+        });
+    }
+
+    /**
+     * Log view summary.
+     */
+    protected async logViewSummary(): Promise<void> {
+        if (!this.quiz || !this.attempt) {
+            return;
+        }
+
+        await CoreUtils.ignoreErrors(
+            AddonModQuiz.logViewAttemptSummary(this.attempt.id, this.preflightData, this.quiz.id),
+        );
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM,
+            ws: 'mod_quiz_view_attempt_summary',
+            name: this.quiz.name,
+            data: { id: this.attempt.id, quizid: this.quiz.id, category: 'quiz' },
+            url: `/mod/quiz/summary.php?attempt=${this.attempt.id}&cmid=${this.cmId}`,
+        });
+    }
+
+    /**
+     * Refresh attempt data.
+     */
+    protected async refreshAttempt(): Promise<void> {
+        if (!this.quiz) {
+            return;
+        }
+
+        const attempts = await AddonModQuiz.getUserAttempts(this.quiz.id, {
+            cmId: this.quiz.coursemodule,
+            readingStrategy: this.offline ? CoreSitesReadingStrategy.PREFER_CACHE : CoreSitesReadingStrategy.ONLY_NETWORK,
+        });
+
+        this.attempt = attempts.find(attempt => attempt.id === this.attempt?.id);
     }
 
     /**
@@ -566,10 +684,7 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
 
         this.dueDateWarning = AddonModQuiz.getAttemptDueDateWarning(this.quiz, this.attempt);
 
-        // Log summary as viewed.
-        CoreUtils.ignoreErrors(
-            AddonModQuiz.logViewAttemptSummary(this.attempt.id, this.preflightData, this.quiz.id, this.quiz.name),
-        );
+        this.logViewSummary();
     }
 
     /**
@@ -619,6 +734,7 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
                 summaryShown: this.showSummary,
                 currentPage: this.attempt?.currentpage,
                 isReview: false,
+                isSequential: this.isSequential,
             },
         });
 
@@ -808,6 +924,15 @@ export class AddonModQuizPlayerPage implements OnInit, OnDestroy, CanLeave {
 
         this.timeUpCalled = true;
         this.finishAttempt(false, true);
+    }
+
+    /**
+     * Stop auto-saving answers.
+     */
+    protected stopAutoSave(): void {
+        this.autoSave.cancelAutoSave();
+        this.autoSave.stopCheckChangesProcess();
+        this.autoSaveErrorSubscription?.unsubscribe();
     }
 
 }

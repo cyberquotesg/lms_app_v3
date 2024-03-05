@@ -25,7 +25,6 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
-import { AddonModWorkshopModuleHandlerService } from '../../services/handlers/module';
 import {
     AddonModWorkshopProvider,
     AddonModWorkshopPhase,
@@ -53,6 +52,7 @@ import {
     AddonModWorkshopSyncResult,
 } from '../../services/workshop-sync';
 import { AddonModWorkshopPhaseInfoComponent } from '../phase/phase';
+import { ADDON_MOD_WORKSHOP_COMPONENT, ADDON_MOD_WORKSHOP_PAGE_NAME } from '@addons/mod/workshop/constants';
 
 /**
  * Component that displays a workshop index page.
@@ -65,8 +65,8 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
 
     @Input() group = 0;
 
-    component = AddonModWorkshopProvider.COMPONENT;
-    moduleName = 'workshop';
+    component = ADDON_MOD_WORKSHOP_COMPONENT;
+    pluginName = 'workshop';
 
     workshop?: AddonModWorkshopData;
     page = 0;
@@ -255,7 +255,9 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             return; // Shouldn't happen.
         }
 
-        await AddonModWorkshop.logView(this.workshop.id, this.workshop.name);
+        await CoreUtils.ignoreErrors(AddonModWorkshop.logView(this.workshop.id));
+
+        this.analyticsLogEvent('mod_workshop_view_workshop');
     }
 
     /**
@@ -289,13 +291,13 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
 
         await Promise.all(grades.map(async (grade) => {
             const submission: AddonModWorkshopSubmissionDataWithOfflineData = {
-                id: grade.submissionid,
+                id: grade.submissionid || 0,
                 workshopid: workshop.id,
                 example: false,
                 authorid: grade.userid,
-                timecreated: grade.submissionmodified,
-                timemodified: grade.submissionmodified,
-                title: grade.submissiontitle,
+                timecreated: grade.submissionmodified || 0,
+                timemodified: grade.submissionmodified || 0,
+                title: grade.submissiontitle || '',
                 content: '',
                 contenttrust: 0,
                 attachment: 0,
@@ -377,7 +379,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
 
             const submissionId = this.submission?.id || 0;
             CoreNavigator.navigateToSitePath(
-                AddonModWorkshopModuleHandlerService.PAGE_NAME + `/${this.courseId}/${this.module.id}/${submissionId}/edit`,
+                `${ADDON_MOD_WORKSHOP_PAGE_NAME}/${this.courseId}/${this.module.id}/${submissionId}/edit`,
                 { params },
             );
 

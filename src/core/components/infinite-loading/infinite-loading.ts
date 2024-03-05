@@ -22,7 +22,7 @@ const THRESHOLD = .15; // % of the scroll element height that must be close to t
  * Component to show a infinite loading trigger and spinner while more data is being loaded.
  *
  * Usage:
- * <core-infinite-loading [action]="loadingAction" [enabled]="dataLoaded"></core-inifinite-loading>
+ * <core-infinite-loading [action]="loadingAction" [enabled]="dataLoaded"></core-infinite-loading>
  */
 @Component({
     selector: 'core-infinite-loading',
@@ -69,17 +69,17 @@ export class CoreInfiniteLoadingComponent implements OnChanges {
             return;
         }
 
-        // Wait until next tick to allow items to render and scroll content to grow.
-        await CoreUtils.nextTick();
+        const scrollElement = await this.hostElement.closest('ion-content')?.getScrollElement();
 
-        // Calculate distance from edge.
-        const content = this.hostElement.closest('ion-content');
-        if (!content) {
+        if (!scrollElement) {
             return;
         }
 
-        const scrollElement = await content.getScrollElement();
+        // Wait to allow items to render and scroll content to grow.
+        await CoreUtils.nextTick();
+        await CoreUtils.waitFor(() => scrollElement.scrollHeight > scrollElement.clientHeight, { timeout: 1000 });
 
+        // Calculate distance from edge.
         const infiniteHeight = this.hostElement.getBoundingClientRect().height;
         const scrollTop = scrollElement.scrollTop;
         const height = scrollElement.offsetHeight;
@@ -127,18 +127,6 @@ export class CoreInfiniteLoadingComponent implements OnChanges {
 
         // More items loaded. If the list doesn't fill the full height, infinite scroll isn't triggered automatically.
         this.checkScrollDistance();
-    }
-
-    /**
-     * Get the height of the element.
-     *
-     * @returns Height.
-     * @todo erase if not needed: I'm depreacating it because if not needed or getBoundingClientRect has the same result, it should
-     * be erased, also with getElementHeight
-     * @deprecated since 3.9.5
-     */
-    getHeight(): number {
-        return this.hostElement.getBoundingClientRect().height;
     }
 
     /**

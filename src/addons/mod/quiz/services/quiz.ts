@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { SafeNumber } from '@/core/utils/types';
 import { Injectable } from '@angular/core';
 
 import { CoreError } from '@classes/errors/error';
 import { CoreWSError } from '@classes/errors/wserror';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreGradesFormattedItem, CoreGradesHelper } from '@features/grades/services/grades-helper';
-import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
 import {
     CoreQuestion,
     CoreQuestionQuestionParsed,
@@ -40,6 +40,8 @@ import { AddonModQuizAccessRuleDelegate } from './access-rules-delegate';
 import { AddonModQuizAttempt } from './quiz-helper';
 import { AddonModQuizOffline, AddonModQuizQuestionsWithAnswers } from './quiz-offline';
 import { AddonModQuizAutoSyncData, AddonModQuizSyncProvider } from './quiz-sync';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { QUESTION_INVALID_STATE_CLASSES, QUESTION_TODO_STATE_CLASSES } from '@features/question/constants';
 
 const ROOT_CACHE_KEY = 'mmaModQuiz:';
 
@@ -592,7 +594,7 @@ export class AddonModQuizProvider {
      */
     async getFeedbackForGrade(
         quizId: number,
-        grade: number,
+        grade: SafeNumber,
         options: CoreCourseCommonModWSOptions = {},
     ): Promise<AddonModQuizGetQuizFeedbackForGradeWSResponse> {
         const site = await CoreSites.getSite(options.siteId);
@@ -1517,6 +1519,21 @@ export class AddonModQuizProvider {
     }
 
     /**
+     * Check if a question is unanswered.
+     *
+     * @param question Question.
+     * @returns Whether it's unanswered.
+     */
+    isQuestionUnanswered(question: CoreQuestionQuestionParsed): boolean {
+        if (!question.stateclass) {
+            return false;
+        }
+
+        return QUESTION_TODO_STATE_CLASSES.some(stateClass => stateClass === question.stateclass)
+            || QUESTION_INVALID_STATE_CLASSES.some(stateClass => stateClass === question.stateclass);
+    }
+
+    /**
      * Check if a quiz is enabled to be used in offline.
      *
      * @param quiz Quiz.
@@ -1524,7 +1541,9 @@ export class AddonModQuizProvider {
      */
     isQuizOffline(quiz: AddonModQuizQuizWSData): boolean {
         // Don't allow downloading the quiz if offline is disabled to prevent wasting a lot of data when opening it.
-        return !!quiz.allowofflineattempts && !CoreSites.getCurrentSite()?.isOfflineDisabled();
+        return !!quiz.allowofflineattempts
+            && !this.isNavigationSequential(quiz)
+            && !CoreSites.getCurrentSite()?.isOfflineDisabled();
     }
 
     /**
@@ -1534,7 +1553,6 @@ export class AddonModQuizProvider {
      * @param page Page number.
      * @param preflightData Preflight required data (like password).
      * @param offline Whether attempt is offline.
-     * @param quiz Quiz instance. If set, a Firebase event will be stored.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
@@ -1543,7 +1561,6 @@ export class AddonModQuizProvider {
         page: number = 0,
         preflightData: Record<string, string> = {},
         offline?: boolean,
-        quiz?: AddonModQuizQuizWSData,
         siteId?: string,
     ): Promise<void> {
         const site = await CoreSites.getSite(siteId);
@@ -1563,16 +1580,6 @@ export class AddonModQuizProvider {
         if (offline) {
             promises.push(AddonModQuizOffline.setAttemptCurrentPage(attemptId, page, site.getId()));
         }
-        if (quiz) {
-            CorePushNotifications.logViewEvent(
-                quiz.id,
-                quiz.name,
-                'quiz',
-                'mod_quiz_view_attempt',
-                { attemptid: attemptId, page },
-                siteId,
-            );
-        }
 
         await Promise.all(promises);
     }
@@ -1582,23 +1589,19 @@ export class AddonModQuizProvider {
      *
      * @param attemptId Attempt ID.
      * @param quizId Quiz ID.
-     * @param name Name of the quiz.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logViewAttemptReview(attemptId: number, quizId: number, name?: string, siteId?: string): Promise<void> {
+    logViewAttemptReview(attemptId: number, quizId: number, siteId?: string): Promise<void> {
         const params: AddonModQuizViewAttemptReviewWSParams = {
             attemptid: attemptId,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_quiz_view_attempt_review',
             params,
             AddonModQuizProvider.COMPONENT,
             quizId,
-            name,
-            'quiz',
-            params,
             siteId,
         );
     }
@@ -1609,7 +1612,6 @@ export class AddonModQuizProvider {
      * @param attemptId Attempt ID.
      * @param preflightData Preflight required data (like password).
      * @param quizId Quiz ID.
-     * @param name Name of the quiz.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
@@ -1617,7 +1619,6 @@ export class AddonModQuizProvider {
         attemptId: number,
         preflightData: Record<string, string>,
         quizId: number,
-        name?: string,
         siteId?: string,
     ): Promise<void> {
         const params: AddonModQuizViewAttemptSummaryWSParams = {
@@ -1629,14 +1630,11 @@ export class AddonModQuizProvider {
             ),
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_quiz_view_attempt_summary',
             params,
             AddonModQuizProvider.COMPONENT,
             quizId,
-            name,
-            'quiz',
-            { attemptid: attemptId },
             siteId,
         );
     }
@@ -1645,23 +1643,19 @@ export class AddonModQuizProvider {
      * Report a quiz as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the quiz.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logViewQuiz(id: number, name?: string, siteId?: string): Promise<void> {
+    logViewQuiz(id: number, siteId?: string): Promise<void> {
         const params: AddonModQuizViewQuizWSParams = {
             quizid: id,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_quiz_view_quiz',
             params,
             AddonModQuizProvider.COMPONENT,
             id,
-            name,
-            'quiz',
-            {},
             siteId,
         );
     }
@@ -2053,7 +2047,7 @@ export type AddonModQuizAttemptWSData = {
     timemodified?: number; // Last modified time.
     timemodifiedoffline?: number; // Last modified time via webservices.
     timecheckstate?: number; // Next time quiz cron should check attempt for state changes. NULL means never check.
-    sumgrades?: number | null; // Total marks for this attempt.
+    sumgrades?: SafeNumber | null; // Total marks for this attempt.
 };
 
 /**
@@ -2304,7 +2298,7 @@ export type AddonModQuizGetUserBestGradeWSParams = {
  */
 export type AddonModQuizGetUserBestGradeWSResponse = {
     hasgrade: boolean; // Whether the user has a grade on the given quiz.
-    grade?: number; // The grade (only if the user has a grade).
+    grade?: SafeNumber; // The grade (only if the user has a grade).
     gradetopass?: number; // @since 3.11. The grade to pass the quiz (only if set).
     warnings?: CoreWSExternalWarning[];
 };

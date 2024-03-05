@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSitesCommonWSOptions, CoreSites } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreWSExternalWarning, CoreWSExternalFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreFilepool } from '@services/filepool';
@@ -22,6 +22,7 @@ import { CoreCourse } from '@features/course/services/course';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreError } from '@classes/errors/error';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 const ROOT_CACHE_KEY = 'mmaModPage:';
 
@@ -141,23 +142,19 @@ export class AddonModPageProvider {
      * Report a page as being viewed.
      *
      * @param pageid Module ID.
-     * @param name Name of the page.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logView(pageid: number, name?: string, siteId?: string): Promise<void> {
+    logView(pageid: number, siteId?: string): Promise<void> {
         const params: AddonModPageViewPageWSParams = {
             pageid,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_page_view_page',
             params,
             AddonModPageProvider.COMPONENT,
             pageid,
-            name,
-            'page',
-            {},
             siteId,
         );
     }

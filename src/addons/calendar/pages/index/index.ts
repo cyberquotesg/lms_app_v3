@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
@@ -62,7 +61,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
     year?: number;
     month?: number;
     canCreate = false;
-    courses: Partial<CoreEnrolledCourseData>[] = [];
+    courses: CoreEnrolledCourseData[] = [];
     loaded = false;
     hasOffline = false;
     isOnline = false;
@@ -200,7 +199,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
             try {
                 const result = await AddonCalendarSync.syncEvents();
                 if (result.warnings && result.warnings.length) {
-                    CoreDomUtils.showErrorModal(result.warnings[0]);
+                    CoreDomUtils.showAlert(undefined, result.warnings[0]);
                 }
 
                 if (result.updated) {
@@ -263,7 +262,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
      * @param showErrors Whether to show sync errors to the user.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void, showErrors?: boolean): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void, showErrors?: boolean): Promise<void> {
         if (!this.loaded) {
             return;
         }

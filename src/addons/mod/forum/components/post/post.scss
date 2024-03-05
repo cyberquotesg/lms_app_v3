@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host .addon-mod_forum-post {
     background-color: var(--ion-item-background);
@@ -6,6 +6,16 @@
 
     .addon-forum-star {
         color: var(--core-star-color);
+    }
+
+    .core-discussionusername {
+        font-size: 1.2em;
+    }
+
+    .core-groupname {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     ion-card-header .item {

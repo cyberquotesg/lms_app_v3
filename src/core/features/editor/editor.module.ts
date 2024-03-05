@@ -24,8 +24,6 @@ export const CORE_EDITOR_SERVICES: Type<unknown>[] = [
 ];
 
 @NgModule({
-    declarations: [
-    ],
     imports: [
         CoreEditorComponentsModule,
     ],

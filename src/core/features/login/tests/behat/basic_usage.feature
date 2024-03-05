@@ -1,4 +1,4 @@
-@auth @core_auth @app @javascript
+@core_login @app @javascript
 Feature: Test basic usage of login in app
   I need basic login functionality to work
 
@@ -36,7 +36,7 @@ Feature: Test basic usage of login in app
     When I set the following fields to these values in the app:
       | Username | student1 |
       | Password | student1 |
-    And I press "Log in" near "Forgotten your username or password?" in the app
+    And I press "Log in" near "Lost password?" in the app
     Then I should find "Acceptance test site" in the app
     And the UI should match the snapshot
     But I should not find "Log in" in the app
@@ -45,18 +45,17 @@ Feature: Test basic usage of login in app
     When I launch the app
     And I set the field "Your site" to "wrongsiteaddress" in the app
     And I press "Connect to your site" in the app
-    Then I should find "Site not found" in the app
+    Then I should find "Can't connect to site" in the app
 
   Scenario: Add a non existing account from accounts switcher
-    When I enter the app
-    And I log in as "student1"
+    Given I entered the app as "student1"
     And I press the user menu button in the app
     And I press "Switch account" in the app
     And I press "Add" in the app
     And I wait the app to restart
     And I set the field "Your site" to "wrongsiteaddress" in the app
     And I press "Connect to your site" in the app
-    Then I should find "Site not found" in the app
+    Then I should find "Can't connect to site" in the app
 
   Scenario: Log out from the app
     Given I entered the app as "student1"
@@ -97,7 +96,7 @@ Feature: Test basic usage of login in app
     And I should find "You must change your password to proceed." in the app
 
     When I press "Change password" "ion-button" in the app
-    Then the app should have opened a browser tab with url "webserver"
+    Then the app should have opened a browser tab with url "$WWWROOTPATTERN"
 
     When I close the browser tab opened by the app
     Then I should find "If you didn't change your password correctly, you'll be asked to do it again." in the app
@@ -116,7 +115,7 @@ Feature: Test basic usage of login in app
     But I should not find "Reconnect" in the app
 
     When I press "Change password" "ion-button" in the app
-    Then the app should have opened a browser tab with url "webserver"
+    Then the app should have opened a browser tab with url "$WWWROOTPATTERN"
 
     When I switch to the browser tab opened by the app
     And I set the field "username" to "student1"
@@ -143,11 +142,11 @@ Feature: Test basic usage of login in app
     Given the following config values are set as admin:
       | supportavailability | 2 |
     When I enter the app
-    And I press "Forgotten your username or password?" in the app
+    And I press "Lost password?" in the app
     And I set the field "Enter either username or email address" to "student1"
     And I press "Search" in the app
     Then I should find "Success" in the app
 
     When I press "OK" in the app
-    And I press "Forgotten your username or password?" in the app
+    And I press "Lost password?" in the app
     Then I should find "Contact support" in the app

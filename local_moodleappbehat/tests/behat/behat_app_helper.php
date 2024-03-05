@@ -201,7 +201,7 @@ class behat_app_helper extends behat_base {
             $restart = true;
 
             // Reset its size.
-            $this->resize_window($this->windowsize, true);
+            $this->resize_app_window();
 
             // Visit the Ionic URL.
             $this->getSession()->visit($this->get_app_url());
@@ -234,7 +234,7 @@ class behat_app_helper extends behat_base {
 
             $this->runtime_js("init($initoptions)");
         } catch (Exception $error) {
-            throw new DriverException('Moodle App not running or not running on Automated mode.');
+            throw new DriverException('Moodle App not running or not running on Automated mode: ' . $error->getMessage());
         }
 
         if ($restart) {
@@ -275,13 +275,13 @@ class behat_app_helper extends behat_base {
         );
 
         $locator = [
-            'text' => str_replace('\\"', '"', $matches[1]),
+            'text' => $this->transform_time_to_string(str_replace('\\"', '"', $matches[1])),
             'selector' => $matches[2] ?? null,
         ];
 
         if (!empty($matches[3])) {
             $locator[$matches[3]] = (object) [
-                'text' => str_replace('\\"', '"', $matches[4]),
+                'text' => $this->transform_time_to_string(str_replace('\\"', '"', $matches[4])),
                 'selector' => $matches[5] ?? null,
             ];
         }
@@ -292,6 +292,8 @@ class behat_app_helper extends behat_base {
     /**
      * Replaces $WWWROOT for the url of the Moodle site.
      *
+     * Using $WWWROOTPATTERN will replace it for a regex pattern.
+     *
      * @Transform /^(.*\$WWWROOT.*)$/
      * @param string $text Text.
      * @return string
@@ -299,7 +301,10 @@ class behat_app_helper extends behat_base {
     public function replace_wwwroot($text) {
         global $CFG;
 
-        return str_replace('$WWWROOT', $CFG->behat_wwwroot, $text);
+        $text = str_replace('$WWWROOTPATTERN', preg_quote($CFG->behat_wwwroot, '/'), $text);
+        $text = str_replace('$WWWROOT', $CFG->behat_wwwroot, $text);
+
+        return $text;
     }
 
     /**
@@ -595,5 +600,61 @@ EOF;
         }
 
         return null;
+    }
+
+    /**
+     * Resize window to have app dimensions.
+     */
+    protected function resize_app_window(int $width = 500, int $height = 720) {
+        $offset = $this->evaluate_script("{
+            x: window.outerWidth - document.body.offsetWidth,
+            y: window.outerHeight - window.innerHeight,
+        }");
+
+        $this->getSession()->getDriver()->resizeWindow($width + $offset['x'], $height + $offset['y']);
+    }
+
+    /**
+     * Given a string, search if it contains a time with the ## format and convert it to a timestamp or readable time.
+     * Only allows 1 occurence, if the text contains more than one time sub-string it won't work as expected.
+     * This function is similar to the arg_time_to_string transformation, but it allows the time to be a sub-text of the string.
+     *
+     * @param string $text
+     * @return string Transformed text.
+     */
+    protected function transform_time_to_string(string $text): string {
+        if (!preg_match('/##(.*)##/', $text, $matches)) {
+            // No time found, return the original text.
+            return $text;
+        }
+
+        $timepassed = explode('##', $matches[1]);
+
+        // If not a valid time string, then just return what was passed.
+        if ((($timestamp = strtotime($timepassed[0])) === false)) {
+            return $text;
+        }
+
+        $count = count($timepassed);
+        if ($count === 2) {
+            // If timestamp with specified strftime format, then return formatted date string.
+            return str_replace($matches[0], userdate($timestamp, $timepassed[1]), $text);
+        } else if ($count === 1) {
+            return str_replace($matches[0], $timestamp, $text);
+        } else {
+            // If not a valid time string, then just return what was passed.
+            return $text;
+        }
+    }
+
+    /**
+     * Wait until animations have finished.
+     */
+    protected function wait_animations_done() {
+        $this->wait_for_pending_js();
+
+        // Ideally, we wouldn't wait a fixed amount of time. But it is not straightforward to wait for animations
+        // to finish, so for now we'll just wait 300ms.
+        usleep(300000);
     }
 }

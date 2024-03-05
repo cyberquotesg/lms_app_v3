@@ -1,4 +1,4 @@
-@mod @mod_chat @app @javascript
+@addon_mod_chat @app @javascript
 Feature: Test chat navigation
 
   Background:
@@ -29,7 +29,7 @@ Feature: Test chat navigation
 
   Scenario: Tablet navigation on chat
     Given I entered the course "Course 1" as "student2" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Sessions
     When I press "Test chat name" in the app

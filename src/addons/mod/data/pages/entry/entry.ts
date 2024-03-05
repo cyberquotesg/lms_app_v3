@@ -17,7 +17,7 @@ import { CoreCommentsCommentsComponent } from '@features/comments/components/com
 import { CoreComments } from '@features/comments/services/comments';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreRatingInfo } from '@features/rating/services/rating';
-import { IonContent, IonRefresher } from '@ionic/angular';
+import { IonContent } from '@ionic/angular';
 import { CoreGroups, CoreGroupInfo } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
@@ -36,6 +36,8 @@ import { AddonModDataProvider,
 } from '../../services/data';
 import { AddonModDataHelper } from '../../services/data-helper';
 import { AddonModDataSyncProvider } from '../../services/data-sync';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreTime } from '@singletons/time';
 
 /**
  * Page that displays the view entry page.
@@ -55,9 +57,9 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
     protected entryChangedObserver: CoreEventObserver; // It will observe the changed entry event.
     protected fields: Record<number, AddonModDataField> = {};
     protected fieldsArray: AddonModDataField[] = [];
-    protected logAfterFetch = true;
     protected sortBy = 0;
     protected sortDirection = 'DESC';
+    protected logView: () => void;
 
     moduleId = 0;
     courseId!: number;
@@ -86,6 +88,7 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
         database: AddonModDataData;
         title: string;
         group: number;
+        access: AddonModDataGetDataAccessInformationWSResponse | undefined;
     };
 
     ratingInfo?: CoreRatingInfo;
@@ -128,6 +131,8 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
                 }
             }
         }, this.siteId);
+
+        this.logView = CoreTime.once(() => this.performLogView());
     }
 
     /**
@@ -152,7 +157,7 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
             return;
         }
 
-        this.commentsEnabled = !CoreComments.areCommentsDisabledInSite();
+        this.commentsEnabled = CoreComments.areCommentsEnabledInSite();
 
         await this.fetchEntryData();
     }
@@ -187,7 +192,7 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
 
             this.selectedGroup = CoreGroups.validateGroupId(this.selectedGroup, this.groupInfo);
 
-            const actions = AddonModDataHelper.getActions(this.database, this.access, this.entry!);
+            const actions = AddonModDataHelper.getActions(this.database, this.access, this.entry!, AddonModDataTemplateMode.SHOW);
 
             const template = AddonModDataHelper.getTemplate(this.database, AddonModDataTemplateType.SINGLE, this.fieldsArray);
             this.entryHtml = AddonModDataHelper.displayShowFields(
@@ -215,15 +220,10 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
                 database: this.database,
                 title: this.title,
                 group: this.selectedGroup,
+                access: this.access,
             };
 
-            if (this.logAfterFetch) {
-                this.logAfterFetch = false;
-                await CoreUtils.ignoreErrors(AddonModData.logView(this.database.id, this.database.name));
-
-                // Store module viewed because this page also updates recent accessed items block.
-                CoreCourse.storeModuleViewed(this.courseId, this.moduleId);
-            }
+            this.logView();
         } catch (error) {
             if (!refresh) {
                 // Some call failed, retry without using cache since it might be a new activity.
@@ -248,7 +248,7 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
         this.entryId = undefined;
         this.entry = undefined;
         this.entryLoaded = false;
-        this.logAfterFetch = true;
+        this.logView = CoreTime.once(() => this.performLogView()); // Log again after loading data.
 
         await this.fetchEntryData();
     }
@@ -286,7 +286,7 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshDatabase(refresher?: IonRefresher): void {
+    refreshDatabase(refresher?: HTMLIonRefresherElement): void {
         if (!this.entryLoaded) {
             return;
         }
@@ -308,7 +308,6 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
         this.entry = undefined;
         this.entryId = undefined;
         this.entryLoaded = false;
-        this.logAfterFetch = true;
 
         await this.fetchEntryData();
     }
@@ -418,6 +417,28 @@ export class AddonModDataEntryPage implements OnInit, OnDestroy {
      */
     ratingUpdated(): void {
         AddonModData.invalidateEntryData(this.database!.id, this.entryId!);
+    }
+
+    /**
+     * Log view.
+     */
+    protected async performLogView(): Promise<void> {
+        if (!this.database) {
+            return;
+        }
+
+        await CoreUtils.ignoreErrors(AddonModData.logView(this.database.id));
+
+        // Store module viewed because this page also updates recent accessed items block.
+        CoreCourse.storeModuleViewed(this.courseId, this.moduleId);
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM,
+            ws: 'mod_data_view_database',
+            name: this.database.name,
+            data: { id: this.entryId, databaseid: this.database.id, category: 'data' },
+            url: `/mod/data/view.php?d=${this.database.id}&rid=${this.entryId}`,
+        });
     }
 
     /**

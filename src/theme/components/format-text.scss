@@ -1,6 +1,7 @@
 /** Format Text - Show more styles. */
 /** Styles of elements inside the directive should be placed in format-text.scss */
-@import "~theme/globals";
+@use "theme/globals.variables" as global;
+@use "sass:math" as math;
 
 core-format-text {
     --core-format-text-background: var(--background, var(--ion-item-background));
@@ -42,7 +43,7 @@ core-format-text {
             }
         }
 
-        @if ($core-format-text-never-shorten) {
+        @if (global.$core-format-text-never-shorten) {
             &.collapsible-enabled {
                 --display-toggle: none !important;
                 --collapsible-height: auto !important;
@@ -74,7 +75,7 @@ core-format-text {
         position: absolute;
         @include position(null, 10px, 10px, null);
         color: var(--ion-text-color);
-        border-radius: var(--huge-radius);
+        border-radius: var(--radius-xl);
         background-color: var(--core-format-text-viewer-icon-background);
         display: flex;
 
@@ -112,6 +113,7 @@ core-format-text {
         margin: 0;
         padding: 10px 0;
     }
+
 }
 
 @keyframes loading {
@@ -181,31 +183,32 @@ core-format-text {
 
     .embed-responsive-21by9 {
         &::before {
-            padding-top: percentage(9 / 21);
+            padding-top: percentage(math.div(9, 21));
         }
     }
 
     .embed-responsive-16by9 {
         &::before {
-            padding-top: percentage(9 / 16);
+            padding-top: percentage(math.div(9, 16));
         }
     }
 
     .embed-responsive-4by3 {
         &::before {
-            padding-top: percentage(3 / 4);
+            padding-top: percentage(math.div(3, 4));
         }
     }
 
     .embed-responsive-1by1 {
         &::before {
-            padding-top: percentage(1 / 1);
+            padding-top: percentage(1);
         }
     }
 
 }
 
 core-format-text,
+.item core-format-text,
 core-rich-text-editor .core-rte-editor {
     @include core-headings();
 
@@ -217,6 +220,10 @@ core-rich-text-editor .core-rte-editor {
     p {
         margin-bottom: 1rem;
         margin-block-start: 0;
+    }
+
+    > p:only-child {
+        margin-bottom: 0;
     }
 
     hr {
@@ -278,7 +285,7 @@ core-rich-text-editor .core-rte-editor {
         border: 1px solid var(--gray-500);
         background: var(--contrast-background);
         padding: 6px 8px;
-        border-radius: var(--small-radius);
+        border-radius: var(--radius-xs);
         margin-left: 2px;
         margin-right: 2px;
         margin-bottom: 10px;
@@ -297,7 +304,7 @@ core-rich-text-editor .core-rte-editor {
 
     input[type=radio],
     input[type=checkbox] {
-        position: relative;
+        position: relative !important;
 
         --color: var(--text-color);
         --color-checked: var(--color);
@@ -353,6 +360,9 @@ core-rich-text-editor .core-rte-editor {
         top: 2px;
     }
 
+    .form-check-inline .form-check-input {
+        flex-shrink: 0;
+    }
 
     // Atto styles
     // -------------------------
@@ -431,6 +441,14 @@ core-rich-text-editor .core-rte-editor {
     // Bootstrap 4 Styles
     // -------------------------
 
+    // _reboot.scss
+    fieldset {
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+
     // _media.scss
     .media {
         display: flex;
@@ -461,7 +479,7 @@ core-rich-text-editor .core-rte-editor {
         font-weight: 400;
     }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .alert-#{$color-name} {
             --color-base: var(--#{$color-name});
             color: var(--#{$color-name}-shade);
@@ -475,6 +493,44 @@ core-rich-text-editor .core-rte-editor {
         .alert-#{$color-name} p {
             color: var(--color-base);
         }
+    }
+
+    // _forms.scss
+    .form-check {
+        position: relative;
+        display: block;
+        padding-left: 1.25rem;
+    }
+
+    .form-check-input {
+        position: absolute;
+        margin-top: .3rem;
+        margin-left: -1.25rem;
+
+        &[disabled] ~ .form-check-label,
+        &:disabled ~ .form-check-label {
+            color: global.$gray-600;
+        }
+
+    }
+
+    .form-check-label {
+        margin-bottom: 0;
+    }
+
+    .form-check-inline {
+        display: inline-flex;
+        align-items: center;
+        padding-left: 0;
+        margin-right: .75rem;
+
+        .form-check-input {
+            position: static;
+            margin-top: 0;
+            margin-right: .3125rem;
+            margin-left: 0;
+        }
+
     }
 
     // utilities/_align.scss
@@ -498,7 +554,7 @@ core-rich-text-editor .core-rte-editor {
     .border-bottom-0 { border-bottom: 0 !important; }
     .border-left-0   { border-left: 0 !important; }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .border-#{$color-name} {
             border-color: var(--#{$color-name}) !important;
         }
@@ -582,7 +638,7 @@ core-rich-text-editor .core-rte-editor {
     .font-italic         { font-style: italic !important; }
     .text-white { color: var(--white) !important; }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .text-#{$color-name} {
             color: var(--#{$color-name});
         }
@@ -618,10 +674,33 @@ core-rich-text-editor .core-rte-editor {
         background-color: var(--danger);
     }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .label-#{$color-name} {
             color: var(--#{$color-name}-contrast);
             background-color: var(--#{$color-name});
+        }
+    }
+
+    .btn-link {
+        background: none;
+    }
+
+    button, .btn {
+        margin: 4px 8px;
+        padding-left: 12px;
+        padding-right: 12px;
+        border-radius: var(--core-input-radius);
+        a {
+            color: inherit;
+        }
+    }
+
+    @each $color-name, $unused in global.$colors {
+        .btn.btn-#{$color-name} {
+            --color-base: var(--#{$color-name});
+            color: var(--#{$color-name}-shade);
+            border-color: var(--color-base);
+            background-color: var(--#{$color-name}-tint);
         }
     }
 }

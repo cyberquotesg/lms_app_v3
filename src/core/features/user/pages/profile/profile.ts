@@ -14,10 +14,9 @@
 
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -26,7 +25,7 @@ import { CoreUserHelper } from '@features/user/services/user-helper';
 import {
     CoreUserDelegate,
     CoreUserDelegateContext,
-    CoreUserDelegateService,
+    CoreUserProfileHandlerType,
     CoreUserProfileHandlerData,
 } from '@features/user/services/user-delegate';
 import { CoreUtils } from '@services/utils/utils';
@@ -35,6 +34,9 @@ import { CoreCourses } from '@features/courses/services/courses';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
 import { CoreUserParticipantsSource } from '@features/user/classes/participants-source';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { Translate } from '@singletons';
 
 @Component({
     selector: 'page-core-user-profile',
@@ -48,7 +50,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
     protected site!: CoreSite;
     protected obsProfileRefreshed: CoreEventObserver;
     protected subscription?: Subscription;
-    protected fetchSuccess = false;
+    protected logView: (user: CoreUserProfile) => void;
 
     userLoaded = false;
     isLoadingHandlers = false;
@@ -57,9 +59,8 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
     isSuspended = false;
     isEnrolled = true;
     rolesFormatted?: string;
-    actionHandlers: CoreUserProfileHandlerData[] = [];
-    newPageHandlers: CoreUserProfileHandlerData[] = [];
-    communicationHandlers: CoreUserProfileHandlerData[] = [];
+    listItemHandlers: CoreUserProfileHandlerData[] = [];
+    buttonHandlers: CoreUserProfileHandlerData[] = [];
 
     users?: CoreUserSwipeItemsManager;
 
@@ -70,8 +71,30 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
             }
 
             this.user.email = data.user.email;
-            this.user.address = CoreUserHelper.formatAddress('', data.user.city, data.user.country);
         }, CoreSites.getCurrentSiteId());
+
+        this.logView = CoreTime.once(async (user) => {
+            try {
+                await CoreUser.logView(this.userId, this.courseId, user.fullname);
+            } catch (error) {
+                this.isDeleted = error?.errorcode === 'userdeleted' || error?.errorcode === 'wsaccessuserdeleted';
+                this.isSuspended = error?.errorcode === 'wsaccessusersuspended';
+                this.isEnrolled = error?.errorcode !== 'notenrolledprofile';
+            }
+            let extraParams = '';
+            if (this.userId !== CoreSites.getCurrentSiteUserId()) {
+                const isCourseProfile = this.courseId && this.courseId !== CoreSites.getCurrentSiteHomeId();
+                extraParams = `?id=${this.userId}` + (isCourseProfile ? `&course=${this.courseId}` : '');
+            }
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'core_user_view_user_profile',
+                name: user.fullname + ': ' + Translate.instant('core.publicprofile'),
+                data: { id: this.userId, courseid: this.courseId || undefined, category: 'user' },
+                url: `/user/profile.php${extraParams}`,
+            });
+        });
     }
 
     /**
@@ -119,7 +142,6 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
         try {
             const user = await CoreUser.getProfile(this.userId, this.courseId);
 
-            user.address = CoreUserHelper.formatAddress('', user.city, user.country);
             this.rolesFormatted = 'roles' in user ? CoreUserHelper.formatRoleList(user.roles) : '';
 
             this.user = user;
@@ -130,20 +152,19 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
             const context = this.courseId ? CoreUserDelegateContext.COURSE : CoreUserDelegateContext.SITE;
 
             this.subscription = CoreUserDelegate.getProfileHandlersFor(user, context, this.courseId).subscribe((handlers) => {
-                this.actionHandlers = [];
-                this.newPageHandlers = [];
-                this.communicationHandlers = [];
+                this.listItemHandlers = [];
+                this.buttonHandlers = [];
                 handlers.forEach((handler) => {
                     switch (handler.type) {
-                        case CoreUserDelegateService.TYPE_COMMUNICATION:
-                            this.communicationHandlers.push(handler.data);
+                        case CoreUserProfileHandlerType.BUTTON:
+                            this.buttonHandlers.push(handler.data);
                             break;
-                        case CoreUserDelegateService.TYPE_ACTION:
-                            this.actionHandlers.push(handler.data);
+                        case CoreUserProfileHandlerType.LIST_ACCOUNT_ITEM:
+                            // Discard this for now.
                             break;
-                        case CoreUserDelegateService.TYPE_NEW_PAGE:
+                        case CoreUserProfileHandlerType.LIST_ITEM:
                         default:
-                            this.newPageHandlers.push(handler.data);
+                            this.listItemHandlers.push(handler.data);
                             break;
                     }
                 });
@@ -151,18 +172,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
                 this.isLoadingHandlers = !CoreUserDelegate.areHandlersLoaded(user.id, context, this.courseId);
             });
 
-            if (!this.fetchSuccess) {
-                this.fetchSuccess = true;
-
-                try {
-                    await CoreUser.logView(this.userId, this.courseId, this.user.fullname);
-                } catch (error) {
-                    this.isDeleted = error?.errorcode === 'userdeleted' || error?.errorcode === 'wsaccessuserdeleted';
-                    this.isSuspended = error?.errorcode === 'wsaccessusersuspended';
-                    this.isEnrolled = error?.errorcode !== 'notenrolledprofile';
-                }
-            }
-
+            this.logView(user);
         } catch (error) {
             // Error is null for deleted users, do not show the modal.
             CoreDomUtils.showErrorModal(error);
@@ -175,7 +185,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
      * @param event Event.
      * @returns Promise resolved when done.
      */
-    async refreshUser(event?: IonRefresher): Promise<void> {
+    async refreshUser(event?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(Promise.all([
             CoreUser.invalidateUserCache(this.userId),
             CoreCourses.invalidateUserNavigationOptions(),
@@ -241,8 +251,10 @@ class CoreUserSwipeItemsManager extends CoreSwipeNavigationItemsManager {
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return route.params.userId;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return snapshot.params.userId;
     }
 
 }

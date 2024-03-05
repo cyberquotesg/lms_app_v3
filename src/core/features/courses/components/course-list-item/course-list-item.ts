@@ -26,6 +26,7 @@ import { CoreEventCourseStatusChanged, CoreEventObserver, CoreEvents } from '@si
 import { CoreCourseListItem, CoreCourses, CoreCoursesProvider } from '../../services/courses';
 import { CoreCoursesHelper, CoreEnrolledCourseDataWithExtraInfoAndOptions } from '../../services/courses-helper';
 import { CoreCoursesCourseOptionsMenuComponent } from '../course-options-menu/course-options-menu';
+import { CoreEnrolHelper } from '@features/enrol/services/enrol-helper';
 
 /**
  * This directive is meant to display an item for a list of courses.
@@ -98,34 +99,18 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
             this.initPrefetchCourse();
 
         } else if ('enrollmentmethods' in this.course) {
-            this.enrolmentIcons = [];
-
-            this.course.enrollmentmethods.forEach((instance) => {
-                if (instance === 'self') {
-                    this.enrolmentIcons.push({
-                        label: 'core.courses.selfenrolment',
-                        icon: 'fas-key',
-                    });
-                } else if (instance === 'guest') {
-                    this.enrolmentIcons.push({
-                        label: 'core.courses.allowguests',
-                        icon: 'fas-unlock',
-                    });
-                } else if (instance === 'paypal') {
-                    this.enrolmentIcons.push({
-                        label: 'core.courses.otherenrolments',
-                        icon: 'fas-up-right-from-square',
-                    });
-                }
-            });
-
-            if (this.enrolmentIcons.length == 0) {
-                this.enrolmentIcons.push({
-                    label: 'core.courses.notenrollable',
-                    icon: 'fas-lock',
-                });
-            }
+            this.enrolmentIcons = await CoreEnrolHelper.getEnrolmentIcons(this.course.enrollmentmethods, this.course.id);
         }
+    }
+
+    /**
+     * Removes the course image set because it cannot be loaded and set the fallback icon color.
+     */
+    loadFallbackCourseIcon(): void {
+        this.course.courseimage = undefined;
+
+        // Set the color because it won't be set at this point.
+        this.setCourseColor();
     }
 
     /**
@@ -166,7 +151,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
      */
     openCourse(): void {
         if (this.isEnrolled) {
-            CoreCourseHelper.openCourse(this.course);
+            CoreCourseHelper.openCourse(this.course, { params: { isGuest: false } });
         } else {
             CoreNavigator.navigateToSitePath(
                 `/course/${this.course.id}/summary`,

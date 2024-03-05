@@ -67,14 +67,12 @@ html {
     --core-input-stroke: var(--gray-500);
     --core-input-text: var(--dark);
     --core-input-background: var(--ion-background-color);
-    --core-input-radius: var(--small-radius);
+    --core-input-radius: var(--radius-xs);
     --core-input-border-width: 1px;
-
-    --module-icon-size: 24px;
-    --module-icon-radius: var(--medium-radius);
 
     --list-item-max-width: 768px;
 
+    --modal-radius: var(--radius-md);
     --modal-lateral-max-width: 320px;
     --modal-lateral-margin: 56px;
 
@@ -82,21 +80,23 @@ html {
 
     --loader-background-color: rgba(0, 0, 0, .1);
     --loader-shine: 251, 251, 251;
-    --loader-radius: var(--small-radius);
+    --loader-radius: var(--radius-xs);
     --loader-display: block;
 
     --drop-shadow-color: 0, 0, 0, 0.5;
     --drop-shadow-top: 0px 2px 5px rgba(var(--drop-shadow-color));
     --drop-shadow-bottom: 0px -2px 5px rgba(var(--drop-shadow-color));
+    --drop-shadow-end: -2px 0px 5px rgba(var(--drop-shadow-color));
+    --drop-shadow-start: 2px 0px 5px rgba(var(--drop-shadow-color));
 
     --ion-text-color: var(--text-color);
     --ion-text-color-rgb: #{$text-color-rgb};
     --subdued-text-color: var(--medium);
 
     --ion-card-color: var(--text-color);
-    --ion-card-vertical-margin: 10px;
-    --ion-card-horizontal-margin: 10px;
-    --ion-card-radius: var(--medium-radius);
+    --ion-card-vertical-margin: 12px;
+    --ion-card-horizontal-margin: 12px;
+    --ion-card-radius: var(--radius-lg);
     --ion-card-border-width: 1px;
     --ion-card-border-color: var(--stroke);
     ion-card {
@@ -146,7 +146,7 @@ html {
     --core-header-buttons-background: var(--core-header-toolbar-background);
     --core-header-buttons-color: var(--core-header-toolbar-color);
 
-    ion-header {
+    ion-header, ion-header.header-md {
         box-shadow: var(--core-header-shadow, none);
         transition: box-shadow 0.5s;
 
@@ -228,6 +228,10 @@ html {
         }
     }
 
+    ion-popover.ios {
+        --min-width: 250px;
+    }
+
     ion-toast {
         --color: var(--ion-color-step-50);
         --button-color: var(--primary);
@@ -243,7 +247,7 @@ html {
     --core-tab-font-weight-active: normal;
     --core-tabs-height: 48px;
     core-tabs, core-tabs-outlet {
-        ion-slide {
+        swiper-slide {
             --background: var(--core-tab-background);
             --color: var(--core-tab-color);
             --border-color: var(--core-tab-border-color);
@@ -324,11 +328,12 @@ html {
 
     --core-star-color: var(--primary);
 
-    --core-large-avatar-size: 90px;
+    --core-large-avatar-size: 80px;
     --core-avatar-size: var(--a11y-min-target-size);
+    --core-avatar-radius: 50%;
 
     --core-courseimage-on-course-size: 72px;
-    --core-courseimage-radius: var(--medium-radius);
+    --core-courseimage-radius: var(--radius-sm);
 
     --core-navigation-background: var(--contrast-background);
 
@@ -374,6 +379,13 @@ html {
     --core-dd-question-radius: 10px;
     --core-dd-question-border: var(--medium);
 
+    --core-table-header-background: var(--white);
+    --core-table-odd-cell-background: var(--light);
+    --core-table-odd-cell-hover: var(--gray-200);
+    --core-table-even-cell-background: var(--white);
+    --core-table-even-cell-hover: var(--light);
+    --core-table-border-color: var(--stroke);
+
     --rotate-expandable: rotate(90deg);
     &[dir=rtl] {
         --rotate-expandable: rotate(-90deg);
@@ -392,6 +404,11 @@ html {
     // Make activtity colours available for custom modules.
     @each $type, $value in $activity-icon-colors {
         --activity#{$type}: #{$value};
+    }
+
+    // Make activtity colours available for custom modules.
+    @each $type, $value in $activity-icon-background-colors {
+        --activity-40-#{$type}: #{$value};
     }
 
     --core-mainpage-sitename-display: none;

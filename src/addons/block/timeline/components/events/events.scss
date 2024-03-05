@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 h3 {
     font-weight: bold;
@@ -23,7 +23,7 @@ h4.core-bold {
     }
 
     core-mod-icon {
-        padding: 8px;
+        --module-legacy-icon-padding: 8px;
         --margin-end: 0.5rem;
         --margin-vertical: 0;
     }

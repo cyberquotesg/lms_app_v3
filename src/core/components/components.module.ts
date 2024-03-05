@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { TranslateModule } from '@ngx-translate/core';
@@ -64,6 +64,8 @@ import { CoreMessageComponent } from './message/message';
 import { CoreGroupSelectorComponent } from './group-selector/group-selector';
 import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-button-modal';
 import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
+import { CoreCourseImageComponent } from '@components/course-image/course-image';
+import { CoreSitesListComponent } from './sites-list/sites-list';
 
 @NgModule({
     declarations: [
@@ -75,6 +77,7 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreContextMenuComponent,
         CoreContextMenuItemComponent,
         CoreContextMenuPopoverComponent,
+        CoreCourseImageComponent,
         CoreDownloadRefreshComponent,
         CoreDynamicComponent,
         CoreEmptyBoxComponent,
@@ -110,6 +113,7 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreSwipeNavigationTourComponent,
         CoreRefreshButtonModalComponent,
         CoreSheetModalComponent,
+        CoreSitesListComponent,
     ],
     imports: [
         CommonModule,
@@ -128,6 +132,7 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreContextMenuComponent,
         CoreContextMenuItemComponent,
         CoreContextMenuPopoverComponent,
+        CoreCourseImageComponent,
         CoreDownloadRefreshComponent,
         CoreDynamicComponent,
         CoreEmptyBoxComponent,
@@ -163,6 +168,8 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreSwipeNavigationTourComponent,
         CoreRefreshButtonModalComponent,
         CoreSheetModalComponent,
+        CoreSitesListComponent,
     ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class CoreComponentsModule {}

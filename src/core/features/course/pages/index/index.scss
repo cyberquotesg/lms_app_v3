@@ -1,4 +1,4 @@
-@import '~theme/globals.scss';
+@use "theme/globals" as *;
 
 :host {
     .core-format-progress-list {
@@ -26,6 +26,11 @@
             border-radius: var(--border-radius);
             color: var(--course-color-tint);
             background: var(--course-color, transparent);
+        }
+
+        // Fill geopaterns
+        img[src$=".svg"] {
+            min-width: 100%;
         }
     }
 

@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 
-import { CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreSitePluginsContent } from '@features/siteplugins/services/siteplugins';
 import { CanLeave } from '@guards/can-leave';
 import { CoreNavigator } from '@services/navigator';
@@ -61,7 +60,7 @@ export class CoreSitePluginsPluginPage implements OnInit, CanLeave {
      *
      * @param refresher Refresher.
      */
-    refreshData(refresher: IonRefresher): void {
+    refreshData(refresher: HTMLIonRefresherElement): void {
         this.content?.refreshContent(false).finally(() => {
             refresher.complete();
         });

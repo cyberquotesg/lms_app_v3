@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host {
     --addon-calendar-blank-day-background-color: var(--light);
@@ -142,7 +142,7 @@
         }
     }
 
-    ion-slide {
+    swiper-slide {
         display: block;
         font-size: inherit;
         justify-content: start;

@@ -31,7 +31,7 @@ import { AddonModAssignSubmissionOnlineTextPluginData } from '../services/handle
 })
 export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignSubmissionPluginBaseComponent implements OnInit {
 
-    control?: FormControl;
+    control?: FormControl<string>;
     words = 0;
     component = AddonModAssignProvider.COMPONENT;
     text = '';
@@ -94,7 +94,7 @@ export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignS
                 });
             } else {
                 // Create and add the control.
-                this.control = this.fb.control(this.text);
+                this.control = this.fb.control(this.text, { nonNullable: true });
             }
 
             // Calculate initial words.
@@ -111,7 +111,7 @@ export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignS
      *
      * @param text The new text.
      */
-    onChange(text: string): void {
+    onChange(text?: string | null): void {
         // Count words if needed.
         if (this.wordLimitEnabled) {
             // Cancel previous wait.

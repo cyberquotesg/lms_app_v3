@@ -77,6 +77,13 @@ html.dark {
         }
     }
 
+    ion-popover,
+    ion-popover ion-content {
+        --background: var(--gray-800);
+        --ion-item-background: var(--background);
+        --ion-background-color: var(--background);
+    }
+
     --core-link-color: var(--info-tint);
 
     --core-header-toolbar-background:   var(--gray-900);
@@ -160,4 +167,10 @@ html.dark {
 
     --addon-forum-border-color: var(--gray-500);
     --addon-forum-highlight-color: var(--gray-800);
+
+    --core-table-header-background: var(--gray-900);
+    --core-table-odd-cell-background: var(--gray-800);
+    --core-table-odd-cell-hover: var(--gray-600);
+    --core-table-even-cell-background: var(--gray-900);
+    --core-table-even-cell-hover: var(--gray-700);
 }

@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 @mixin inline() {
     &:not(.core-loading-loaded) {
@@ -85,13 +85,4 @@
 :host-context(core-block) {
     // Implicit Inline.
     @include inline();
-}
-
-:host-context(.limited-width > ):not([slot]),
-:host-context(.menu > ):not([slot]) {
-    &.core-loading-loaded {
-        --contents-display: flex;
-        flex-direction: column;
-    }
-    min-height: 100%;
 }

@@ -16,7 +16,6 @@ import { Component, OnDestroy, AfterViewInit, ViewChild } from '@angular/core';
 import { CoreListItemsManager } from '@classes/items-management/list-items-manager';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
-import { IonRefresher } from '@ionic/angular';
 import { CoreGroupInfo } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
@@ -34,6 +33,7 @@ import {
     AddonModAssignManualSyncData,
     AddonModAssignAutoSyncData,
 } from '../../services/assign-sync';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 /**
  * Page that displays a list of submissions of an assignment.
@@ -168,6 +168,21 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
     protected async fetchAssignment(sync = false): Promise<void> {
         try {
             await this.submissions.getSource().loadAssignment(sync);
+
+            if (!this.assign) {
+                return;
+            }
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'mod_assign_get_submissions',
+                name: Translate.instant('addon.mod_assign.subpagetitle', {
+                    contextname: this.assign.name,
+                    subpage: Translate.instant('addon.mod_assign.grading'),
+                }),
+                data: { assignid: this.assign.id, category: 'assign' },
+                url: `/mod/assign/view.php?id=${this.assign.cmid}&action=grading`,
+            });
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error getting assigment data.');
         }
@@ -192,7 +207,7 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
      *
      * @param refresher Refresher.
      */
-    refreshList(refresher?: IonRefresher): void {
+    refreshList(refresher?: HTMLIonRefresherElement): void {
         this.refreshAllData(true).finally(() => {
             refresher?.complete();
         });

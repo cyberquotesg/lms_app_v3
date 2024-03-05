@@ -48,6 +48,7 @@ import {
 import { AddonModLessonModuleHandlerService } from '../../services/handlers/module';
 import { CoreTime } from '@singletons/time';
 import { CoreError } from '@classes/errors/error';
+import { Translate } from '@singletons';
 
 /**
  * Component that displays a lesson entry page.
@@ -65,7 +66,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
     @Input() action?: string; // The "action" to display first.
 
     component = AddonModLessonProvider.COMPONENT;
-    moduleName = 'lesson';
+    pluginName = 'lesson';
 
     lesson?: AddonModLessonLessonWSData; // The lesson.
     selectedTab?: number; // The initial selected tab.
@@ -78,7 +79,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
     leftDuringTimed?: boolean; // Whether the user has started and left a retake.
     groupInfo?: CoreGroupInfo; // The group info.
     reportLoaded?: boolean; // Whether the report data has been loaded.
-    selectedGroupName?: string; // The name of the selected group.
+    selectedGroupEmptyMessage?: string; // The message to show if the selected group is empty.
     overview?: AttemptsOverview; // Reports overview data.
     finishedOffline?: boolean; // Whether a retake was finished in offline.
     avetimeReadable?: string; // Average time in a readable format.
@@ -371,7 +372,16 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
             return;
         }
 
-        await AddonModLesson.logViewLesson(this.lesson.id, this.password, this.lesson.name);
+        await CoreUtils.ignoreErrors(AddonModLesson.logViewLesson(this.lesson.id, this.password));
+    }
+
+    /**
+     * Call analytics.
+     */
+    protected callAnalyticsLogEvent(): void {
+        this.analyticsLogEvent('mod_lesson_view_lesson', {
+            url: this.selectedTab === 1 ? `/mod/lesson/report.php?id=${this.module.id}&action=reportoverview` : undefined,
+        });
     }
 
     /**
@@ -434,19 +444,29 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
      * First tab selected.
      */
     indexSelected(): void {
+        const tabHasChanged = this.selectedTab !== 0;
         this.selectedTab = 0;
+
+        if (tabHasChanged) {
+            this.callAnalyticsLogEvent();
+        }
     }
 
     /**
      * Reports tab selected.
      */
     reportsSelected(): void {
+        const tabHasChanged = this.selectedTab !== 1;
         this.selectedTab = 1;
 
         if (!this.groupInfo) {
             this.fetchReportData().catch((error) => {
                 CoreDomUtils.showErrorModalDefault(error, 'Error getting report.');
             });
+        }
+
+        if (tabHasChanged) {
+            this.callAnalyticsLogEvent();
         }
     }
 
@@ -486,12 +506,15 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
         }
 
         this.group = groupId;
-        this.selectedGroupName = '';
+        this.selectedGroupEmptyMessage = '';
 
         // Search the name of the group if it isn't all participants.
         if (groupId && this.groupInfo && this.groupInfo.groups) {
             const group = this.groupInfo.groups.find(group => groupId == group.id);
-            this.selectedGroupName = group?.name || '';
+
+            this.selectedGroupEmptyMessage = group
+                ? Translate.instant('addon.mod_lesson.nolessonattemptsgroup', { $a: group.name })
+                : '';
         }
 
         // Get the overview of retakes for the group.

@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 
-import { CoreLang } from '@services/lang';
+import { CoreLang, CoreLangFormat } from '@services/lang';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreConstants } from '@/core/constants';
 import { makeSingleton } from '@singletons';
@@ -64,18 +64,18 @@ export class CoreUrlUtilsProvider {
         const urlAndAnchor = url.split('#');
         url = urlAndAnchor[0];
 
-        let separator = url.indexOf('?') != -1 ? '&' : '?';
+        let separator = url.indexOf('?') !== -1 ? '&' : '?';
 
         for (const key in params) {
             let value = params[key];
 
-            if (boolToNumber && typeof value == 'boolean') {
+            if (boolToNumber && typeof value === 'boolean') {
                 // Convert booleans to 1 or 0.
                 value = value ? '1' : '0';
             }
 
-            // Ignore objects.
-            if (typeof value != 'object') {
+            // Ignore objects and undefined.
+            if (typeof value !== 'object' && value !== undefined) {
                 url += separator + key + '=' + value;
                 separator = '&';
             }
@@ -260,8 +260,8 @@ export class CoreUrlUtilsProvider {
         }
 
         try {
-            let lang = await CoreLang.getCurrentLanguage();
-            lang = CoreLang.getParentLanguage(lang) || lang;
+            let lang = await CoreLang.getCurrentLanguage(CoreLangFormat.LMS);
+            lang = CoreLang.getParentLanguage() || lang;
 
             return docsUrl.replace('/en/', '/' + lang + '/');
         } catch (error) {
@@ -270,10 +270,10 @@ export class CoreUrlUtilsProvider {
     }
 
     /**
-     * Returns the Youtube Embed Video URL or null if not found.
+     * Returns the Youtube Embed Video URL or undefined if not found.
      *
      * @param url URL
-     * @returns Youtube Embed Video URL or null if not found.
+     * @returns Youtube Embed Video URL or undefined if not found.
      */
     getYoutubeEmbedUrl(url?: string): string | void {
         if (!url) {
@@ -332,12 +332,13 @@ export class CoreUrlUtilsProvider {
      * @returns Last file without params.
      */
     getLastFileWithoutParams(url: string): string {
-        let filename = url.substring(url.lastIndexOf('/') + 1);
-        if (filename.indexOf('?') != -1) {
-            filename = filename.substring(0, filename.indexOf('?'));
+        const parsedUrl = CoreUrl.parse(url);
+        if (!parsedUrl) {
+            return '';
         }
+        const path = parsedUrl.path ?? '';
 
-        return filename;
+        return path.split('/').pop() ?? '';
     }
 
     /**
@@ -346,6 +347,7 @@ export class CoreUrlUtilsProvider {
      *
      * @param url URL to treat.
      * @returns Protocol, undefined if no protocol found.
+     * @todo Use CoreUrl.parse
      */
     getUrlProtocol(url: string): string | void {
         if (!url) {
@@ -381,6 +383,7 @@ export class CoreUrlUtilsProvider {
      *
      * @param url URL to treat.
      * @returns Username. Undefined if no username found.
+     * @todo Use CoreUrl.parse
      */
     getUsernameFromUrl(url: string): string | undefined {
         if (url.indexOf('@') > -1) {
@@ -430,6 +433,7 @@ export class CoreUrlUtilsProvider {
      *
      * @param url The url to test.
      * @returns Whether the url uses http or https protocol.
+     * @todo Use CoreUrl.parse
      */
     isHttpURL(url: string): boolean {
         return /^https?:\/\/.+/i.test(url);
@@ -489,11 +493,16 @@ export class CoreUrlUtilsProvider {
     /**
      * Returns if a URL is a theme image URL.
      *
-     * @param url The URL to test.
+     * @param imageUrl The URL to test.
+     * @param siteUrl The Site Url.
      * @returns Whether the URL is a theme image URL.
      */
-    isThemeImageUrl(url: string): boolean {
-        return url?.indexOf('/theme/image.php') !== -1;
+    isThemeImageUrl(imageUrl: string, siteUrl?: string): boolean {
+        if (siteUrl) {
+            return imageUrl.startsWith(`${siteUrl}/theme/image.php`);
+        }
+
+        return imageUrl?.indexOf('/theme/image.php') !== -1;
     }
 
     /**
@@ -504,7 +513,7 @@ export class CoreUrlUtilsProvider {
      */
     removeProtocolAndWWW(url: string): string {
         // Remove protocol.
-        url = url.replace(/.*?:\/\//g, '');
+        url = url.replace(/^.*?:\/\//, '');
         // Remove www.
         url = url.replace(/^www./, '');
 
@@ -542,7 +551,10 @@ export class CoreUrlUtilsProvider {
             return url;
         }
 
-        // Not a pluginfile URL. Treat webservice/pluginfile case.
+        // Check tokenpluginfile first.
+        url = url.replace(/\/tokenpluginfile\.php\/[^/]+\//, '/pluginfile.php/');
+
+        // Treat webservice/pluginfile case.
         url = url.replace(/\/webservice\/pluginfile\.php\//, '/pluginfile.php/');
 
         // Make sure the URL doesn't contain the token.

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, Input, Output, OnInit, EventEmitter, ViewChild, ElementRef } from '@angular/core';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreIonLoadingElement } from '@classes/ion-loading';
 import { CoreFile } from '@services/file';
@@ -98,7 +98,7 @@ export class CoreLocalFileComponent implements OnInit {
         this.fileExtension = CoreMimetypeUtils.getFileExtension(file.name);
 
         // Let's calculate the relative path for the file.
-        this.relativePath = CoreFile.removeBasePath(file.toURL());
+        this.relativePath = CoreFile.removeBasePath(CoreFile.getFileEntryURL(file));
         if (!this.relativePath) {
             // Didn't find basePath, use fullPath but if the user tries to manage the file it'll probably fail.
             this.relativePath = file.fullPath;
@@ -119,7 +119,7 @@ export class CoreLocalFileComponent implements OnInit {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!isOpenButton && CoreUtils.isTrueOrOne(this.overrideClick) && this.onClick.observers.length) {
+        if (!isOpenButton && CoreUtils.isTrueOrOne(this.overrideClick) && this.onClick.observed) {
             this.onClick.emit();
 
             return;
@@ -139,7 +139,7 @@ export class CoreLocalFileComponent implements OnInit {
             options.iOSOpenFileAction = this.defaultIsOpenWithPicker ? OpenFileAction.OPEN : OpenFileAction.OPEN_WITH;
         }
 
-        CoreUtils.openFile(this.file.toURL(), options);
+        CoreUtils.openFile(CoreFile.getFileEntryURL(this.file), options);
     }
 
     /**

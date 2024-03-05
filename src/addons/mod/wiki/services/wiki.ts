@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreTagItem } from '@features/tag/services/tag';
@@ -28,6 +28,7 @@ import { CoreEvents } from '@singletons/events';
 import { AddonModWikiPageDBRecord } from './database/wiki';
 import { AddonModWikiOffline } from './wiki-offline';
 import { AddonModWikiAutoSyncData, AddonModWikiManualSyncData, AddonModWikiSyncProvider } from './wiki-sync';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 const ROOT_CACHE_KEY = 'mmaModWiki:';
 
@@ -621,23 +622,19 @@ export class AddonModWikiProvider {
      *
      * @param id Page ID.
      * @param wikiId Wiki ID.
-     * @param name Name of the wiki.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logPageView(id: number, wikiId: number, name?: string, siteId?: string): Promise<void> {
+    logPageView(id: number, wikiId: number, siteId?: string): Promise<void> {
         const params: AddonModWikiViewPageWSParams = {
             pageid: id,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_wiki_view_page',
             params,
             AddonModWikiProvider.COMPONENT,
             wikiId,
-            name,
-            'wiki',
-            params,
             siteId,
         );
     }
@@ -646,23 +643,19 @@ export class AddonModWikiProvider {
      * Report the wiki as being viewed.
      *
      * @param id Wiki ID.
-     * @param name Name of the wiki.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logView(id: number, name?: string, siteId?: string): Promise<void> {
+    logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModWikiViewWikiWSParams = {
             wikiid: id,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_wiki_view_wiki',
             params,
             AddonModWikiProvider.COMPONENT,
             id,
-            name,
-            'wiki',
-            {},
             siteId,
         );
     }

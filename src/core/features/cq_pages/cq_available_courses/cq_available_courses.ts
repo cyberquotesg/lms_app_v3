@@ -20,7 +20,6 @@ export class CqAvailableCourses extends CqPage implements OnInit
         media: "",
     };
     pageDefaults: any = {
-        medias: [],
         online: {
             initiated: false,
             reachedEndOfList: false,
@@ -46,12 +45,15 @@ export class CqAvailableCourses extends CqPage implements OnInit
         getCqConfig: {
             value: 0,
             next: {
-                getCourses: 0,
+                courses: 0,
             },
         },
     };
+    pageJobLoadMore: any = {
+        courses: 0,
+    };
     pageJobRefresh: any = {
-        getCourses: 0,
+        courses: 0,
     };
 
     constructor(renderer: Renderer2, CH: CqHelper, private router: Router)
@@ -114,10 +116,10 @@ export class CqAvailableCourses extends CqPage implements OnInit
                     endpoint: 'get_filter_multiple',
                     page: 'classroom_training_list',
                 },
-                mobileCourseMedia: {
+                cqConfig: {
                     cluster: 'CqLib',
                     endpoint: 'get_cq_config',
-                    name: 'mobile_course_media',
+                    name: 'mobile_list_length,mobile_course_media',
                 },
             },
         };
@@ -137,17 +139,12 @@ export class CqAvailableCourses extends CqPage implements OnInit
                 this.pageData.offline.filterMultiple = allData.offlineFilter;
             }
 
-            this.pageData.medias = Array.isArray(allData.mobileCourseMedia[0].value) ? allData.mobileCourseMedia[0].value : [allData.mobileCourseMedia[0].value];
+            // cqConfig
+            var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
 
-            if (this.pageParams.media && this.pageData.medias.includes(this.pageParams.media))
-            {
-                this.pageData.media = this.pageParams.media
-            }
-            else
-            {
-                this.pageData.media = this.pageData.medias[0];
-            }
-
+            this.pageData.online.length = this.pageData.offline.length = cqConfig.mobileListLength;
+            this.pageData.medias = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
+            this.pageData.media = this.pageParams.media != "" ? this.pageParams.media : this.pageData.medias[0];
             this.pageData.sliderOptions = {
                 initialSlide: this.pageData.medias.indexOf(this.pageData.media),
                 speed: 400,
@@ -160,9 +157,9 @@ export class CqAvailableCourses extends CqPage implements OnInit
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
     }
-    getCourses(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
+    courses(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
-        // don't use modeData.mode, but use it's own duplicated functionality
+        // don't use modeData.page or modeData.length, but use it's own duplicated functionality
         let page, length, media = this.pageData.media;
         if (modeData.mode == 'firstload' || modeData.mode == 'forced-firstload')
         {
@@ -207,7 +204,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageJobExecuter(jobName, params, (data) => {
                 let courses = this.CH.toArray(this.CH.toJson(data));
                 this.pageData.online.initiated = true;
-                this.pageData.online.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < this.pageData.online.length;
+                this.pageData.online.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < length;
 
                 let temp = (modeData.mode != 'loadmore' && modeData.mode != 'forced-loadmore') ? courses : this.pageData.online.courses.concat(courses);
                 if (!this.CH.isSame(this.pageData.online.courses, temp))
@@ -240,7 +237,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageJobExecuter(jobName, params, (data) => {
                 let courses = this.CH.toArray(this.CH.toJson(data));
                 this.pageData.offline.initiated = true;
-                this.pageData.offline.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < this.pageData.offline.length;
+                this.pageData.offline.reachedEndOfList = this.CH.isEmpty(courses) || this.CH.getLength(courses) < length;
 
                 // aditional information
                 for (let id in courses)

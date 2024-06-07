@@ -34,7 +34,7 @@ export class CqPage extends CqGeneral
     pageJobRefresh: any = {};
 
     page = 1;
-    length = 36;
+    length = 12;
     reachedEndOfList = false;
     loadMoreError = false;
 

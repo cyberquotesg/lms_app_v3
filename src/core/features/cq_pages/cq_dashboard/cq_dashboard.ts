@@ -77,7 +77,7 @@ export class CqDashboard extends CqPage implements OnInit
                     endpoint: 'get_filter_multiple',
                     page: 'dashboard',
                 },
-                mobileCourseMedia: {
+                cqConfig: {
                     cluster: 'CqLib',
                     endpoint: 'get_cq_config',
                     name: 'mobile_course_media',
@@ -87,10 +87,14 @@ export class CqDashboard extends CqPage implements OnInit
 
         this.pageJobExecuter(jobName, params, (data) => {
             let allData = this.CH.toJson(data);
+
+            // filterMultiple
             this.pageData.filterMultiple = allData.filterMultiple;
-            this.pageData.mobileCourseMedia = Array.isArray(allData.mobileCourseMedia[0].value) ? allData.mobileCourseMedia[0].value : [allData.mobileCourseMedia[0].value];
-            this.pageData.offlineCourse = this.pageData.mobileCourseMedia.includes("offline");
-            this.pageData.onlineCourse = this.pageData.mobileCourseMedia.includes("online");
+
+            // cqConfig
+            var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+
+            this.pageData.mobileCourseMedia = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -120,24 +124,22 @@ export class CqDashboard extends CqPage implements OnInit
             },
         };
 
-        if (this.pageData.offlineCourse)
+        if (this.pageData.mobileCourseMedia.includes("offline"))
         {
             params.calls.offline = {
                 cluster: "CqCourseLib",
                 endpoint: "get_classroom_training_list",
                 page: 1,
                 length: 5,
-                order_by: "rand()",
             };
         }
-        if (this.pageData.onlineCourse)
+        if (this.pageData.mobileCourseMedia.includes("online"))
         {
             params.calls.online = {
                 cluster: "CqCourseLib",
                 endpoint: "get_e_learning_list",
                 page: 1,
                 length: 5,
-                order_by: "rand()",
             };
         }
 
@@ -151,8 +153,8 @@ export class CqDashboard extends CqPage implements OnInit
             let bucketTexted = bucket.join(",");
 
             params.calls.myCourses[item.plural] = bucketTexted;
-            if (this.pageData.offlineCourse) params.calls.offline[item.plural] = bucketTexted;
-            if (this.pageData.onlineCourse) params.calls.online[item.plural] = bucketTexted;
+            params.calls.online[item.plural] = bucketTexted;
+            params.calls.offline[item.plural] = bucketTexted;
         });
 
         this.pageJobExecuter(jobName, params, (data) => {
@@ -171,7 +173,7 @@ export class CqDashboard extends CqPage implements OnInit
             }
 
             // offline
-            if (this.pageData.offlineCourse)
+            if (this.pageData.mobileCourseMedia.includes("offline"))
             {
                 temp = this.CH.toArray(allData.offline);
                 if (!this.CH.isSame(this.pageData.offline, temp))
@@ -179,10 +181,13 @@ export class CqDashboard extends CqPage implements OnInit
                     this.pageData.offline = temp;
                 }
             }
-            else this.pageData.offline = [];
+            else
+            {
+                this.pageData.offline = [];
+            }
 
             // online
-            if (this.pageData.onlineCourse)
+            if (this.pageData.mobileCourseMedia.includes("online"))
             {
                 temp = this.CH.toArray(allData.online);
                 if (!this.CH.isSame(this.pageData.online, temp))
@@ -190,7 +195,10 @@ export class CqDashboard extends CqPage implements OnInit
                     this.pageData.online = temp;
                 }
             }
-            else this.pageData.online = [];
+            else
+            {
+                this.pageData.online = [];
+            }
 
             // additionalContents
             this.pageData.additionalContents = this.CH.toArray(allData.additionalContents);

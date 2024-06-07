@@ -95,27 +95,25 @@ export class CqMyReports extends CqPage implements OnInit
         };
 
         this.pageJobExecuter(jobName, params, (data) => {
-            let allData = this.CH.toJson(data),
-                temp: any;
+            let allData = this.CH.toJson(data);
 
             // courseTypes
             let courseTypesArray: any[] = [];
             for (let id in allData.courseTypes) courseTypesArray.push(allData.courseTypes[id]);
-            temp = {
+            var courseTypes : any = {
                 object: allData.courseTypes,
                 array: courseTypesArray,
             };
-            if (!this.CH.isSame(this.pageData.courseTypes, temp))
+            if (!this.CH.isSame(this.pageData.courseTypes, courseTypes))
             {
-                this.pageData.courseTypes = temp;
+                this.pageData.courseTypes = courseTypes;
             }
 
             // cqConfig
-            temp = {};
-            allData.cqConfig.forEach((config) => temp[config.name] = config.value);
-            if (!this.CH.isSame(this.pageData.CqConfig, temp))
+            var cqConfig : any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+            if (!this.CH.isSame(this.pageData.CqConfig, cqConfig))
             {
-                this.pageData.CqConfig = temp;
+                this.pageData.CqConfig = cqConfig;
             }
 
             // years

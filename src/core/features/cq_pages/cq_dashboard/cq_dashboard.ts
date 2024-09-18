@@ -95,6 +95,8 @@ export class CqDashboard extends CqPage implements OnInit
             var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
 
             this.pageData.mobileCourseMedia = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
+            this.pageData.offlineCourse = this.pageData.mobileCourseMedia.includes("offline");
+            this.pageData.onlineCourse = this.pageData.mobileCourseMedia.includes("online");
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);

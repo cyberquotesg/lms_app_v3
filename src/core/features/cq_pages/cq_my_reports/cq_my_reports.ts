@@ -36,6 +36,10 @@ export class CqMyReports extends CqPage implements OnInit
     {
         super(renderer, CH);
 
+        CH.getUser().getUserFullNameWithDefault(CH.getUserId()).then((userFullName) => {
+            this.pageData.userFullName = userFullName;
+        });
+
         this.pageData.yearsSliderOptions = {
             initialSlide: 0,
             speed: 400,

@@ -73,11 +73,12 @@
 
         <div *ngFor="let media of pageData.mobileCourseMedia">
             <div *ngIf="isAvailable(pageData[media])">
-                <div class="pl-24 pt-40 pr-24 pb-20" style="font-weight: 900;">
+                <div class="pl-24 pt-24 pr-24 pb-20" style="position: relative; font-weight: 900;">
                     <span *ngIf="media == 'online'">E-Learning You May Like</span>
                     <span *ngIf="media == 'offline'">Classroom Training You May Like</span>
+                    <ion-icon class="this-is-swiping" name="chevron-forward" style="position: absolute; top: 24px; right: 24px; font-size: 22px;"></ion-icon>
                 </div>
-                <ion-slides class="pl-24 pr-24" [options]="pageData.sliderOptions">
+                <ion-slides class="pl-24 pr-48" [options]="pageData.sliderOptions">
                     <ion-slide *ngFor="let course of pageData[media]" class="mb-24">
                        <cq_items [items]="course" (onSelectItem)="openCourse($event)"></cq_items>
                     </ion-slide>

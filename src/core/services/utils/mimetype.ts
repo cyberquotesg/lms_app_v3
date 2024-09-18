@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreFile } from '@services/file';
 import { CoreTextUtils } from '@services/utils/text';
@@ -26,14 +26,15 @@ import extToMime from '@/assets/exttomime.json';
 import mimeToExt from '@/assets/mimetoext.json';
 import { CoreFileEntry, CoreFileHelper } from '@services/file-helper';
 import { CoreUrl } from '@singletons/url';
+import { CoreSites } from '@services/sites';
 
 interface MimeTypeInfo {
     type: string;
     icon?: string;
     groups?: string[];
-
     // eslint-disable-next-line id-blacklist
     string?: string;
+    deprecated?: string; // Deprecated mimetype name.
 }
 
 interface MimeTypeGroupInfo {
@@ -184,7 +185,7 @@ export class CoreMimetypeUtilsProvider {
             // @todo linting: See if this can be removed
             (file as { embedType?: string }).embedType = embedType;
 
-            path = path ?? (CoreUtils.isFileEntry(file) ? file.toURL() : CoreFileHelper.getFileUrl(file));
+            path = path ?? (CoreUtils.isFileEntry(file) ? CoreFile.getFileEntryURL(file) : CoreFileHelper.getFileUrl(file));
             path = path && CoreFile.convertFileSrc(path);
 
             switch (embedType) {
@@ -282,7 +283,11 @@ export class CoreMimetypeUtilsProvider {
      * @returns The path to a folder icon.
      */
     getFolderIcon(): string {
-        return 'assets/img/files/folder-64.png';
+        if (CoreSites.getCurrentSite() === undefined || CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.0')) {
+            return 'assets/img/files/folder.svg';
+        }
+
+        return 'assets/img/files_legacy/folder-64.png';
     }
 
     /**
@@ -292,7 +297,11 @@ export class CoreMimetypeUtilsProvider {
      * @returns The icon path.
      */
     getFileIconForType(type: string): string {
-        return 'assets/img/files/' + type + '-64.png';
+        if (CoreSites.getCurrentSite() === undefined || CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.0')) {
+            return 'assets/img/files/' + type + '.svg';
+        }
+
+        return 'assets/img/files_legacy/' + type + '-64.png';
     }
 
     /**
@@ -303,17 +312,12 @@ export class CoreMimetypeUtilsProvider {
      * @returns The lowercased extension without the dot, or undefined.
      */
     guessExtensionFromUrl(fileUrl: string): string | undefined {
-        const split = CoreUrl.removeUrlAnchor(fileUrl).split('.');
+        const parsed = CoreUrl.parse(fileUrl);
+        const split = parsed?.path?.split('.');
         let extension: string | undefined;
 
-        if (split.length > 1) {
-            let candidate = split[split.length - 1].toLowerCase();
-            // Remove params if any.
-            const position = candidate.indexOf('?');
-            if (position > -1) {
-                candidate = candidate.substring(0, position);
-            }
-
+        if (split && split.length > 1) {
+            const candidate = split[split.length - 1].toLowerCase();
             if (EXTENSION_REGEX.test(candidate)) {
                 extension = candidate;
             }
@@ -392,6 +396,18 @@ export class CoreMimetypeUtilsProvider {
         if (this.extToMime[extension] && this.extToMime[extension].type) {
             return this.extToMime[extension].type;
         }
+    }
+
+    /**
+     * Get the deprecated mimetype of an extension. Returns undefined if not found or no deprecated mimetype.
+     *
+     * @param extension Extension.
+     * @returns Deprecated mimetype.
+     */
+    getDeprecatedMimeType(extension: string): string | undefined {
+        extension = this.cleanExtension(extension);
+
+        return this.extToMime[extension]?.deprecated;
     }
 
     /**

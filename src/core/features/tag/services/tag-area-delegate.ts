@@ -15,6 +15,7 @@
 import { Injectable, Type } from '@angular/core';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
 import { makeSingleton } from '@singletons';
+import { CoreTag } from './tag';
 
 /**
  * Interface that all tag area handlers must implement.
@@ -50,7 +51,14 @@ export class CoreTagAreaDelegateService extends CoreDelegate<CoreTagAreaHandler>
     protected handlerNameProperty = 'type';
 
     constructor() {
-        super('CoreTagAreaDelegate', true);
+        super('CoreTagAreaDelegate');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    async isEnabled(): Promise<boolean> {
+        return CoreTag.areTagsAvailable();
     }
 
     /**
@@ -61,7 +69,7 @@ export class CoreTagAreaDelegateService extends CoreDelegate<CoreTagAreaHandler>
      * @returns String key.
      */
     getDisplayNameKey(component: string, itemType: string): string {
-        return (component == 'core' ? 'core.tag' : 'addon.' + component) + '.tagarea_' + itemType;
+        return (component === 'core' || component.startsWith('core_') ? 'core.tag' : 'addon.' + component) + '.tagarea_' + itemType;
     }
 
     /**

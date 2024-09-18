@@ -12,16 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, Input, Output, EventEmitter, DoCheck, KeyValueDiffers, ViewChild, KeyValueDiffer } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    Input,
+    Output,
+    EventEmitter,
+    DoCheck,
+    KeyValueDiffers,
+    ViewChild,
+    KeyValueDiffer,
+    HostBinding,
+} from '@angular/core';
 import { Subject } from 'rxjs';
 import { Md5 } from 'ts-md5';
 
-import { CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreCompileHtmlComponent } from '@features/compile/components/compile-html/compile-html';
-import { CoreSitePlugins, CoreSitePluginsContent, CoreSitePluginsProvider } from '@features/siteplugins/services/siteplugins';
+import { CoreSitePlugins, CoreSitePluginsContent } from '@features/siteplugins/services/siteplugins';
 import { CoreNavigator } from '@services/navigator';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreEvents } from '@singletons/events';
+import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
+import { CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT } from '@features/siteplugins/constants';
 
 /**
  * Component to render a site plugin content.
@@ -36,18 +49,18 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
     // Get the compile element. Don't set the right type to prevent circular dependencies.
     @ViewChild('compile') compileComponent?: CoreCompileHtmlComponent;
 
-    @Input() component!: string;
+    @HostBinding('class') @Input() component = '';
     @Input() method!: string;
     @Input() args?: Record<string, unknown>;
     @Input() initResult?: CoreSitePluginsContent | null; // Result of the init WS call of the handler.
-    @Input() data?: Record<string, unknown>; // Data to pass to the component.
+    @Input() data: Record<string, unknown> = {}; // Data to pass to the component.
     @Input() preSets?: CoreSiteWSPreSets; // The preSets for the WS call.
     @Input() pageTitle?: string; // Current page title. It can be used by the "new-content" directives.
     @Output() onContentLoaded = new EventEmitter<CoreSitePluginsPluginContentLoadedData>(); // Emits event when content is loaded.
     @Output() onLoadingContent = new EventEmitter<boolean>(); // Emits an event when starts to load the content.
 
-    content?: string; // Content.
-    javascript?: string; // Javascript to execute.
+    content = ''; // Content.
+    javascript = ''; // Javascript to execute.
     otherData?: Record<string, unknown>; // Other data of the content.
     dataLoaded = false;
     invalidateObservable = new Subject<void>(); // An observable to notify observers when to invalidate data.
@@ -105,22 +118,40 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
             this.data = this.data || {};
             this.forceCompile = true;
 
-            this.jsData = Object.assign(this.data, CoreSitePlugins.createDataForJS(this.initResult, result));
+            this.jsData = {
+                ...this.args,
+                ...this.data,
+                ...CoreSitePlugins.createDataForJS(this.initResult, result),
+            };
 
             // Pass some methods as jsData so they can be called from the template too.
-            this.jsData.fetchContent = refresh => this.fetchContent(refresh);
-            this.jsData.openContent = (title, args, component, method, jsData, preSets, ptrEnabled) =>
-                this.openContent(title, args, component, method, jsData, preSets, ptrEnabled);
-            this.jsData.refreshContent = showSpinner => this.refreshContent(showSpinner);
-            this.jsData.updateContent = (args, component, method, jsData, preSets) =>
-                this.updateContent(args, component, method, jsData, preSets);
-            this.jsData.updateModuleCourseContent = (cmId, alreadyFetched) => this.updateModuleCourseContent(cmId, alreadyFetched);
+            this.jsData.fetchContent = (refresh?: boolean) => this.fetchContent(refresh);
+            this.jsData.openContent = (
+                title: string,
+                args?: Record<string, unknown>,
+                component?: string,
+                method?: string,
+                jsData?: Record<string, unknown> | boolean,
+                preSets?: CoreSiteWSPreSets,
+                ptrEnabled?: boolean,
+            ) => this.openContent(title, args, component, method, jsData, preSets, ptrEnabled);
+            this.jsData.refreshContent = (showSpinner?: boolean) => this.refreshContent(showSpinner);
+            this.jsData.updateContent = (
+                args?: Record<string, unknown>,
+                component?: string,
+                method?: string,
+                jsData?: Record<string, unknown>,
+                preSets?: CoreSiteWSPreSets,
+            ) => this.updateContent(args, component, method, jsData, preSets);
+            this.jsData.updateModuleCourseContent = (cmId: number, alreadyFetched?: boolean) =>
+                this.updateModuleCourseContent(cmId, alreadyFetched);
+            this.jsData.updateCachedContent = () => this.updateCachedContent();
 
-            this.onContentLoaded.emit({ refresh: !!refresh, success: true });
+            this.onContentLoaded.emit({ refresh: !!refresh, success: true, content: this.content });
         } catch (error) {
             // Make it think it's loaded - otherwise it sticks on 'loading' and stops navigation working.
             this.content = '<div></div>';
-            this.onContentLoaded.emit({ refresh: !!refresh, success: false });
+            this.onContentLoaded.emit({ refresh: !!refresh, success: false, content: this.content });
 
             CoreDomUtils.showErrorModalDefault(error, 'core.errorloadingcontent', true);
         } finally {
@@ -142,7 +173,7 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
      */
     openContent(
         title: string,
-        args?: Record<string, unknown>,
+        args: Record<string, unknown> = {},
         component?: string,
         method?: string,
         jsData?: Record<string, unknown> | boolean,
@@ -155,8 +186,7 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
 
         component = component || this.component;
         method = method || this.method;
-        args = args || {};
-        const hash = <string> Md5.hashAsciiStr(JSON.stringify(args));
+        const hash = Md5.hashAsciiStr(JSON.stringify(args));
 
         CoreNavigator.navigateToSitePath(`siteplugins/content/${component}/${method}/${hash}`, {
             params: {
@@ -175,7 +205,7 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
      *
      * @param showSpinner Whether to show spinner while refreshing.
      */
-    async refreshContent(showSpinner: boolean = true): Promise<void> {
+    async refreshContent(showSpinner = true): Promise<void> {
         if (showSpinner) {
             this.dataLoaded = false;
         }
@@ -210,7 +240,8 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
         this.args = args;
         this.dataLoaded = false;
         this.preSets = preSets || this.preSets;
-        if (jsData) {
+
+        if (this.data && jsData) {
             Object.assign(this.data, jsData);
         }
 
@@ -235,7 +266,20 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
      * @param alreadyFetched Whether course data has already been fetched (no need to fetch it again).
      */
     updateModuleCourseContent(cmId: number, alreadyFetched?: boolean): void {
-        CoreEvents.trigger(CoreSitePluginsProvider.UPDATE_COURSE_CONTENT, { cmId, alreadyFetched });
+        CoreEvents.trigger(CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT, { cmId, alreadyFetched });
+    }
+
+    /**
+     * Update this content stored in the app's cache. This function will not reload the view, it will only update the data stored
+     * in the device so it's updated for the next usage. If you want to update the view, please use refreshContent.
+     */
+    async updateCachedContent(): Promise<void> {
+        await CoreSitePlugins.getContent(
+            this.component,
+            this.method,
+            this.args,
+            CoreSites.getReadingStrategyPreSets(CoreSitesReadingStrategy.ONLY_NETWORK),
+        );
     }
 
 }
@@ -243,4 +287,5 @@ export class CoreSitePluginsPluginContentComponent implements OnInit, DoCheck {
 export type CoreSitePluginsPluginContentLoadedData = {
     refresh: boolean;
     success: boolean;
+    content: string;
 };

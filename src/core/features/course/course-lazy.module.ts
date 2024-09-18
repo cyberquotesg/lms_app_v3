@@ -14,7 +14,7 @@
 
 import { CoreSharedModule } from '@/core/shared.module';
 import { Injector, NgModule } from '@angular/core';
-import { RouterModule, ROUTES, Routes } from '@angular/router';
+import { ROUTES, Routes } from '@angular/router';
 import { CoreCourseComponentsModule } from '@features/course/components/components.module';
 import { resolveIndexRoutes } from '@features/course/course-routing.module';
 import { CoreCourseSummaryPageModule } from '@features/course/pages/course-summary/course-summary.module';
@@ -78,7 +78,6 @@ function buildRoutes(injector: Injector): Routes {
         CoreCourseSummaryPageModule,
         CqComponentsModule,
     ],
-    exports: [RouterModule],
     providers: [
         {
             provide: ROUTES,

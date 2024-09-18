@@ -1,8 +1,9 @@
-@mod @mod_feedback @app @javascript
+@addon_mod_feedback @app @javascript
 Feature: Test feedback navigation
 
   Background:
-    Given the following "users" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "users" exist:
       | username  | firstname | lastname |
       | teacher1  | Teacher   | teacher  |
       | student01 | Student   | 01       |
@@ -377,10 +378,13 @@ Feature: Test feedback navigation
     But I should not find "Student 21" in the app
     And I should not find "Anonymous entries" in the app
     And I should not find "Response number: 22" in the app
+    And the following events should have been logged for "teacher1" in the app:
+      | name                                     | activity | activityname | course   |
+      | \mod_feedback\event\course_module_viewed | feedback | Feedback     | Course 1 |
 
   Scenario: Tablet navigation
     Given I entered the course "Course 1" as "teacher1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Preview
     When I press "Feedback" in the app

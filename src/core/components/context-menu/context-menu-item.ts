@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, Input, Output, OnInit, OnDestroy, EventEmitter, OnChanges, SimpleChange } from '@angular/core';
-import { CoreLogger } from '@singletons/logger';
 import { CoreContextMenuComponent } from '../context-menu/context-menu';
 
 /**
@@ -58,11 +57,6 @@ export class CoreContextMenuItemComponent implements OnInit, OnDestroy, OnChange
     @Output() onClosed?: EventEmitter<() => void>; // Will emit an event when the popover is closed because the item was clicked.
     @Output() toggleChange = new EventEmitter<boolean>();// Will emit an event when toggle changes to enable 2-way data binding.
 
-    /**
-     * @deprecated since 4.0.
-     */
-    @Input() iconDescription?: string; // Name of the icon to be shown on the left side of the item. Not used anymore.
-
     protected hasAction = false;
     protected destroyed = false;
 
@@ -79,7 +73,7 @@ export class CoreContextMenuItemComponent implements OnInit, OnDestroy, OnChange
     ngOnInit(): void {
         // Initialize values.
         this.priority = this.priority || 1;
-        this.hasAction = !!this.action && this.action.observers.length > 0;
+        this.hasAction = !!this.action && this.action.observed;
         this.ariaAction = this.ariaAction || this.content;
 
         if (this.hasAction) {
@@ -91,11 +85,6 @@ export class CoreContextMenuItemComponent implements OnInit, OnDestroy, OnChange
 
         if (!this.destroyed) {
             this.ctxtMenu.addItem(this);
-        }
-
-        if (this.iconDescription !== undefined) {
-            CoreLogger.getInstance('CoreContextMenuItemComponent')
-                .warn('iconDescription Input is deprecated and should not be used');
         }
     }
 

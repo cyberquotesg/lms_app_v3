@@ -1,8 +1,9 @@
-@mod @mod_chat @app @javascript
+@addon_mod_chat @app @javascript
 Feature: Test chat navigation
 
   Background:
-    Given the following "courses" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "courses" exist:
       | fullname | shortname |
       | Course 1 | C1        |
     And the following "users" exist:
@@ -13,6 +14,7 @@ Feature: Test chat navigation
       | user     | course | role     |
       | student1 | C1     | student  |
       | student2 | C1     | student  |
+    And I enable "chat" "mod" plugin
     And the following "activities" exist:
       | activity   | name            | intro       | course | idnumber | groupmode |
       | chat       | Test chat name  | Test chat   | C1     | chat     | 0         |
@@ -29,7 +31,7 @@ Feature: Test chat navigation
 
   Scenario: Tablet navigation on chat
     Given I entered the course "Course 1" as "student2" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Sessions
     When I press "Test chat name" in the app

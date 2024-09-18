@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
+import { isSafeNumber } from '@/core/utils/types';
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
@@ -31,11 +32,11 @@ import {
     AddonModQuiz,
     AddonModQuizAttemptWSData,
     AddonModQuizGetQuizAccessInformationWSResponse,
-    AddonModQuizProvider,
     AddonModQuizQuizWSData,
 } from '../quiz';
 import { AddonModQuizHelper } from '../quiz-helper';
 import { AddonModQuizSync, AddonModQuizSyncResult } from '../quiz-sync';
+import { AddonModQuizAttemptStates, ADDON_MOD_QUIZ_COMPONENT } from '../../constants';
 
 /**
  * Handler to prefetch quizzes.
@@ -45,7 +46,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
 
     name = 'AddonModQuiz';
     modName = 'quiz';
-    component = AddonModQuizProvider.COMPONENT;
+    component = ADDON_MOD_QUIZ_COMPONENT;
     updatesNames = /^configuration$|^.*files$|^grades$|^gradeitems$|^questions$|^attempts$/;
 
     /**
@@ -114,17 +115,18 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
         let files: CoreWSFile[] = [];
 
         await Promise.all(attempts.map(async (attempt) => {
-            if (!AddonModQuiz.isAttemptFinished(attempt.state)) {
-                // Attempt not finished, no feedback files.
+            if (!AddonModQuiz.isAttemptCompleted(attempt.state)) {
+                // Attempt not completed, no feedback files.
                 return;
             }
 
             const attemptGrade = AddonModQuiz.rescaleGrade(attempt.sumgrades, quiz, false);
-            if (attemptGrade === undefined) {
+            const attemptGradeNumber = attemptGrade !== undefined && Number(attemptGrade);
+            if (!isSafeNumber(attemptGradeNumber)) {
                 return;
             }
 
-            const feedback = await AddonModQuiz.getFeedbackForGrade(quiz.id, Number(attemptGrade), {
+            const feedback = await AddonModQuiz.getFeedbackForGrade(quiz.id, attemptGradeNumber, {
                 cmId: quiz.coursemodule,
                 readingStrategy: CoreSitesReadingStrategy.ONLY_NETWORK,
                 siteId,
@@ -165,11 +167,12 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
                 quiz,
                 accessInfo,
                 preflightData,
-                attempt,
-                false,
-                true,
-                title,
-                siteId,
+                {
+                    attempt,
+                    prefetch: true,
+                    title,
+                    siteId,
+                },
             );
         } else {
             // Get some fixed preflight data from access rules (data that doesn't require user interaction).
@@ -229,7 +232,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
 
         const quiz = await AddonModQuiz.getQuiz(courseId, module.id, { siteId });
 
-        if (quiz.allowofflineattempts !== 1 || quiz.hasquestions === 0) {
+        if (!AddonModQuiz.isQuizOffline(quiz) || quiz.hasquestions === 0) {
             return false;
         }
 
@@ -239,9 +242,9 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
             siteId,
         });
 
-        const isLastFinished = !attempts.length || AddonModQuiz.isAttemptFinished(attempts[attempts.length - 1].state);
+        const isLastCompleted = !attempts.length || AddonModQuiz.isAttemptCompleted(attempts[attempts.length - 1].state);
 
-        return quiz.attempts === 0 || (quiz.attempts ?? 0) > attempts.length || !isLastFinished;
+        return quiz.attempts === 0 || (quiz.attempts ?? 0) > attempts.length || !isLastCompleted;
     }
 
     /**
@@ -319,7 +322,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
             AddonModQuiz.getUserAttempts(quiz.id, modOptions),
             AddonModQuiz.getAttemptAccessInformation(quiz.id, 0, modOptions),
             AddonModQuiz.getQuizRequiredQtypes(quiz.id, modOptions),
-            CoreFilepool.addFilesToQueue(siteId, introFiles, AddonModQuizProvider.COMPONENT, module.id),
+            CoreFilepool.addFilesToQueue(siteId, introFiles, ADDON_MOD_QUIZ_COMPONENT, module.id),
         ]);
 
         // Check if we need to start a new attempt.
@@ -328,7 +331,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
         let startAttempt = false;
 
         if (canStart || attempt) {
-            if (canStart && (!attempt || AddonModQuiz.isAttemptFinished(attempt.state))) {
+            if (canStart && (!attempt || AddonModQuiz.isAttemptCompleted(attempt.state))) {
                 // Check if the user can attempt the quiz.
                 if (attemptAccessInfo.preventnewattemptreasons.length) {
                     throw new CoreError(CoreTextUtils.buildMessage(attemptAccessInfo.preventnewattemptreasons));
@@ -351,17 +354,17 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
 
                 const attemptFiles = await this.getAttemptsFeedbackFiles(quiz, attempts, siteId);
 
-                return CoreFilepool.addFilesToQueue(siteId, attemptFiles, AddonModQuizProvider.COMPONENT, module.id);
+                return CoreFilepool.addFilesToQueue(siteId, attemptFiles, ADDON_MOD_QUIZ_COMPONENT, module.id);
             }));
 
             // Update the download time to prevent detecting the new attempt as an update.
             promises.push(CoreUtils.ignoreErrors(
-                CoreFilepool.updatePackageDownloadTime(siteId, AddonModQuizProvider.COMPONENT, module.id),
+                CoreFilepool.updatePackageDownloadTime(siteId, ADDON_MOD_QUIZ_COMPONENT, module.id),
             ));
         } else {
             // Use the already fetched attempts.
             promises.push(this.getAttemptsFeedbackFiles(quiz, attempts, siteId).then((attemptFiles) =>
-                CoreFilepool.addFilesToQueue(siteId, attemptFiles, AddonModQuizProvider.COMPONENT, module.id)));
+                CoreFilepool.addFilesToQueue(siteId, attemptFiles, ADDON_MOD_QUIZ_COMPONENT, module.id)));
         }
 
         // Fetch attempt related data.
@@ -377,7 +380,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
 
         // We have quiz data, now we'll get specific data for each attempt.
         await Promise.all(attempts.map(async (attempt) => {
-            await this.prefetchAttempt(quiz, attempt, preflightData, siteId);
+            await this.prefetchAttempt(quiz, quizAccessInfo, attempt, preflightData, siteId);
         }));
 
         if (!canStart) {
@@ -397,6 +400,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
      * Prefetch all WS data for an attempt.
      *
      * @param quiz Quiz.
+     * @param accessInfo Quiz access info.
      * @param attempt Attempt.
      * @param preflightData Preflight required data (like password).
      * @param siteId Site ID. If not defined, current site.
@@ -404,11 +408,11 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
      */
     async prefetchAttempt(
         quiz: AddonModQuizQuizWSData,
+        accessInfo: AddonModQuizGetQuizAccessInformationWSResponse,
         attempt: AddonModQuizAttemptWSData,
         preflightData: Record<string, string>,
         siteId?: string,
     ): Promise<void> {
-        const pages = AddonModQuiz.getPagesFromLayout(attempt.layout);
         const isSequential = AddonModQuiz.isNavigationSequential(quiz);
         let promises: Promise<unknown>[] = [];
 
@@ -418,33 +422,27 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
             siteId,
         };
 
-        if (AddonModQuiz.isAttemptFinished(attempt.state)) {
+        if (AddonModQuiz.isAttemptCompleted(attempt.state)) {
             // Attempt is finished, get feedback and review data.
             const attemptGrade = AddonModQuiz.rescaleGrade(attempt.sumgrades, quiz, false);
-            if (attemptGrade !== undefined) {
-                promises.push(AddonModQuiz.getFeedbackForGrade(quiz.id, Number(attemptGrade), modOptions));
+            const attemptGradeNumber = attemptGrade !== undefined && Number(attemptGrade);
+            if (isSafeNumber(attemptGradeNumber)) {
+                promises.push(AddonModQuiz.getFeedbackForGrade(quiz.id, attemptGradeNumber, modOptions));
             }
 
-            // Get the review for each page.
-            pages.forEach((page) => {
-                promises.push(CoreUtils.ignoreErrors(AddonModQuiz.getAttemptReview(attempt.id, {
-                    page,
-                    ...modOptions, // Include all options.
-                })));
-            });
-
-            // Get the review for all questions in same page.
-            promises.push(this.prefetchAttemptReviewFiles(quiz, attempt, modOptions, siteId));
+            promises.push(this.prefetchAttemptReview(quiz, accessInfo, attempt, modOptions));
         } else {
 
             // Attempt not finished, get data needed to continue the attempt.
             promises.push(AddonModQuiz.getAttemptAccessInformation(quiz.id, attempt.id, modOptions));
             promises.push(AddonModQuiz.getAttemptSummary(attempt.id, preflightData, modOptions));
 
-            if (attempt.state == AddonModQuizProvider.ATTEMPT_IN_PROGRESS) {
+            if (attempt.state === AddonModQuizAttemptStates.IN_PROGRESS) {
                 // Get data for each page.
+                const pages = AddonModQuiz.getPagesFromLayout(attempt.layout);
+
                 promises = promises.concat(pages.map(async (page) => {
-                    if (isSequential && attempt.currentpage && page < attempt.currentpage) {
+                    if (isSequential && typeof attempt.currentpage === 'number' && page < attempt.currentpage) {
                         // Sequential quiz, cannot get pages before the current one.
                         return;
                     }
@@ -470,19 +468,56 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
     }
 
     /**
+     * Prefetch attempt review data.
+     *
+     * @param quiz Quiz.
+     * @param accessInfo Quiz access info.
+     * @param attempt Attempt.
+     * @param modOptions Other options.
+     * @param siteId Site ID.
+     * @returns Promise resolved when done.
+     */
+    protected async prefetchAttemptReview(
+        quiz: AddonModQuizQuizWSData,
+        accessInfo: AddonModQuizGetQuizAccessInformationWSResponse,
+        attempt: AddonModQuizAttemptWSData,
+        modOptions: CoreCourseCommonModWSOptions,
+    ): Promise<void> {
+        // Check if attempt can be reviewed.
+        const canReview = await AddonModQuizHelper.canReviewAttempt(quiz, accessInfo, attempt);
+        if (!canReview) {
+            return;
+        }
+
+        const pages = AddonModQuiz.getPagesFromLayout(attempt.layout);
+        const promises: Promise<unknown>[] = [];
+
+        // Get the review for each page.
+        pages.forEach((page) => {
+            promises.push(CoreUtils.ignoreErrors(AddonModQuiz.getAttemptReview(attempt.id, {
+                page,
+                ...modOptions, // Include all options.
+            })));
+        });
+
+        // Get the review for all questions in same page.
+        promises.push(this.prefetchAttemptReviewFiles(quiz, attempt, modOptions));
+
+        await Promise.all(promises);
+    }
+
+    /**
      * Prefetch attempt review and its files.
      *
      * @param quiz Quiz.
      * @param attempt Attempt.
      * @param modOptions Other options.
-     * @param siteId Site ID.
      * @returns Promise resolved when done.
      */
     protected async prefetchAttemptReviewFiles(
         quiz: AddonModQuizQuizWSData,
         attempt: AddonModQuizAttemptWSData,
         modOptions: CoreCourseCommonModWSOptions,
-        siteId?: string,
     ): Promise<void> {
         // Get the review for all questions in same page.
         const data = await CoreUtils.ignoreErrors(AddonModQuiz.getAttemptReview(attempt.id, {
@@ -499,7 +534,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
                 question,
                 this.component,
                 quiz.coursemodule,
-                siteId,
+                modOptions.siteId,
                 attempt.uniqueid,
             );
         }));
@@ -565,7 +600,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
             preflightData = await this.getPreflightData(quiz, quizAccessInfo, lastAttempt, askPreflight, 'core.download', siteId);
 
             // Get data for last attempt.
-            await this.prefetchAttempt(quiz, lastAttempt, preflightData, siteId);
+            await this.prefetchAttempt(quiz, quizAccessInfo, lastAttempt, preflightData, siteId);
         }
 
         // Prefetch finished, set the right status.
@@ -601,15 +636,15 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
         // Check the current status of the quiz.
         const status = await CoreFilepool.getPackageStatus(options.siteId, this.component, quiz.coursemodule);
 
-        if (status === CoreConstants.NOT_DOWNLOADED) {
+        if (status === DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED) {
             return;
         }
 
         // Quiz was downloaded, set the new status.
         // If no attempts or last is finished we'll mark it as not downloaded to show download icon.
         const lastAttempt = attempts[attempts.length - 1];
-        const isLastFinished = !lastAttempt || AddonModQuiz.isAttemptFinished(lastAttempt.state);
-        const newStatus = isLastFinished ? CoreConstants.NOT_DOWNLOADED : CoreConstants.DOWNLOADED;
+        const isLastCompleted = !lastAttempt || AddonModQuiz.isAttemptCompleted(lastAttempt.state);
+        const newStatus = isLastCompleted ? DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED : DownloadStatus.DOWNLOADED;
 
         await CoreFilepool.storePackageStatus(options.siteId, newStatus, this.component, quiz.coursemodule);
     }

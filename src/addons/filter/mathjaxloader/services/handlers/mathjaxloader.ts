@@ -21,7 +21,7 @@ import { CoreSites } from '@services/sites';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEvents } from '@singletons/events';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { makeSingleton } from '@singletons';
 
 /**
@@ -407,11 +407,11 @@ type MathJaxWindow = Window & {
     MathJax?: any; // eslint-disable-line @typescript-eslint/naming-convention, @typescript-eslint/no-explicit-any
     M?: { // eslint-disable-line @typescript-eslint/naming-convention
         filter_mathjaxloader?: { // eslint-disable-line @typescript-eslint/naming-convention
-            _lang: ''; // eslint-disable-line @typescript-eslint/naming-convention
-            _configured: false; // eslint-disable-line @typescript-eslint/naming-convention
+            _lang: string; // eslint-disable-line @typescript-eslint/naming-convention
+            _configured: boolean; // eslint-disable-line @typescript-eslint/naming-convention
             // Add the configuration to the head and set the lang.
             configure: (params: Record<string, unknown>) => void;
-            _setLocale: () => void; // eslint-disable-line @typescript-eslint/naming-convention
+            _setLocale: () => void;
             typeset: (container: HTMLElement) => void;
         };
     };

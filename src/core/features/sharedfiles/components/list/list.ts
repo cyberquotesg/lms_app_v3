@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
-import { FileEntry, DirectoryEntry } from '@ionic-native/file/ngx';
-import { IonRefresher } from '@ionic/angular';
+import { FileEntry, DirectoryEntry } from '@awesome-cordova-plugins/file/ngx';
 import { Md5 } from 'ts-md5';
 
 import { CoreSharedFiles } from '@features/sharedfiles/services/sharedfiles';
@@ -82,7 +81,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshFiles(refresher: IonRefresher): void {
+    refreshFiles(refresher: HTMLIonRefresherElement): void {
         this.loadFiles().finally(() => {
             refresher.complete();
         });
@@ -124,7 +123,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const hash = <string> Md5.hashAsciiStr(path);
+        const hash = Md5.hashAsciiStr(path);
 
         CoreNavigator.navigate(`../${hash}`, {
             params: {

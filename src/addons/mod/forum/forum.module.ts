@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { APP_INITIALIZER, NgModule, Type } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { Routes } from '@angular/router';
 
 import { conditionalRoutes } from '@/app/app-routing.module';
@@ -22,7 +22,6 @@ import { CoreCourseModuleDelegate } from '@features/course/services/module-deleg
 import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CoreScreen } from '@services/screen';
 
-import { AddonModForumComponentsModule } from './components/components.module';
 import { AddonModForumModuleHandler, AddonModForumModuleHandlerService } from './services/handlers/module';
 import { SITE_SCHEMA } from './services/database/offline';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
@@ -39,23 +38,18 @@ import { AddonModForumTagAreaHandler } from './services/handlers/tag-area';
 import { CorePushNotificationsDelegate } from '@features/pushnotifications/services/push-delegate';
 import { AddonModForumPushClickHandler } from './services/handlers/push-click';
 import { AddonModForumProvider } from './services/forum';
-import { AddonModForumOfflineProvider } from './services/forum-offline';
-import { AddonModForumHelperProvider } from './services/forum-helper';
-import { AddonModForumSyncProvider } from './services/forum-sync';
 import { COURSE_CONTENTS_PATH } from '@features/course/course.module';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
-
-export const ADDON_MOD_FORUM_SERVICES: Type<unknown>[] = [
-    AddonModForumProvider,
-    AddonModForumOfflineProvider,
-    AddonModForumHelperProvider,
-    AddonModForumSyncProvider,
-];
+import { ADDON_MOD_FORUM_SEARCH_PAGE_NAME } from './constants';
 
 const mainMenuRoutes: Routes = [
     {
+        path: ADDON_MOD_FORUM_SEARCH_PAGE_NAME,
+        loadChildren: () => import('./forum-search-lazy.module').then(m => m.AddonModForumSearchLazyModule),
+    },
+    {
         path: `${AddonModForumModuleHandlerService.PAGE_NAME}/discussion/:discussionId`,
-        loadChildren: () => import('./forum-discussion-lazy.module').then(m => m.AddonForumDiscussionLazyModule),
+        loadChildren: () => import('./forum-discussion-lazy.module').then(m => m.AddonModForumDiscussionLazyModule),
         data: { swipeEnabled: false },
     },
     {
@@ -66,12 +60,12 @@ const mainMenuRoutes: Routes = [
         [
             {
                 path: `${COURSE_CONTENTS_PATH}/${AddonModForumModuleHandlerService.PAGE_NAME}/new/:timeCreated`,
-                loadChildren: () => import('./forum-new-discussion-lazy.module').then(m => m.AddonForumNewDiscussionLazyModule),
+                loadChildren: () => import('./forum-new-discussion-lazy.module').then(m => m.AddonModForumNewDiscussionLazyModule),
                 data: { discussionsPathPrefix: `${AddonModForumModuleHandlerService.PAGE_NAME}/` },
             },
             {
                 path: `${COURSE_CONTENTS_PATH}/${AddonModForumModuleHandlerService.PAGE_NAME}/:discussionId`,
-                loadChildren: () => import('./forum-discussion-lazy.module').then(m => m.AddonForumDiscussionLazyModule),
+                loadChildren: () => import('./forum-discussion-lazy.module').then(m => m.AddonModForumDiscussionLazyModule),
                 data: { discussionsPathPrefix: `${AddonModForumModuleHandlerService.PAGE_NAME}/` },
             },
         ],
@@ -83,12 +77,12 @@ const courseContentsRoutes: Routes = conditionalRoutes(
     [
         {
             path: `${AddonModForumModuleHandlerService.PAGE_NAME}/new/:timeCreated`,
-            loadChildren: () => import('./forum-new-discussion-lazy.module').then(m => m.AddonForumNewDiscussionLazyModule),
+            loadChildren: () => import('./forum-new-discussion-lazy.module').then(m => m.AddonModForumNewDiscussionLazyModule),
             data: { discussionsPathPrefix: `${AddonModForumModuleHandlerService.PAGE_NAME}/` },
         },
         {
             path: `${AddonModForumModuleHandlerService.PAGE_NAME}/:discussionId`,
-            loadChildren: () => import('./forum-discussion-lazy.module').then(m => m.AddonForumDiscussionLazyModule),
+            loadChildren: () => import('./forum-discussion-lazy.module').then(m => m.AddonModForumDiscussionLazyModule),
             data: { discussionsPathPrefix: `${AddonModForumModuleHandlerService.PAGE_NAME}/` },
         },
     ],
@@ -99,7 +93,6 @@ const courseContentsRoutes: Routes = conditionalRoutes(
     imports: [
         CoreMainMenuTabRoutingModule.forChild(mainMenuRoutes),
         CoreCourseContentsRoutingModule.forChild({ children: courseContentsRoutes }),
-        AddonModForumComponentsModule,
     ],
     providers: [
         {

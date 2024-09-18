@@ -15,8 +15,8 @@
 import { Component, Optional, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { IonContent } from '@ionic/angular';
 
-import { CoreConstants } from '@/core/constants';
-import { CoreSite } from '@classes/site';
+import { DownloadStatus } from '@/core/constants';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { CoreH5PDisplayOptions } from '@features/h5p/classes/core';
@@ -27,7 +27,7 @@ import { CoreXAPI } from '@features/xapi/services/xapi';
 import { CoreNetwork } from '@services/network';
 import { CoreFilepool } from '@services/filepool';
 import { CoreNavigator } from '@services/navigator';
-import { CoreSites } from '@services/sites';
+import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreWSFile } from '@services/ws';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -36,7 +36,10 @@ import {
     AddonModH5PActivityAccessInfo,
     AddonModH5PActivityData,
     AddonModH5PActivityProvider,
-    AddonModH5PActivityXAPIData,
+    AddonModH5PActivityXAPIPostStateData,
+    AddonModH5PActivityXAPIStateData,
+    AddonModH5PActivityXAPIStatementsData,
+    MOD_H5PACTIVITY_STATE_ID,
 } from '../../services/h5pactivity';
 import {
     AddonModH5PActivitySync,
@@ -45,6 +48,8 @@ import {
 } from '../../services/h5pactivity-sync';
 import { CoreFileHelper } from '@services/file-helper';
 import { AddonModH5PActivityModuleHandlerService } from '../../services/handlers/module';
+import { CoreTextUtils } from '@services/utils/text';
+import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Component that displays an H5P activity entry page.
@@ -58,7 +63,7 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
     @Output() onActivityFinish = new EventEmitter<boolean>();
 
     component = AddonModH5PActivityProvider.COMPONENT;
-    moduleName = 'h5pactivity';
+    pluginName = 'h5pactivity';
 
     h5pActivity?: AddonModH5PActivityData; // The H5P activity object.
     accessInfo?: AddonModH5PActivityAccessInfo; // Info about the user capabilities.
@@ -80,6 +85,9 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
     hasOffline = false;
     isOpeningPage = false;
     canViewAllAttempts = false;
+    saveStateEnabled = false;
+    saveFreq?: number;
+    contentState?: string;
 
     protected fetchContentDefaultError = 'addon.mod_h5pactivity.errorgetactivity';
     protected syncEventName = AddonModH5PActivitySyncProvider.AUTO_SYNCED;
@@ -108,13 +116,17 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
     async ngOnInit(): Promise<void> {
         super.ngOnInit();
 
-        this.loadContent();
+        this.loadContent(false, true);
     }
 
     /**
      * @inheritdoc
      */
     protected async fetchContent(refresh?: boolean, sync = false, showErrors = false): Promise<void> {
+        // Always show loading and stop playing, the package needs to be reloaded with the latest data.
+        this.showLoading = true;
+        this.playing = false;
+
         this.h5pActivity = await AddonModH5PActivity.getH5PActivity(this.courseId, this.module.id, {
             siteId: this.siteId,
         });
@@ -133,6 +145,8 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
             this.fetchDeployedFileData(),
         ]);
 
+        await this.loadContentState(); // Loading the state requires the access info.
+
         this.trackComponent = this.accessInfo?.cansubmit ? AddonModH5PActivityProvider.TRACK_COMPONENT : '';
         this.canViewAllAttempts = !!this.h5pActivity.enabletracking && !!this.accessInfo?.canreviewattempts &&
                 AddonModH5PActivity.canGetUsersAttemptsInSite();
@@ -147,12 +161,16 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
             );
         }
 
-        if (!this.siteCanDownload || this.state == CoreConstants.DOWNLOADED) {
+        if (!this.siteCanDownload || this.state === DownloadStatus.DOWNLOADED) {
             // Cannot download the file or already downloaded, play the package directly.
             this.play();
 
-        } else if ((this.state == CoreConstants.NOT_DOWNLOADED || this.state == CoreConstants.OUTDATED) && CoreNetwork.isOnline() &&
-                    this.deployedFile?.filesize && CoreFilepool.shouldDownload(this.deployedFile.filesize)) {
+        } else if (
+            (this.state == DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED || this.state == DownloadStatus.OUTDATED) &&
+            CoreNetwork.isOnline() &&
+            this.deployedFile?.filesize &&
+            CoreFilepool.shouldDownload(this.deployedFile.filesize)
+        ) {
             // Package is small, download it automatically. Don't block this function for this.
             this.downloadAutomatically();
         }
@@ -168,7 +186,7 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
             return;
         }
 
-        this.hasOffline = await CoreXAPIOffline.contextHasStatements(this.h5pActivity.context, this.siteId);
+        this.hasOffline = await CoreXAPIOffline.contextHasData(this.h5pActivity.context, this.siteId);
     }
 
     /**
@@ -218,6 +236,43 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
     }
 
     /**
+     * Load the content's state (if enabled and there's any).
+     */
+    protected async loadContentState(): Promise<void> {
+        if (!this.h5pActivity || !this.accessInfo || !AddonModH5PActivity.isSaveStateEnabled(this.h5pActivity, this.accessInfo)) {
+            this.saveStateEnabled = false;
+            this.contentState = undefined;
+
+            return;
+        }
+
+        this.saveStateEnabled = true;
+        this.saveFreq = this.h5pActivity.savestatefreq;
+
+        const contentState = await CoreXAPI.getState(
+            AddonModH5PActivityProvider.TRACK_COMPONENT,
+            this.h5pActivity.context,
+            MOD_H5PACTIVITY_STATE_ID,
+            {
+                appComponent: AddonModH5PActivityProvider.COMPONENT,
+                appComponentId: this.h5pActivity.coursemodule,
+                readingStrategy: CoreSitesReadingStrategy.PREFER_NETWORK,
+            },
+        );
+
+        if (contentState === null) {
+            this.contentState = undefined;
+
+            return;
+        }
+
+        const contentStateObj = CoreTextUtils.parseJSON<{h5p: string}>(contentState, { h5p: '{}' });
+
+        // The H5P state doesn't always use JSON, so an h5p property was added to jsonize it.
+        this.contentState = contentStateObj.h5p ?? '{}';
+    }
+
+    /**
      * Calculate the state of the deployed file.
      *
      * @returns Promise resolved when done.
@@ -247,13 +302,13 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
      * Displays some data based on the state of the main file.
      */
     protected async showFileState(): Promise<void> {
-        if (this.state == CoreConstants.OUTDATED) {
+        if (this.state === DownloadStatus.OUTDATED) {
             this.stateMessage = 'addon.mod_h5pactivity.filestateoutdated';
             this.needsDownload = true;
-        } else if (this.state == CoreConstants.NOT_DOWNLOADED) {
+        } else if (this.state === DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED) {
             this.stateMessage = 'addon.mod_h5pactivity.filestatenotdownloaded';
             this.needsDownload = true;
-        } else if (this.state == CoreConstants.DOWNLOADING) {
+        } else if (this.state === DownloadStatus.DOWNLOADING) {
             this.stateMessage = '';
 
             if (!this.downloading) {
@@ -339,6 +394,9 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
         this.downloading = true;
         this.progressMessage = 'core.downloading';
 
+        // Delete offline states when downloading the package because it means the package has changed or user deleted it.
+        this.deleteOfflineStates();
+
         try {
             await CoreFilepool.downloadUrl(
                 this.site.getId(),
@@ -390,9 +448,11 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
         this.playing = true;
 
         // Mark the activity as viewed.
-        await AddonModH5PActivity.logView(this.h5pActivity.id, this.h5pActivity.name, this.siteId);
+        await AddonModH5PActivity.logView(this.h5pActivity.id, this.siteId);
 
         this.checkCompletion();
+
+        this.analyticsLogEvent('mod_h5pactivity_view_h5pactivity');
     }
 
     /**
@@ -434,7 +494,78 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
      */
     protected async onIframeMessage(event: MessageEvent): Promise<void> {
         const data = event.data;
-        if (!data || !this.h5pActivity || !CoreXAPI.canPostStatementsInSite(this.site) || !this.isCurrentXAPIPost(data)) {
+        if (!data || !this.h5pActivity) {
+            return;
+        }
+
+        if (CoreXAPI.canPostStatementsInSite(this.site) && this.isCurrentXAPIPostStatement(data)) {
+            this.postStatements(data);
+        } else if (this.saveStateEnabled && this.isCurrentXAPIState(data, 'xapi_post_state') && this.isXAPIPostState(data)) {
+            this.postState(data);
+        } else if (this.saveStateEnabled && this.isCurrentXAPIState(data, 'xapi_delete_state')) {
+            this.deleteState(data);
+        }
+    }
+
+    /**
+     * Check if an event is an H5P event meant for this app.
+     *
+     * @param data Event data.
+     * @returns Whether it's an H5P event meant for this app.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected isH5PEventForApp(data: any): boolean {
+        return data.environment === 'moodleapp' && data.context === 'h5p';
+    }
+
+    /**
+     * Check if an activity ID (an IRI) belongs to the current activity.
+     *
+     * @param activityId Activity ID (IRI).
+     * @returns Whether it belongs to the current activity.
+     */
+    protected activityIdIsCurrentActivity(activityId?: string): boolean {
+        if (!activityId || !this.h5pActivity) {
+            return false;
+        }
+
+        if (!this.site.containsUrl(activityId)) {
+            // The event belongs to another site, weird scenario. Maybe some JS running in background.
+            return false;
+        }
+
+        const match = activityId.match(/xapi\/activity\/(\d+)/);
+
+        return !!match && Number(match[1]) === this.h5pActivity.context;
+    }
+
+    /**
+     * Check if an event is an XAPI post statement of the current activity.
+     *
+     * @param data Event data.
+     * @returns Whether it's an XAPI post statement of the current activity.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected isCurrentXAPIPostStatement(data: any): data is AddonModH5PActivityXAPIStatementsData {
+        if (!this.h5pActivity) {
+            return false;
+        }
+
+        if (!this.isH5PEventForApp(data) || data.action !== 'xapi_post_statement' || !data.statements) {
+            return false;
+        }
+
+        // Check the event belongs to this activity.
+        return this.activityIdIsCurrentActivity(data.statements[0] && data.statements[0].object && data.statements[0].object.id);
+    }
+
+    /**
+     * Post statements.
+     *
+     * @param data Event data.
+     */
+    protected async postStatements(data: AddonModH5PActivityXAPIStatementsData): Promise<void> {
+        if (!this.h5pActivity) {
             return;
         }
 
@@ -454,6 +585,7 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
             );
 
             this.hasOffline = !sent;
+            this.deleteOfflineStates(); // Posting statements means attempt has finished, delete any offline state.
 
             if (sent) {
                 try {
@@ -476,35 +608,97 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
     }
 
     /**
-     * Check if an event is an XAPI post statement of the current activity.
+     * Check if an event is an XAPI state event of the current activity.
      *
      * @param data Event data.
-     * @returns Whether it's an XAPI post statement of the current activity.
+     * @param action Action to check.
+     * @returns Whether it's an XAPI state event of the current activity.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected isCurrentXAPIPost(data: any): data is AddonModH5PActivityXAPIData {
+    protected isCurrentXAPIState(data: any, action: string): data is AddonModH5PActivityXAPIStateData {
         if (!this.h5pActivity) {
             return false;
         }
 
-        if (data.environment != 'moodleapp' || data.context != 'h5p' || data.action != 'xapi_post_statement' || !data.statements) {
+        if (!this.isH5PEventForApp(data) || data.action !== action) {
             return false;
         }
 
         // Check the event belongs to this activity.
-        const trackingUrl = data.statements[0] && data.statements[0].object && data.statements[0].object.id;
-        if (!trackingUrl) {
-            return false;
+        return this.activityIdIsCurrentActivity(data.activityId);
+    }
+
+    /**
+     * Check if an xAPI state event data is a post state event.
+     *
+     * @param data Event data.
+     * @returns Whether it's an XAPI post state.
+     */
+    protected isXAPIPostState(data: AddonModH5PActivityXAPIStateData): data is AddonModH5PActivityXAPIPostStateData {
+        return 'stateData' in data;
+    }
+
+    /**
+     * Post state.
+     *
+     * @param data Event data.
+     */
+    protected async postState(data: AddonModH5PActivityXAPIPostStateData): Promise<void> {
+        try {
+            const options = {
+                offline: this.hasOffline,
+                courseId: this.courseId,
+                extra: this.h5pActivity?.name,
+                siteId: this.site.getId(),
+            };
+
+            const sent = await CoreXAPI.postState(
+                data.component,
+                data.activityId,
+                data.agent,
+                data.stateId,
+                data.stateData,
+                options,
+            );
+
+            this.hasOffline = !sent;
+        } catch (error) {
+            CoreDomUtils.showErrorModalDefault(error, 'Error sending tracking data.');
+        }
+    }
+
+    /**
+     * Delete state.
+     *
+     * @param data Event data.
+     */
+    protected async deleteState(data: AddonModH5PActivityXAPIStateData): Promise<void> {
+        try {
+            await CoreXAPI.deleteState(
+                data.component,
+                data.activityId,
+                data.agent,
+                data.stateId,
+                {
+                    siteId: this.site.getId(),
+                },
+            );
+        } catch (error) {
+            CoreDomUtils.showErrorModalDefault(error, 'Error sending tracking data.');
+        }
+    }
+
+    /**
+     * Delete offline states for current activity.
+     */
+    protected async deleteOfflineStates(): Promise<void> {
+        if (!this.h5pActivity) {
+            return;
         }
 
-        if (!this.site.containsUrl(trackingUrl)) {
-            // The event belongs to another site, weird scenario. Maybe some JS running in background.
-            return false;
-        }
-
-        const match = trackingUrl.match(/xapi\/activity\/(\d+)/);
-
-        return match && match[1] == this.h5pActivity.context;
+        await CoreUtils.ignoreErrors(CoreXAPIOffline.deleteStates(AddonModH5PActivityProvider.TRACK_COMPONENT, {
+            itemId: this.h5pActivity.context,
+        }));
     }
 
     /**
@@ -535,7 +729,11 @@ export class AddonModH5PActivityIndexComponent extends CoreCourseModuleMainActiv
         super.ngOnDestroy();
 
         this.observer?.off();
-        window.removeEventListener('message', this.messageListenerFunction);
+
+        // Wait a bit to make sure all messages have been received.
+        setTimeout(() => {
+            window.removeEventListener('message', this.messageListenerFunction);
+        }, 2000);
     }
 
 }

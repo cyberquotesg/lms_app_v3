@@ -15,7 +15,6 @@
 import { Component, Optional, OnInit, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonContent } from '@ionic/angular';
-import { ModalOptions } from '@ionic/core';
 
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import {
@@ -45,7 +44,6 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { AddonModForumDiscussionOptionsMenuComponent } from '../discussion-options-menu/discussion-options-menu';
-import { AddonModForumSortOrderSelectorComponent } from '../sort-order-selector/sort-order-selector';
 import { CoreScreen } from '@services/screen';
 import { AddonModForumPrefetchHandler } from '../../services/handlers/prefetch';
 import { AddonModForumModuleHandlerService } from '../../services/handlers/module';
@@ -57,7 +55,9 @@ import { AddonModForumDiscussionItem, AddonModForumDiscussionsSource } from '../
 import { CoreListItemsManager } from '@classes/items-management/list-items-manager';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { CorePromisedValue } from '@classes/promised-value';
-
+import { CoreNavigator } from '@services/navigator';
+import { ADDON_MOD_FORUM_SEARCH_PAGE_NAME } from '@addons/mod/forum/constants';
+import { CoreSearchGlobalSearch } from '@features/search/services/global-search';
 /**
  * Component that displays a forum entry page.
  */
@@ -71,7 +71,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
     component = AddonModForumProvider.COMPONENT;
-    moduleName = 'forum';
+    pluginName = 'forum';
     descriptionNote?: string;
     promisedDiscussions: CorePromisedValue<AddonModForumDiscussionsManager>;
     discussionsItems: AddonModForumDiscussionItem[] = [];
@@ -84,9 +84,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
     hasOfflineRatings = false;
     showQAMessage = false;
     isSetPinAvailable = false;
-    sortOrderSelectorModalOptions: ModalOptions = {
-        component: AddonModForumSortOrderSelectorComponent,
-    };
+    showSearch = false;
 
     protected fetchContentDefaultError = 'addon.mod_forum.errorgetforum';
     protected syncEventName = AddonModForumSyncProvider.AUTO_SYNCED;
@@ -184,10 +182,6 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         this.sortingAvailable = AddonModForum.isDiscussionListSortingAvailable();
         this.sortOrders = AddonModForum.getAvailableSortOrders();
         this.isSetPinAvailable = AddonModForum.isSetPinStateAvailableForSite();
-
-        this.sortOrderSelectorModalOptions.componentProps = {
-            sortOrders: this.sortOrders,
-        };
 
         await super.ngOnInit();
 
@@ -305,6 +299,9 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
                 this.hasOffline = this.hasOffline || this.hasOfflineRatings;
             }
         });
+
+        // Initialize search.
+        this.showSearch = await this.isSearchEnabled();
     }
 
     async ngAfterViewInit(): Promise<void> {
@@ -330,6 +327,22 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         this.ratingSyncObserver && this.ratingSyncObserver.off();
         this.sourceUnsubscribe && this.sourceUnsubscribe();
         this.discussions?.destroy();
+    }
+
+    /**
+     * Open search page.
+     */
+    async openSearch(): Promise<void> {
+        if (!this.forum) {
+            return;
+        }
+
+        await CoreNavigator.navigateToSitePath(ADDON_MOD_FORUM_SEARCH_PAGE_NAME, {
+            params: {
+                courseId: this.courseId,
+                forumId: this.forum.id,
+            },
+        });
     }
 
     /**
@@ -470,10 +483,6 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         const selectedOrder = await AddonModForum.getSelectedSortOrder();
 
         discussions.getSource().selectedSortOrder = selectedOrder;
-
-        if (this.sortOrderSelectorModalOptions.componentProps) {
-            this.sortOrderSelectorModalOptions.componentProps.selected = selectedOrder.value;
-        }
     }
 
     /**
@@ -583,16 +592,14 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
     /**
      * Changes the sort order.
      *
-     * @param sortOrder Sort order new data.
+     * @param sortOrderValue Sort order new data.
      */
-    async setSortOrder(sortOrder: AddonModForumSortOrder): Promise<void> {
-        if (this.discussions && sortOrder.value != this.discussions.getSource().selectedSortOrder?.value) {
+    async setSortOrder(sortOrderValue: number): Promise<void> {
+        const sortOrder = this.sortOrders.find(sortOrder => sortOrder.value === sortOrderValue);
+
+        if (this.discussions && sortOrder && sortOrder.value != this.discussions.getSource().selectedSortOrder?.value) {
             this.discussions.getSource().selectedSortOrder = sortOrder;
             this.discussions.getSource().setDirty(true);
-
-            if (this.sortOrderSelectorModalOptions.componentProps) {
-                this.sortOrderSelectorModalOptions.componentProps.selected = sortOrder.value;
-            }
 
             try {
                 await CoreUser.setUserPreference(AddonModForumProvider.PREFERENCE_SORTORDER, sortOrder.value.toFixed(0));
@@ -600,17 +607,6 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
             } catch (error) {
                 CoreDomUtils.showErrorModalDefault(error, 'Error updating preference.');
             }
-        }
-    }
-
-    /**
-     * Display the sort order selector modal.
-     */
-    async showSortOrderSelector(): Promise<void> {
-        const modalData = await CoreDomUtils.openModal<AddonModForumSortOrder>(this.sortOrderSelectorModalOptions);
-
-        if (modalData) {
-            this.setSortOrder(modalData);
         }
     }
 
@@ -673,6 +669,21 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         }
     }
 
+    /**
+     * Check if forum search is available.
+     *
+     * @returns Whether forum search is available.
+     */
+    protected async isSearchEnabled(): Promise<boolean> {
+        if (!CoreSearchGlobalSearch.isEnabled()) {
+            return false;
+        }
+
+        const searchAreas = await CoreSearchGlobalSearch.getSearchAreas();
+
+        return !!searchAreas.find(({ id }) => id === 'mod_forum-post');
+    }
+
 }
 
 /**
@@ -708,12 +719,14 @@ class AddonModForumDiscussionsManager extends CoreListItemsManager<AddonModForum
         }
 
         try {
-            await AddonModForum.logView(forum.id, forum.name);
+            await AddonModForum.logView(forum.id);
 
             CoreCourse.checkModuleCompletion(this.page.courseId, this.page.module.completiondata);
         } catch {
             // Ignore errors.
         }
+
+        this.page.analyticsLogEvent('mod_forum_view_forum');
     }
 
     /**

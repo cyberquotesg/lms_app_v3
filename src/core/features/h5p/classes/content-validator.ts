@@ -17,6 +17,7 @@ import { CoreUtils } from '@services/utils/utils';
 import { CoreH5P } from '@features/h5p/services/h5p';
 import { Translate } from '@singletons';
 import { CoreH5PCore, CoreH5PLibraryData, CoreH5PLibraryAddonData, CoreH5PContentDepsTreeDependency } from './core';
+import { CoreArray } from '@singletons/array';
 
 const ALLOWED_STYLEABLE_TAGS = ['span', 'p', 'div', 'h1', 'h2', 'h3', 'td'];
 
@@ -131,7 +132,7 @@ export class CoreH5PContentValidator {
                 tags.push('s');
             }
 
-            tags = CoreUtils.uniqueArray(tags);
+            tags = CoreArray.unique(tags);
 
             // Determine allowed style tags
             const stylePatterns: RegExp[] = [];
@@ -372,7 +373,7 @@ export class CoreH5PContentValidator {
         if (semantics.extraAttributes) {
             validKeys = validKeys.concat(semantics.extraAttributes);
         }
-        validKeys = CoreUtils.uniqueArray(validKeys);
+        validKeys = CoreArray.unique(validKeys);
 
         this.filterParams(file, validKeys);
 
@@ -556,7 +557,7 @@ export class CoreH5PContentValidator {
 
         let validKeys = ['library', 'params', 'subContentId', 'metadata'];
         if (semantics.extraAttributes) {
-            validKeys = CoreUtils.uniqueArray(validKeys.concat(semantics.extraAttributes));
+            validKeys = CoreArray.unique(validKeys.concat(semantics.extraAttributes));
         }
 
         this.filterParams(value, validKeys);
@@ -585,14 +586,14 @@ export class CoreH5PContentValidator {
     }
 
     /**
-     * Check params for a whitelist of allowed properties.
+     * Check params for a allowlist of allowed properties.
      *
      * @param params Object to filter.
-     * @param whitelist List of keys to keep.
+     * @param allowlist List of keys to keep.
      */
-    filterParams(params: Record<string, unknown>, whitelist: string[]): void {
+    filterParams(params: Record<string, unknown>, allowlist: string[]): void {
         for (const key in params) {
-            if (whitelist.indexOf(key) == -1) {
+            if (allowlist.indexOf(key) == -1) {
                 delete params[key];
             }
         }
@@ -625,7 +626,7 @@ export class CoreH5PContentValidator {
         // Defuse all HTML entities.
         text = text.replace(/&/g, '&amp;');
 
-        // Change back only well-formed entities in our whitelist:
+        // Change back only well-formed entities in our allowed list:
         // Decimal numeric entities.
         text = text.replace(/&amp;#([0-9]+;)/g, '&#$1');
         // Hexadecimal numeric entities.

@@ -1,4 +1,4 @@
-@app @javascript @core_settings
+@core_settings @app @javascript
 Feature: It navigates properly within settings.
 
   Background:
@@ -47,7 +47,7 @@ Feature: It navigates properly within settings.
 
   Scenario: Tablet navigation on settings
     Given I entered the app as "student1"
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Settings
     When I press "More" in the app

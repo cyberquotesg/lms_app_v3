@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreWSExternalWarning, CoreWSExternalFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreConstants } from '@/core/constants';
@@ -23,8 +23,8 @@ import { CoreCourse } from '@features/course/services/course';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreError } from '@classes/errors/error';
-
-const ROOT_CACHE_KEY = 'mmaModUrl:';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { ADDON_MOD_URL_COMPONENT } from '../constants';
 
 /**
  * Service that provides some features for urls.
@@ -32,7 +32,8 @@ const ROOT_CACHE_KEY = 'mmaModUrl:';
 @Injectable({ providedIn: 'root' })
 export class AddonModUrlProvider {
 
-    static readonly COMPONENT = 'mmaModUrl';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModUrl:';
+    static readonly COMPONENT = ADDON_MOD_URL_COMPONENT;
 
     /**
      * Get the final display type for a certain URL. Based on Moodle's url_get_final_display_type.
@@ -93,7 +94,7 @@ export class AddonModUrlProvider {
      * @returns Cache key.
      */
     protected getUrlCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'url:' + courseId;
+        return AddonModUrlProvider.ROOT_CACHE_KEY + 'url:' + courseId;
     }
 
     /**
@@ -120,7 +121,7 @@ export class AddonModUrlProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getUrlCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModUrlProvider.COMPONENT,
+            component: ADDON_MOD_URL_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
 
@@ -156,14 +157,14 @@ export class AddonModUrlProvider {
         url = url || '';
 
         const matches = url.match(/\//g);
-        const extension = CoreMimetypeUtils.getFileExtension(url);
+        const extension = CoreMimetypeUtils.guessExtensionFromUrl(url);
 
         if (!matches || matches.length < 3 || url.slice(-1) === '/' || extension == 'php') {
             // Use default icon.
             return '';
         }
 
-        const icon = CoreMimetypeUtils.getFileIcon(url);
+        const icon = CoreMimetypeUtils.getExtensionIcon(extension ?? '');
 
         // We do not want to return those icon types, the module icon is more appropriate.
         if (icon === CoreMimetypeUtils.getFileIconForType('unknown') ||
@@ -210,23 +211,19 @@ export class AddonModUrlProvider {
      * Report the url as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the assign.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logView(id: number, name?: string, siteId?: string): Promise<void> {
+    logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModUrlViewUrlWSParams = {
             urlid: id,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_url_view_url',
             params,
-            AddonModUrlProvider.COMPONENT,
+            ADDON_MOD_URL_COMPONENT,
             id,
-            name,
-            'url',
-            {},
             siteId,
         );
     }

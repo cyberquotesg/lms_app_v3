@@ -14,12 +14,11 @@
 
 import { Injectable } from '@angular/core';
 
-import { CoreLang, CoreLangLanguage } from '@services/lang';
+import { CoreLang, CoreLangFormat, CoreLangLanguage } from '@services/lang';
 import { CoreSites } from '@services/sites';
 import { CoreConstants } from '@/core/constants';
 import { CoreMainMenuDelegate, CoreMainMenuHandlerToDisplay } from './mainmenu-delegate';
 import { Device, makeSingleton } from '@singletons';
-import { CoreArray } from '@singletons/array';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreScreen } from '@services/screen';
 import { CorePlatform } from '@services/platform';
@@ -73,7 +72,7 @@ export class CoreMainMenuProvider {
             this.getCustomItemsFromConfig(),
         ]);
 
-        return CoreArray.flatten(customItems);
+        return customItems.flat();
     }
 
     /**
@@ -139,15 +138,19 @@ export class CoreMainMenuProvider {
             return result;
         }
 
-        const currentLang = await CoreLang.getCurrentLanguage();
-
+        const currentLangApp = await CoreLang.getCurrentLanguage();
+        const currentLangLMS = CoreLang.formatLanguage(currentLangApp, CoreLangFormat.LMS);
         const fallbackLang = CoreConstants.CONFIG.default_lang || 'en';
 
         // Get the right label for each entry and add it to the result.
         for (const id in map) {
             const entry = map[id];
-            let data = entry.labels[currentLang] || entry.labels[currentLang + '_only'] ||
-                    entry.labels.none || entry.labels[fallbackLang];
+            let data = entry.labels[currentLangApp]
+                ?? entry.labels[currentLangLMS]
+                ?? entry.labels[currentLangApp + '_only']
+                ?? entry.labels[currentLangLMS + '_only']
+                ?? entry.labels.none
+                ?? entry.labels[fallbackLang];
 
             if (!data) {
                 // No valid label found, get the first one that is not "_only".

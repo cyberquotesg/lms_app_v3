@@ -16,7 +16,6 @@ import { Injectable, Type } from '@angular/core';
 
 import { CoreConstants, ModPurpose } from '@/core/constants';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
-import { AddonModLessonIndexComponent } from '../../components/index';
 import { makeSingleton } from '@singletons';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 
@@ -42,13 +41,15 @@ export class AddonModLessonModuleHandlerService extends CoreModuleHandlerBase im
         [CoreConstants.FEATURE_GRADE_OUTCOMES]: true,
         [CoreConstants.FEATURE_BACKUP_MOODLE2]: true,
         [CoreConstants.FEATURE_SHOW_DESCRIPTION]: true,
-        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_CONTENT,
+        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_INTERACTIVECONTENT,
     };
 
     /**
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { AddonModLessonIndexComponent } = await import('../../components/index');
+
         return AddonModLessonIndexComponent;
     }
 

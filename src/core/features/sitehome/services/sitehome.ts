@@ -15,12 +15,14 @@
 import { Injectable } from '@angular/core';
 
 import { CoreSites } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { makeSingleton } from '@singletons';
 import { CoreCourse } from '../../course/services/course';
 import { CoreCourses } from '../../courses/services/courses';
 import { AddonModForum, AddonModForumData } from '@addons/mod/forum/services/forum';
 import { CoreError } from '@classes/errors/error';
+import { CoreBlockHelper } from '@features/block/services/block-helper';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 /**
  * Items with index 1 and 3 were removed on 2.5 and not being supported in the app.
@@ -98,8 +100,9 @@ export class CoreSiteHomeProvider {
                 }
 
                 const hasContent = sections.some((section) => section.summary || (section.modules && section.modules.length));
+                const hasCourseBlocks = await CoreBlockHelper.hasCourseBlocks(siteHomeId);
 
-                if (hasContent) {
+                if (hasContent || hasCourseBlocks) {
                     // There's a section with content.
                     return true;
                 }

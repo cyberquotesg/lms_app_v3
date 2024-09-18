@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { Md5 } from 'ts-md5/dist/md5';
 
 import { CoreNetwork } from '@services/network';
@@ -32,6 +31,8 @@ import {
 import { AddonPrivateFilesHelper } from '@addons/privatefiles/services/privatefiles-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreNavigator } from '@services/navigator';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 /**
  * Page that displays the list of files.
@@ -57,12 +58,23 @@ export class AddonPrivateFilesIndexPage implements OnInit, OnDestroy {
     filesLoaded = false; // Whether the files are loaded.
 
     protected updateSiteObserver: CoreEventObserver;
+    protected logView: () => void;
 
     constructor() {
         // Update visibility if current site info is updated.
         this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, () => {
             this.setVisibility();
         }, CoreSites.getCurrentSiteId());
+
+        this.logView = CoreTime.once(async () => {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'core_files_get_files',
+                name: Translate.instant('addon.privatefiles.files'),
+                data: { category: 'files' },
+                url: '/user/files.php',
+            });
+        });
     }
 
     /**
@@ -127,7 +139,7 @@ export class AddonPrivateFilesIndexPage implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshData(refresher?: IonRefresher): void {
+    refreshData(refresher?: HTMLIonRefresherElement): void {
         this.refreshFiles().finally(() => {
             refresher?.complete();
         });
@@ -208,6 +220,8 @@ export class AddonPrivateFilesIndexPage implements OnInit, OnDestroy {
                     // User quota isn't useful, delete it.
                     delete this.userQuota;
                 }
+
+                this.logView();
             } else {
                 // Unknown root.
                 CoreDomUtils.showErrorModal('addon.privatefiles.couldnotloadfiles', true);
@@ -253,7 +267,7 @@ export class AddonPrivateFilesIndexPage implements OnInit, OnDestroy {
             params.filename = '';
         }
 
-        const hash = <string> Md5.hashAsciiStr(JSON.stringify(params));
+        const hash = Md5.hashAsciiStr(JSON.stringify(params));
 
         CoreNavigator.navigate(`../${hash}`, { params });
     }

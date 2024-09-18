@@ -16,11 +16,10 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { CoreSharedModule } from '@/core/shared.module';
-import { CoreLoginHasSitesGuard } from './guards/has-sites';
+import { hasSitesGuard } from './guards/has-sites';
 import { CoreLoginComponentsModule } from './components/components.module';
 import { CoreLoginHelper } from './services/login-helper';
 import { CoreLoginForgottenPasswordPage } from '@features/login/pages/forgotten-password/forgotten-password';
-import { CoreLoginSitePolicyPage } from '@features/login/pages/site-policy/site-policy';
 import { CoreUserComponentsModule } from '@features/user/components/components.module';
 import { CoreLoginEmailSignupPage } from '@features/login/pages/email-signup/email-signup';
 import { CoreLoginSitePage } from '@features/login/pages/site/site';
@@ -44,8 +43,7 @@ const routes: Routes = [
     {
         path: 'sites',
         component: CoreLoginSitesPage,
-        canLoad: [CoreLoginHasSitesGuard],
-        canActivate: [CoreLoginHasSitesGuard],
+        canActivate: [hasSitesGuard],
     },
     {
         path: 'forgottenpassword',
@@ -54,10 +52,6 @@ const routes: Routes = [
     {
         path: 'changepassword',
         component: CoreLoginChangePasswordPage,
-    },
-    {
-        path: 'sitepolicy',
-        component: CoreLoginSitePolicyPage,
     },
     {
         path: 'emailsignup',
@@ -78,7 +72,6 @@ const routes: Routes = [
     ],
     declarations: [
         CoreLoginForgottenPasswordPage,
-        CoreLoginSitePolicyPage,
         CoreLoginSitePage,
         CoreLoginSitesPage,
         CoreLoginChangePasswordPage,

@@ -26,8 +26,10 @@ import { NgZone, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
 import { AddonModChatUsersModalComponent, AddonModChatUsersModalResult } from '../../components/users-modal/users-modal';
-import { AddonModChat, AddonModChatProvider, AddonModChatUser } from '../../services/chat';
+import { AddonModChat, AddonModChatUser } from '../../services/chat';
 import { AddonModChatFormattedMessage, AddonModChatHelper } from '../../services/chat-helper';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 /**
  * Page that displays a chat session.
@@ -35,9 +37,11 @@ import { AddonModChatFormattedMessage, AddonModChatHelper } from '../../services
 @Component({
     selector: 'page-addon-mod-chat-chat',
     templateUrl: 'chat.html',
-    styleUrls: ['chat.scss'],
+    styleUrls: ['../../../../../theme/components/discussion.scss', 'chat.scss'],
 })
 export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
+
+    protected static readonly POLL_INTERVAL = 4000;
 
     @ViewChild(IonContent) content?: IonContent;
     @ViewChild(CoreSendMessageFormComponent) sendMessageForm?: CoreSendMessageFormComponent;
@@ -61,6 +65,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
     protected viewDestroyed = false;
     protected pollingRunning = false;
     protected users: AddonModChatUser[] = [];
+    protected logView: () => void;
 
     constructor() {
         this.currentUserId = CoreSites.getCurrentSiteUserId();
@@ -69,6 +74,16 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
             // Execute the callback in the Angular zone, so change detection doesn't stop working.
             NgZone.run(() => {
                 this.isOnline = CoreNetwork.isOnline();
+            });
+        });
+
+        this.logView = CoreTime.once(() => {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'mod_chat_get_chat_latest_messages',
+                name: this.title,
+                data: { chatid: this.chatId, category: 'chat' },
+                url: `/mod/chat/gui_ajax/index.php?id=${this.chatId}`,
             });
         });
     }
@@ -88,6 +103,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
             await this.fetchMessages();
 
             this.startPolling();
+            this.logView();
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'addon.mod_chat.errorwhileconnecting', true);
             CoreNavigator.back();
@@ -150,7 +166,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
 
             const message = this.messages[index];
 
-            if (message.beep && message.beep != String(this.currentUserId)) {
+            if (message.beep && message.beep !== this.currentUserId) {
                 this.loadMessageBeepWho(message);
             }
         }
@@ -196,11 +212,11 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
      * @param id User Id before parsing.
      * @returns User fullname.
      */
-    protected async getUserFullname(id: string): Promise<string> {
-        const idNumber = parseInt(id, 10);
+    protected async getUserFullname(id: string | number): Promise<string> {
+        const idNumber = Number(id);
 
         if (isNaN(idNumber)) {
-            return id;
+            return String(id);
         }
 
         const user = this.users.find((user) => user.id == idNumber);
@@ -219,10 +235,10 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
                 return user.fullname;
             }
 
-            return id;
+            return String(id);
         } catch {
             // Ignore errors.
-            return id;
+            return String(id);
         }
     }
 
@@ -238,7 +254,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
         // Start polling.
         this.polling = window.setInterval(() => {
             CoreUtils.ignoreErrors(this.fetchMessagesInterval());
-        }, AddonModChatProvider.POLL_INTERVAL);
+        }, AddonModChatChatPage.POLL_INTERVAL);
     }
 
     /**

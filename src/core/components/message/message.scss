@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host {
     --message-background: var(--core-messages-message-bg);
@@ -11,14 +11,14 @@
 
     .message-box {
         --background: var(--message-background);
-        --min-height: var(--a11y-min-target-size);
+        --min-height: var(--a11y-sizing-minTargetSize);
 
         display: flex;
         flex-direction: row;
         position: relative;
 
         border: 0;
-        border-radius: var(--medium-radius);
+        border-radius: var(--mdl-shape-borderRadius-sm);
         margin: 8px;
         width: 90%;
         max-width: var(--list-item-max-width);
@@ -34,8 +34,8 @@
         overflow: visible;
 
         &:hover {
-            -webkit-filter: drop-shadow(2px 2px 2px rgba(0,0,0,.3));
-            filter: drop-shadow(2px 2px 2px rgba(0,0,0,.3));
+            -webkit-filter: drop-shadow(2px 2px 2px rgb(0 0 0 / 30%));
+            filter: drop-shadow(2px 2px 2px rgb(0 0 0 / 30%));
         }
 
         &[tappable]:active {
@@ -63,14 +63,11 @@
                 }
 
                 div {
-                    font-weight: 500;
                     flex-grow: 1;
                     padding-left: .5rem;
                     padding-right: .5rem;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    font-size: 16px;
+                    @include ellipsis();
+                    font: var(--mdl-typography-subtitle-font-md);
                 }
             }
 
@@ -83,7 +80,7 @@
         }
 
         .extra {
-            flex-shrink: 1;
+            flex-shrink: 0;
             display: flex;
             flex-direction: row;
             padding-left: 8px;
@@ -96,7 +93,7 @@
             }
 
             .delete-button {
-                min-height: initial;
+                min-height: 36px;
                 line-height: initial;
                 margin: 0px;
                 align-self: flex-end;

@@ -23,7 +23,7 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreTextUtils } from '@services/utils/text';
 import { Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
-import { AddonModSurveyPrefetchHandler } from '../../services/handlers/prefetch';
+import { getPrefetchHandlerInstance } from '../../services/handlers/prefetch';
 import {
     AddonModSurveyProvider,
     AddonModSurveySurvey,
@@ -38,6 +38,7 @@ import {
     AddonModSurveySyncProvider,
     AddonModSurveySyncResult,
 } from '../../services/survey-sync';
+import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Component that displays a survey.
@@ -50,7 +51,7 @@ import {
 export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit {
 
     component = AddonModSurveyProvider.COMPONENT;
-    moduleName = 'survey';
+    pluginName = 'survey';
 
     survey?: AddonModSurveySurvey;
     questions: AddonModSurveyQuestionFormatted[] = [];
@@ -168,7 +169,9 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
             return; // Shouldn't happen.
         }
 
-        await AddonModSurvey.logView(this.survey.id, this.survey.name);
+        await CoreUtils.ignoreErrors(AddonModSurvey.logView(this.survey.id));
+
+        this.analyticsLogEvent('mod_survey_view_survey');
     }
 
     /**
@@ -212,7 +215,7 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
                 // The survey is downloaded, update the data.
                 try {
                     const prefetched = await AddonModSurveySync.prefetchAfterUpdate(
-                        AddonModSurveyPrefetchHandler.instance,
+                        getPrefetchHandlerInstance(),
                         this.module,
                         this.courseId,
                     );

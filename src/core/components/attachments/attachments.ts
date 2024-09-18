@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, Input, OnInit } from '@angular/core';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreFileUploader, CoreFileUploaderTypeList } from '@features/fileuploader/services/fileuploader';
 import { CoreSites } from '@services/sites';
@@ -55,6 +55,7 @@ export class CoreAttachmentsComponent implements OnInit {
     @Input() acceptedTypes?: string; // List of supported filetypes. If undefined, all types supported.
     @Input() required?: boolean; // Whether to display the required mark.
     @Input() courseId?: number; // Course ID.
+    @Input() title = Translate.instant('core.fileuploader.attachedfiles'); // Title to display.
 
     maxSizeReadable?: string;
     maxSubmissionsReadable?: string;

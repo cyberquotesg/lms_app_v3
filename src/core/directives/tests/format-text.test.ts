@@ -21,11 +21,12 @@ import { CoreFilepool } from '@services/filepool';
 import { CoreFilter } from '@features/filter/services/filter';
 import { CoreFilterHelper } from '@features/filter/services/filter-helper';
 import { CoreFormatTextDirective } from '@directives/format-text';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 
 import { mock, mockSingleton, RenderConfig, renderTemplate, renderWrapperComponent } from '@/testing/utils';
+import { ContextLevel } from '@/core/constants';
 
 describe('CoreFormatTextDirective', () => {
 
@@ -120,7 +121,7 @@ describe('CoreFormatTextDirective', () => {
         expect(CoreFilterHelper.getFiltersAndFormatText).toHaveBeenCalledTimes(1);
         expect(CoreFilterHelper.getFiltersAndFormatText).toHaveBeenCalledWith(
             'Lorem ipsum dolor',
-            'course',
+            ContextLevel.COURSE,
             42,
             expect.anything(),
             undefined,

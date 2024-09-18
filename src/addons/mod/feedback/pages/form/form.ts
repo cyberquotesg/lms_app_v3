@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { CoreSite } from '@classes/site';
-import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourse, CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CanLeave } from '@guards/can-leave';
@@ -38,6 +37,7 @@ import {
 import { AddonModFeedbackFormItem, AddonModFeedbackHelper } from '../../services/feedback-helper';
 import { AddonModFeedbackSync } from '../../services/feedback-sync';
 import { AddonModFeedbackModuleHandlerService } from '../../services/handlers/module';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 /**
  * Page that displays feedback form.
@@ -122,7 +122,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         }
 
         try {
-            await AddonModFeedback.logView(this.feedback.id, this.feedback.name, true);
+            await AddonModFeedback.logView(this.feedback.id, true);
 
             CoreCourse.checkModuleCompletion(this.courseId, this.module!.completiondata);
         } catch {
@@ -263,6 +263,8 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
             const itemsCopy = CoreUtils.clone(this.items); // Copy the array to avoid modifications.
             this.originalData = AddonModFeedbackHelper.getPageItemsResponses(itemsCopy);
         }
+
+        this.analyticsLogEvent();
     }
 
     /**
@@ -425,14 +427,44 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         const modal = await CoreDomUtils.showModalLoading();
 
         try {
-            const treated = await CoreContentLinksHelper.handleLink(this.siteAfterSubmit);
-
-            if (!treated) {
-                await this.currentSite.openInBrowserWithAutoLogin(this.siteAfterSubmit);
-            }
+            await CoreSites.visitLink(this.siteAfterSubmit, { siteId: this.currentSite.id });
         } finally {
             modal.dismiss();
         }
+    }
+
+    /**
+     * Log event in analytics.
+     */
+    protected analyticsLogEvent(): void {
+        if (!this.feedback) {
+            return;
+        }
+
+        if (this.preview) {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'mod_feedback_get_items',
+                name: this.feedback.name,
+                data: { id: this.feedback.id, category: 'feedback' },
+                url: `/mod/feedback/print.php?id=${this.cmId}&courseid=${this.courseId}`,
+            });
+
+            return;
+        }
+
+        let url = '/mod/feedback/complete.php';
+        if (!this.completed) {
+            url += `?id=${this.cmId}` + (this.currentPage ? `&gopage=${this.currentPage}` : '') + `&courseid=${this.courseId}`;
+        }
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM,
+            ws: this.completed ? 'mod_feedback_get_feedback_access_information' : 'mod_feedback_get_page_items',
+            name: this.feedback.name,
+            data: { id: this.feedback.id, category: 'feedback', page: this.currentPage },
+            url,
+        });
     }
 
     /**

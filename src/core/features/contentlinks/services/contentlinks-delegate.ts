@@ -118,7 +118,7 @@ export interface CoreContentLinksAction {
      *
      * @param siteId The site ID.
      */
-    action(siteId: string): void;
+    action(siteId: string): Promise<void>;
 }
 
 /**
@@ -194,7 +194,10 @@ export class CoreContentLinksDelegateService {
                     return;
                 }
 
-                const actions = await handler.getActions(siteIds, relativeUrl, params, courseId, data);
+                const actions = await CoreUtils.ignoreErrors(
+                    Promise.resolve(handler.getActions(siteIds, relativeUrl, params, courseId, data)),
+                    <CoreContentLinksAction[]> [],
+                );
 
                 if (actions && actions.length) {
                     // Set default values if any value isn't supplied.

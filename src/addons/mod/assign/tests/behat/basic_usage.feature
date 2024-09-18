@@ -1,4 +1,4 @@
-@mod @mod_assign @app @javascript
+@addon_mod_assign @app @javascript
 Feature: Test basic usage of assignment activity in app
   In order to participate in the assignment while using the mobile app
   I need basic assignment functionality to work
@@ -16,10 +16,9 @@ Feature: Test basic usage of assignment activity in app
       | teacher1 | C1 | editingteacher |
       | student1 | C1 | student |
     And the following "activities" exist:
-      | activity | course | idnumber | name         | intro                        | assignsubmission_onlinetext_enabled | duedate                       | attemptreopenmethod |
-      | assign   | C1     | assign1  | assignment1  | Test assignment description1 | 1                                   | ## 20 August 2002 12:00 PM ## | manual              |
+      | activity | course | idnumber | name         | intro                        | assignsubmission_onlinetext_enabled | duedate                       | attemptreopenmethod | maxattempts |
+      | assign   | C1     | assign1  | assignment1  | Test assignment description1 | 1                                   | ## 20 August 2002 12:00 PM ## | manual              | -1          |
 
-  @lms_from3.11
   Scenario: View assign description, due date & View list of student submissions (as teacher) & View own submission or student submission
     # Create, edit and submit as a student
     Given I entered the assign activity "assignment1" on course "Course 1" as "student1" in the app
@@ -57,6 +56,19 @@ Feature: Test basic usage of assignment activity in app
     When I press "Student student" near "assignment1" in the app
     Then I should find "Online text submissions" in the app
     And I should find "Submission test edited" in the app
+    And the following events should have been logged for "student1" in the app:
+      | name                                                   | activity | activityname | course   |
+      | \assignsubmission_onlinetext\event\assessable_uploaded | assign   | assignment1  | Course 1 |
+      | \assignsubmission_onlinetext\event\submission_created  | assign   | assignment1  | Course 1 |
+      | \assignsubmission_onlinetext\event\submission_updated  | assign   | assignment1  | Course 1 |
+      | \mod_assign\event\assessable_submitted                 | assign   | assignment1  | Course 1 |
+      | \mod_assign\event\course_module_viewed                 | assign   | assignment1  | Course 1 |
+      | \mod_assign\event\statement_accepted                   | assign   | assignment1  | Course 1 |
+      | \mod_assign\event\submission_status_viewed             | assign   | assignment1  | Course 1 |
+    And the following events should have been logged for "teacher1" in the app:
+      | name                                                   | activity | activityname | course   |
+      | \mod_assign\event\grading_table_viewed                 | assign   | assignment1  | Course 1 |
+      | \mod_assign\event\course_module_viewed                 | assign   | assignment1  | Course 1 |
 
   Scenario: Edit/Add submission (online text) & Add new attempt from previous submission & Submit for grading
     # Submit first attempt as a student

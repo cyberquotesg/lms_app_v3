@@ -18,7 +18,7 @@ import { CoreSites } from '@services/sites';
 import { CoreWSExternalWarning, CoreWSExternalFile, CoreWSFile } from '@services/ws';
 import { CoreUrlUtils } from '@services/utils/url';
 import { CoreQueueRunner } from '@classes/queue-runner';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 
 import { CoreH5PCore } from '../classes/core';
 import { CoreH5PFramework } from '../classes/framework';
@@ -29,6 +29,10 @@ import { CoreH5PValidator } from '../classes/validator';
 import { makeSingleton } from '@singletons';
 import { CoreError } from '@classes/errors/error';
 import { CorePath } from '@singletons/path';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreFilepool } from '@services/filepool';
+import { DownloadStatus } from '@/core/constants';
+import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Service to provide H5P functionalities.
@@ -43,7 +47,8 @@ export class CoreH5PProvider {
     h5pValidator: CoreH5PValidator;
     queueRunner: CoreQueueRunner;
 
-    protected readonly ROOT_CACHE_KEY = 'CoreH5P:';
+    protected static readonly ROOT_CACHE_KEY = 'CoreH5P:';
+    protected static readonly CUSTOM_CSS_COMPONENT = 'CoreH5PCustomCSS';
 
     constructor() {
         this.queueRunner = new CoreQueueRunner(1);
@@ -79,6 +84,36 @@ export class CoreH5PProvider {
         site = site || CoreSites.getCurrentSite();
 
         return !!(site?.wsAvailable('core_h5p_get_trusted_h5p_file'));
+    }
+
+    /**
+     * Get the src URL to load custom CSS styles for H5P.
+     *
+     * @param siteId Site ID. If not defined, current site.
+     * @returns Src URL, undefined if no custom CSS.
+     */
+    async getCustomCssSrc(siteId?: string): Promise<string | undefined> {
+        const site = await CoreSites.getSite(siteId);
+
+        const customCssUrl = await site.getStoredConfig('h5pcustomcssurl');
+        if (!customCssUrl) {
+            return;
+        }
+
+        const state = await CoreFilepool.getFileStateByUrl(site.getId(), customCssUrl);
+        if (state === DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED) {
+            // File not downloaded, URL has changed or first time. Delete previously downloaded file.
+            await CoreUtils.ignoreErrors(
+                CoreFilepool.removeFilesByComponent(site.getId(), CoreH5PProvider.CUSTOM_CSS_COMPONENT, 1),
+            );
+        }
+
+        if (state !== DownloadStatus.DOWNLOADED) {
+            // Download CSS styles first.
+            await CoreFilepool.downloadUrl(site.getId(), customCssUrl, false, CoreH5PProvider.CUSTOM_CSS_COMPONENT, 1);
+        }
+
+        return await CoreFilepool.getInternalSrcByUrl(site.getId(), customCssUrl);
     }
 
     /**
@@ -147,7 +182,7 @@ export class CoreH5PProvider {
      * @returns Cache key.
      */
     protected getTrustedH5PFilePrefixCacheKey(): string {
-        return this.ROOT_CACHE_KEY + 'trustedH5PFile:';
+        return CoreH5PProvider.ROOT_CACHE_KEY + 'trustedH5PFile:';
     }
 
     /**

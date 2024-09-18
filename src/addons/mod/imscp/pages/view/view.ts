@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
 import { Component, OnInit } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreNavigationBarItem } from '@components/navigation-bar/navigation-bar';
@@ -20,7 +20,6 @@ import { CoreCourseResourceDownloadResult } from '@features/course/classes/main-
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -174,7 +173,7 @@ export class AddonModImscpViewPage implements OnInit {
         // Get module status to determine if it needs to be downloaded.
         const status = await CoreCourseModulePrefetchDelegate.getModuleStatus(module, this.courseId, undefined, refresh);
 
-        if (status !== CoreConstants.DOWNLOADED) {
+        if (status !== DownloadStatus.DOWNLOADED) {
             // Download content. This function also loads module contents if needed.
             try {
                 await CoreCourseModulePrefetchDelegate.downloadModule(module, this.courseId);
@@ -214,7 +213,7 @@ export class AddonModImscpViewPage implements OnInit {
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(Promise.all([
             AddonModImscp.invalidateContent(this.cmId, this.courseId),
             CoreCourseModulePrefetchDelegate.invalidateCourseUpdates(this.courseId), // To detect if IMSCP was updated.

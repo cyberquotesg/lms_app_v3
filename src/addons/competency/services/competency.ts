@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCommentsArea } from '@features/comments/services/comments';
-import { CoreCourseSummary, CoreCourseModuleSummary } from '@features/course/services/course';
-import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
+import { CoreCourseSummary } from '@features/course/services/course';
 import { CoreUserSummary } from '@features/user/services/user';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
@@ -43,17 +43,33 @@ export class AddonCompetencyProvider {
     static readonly REVIEW_STATUS_IN_REVIEW = 2;
 
     /**
+     * Check if competencies are enabled in a certain site.
+     *
+     * @param options Site ID or site object.
+     * @returns Whether competencies are enabled.
+     */
+    async areCompetenciesEnabled(options?: {siteId?: string; site?: CoreSite}): Promise<boolean> {
+        const site = options?.site ? options.site : await CoreSites.getSite(options?.siteId);
+
+        if (!site) {
+            return false;
+        }
+
+        return site.canUseAdvancedFeature('enablecompetencies') &&
+            !(site.isFeatureDisabled('CoreMainMenuDelegate_AddonCompetency') &&
+            site.isFeatureDisabled('CoreCourseOptionsDelegate_AddonCompetency') &&
+            site.isFeatureDisabled('CoreUserDelegate_AddonCompetency'));
+    }
+
+    /**
      * Check if all competencies features are disabled.
      *
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved with boolean: whether all competency features are disabled.
+     * @deprecated since 4.4. Use areCompetenciesEnabled instead.
      */
     async allCompetenciesDisabled(siteId?: string): Promise<boolean> {
-        const site = await CoreSites.getSite(siteId);
-
-        return site.isFeatureDisabled('CoreMainMenuDelegate_AddonCompetency') &&
-            site.isFeatureDisabled('CoreCourseOptionsDelegate_AddonCompetency') &&
-            site.isFeatureDisabled('CoreUserDelegate_AddonCompetency');
+        return !(await this.areCompetenciesEnabled({ siteId }));
     }
 
     /**
@@ -66,6 +82,11 @@ export class AddonCompetencyProvider {
      */
     async canViewUserCompetenciesInCourse(courseId: number, userId?: number, siteId?: string): Promise<boolean> {
         if (!CoreSites.isLoggedIn()) {
+            return false;
+        }
+
+        const enabled = await this.areCompetenciesEnabled({ siteId });
+        if (!enabled) {
             return false;
         }
 
@@ -495,7 +516,7 @@ export class AddonCompetencyProvider {
      * @param planId ID of the plan.
      * @param competencyId ID of the competency.
      * @param planStatus Current plan Status to decide what action should be logged.
-     * @param name Name of the competency.
+     * @param name Deprecated, not used anymore.
      * @param userId User ID. If not defined, current user.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
@@ -525,12 +546,6 @@ export class AddonCompetencyProvider {
             ? 'core_competency_user_competency_plan_viewed'
             : 'core_competency_user_competency_viewed_in_plan';
 
-        CorePushNotifications.logViewEvent(competencyId, name, 'competency', wsName, {
-            planid: planId,
-            planstatus: planStatus,
-            userid: userId,
-        }, siteId);
-
         await site.write(wsName, params, preSets);
     }
 
@@ -539,7 +554,7 @@ export class AddonCompetencyProvider {
      *
      * @param courseId ID of the course.
      * @param competencyId ID of the competency.
-     * @param name Name of the competency.
+     * @param name Deprecated, not used anymore.
      * @param userId User ID. If not defined, current user.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
@@ -564,14 +579,7 @@ export class AddonCompetencyProvider {
             typeExpected: 'boolean',
         };
 
-        const wsName = 'core_competency_user_competency_viewed_in_course';
-
-        CorePushNotifications.logViewEvent(competencyId, name, 'competency', 'wsName', {
-            courseid: courseId,
-            userid: userId,
-        }, siteId);
-
-        await site.write(wsName, params, preSets);
+        await site.write('core_competency_user_competency_viewed_in_course', params, preSets);
     }
 
     /**
@@ -593,10 +601,7 @@ export class AddonCompetencyProvider {
             typeExpected: 'boolean',
         };
 
-        const wsName = 'core_competency_competency_viewed';
-        CorePushNotifications.logViewEvent(competencyId, name, 'competency', wsName, {}, siteId);
-
-        await site.write(wsName, params, preSets);
+        await site.write('core_competency_competency_viewed', params, preSets);
     }
 
 }
@@ -893,12 +898,14 @@ type AddonCompetencyDataForUserCompetencySummaryInCourseWSParams = {
 };
 
 /**
- * Data returned by competency's user_competency_summary_in_course_exporter.
+ * Data returned by tool_lp_data_for_user_competency_summary_in_course WS.
+ *
+ * WS Description: Load a summary of a user competency.
  */
 export type AddonCompetencyDataForUserCompetencySummaryInCourseWSResponse = {
     usercompetencysummary: AddonCompetencyDataForUserCompetencySummaryWSResponse;
     course: CoreCourseSummary;
-    coursemodules: CoreCourseModuleSummary[]; // Coursemodules.
+    coursemodules: AddonCompetencyCourseModuleInfo[]; // Coursemodules.
     plans: AddonCompetencyPlan[]; // @since 3.7. Plans.
     pluginbaseurl: string; // @since 3.7. Pluginbaseurl.
 };
@@ -1025,7 +1032,7 @@ export type AddonCompetencyDataForCourseCompetenciesPageWSResponse = {
 export type AddonCompetencyDataForCourseCompetenciesPageCompetency = {
     competency: AddonCompetencyCompetency;
     coursecompetency: AddonCompetencyCourseCompetency;
-    coursemodules: CoreCourseModuleSummary[];
+    coursemodules: AddonCompetencyCourseModuleInfo[];
     usercompetencycourse?: AddonCompetencyUserCompetencyCourse;
     ruleoutcomeoptions: {
         value: number; // The option value.
@@ -1034,6 +1041,13 @@ export type AddonCompetencyDataForCourseCompetenciesPageCompetency = {
     }[];
     comppath: AddonCompetencyPath;
     plans: AddonCompetencyPlan[]; // @since 3.7.
+};
+
+type AddonCompetencyCourseModuleInfo = {
+    id: number; // Id.
+    name: string; // Name.
+    url?: string; // Url.
+    iconurl: string; // Iconurl.
 };
 
 /**

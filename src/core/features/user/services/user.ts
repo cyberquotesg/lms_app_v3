@@ -20,13 +20,15 @@ import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreUserOffline } from './user-offline';
 import { CoreLogger } from '@singletons/logger';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreEvents, CoreEventSiteData, CoreEventUserDeletedData, CoreEventUserSuspendedData } from '@singletons/events';
 import { CoreStatusWithWarningsWSResponse, CoreWSExternalWarning } from '@services/ws';
 import { CoreError } from '@classes/errors/error';
 import { USERS_TABLE_NAME, CoreUserDBRecord } from './database/user';
-import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
+import { CoreUrlUtils } from '@services/utils/url';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreConstants } from '@/core/constants';
 
 const ROOT_CACHE_KEY = 'mmUser:';
 
@@ -53,6 +55,16 @@ export const USER_PROFILE_REFRESHED = 'CoreUserProfileRefreshed';
  * Profile picture updated event.
  */
 export const USER_PROFILE_PICTURE_UPDATED = 'CoreUserProfilePictureUpdated';
+
+/**
+ * Value set in timezone when using the server's timezone.
+ */
+export const USER_PROFILE_SERVER_TIMEZONE = '99';
+
+/**
+ * Fake ID for a "no reply" user.
+ */
+export const USER_NOREPLY_USER = -10;
 
 /**
  * Service to provide user functionalities.
@@ -96,26 +108,6 @@ export class CoreUserProvider {
         site = site || CoreSites.getCurrentSite();
 
         return !!site?.wsAvailable('core_enrol_search_users');
-    }
-
-    /**
-     * Check if WS to update profile picture is available in site.
-     *
-     * @returns Promise resolved with boolean: whether it's available.
-     * @deprecated since app 4.0
-     */
-    async canUpdatePicture(): Promise<boolean> {
-        return true;
-    }
-
-    /**
-     * Check if WS to search participants is available in site.
-     *
-     * @returns Whether it's available.
-     * @deprecated since app 4.0
-     */
-    canUpdatePictureInSite(): boolean {
-        return true;
     }
 
     /**
@@ -291,6 +283,24 @@ export class CoreUserProvider {
                 throw error;
             }
         }
+    }
+
+    /**
+     * Get the starting week day based on the user preference.
+     *
+     * @returns Starting week day.
+     */
+    async getStartingWeekDay(): Promise<number> {
+        const preference = await CoreUtils.ignoreErrors(this.getUserPreference('calendar_startwday'));
+
+        if (preference && !isNaN(Number(preference))) {
+            return Number(preference);
+        }
+
+        const defaultValue = Number(CoreSites.getCurrentSite()?.getStoredConfig('calendar_startwday') ??
+            Translate.instant('core.firstdayofweek'));
+
+        return !isNaN(defaultValue) ? defaultValue % 7 : CoreConstants.CALENDAR_DEFAULT_STARTING_WEEKDAY;
     }
 
     /**
@@ -557,24 +567,20 @@ export class CoreUserProvider {
      *
      * @param userId User ID.
      * @param courseId Course ID.
-     * @param name Name of the user.
      * @returns Promise resolved when done.
      */
-    async logView(userId: number, courseId?: number, name?: string, siteId?: string): Promise<CoreStatusWithWarningsWSResponse> {
+    async logView(userId: number, courseId?: number, siteId?: string): Promise<CoreStatusWithWarningsWSResponse> {
         const site = await CoreSites.getSite(siteId);
 
         const params: CoreUserViewUserProfileWSParams = {
             userid: userId,
         };
-        const wsName = 'core_user_view_user_profile';
 
         if (courseId) {
             params.courseid = courseId;
         }
 
-        CorePushNotifications.logViewEvent(userId, name, 'user', wsName, { courseid: courseId });
-
-        return site.write(wsName, params);
+        return site.write('core_user_view_user_profile', params);
     }
 
     /**
@@ -589,8 +595,6 @@ export class CoreUserProvider {
         const params: CoreUserViewUserListWSParams = {
             courseid: courseId,
         };
-
-        CorePushNotifications.logViewListEvent('user', 'core_user_view_user_list', params);
 
         return site.write('core_user_view_user_list', params);
     }
@@ -660,6 +664,11 @@ export class CoreUserProvider {
 
             if (!imageUrl || treated[imageUrl] || !siteId) {
                 // It doesn't have an image or it has already been treated.
+                return;
+            }
+
+            // Do not prefetch when initials are set and image is default.
+            if (imageUrl && CoreUrlUtils.isThemeImageUrl(imageUrl)) {
                 return;
             }
 
@@ -887,6 +896,7 @@ export type CoreUserPreference = {
 export type CoreUserProfileField = {
     type: string; // The type of the custom field - text field, checkbox...
     value: string; // The value of the custom field.
+    displayvalue?: string; // @since 4.2. Formatted value of the custom field.
     name: string; // The name of the custom field.
     shortname: string; // The shortname of the custom field - to be able to build the field class in the code.
 };
@@ -952,6 +962,7 @@ export type CoreUserData = {
     theme?: string; // Theme name such as "standard", must exist on server.
     timezone?: string; // Timezone code such as Australia/Perth, or 99 for default.
     mailformat?: number; // Mail format code is 0 for plain text, 1 for HTML etc.
+    trackforums?: number; // @since 4.4. Whether the user is tracking forums.
     description?: string; // User profile description.
     descriptionformat?: number; // Int format (1 = HTML, 0 = MOODLE, 2 = PLAIN or 4 = MARKDOWN).
     city?: string; // Home city of the user.
@@ -1147,6 +1158,7 @@ type CoreEnrolSearchUsersWSParams = {
     searchanywhere: boolean; // Find a match anywhere, or only at the beginning.
     page: number; // Page number.
     perpage: number; // Number per page.
+    contextid?: number; // @since 4.4. Context ID.
 };
 
 /**

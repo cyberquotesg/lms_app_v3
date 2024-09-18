@@ -17,7 +17,6 @@ import { Injectable, Type } from '@angular/core';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
 import { makeSingleton } from '@singletons';
-import { AddonModImscpIndexComponent } from '../../components/index';
 import { AddonModImscp } from '../imscp';
 
 /**
@@ -42,7 +41,7 @@ export class AddonModImscpModuleHandlerService extends CoreModuleHandlerBase imp
         [CoreConstants.FEATURE_GRADE_OUTCOMES]: false,
         [CoreConstants.FEATURE_BACKUP_MOODLE2]: true,
         [CoreConstants.FEATURE_SHOW_DESCRIPTION]: true,
-        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_CONTENT,
+        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_INTERACTIVECONTENT,
     };
 
     /**
@@ -56,6 +55,8 @@ export class AddonModImscpModuleHandlerService extends CoreModuleHandlerBase imp
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { AddonModImscpIndexComponent } = await import('../../components/index');
+
         return AddonModImscpIndexComponent;
     }
 

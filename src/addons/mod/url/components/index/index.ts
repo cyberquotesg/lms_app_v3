@@ -18,11 +18,12 @@ import { CoreError } from '@classes/errors/error';
 import { CoreCourseModuleMainResourceComponent } from '@features/course/classes/main-resource-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { CoreCourse } from '@features/course/services/course';
-import { CoreSites } from '@services/sites';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { CoreTextUtils } from '@services/utils/text';
-import { AddonModUrl, AddonModUrlDisplayOptions, AddonModUrlProvider, AddonModUrlUrl } from '../../services/url';
+import { AddonModUrl, AddonModUrlDisplayOptions, AddonModUrlUrl } from '../../services/url';
 import { AddonModUrlHelper } from '../../services/url-helper';
+import { ADDON_MOD_URL_COMPONENT } from '../../constants';
+import { CoreSites } from '@services/sites';
 
 /**
  * Component that displays a url.
@@ -34,9 +35,11 @@ import { AddonModUrlHelper } from '../../services/url-helper';
 })
 export class AddonModUrlIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit {
 
-    component = AddonModUrlProvider.COMPONENT;
+    component = ADDON_MOD_URL_COMPONENT;
+    pluginName = 'url';
 
     url?: string;
+    embeddedUrl?: string;
     name?: string;
     shouldEmbed = false;
     shouldIframe = false;
@@ -109,8 +112,7 @@ export class AddonModUrlIndexComponent extends CoreCourseModuleMainResourceCompo
 
         } catch {
             // Fallback in case is not prefetched.
-            const mod =
-                await CoreCourse.getModule(this.module.id, this.courseId, undefined, false, false, undefined, 'url');
+            const mod = await CoreCourse.getModule(this.module.id, this.courseId, undefined, false, false, undefined, 'url');
 
             this.name = mod.name;
             this.description = mod.description;
@@ -137,25 +139,22 @@ export class AddonModUrlIndexComponent extends CoreCourseModuleMainResourceCompo
         this.shouldEmbed = displayType == CoreConstants.RESOURCELIB_DISPLAY_EMBED;
         this.shouldIframe = displayType == CoreConstants.RESOURCELIB_DISPLAY_FRAME;
 
-        if (this.shouldEmbed) {
-            const extension = CoreMimetypeUtils.guessExtensionFromUrl(url.externalurl);
-
-            this.mimetype = CoreMimetypeUtils.getMimeType(extension);
-            this.isImage = CoreMimetypeUtils.isExtensionInGroup(extension, ['web_image']);
-            this.isAudio = CoreMimetypeUtils.isExtensionInGroup(extension, ['web_audio']);
-            this.isVideo = CoreMimetypeUtils.isExtensionInGroup(extension, ['web_video']);
-            this.isOther = !this.isImage && !this.isAudio && !this.isVideo;
+        if (!this.shouldEmbed) {
+            return;
         }
 
-        if (this.shouldIframe || (this.shouldEmbed && !this.isImage && !this.isAudio && !this.isVideo)) {
-            // Will be displayed in an iframe. Check if we need to auto-login.
-            const currentSite = CoreSites.getCurrentSite();
+        const extension = CoreMimetypeUtils.guessExtensionFromUrl(url.externalurl);
 
-            if (currentSite && this.url) {
-                // Format the URL to add auto-login if needed.
-                this.url = await currentSite.getAutoLoginUrl(this.url, false);
-            }
-        }
+        this.mimetype = CoreMimetypeUtils.getMimeType(extension);
+        this.isImage = CoreMimetypeUtils.isExtensionInGroup(extension, ['web_image']);
+        this.isAudio = CoreMimetypeUtils.isExtensionInGroup(extension, ['web_audio']);
+        this.isVideo = CoreMimetypeUtils.isExtensionInGroup(extension, ['web_video']);
+        this.isOther = !this.isImage && !this.isAudio && !this.isVideo;
+
+        // Fix the URL if it uses pluginfile endpoint.
+        const currentSite = CoreSites.getCurrentSite();
+        this.embeddedUrl = currentSite && this.url ?
+            await currentSite.checkAndFixPluginfileURL(this.url) : '';
     }
 
     /**
@@ -165,12 +164,14 @@ export class AddonModUrlIndexComponent extends CoreCourseModuleMainResourceCompo
      */
     protected async logView(): Promise<void> {
         try {
-            await AddonModUrl.logView(this.module.instance, this.module.name);
+            await AddonModUrl.logView(this.module.instance);
 
             this.checkCompletion();
         } catch {
             // Ignore errors.
         }
+
+        this.analyticsLogEvent('mod_url_view_url');
     }
 
     /**

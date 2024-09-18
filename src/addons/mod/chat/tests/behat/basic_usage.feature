@@ -1,10 +1,11 @@
-@mod @mod_chat @app @javascript
+@addon_mod_chat @app @javascript
 Feature: Test basic usage of chat in app
   As a student
   I need basic chat functionality to work
 
   Background:
-    Given the following "courses" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "courses" exist:
       | fullname | shortname |
       | Course 1 | C1        |
     And the following "users" exist:
@@ -15,6 +16,7 @@ Feature: Test basic usage of chat in app
       | user     | course | role           |
       | student1 | C1     | student        |
       | student2 | C1     | student        |
+    And I enable "chat" "mod" plugin
     And the following "activities" exist:
       | activity   | name            | intro       | course | idnumber | groupmode |
       | chat       | Test chat name  | Test chat   | C1     | chat     | 0         |
@@ -53,6 +55,14 @@ Feature: Test basic usage of chat in app
     When I set the field "New message" to "Hi David, I am Pau." in the app
     And I press "Send" in the app
     Then I should find "Hi David, I am Pau." in the app
+    And the following events should have been logged for "student1" in the app:
+      | name                                 | activity | activityname   | course   |
+      | \mod_chat\event\course_module_viewed | chat     | Test chat name | Course 1 |
+      | \mod_chat\event\message_sent         | chat     | Test chat name | Course 1 |
+    And the following events should have been logged for "student2" in the app:
+      | name                                 | activity | activityname   | course   |
+      | \mod_chat\event\course_module_viewed | chat     | Test chat name | Course 1 |
+      | \mod_chat\event\message_sent         | chat     | Test chat name | Course 1 |
 
   Scenario: Past sessions shown
     # Send messages as student1
@@ -76,3 +86,10 @@ Feature: Test basic usage of chat in app
     And I press "david student" near "(2)" in the app
     Then I should find "Hi!" in the app
     And I should find "I am David" in the app
+
+  Scenario: Prefetch chat
+    # Only check that the chat is marked as downloaded to test that lazy handler is working.
+    Given I entered the course "Course 1" as "student1" in the app
+    When I press "Course downloads" in the app
+    And I press "Download" within "Test chat name" "ion-item" in the app
+    Then I should find "Downloaded" within "Test chat name" "ion-item" in the app

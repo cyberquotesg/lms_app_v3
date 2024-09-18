@@ -16,16 +16,25 @@ import { CoreArray } from '@singletons/array';
 
 describe('CoreArray singleton', () => {
 
-    it('flattens arrays', () => {
-        expect(CoreArray.flatten([])).toEqual([]);
-        expect(CoreArray.flatten<number>([[1, 2], [3, 4], [5, 6]])).toEqual([1, 2, 3, 4, 5, 6]);
-    });
-
     it('gets array without an item', () => {
         const originalArray = ['foo', 'bar', 'baz'];
 
         expect(CoreArray.withoutItem(originalArray, 'bar')).toEqual(['foo', 'baz']);
         expect(CoreArray.withoutItem(originalArray, 'not found')).toEqual(['foo', 'bar', 'baz']);
+    });
+
+    it('gets unique array', () => {
+        const originalArray = ['foo', 'bar', 'foo', 'baz'];
+
+        expect(CoreArray.unique(originalArray)).toEqual(['foo', 'bar', 'baz']);
+    });
+
+    it('filters array by regexp', () => {
+        const originalArray = ['foo', 'bar', 'baz', 'qux'];
+
+        expect(CoreArray.filterByRegexp(originalArray, /ba/)).toEqual(['bar', 'baz']);
+        expect(CoreArray.filterByRegexp(originalArray, /foo/)).toEqual(['foo']);
+        expect(CoreArray.filterByRegexp([], /foo/)).toEqual([]);
     });
 
 });

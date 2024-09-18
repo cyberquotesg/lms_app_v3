@@ -198,7 +198,7 @@ export class AddonModFeedbackHelperProvider {
             });
 
             await CoreNavigator.navigateToSitePath(
-                AddonModFeedbackModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/attempt/${attempt.id}`,
+                AddonModFeedbackModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/attempts/${attempt.id}`,
                 {
                     params: {
                         feedbackId: module.instance,
@@ -220,9 +220,9 @@ export class AddonModFeedbackHelperProvider {
      * @param entries Entries array to get profile from.
      * @returns Returns the same array with the profileimageurl added if found.
      */
-    protected async addImageProfile(entries: AddonModFeedbackWSAttempt[]): Promise<AddonModFeedbackAttempt[]>;
-    protected async addImageProfile(entries: AddonModFeedbackWSNonRespondent[]): Promise<AddonModFeedbackNonRespondent[]>;
-    protected async addImageProfile(
+    async addImageProfile(entries: AddonModFeedbackWSAttempt[]): Promise<AddonModFeedbackAttempt[]>;
+    async addImageProfile(entries: AddonModFeedbackWSNonRespondent[]): Promise<AddonModFeedbackNonRespondent[]>;
+    async addImageProfile(
         entries: (AddonModFeedbackWSAttempt | AddonModFeedbackWSNonRespondent)[],
     ): Promise<(AddonModFeedbackAttempt | AddonModFeedbackNonRespondent)[]> {
         return Promise.all(entries.map(async (entry: AddonModFeedbackAttempt | AddonModFeedbackNonRespondent) => {
@@ -251,7 +251,7 @@ export class AddonModFeedbackHelperProvider {
         return Object.assign(item, {
             templateName: 'label',
             value: '',
-            hasTextInput: false,
+            slottedLabel: false,
         });
     }
 
@@ -265,7 +265,7 @@ export class AddonModFeedbackHelperProvider {
         const formItem: AddonModFeedbackFormBasicItem = Object.assign(item, {
             templateName: 'label',
             value: '',
-            hasTextInput: false,
+            slottedLabel: false,
         });
 
         const type = parseInt(formItem.presentation, 10);
@@ -304,7 +304,7 @@ export class AddonModFeedbackHelperProvider {
             value: item.rawValue !== undefined ? Number(item.rawValue) : '',
             rangefrom: typeof rangeFrom == 'number' && !isNaN(rangeFrom) ? range[0] : '',
             rangeto: typeof rangeTo == 'number' && !isNaN(rangeTo) ? rangeTo : '',
-            hasTextInput: true,
+            slottedLabel: true,
         });
         formItem.postfix = this.getNumericBoundariesForDisplay(formItem.rangefrom, formItem.rangeto);
 
@@ -322,7 +322,7 @@ export class AddonModFeedbackHelperProvider {
             templateName: 'textfield',
             length: Number(item.presentation.split(AddonModFeedbackProvider.LINE_SEP)[1]) || 255,
             value: item.rawValue !== undefined ? item.rawValue : '',
-            hasTextInput: true,
+            slottedLabel: true,
         });
     }
 
@@ -336,7 +336,7 @@ export class AddonModFeedbackHelperProvider {
         return Object.assign(item, {
             templateName: 'textarea',
             value: item.rawValue !== undefined ? item.rawValue : '',
-            hasTextInput: true,
+            slottedLabel: true,
         });
     }
 
@@ -356,7 +356,7 @@ export class AddonModFeedbackHelperProvider {
             subtype: subType,
             value: '',
             choices: [],
-            hasTextInput: false,
+            slottedLabel: subType === 'd',
         });
 
         formItem.presentation = parts.length > 1 ? parts[1] : '';
@@ -411,7 +411,7 @@ export class AddonModFeedbackHelperProvider {
         const formItem: AddonModFeedbackCaptchaItem = Object.assign(item, {
             templateName: 'captcha',
             value: '',
-            hasTextInput: false,
+            slottedLabel: false,
         });
 
         const data = <string[]> CoreTextUtils.parseJSON(item.otherdata);
@@ -549,7 +549,7 @@ export type AddonModFeedbackFormItem =
 export type AddonModFeedbackFormBasicItem = AddonModFeedbackItem & {
     templateName: string;
     value: AddonModFeedbackResponseValue;
-    hasTextInput: boolean;
+    slottedLabel: boolean;
     isEmpty?: boolean;
     hasError?: boolean;
 };

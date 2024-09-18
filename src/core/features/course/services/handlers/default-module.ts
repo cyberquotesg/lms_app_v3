@@ -18,7 +18,6 @@ import { CoreSites } from '@services/sites';
 import { CoreCourseModuleHandler, CoreCourseModuleHandlerData } from '../module-delegate';
 import { CoreCourse } from '../course';
 import { CoreCourseModuleData } from '../course-helper';
-import { CoreCourseUnsupportedModuleComponent } from '@features/course/components/unsupported-module/unsupported-module';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 
 /**
@@ -60,7 +59,7 @@ export class CoreCourseModuleDefaultHandler implements CoreCourseModuleHandler {
         if ('url' in module && module.url) {
             const url = module.url;
 
-            defaultData.buttons = [{
+            defaultData.button = {
                 icon: 'fas-up-right-from-square',
                 label: 'core.openinbrowser',
                 action: (e: Event): void => {
@@ -69,7 +68,7 @@ export class CoreCourseModuleDefaultHandler implements CoreCourseModuleHandler {
 
                     CoreSites.getRequiredCurrentSite().openInBrowserWithAutoLogin(url);
                 },
-            }];
+            };
         }
 
         return defaultData;
@@ -79,6 +78,9 @@ export class CoreCourseModuleDefaultHandler implements CoreCourseModuleHandler {
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { CoreCourseUnsupportedModuleComponent } =
+            await import('@features/course/components/unsupported-module/unsupported-module');
+
         return CoreCourseUnsupportedModuleComponent;
     }
 

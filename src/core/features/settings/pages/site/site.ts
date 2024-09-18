@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { AfterViewInit, Component, OnDestroy, ViewChild } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 
 import { CoreSettingsHandlerToDisplay, CoreSettingsPageHandlerToDisplay } from '../../services/settings-delegate';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -117,6 +116,8 @@ export class CoreSitePreferencesPage implements AfterViewInit, OnDestroy {
         try {
             // Using syncOnlyOnWifi false to force manual sync.
             await CoreSettingsHelper.synchronizeSite(false, this.siteId);
+
+            CoreDomUtils.showToast('core.settings.sitesynccompleted', true);
         } catch (error) {
             if (this.isDestroyed) {
                 return;
@@ -140,7 +141,7 @@ export class CoreSitePreferencesPage implements AfterViewInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshData(refresher?: IonRefresher): void {
+    refreshData(refresher?: HTMLIonRefresherElement): void {
         this.handlers.getSource().setDirty(true);
         this.fetchData().finally(() => {
             refresher?.complete();

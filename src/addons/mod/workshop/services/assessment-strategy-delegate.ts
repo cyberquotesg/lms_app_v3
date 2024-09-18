@@ -17,6 +17,8 @@ import { CoreDelegateHandler, CoreDelegate } from '@classes/delegate';
 import { makeSingleton } from '@singletons';
 import { CoreFormFields } from '@singletons/form';
 import { AddonModWorkshopGetAssessmentFormDefinitionData, AddonModWorkshopGetAssessmentFormFieldsParsedData } from './workshop';
+import { CoreSites } from '@services/sites';
+import { ADDON_MOD_WORKSHOP_FEATURE_NAME } from '../constants';
 
 /**
  * Interface that all assessment strategy handlers must implement.
@@ -34,7 +36,7 @@ export interface AddonWorkshopAssessmentStrategyHandler extends CoreDelegateHand
      * @param injector Injector.
      * @returns The component (or promise resolved with component) to use, undefined if not found.
      */
-    getComponent?(): Type<unknown>;
+    getComponent?(): Promise<Type<unknown>> | Type<unknown>;
 
     /**
      * Prepare original values to be shown and compared.
@@ -58,7 +60,7 @@ export interface AddonWorkshopAssessmentStrategyHandler extends CoreDelegateHand
     hasDataChanged?(
         originalValues: AddonModWorkshopGetAssessmentFormFieldsParsedData[],
         currentValues: AddonModWorkshopGetAssessmentFormFieldsParsedData[],
-    ): boolean;
+    ): Promise<boolean> | boolean;
 
     /**
      * Prepare assessment data to be sent to the server depending on the strategy selected.
@@ -83,7 +85,14 @@ export class AddonWorkshopAssessmentStrategyDelegateService extends CoreDelegate
     protected handlerNameProperty = 'strategyName';
 
     constructor() {
-        super('AddonWorkshopAssessmentStrategyDelegate', true);
+        super('AddonWorkshopAssessmentStrategyDelegate');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    async isEnabled(): Promise<boolean> {
+        return !(await CoreSites.isFeatureDisabled(ADDON_MOD_WORKSHOP_FEATURE_NAME));
     }
 
     /**
@@ -102,7 +111,7 @@ export class AddonWorkshopAssessmentStrategyDelegateService extends CoreDelegate
      * @param workshopStrategy Assessment strategy name.
      * @returns The component, undefined if not found.
      */
-    getComponentForPlugin(workshopStrategy: string): Type<unknown> | undefined {
+    getComponentForPlugin(workshopStrategy: string): Promise<Type<unknown>> | Type<unknown> | undefined {
         return this.executeFunctionOnEnabled(workshopStrategy, 'getComponent');
     }
 

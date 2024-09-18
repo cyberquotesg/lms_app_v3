@@ -22,6 +22,8 @@ import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
 import { AddonModQuiz } from '../quiz';
 import { AddonModQuizHelper } from '../quiz-helper';
+import { isSafeNumber } from '@/core/utils/types';
+import { ADDON_MOD_QUIZ_FEATURE_NAME } from '../../constants';
 
 /**
  * Handler for quiz push notifications clicks.
@@ -31,7 +33,7 @@ export class AddonModQuizPushClickHandlerService implements CorePushNotification
 
     name = 'AddonModQuizPushClickHandler';
     priority = 200;
-    featureName = 'CoreCourseModuleDelegate_AddonModQuiz';
+    featureName = ADDON_MOD_QUIZ_FEATURE_NAME;
 
     protected readonly SUPPORTED_NAMES = ['submission', 'confirmation', 'attempt_overdue'];
 
@@ -43,7 +45,8 @@ export class AddonModQuizPushClickHandlerService implements CorePushNotification
      */
     async handles(notification: AddonModQuizPushNotificationData): Promise<boolean> {
         return CoreUtils.isTrueOrOne(notification.notif) && notification.moodlecomponent == 'mod_quiz' &&
-                this.SUPPORTED_NAMES.indexOf(notification.name ?? '') != -1;
+                this.SUPPORTED_NAMES.indexOf(notification.name ?? '') !== -1 &&
+                !!(notification.customdata?.instance || notification.contexturl);
     }
 
     /**
@@ -57,7 +60,12 @@ export class AddonModQuizPushClickHandlerService implements CorePushNotification
         const data = notification.customdata || {};
         const courseId = Number(notification.courseid);
 
-        if (notification.name == 'submission') {
+        if (
+            notification.name === 'submission' &&
+            data.instance !== undefined &&
+            contextUrlParams.attempt !== undefined &&
+            contextUrlParams.page !== undefined
+        ) {
             // A student made a submission, go to view the attempt.
             return AddonModQuizHelper.handleReviewLink(
                 Number(contextUrlParams.attempt),
@@ -69,6 +77,9 @@ export class AddonModQuizPushClickHandlerService implements CorePushNotification
 
         // Open the activity.
         const moduleId = Number(contextUrlParams.id);
+        if (!isSafeNumber(moduleId)) {
+            return;
+        }
 
         await CoreUtils.ignoreErrors(AddonModQuiz.invalidateContent(moduleId, courseId, notification.site));
 

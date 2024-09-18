@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TestingBehatDomUtils } from './behat-dom';
+import { TestingBehatDomUtils, TestingBehatDomUtilsService } from './behat-dom';
 import { TestingBehatBlocking } from './behat-blocking';
 import { CoreCustomURLSchemes, CoreCustomURLSchemesProvider } from '@services/urlschemes';
-import { CoreLoginHelperProvider } from '@features/login/services/login-helper';
+import { ONBOARDING_DONE } from '@features/login/constants';
 import { CoreConfig } from '@services/config';
 import { EnvironmentConfig } from '@/types/config';
-import { LocalNotifications, makeSingleton, NgZone } from '@singletons';
+import { LocalNotifications, makeSingleton, NgZone, ToastController } from '@singletons';
 import { CoreNetwork, CoreNetworkService } from '@services/network';
 import { CorePushNotifications, CorePushNotificationsProvider } from '@features/pushnotifications/services/pushnotifications';
 import { CoreCronDelegate, CoreCronDelegateService } from '@services/cron';
@@ -29,7 +29,11 @@ import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesProvider } from '@services/sites';
 import { CoreNavigator, CoreNavigatorService } from '@services/navigator';
 import { CoreSwipeNavigationDirective } from '@directives/swipe-navigation';
-import { IonSlides } from '@ionic/angular';
+import { Swiper } from 'swiper';
+import { LocalNotificationsMock } from '@features/emulator/services/local-notifications';
+import { GetClosureArgs } from '@/core/utils/types';
+import { CoreIframeComponent } from '@components/iframe/iframe';
+import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Behat runtime servive with public API.
@@ -38,6 +42,10 @@ import { IonSlides } from '@ionic/angular';
 export class TestingBehatRuntimeService {
 
     protected initialized = false;
+    protected openedUrls: {
+        args: GetClosureArgs<Window['open']>;
+        contents?: string;
+    }[] = [];
 
     get cronDelegate(): CoreCronDelegateService {
         return CoreCronDelegate.instance;
@@ -63,6 +71,10 @@ export class TestingBehatRuntimeService {
         return CoreNavigator.instance;
     }
 
+    get domUtils(): TestingBehatDomUtilsService {
+        return TestingBehatDomUtils.instance;
+    }
+
     /**
      * Init behat functions and set options like skipping onboarding.
      *
@@ -77,7 +89,7 @@ export class TestingBehatRuntimeService {
         TestingBehatBlocking.init();
 
         if (options.skipOnBoarding) {
-            CoreConfig.set(CoreLoginHelperProvider.ONBOARDING_DONE, 1);
+            CoreConfig.set(ONBOARDING_DONE, 1);
         }
 
         if (options.configOverrides) {
@@ -85,6 +97,30 @@ export class TestingBehatRuntimeService {
             document.cookie = 'MoodleAppConfig=' + JSON.stringify(options.configOverrides);
             CoreConfig.patchEnvironment(options.configOverrides, { patchDefault: true });
         }
+
+        // Spy on window.open.
+        const originalOpen = window.open.bind(window);
+        window.open = (...args) => {
+            this.openedUrls.push({ args });
+
+            return originalOpen(...args);
+        };
+
+        // Reduce iframes timeout to speed up tests.
+        CoreIframeComponent.loadingTimeout = 1000;
+    }
+
+    /**
+     * Get coverage data.
+     *
+     * @returns Coverage data.
+     */
+    getCoverage(): string | null {
+        if (!('__coverage__' in window)) {
+            return null;
+        }
+
+        return JSON.stringify(window.__coverage__);
     }
 
     /**
@@ -186,17 +222,25 @@ export class TestingBehatRuntimeService {
     closePopup(): string {
         this.log('Action - Close popup');
 
-        let backdrops = Array.from(document.querySelectorAll('ion-backdrop'));
-        backdrops = backdrops.filter((backdrop) => !!backdrop.offsetParent);
+        const backdrops = [
+            ...Array
+                .from(document.querySelectorAll('ion-popover, ion-modal'))
+                .map(popover => popover.shadowRoot?.querySelector('ion-backdrop'))
+                .filter(backdrop => !!backdrop),
+            ...Array
+                .from(document.querySelectorAll('ion-backdrop'))
+                .filter(backdrop => !!backdrop.offsetParent),
+        ];
 
         if (!backdrops.length) {
             return 'ERROR: Could not find backdrop';
         }
+
         if (backdrops.length > 1) {
             return 'ERROR: Found too many backdrops ('+backdrops.length+')';
         }
-        const backdrop = backdrops[0];
-        backdrop.click();
+
+        backdrops[0]?.click();
 
         // Mark busy until the click finishes processing.
         TestingBehatBlocking.delay();
@@ -262,6 +306,45 @@ export class TestingBehatRuntimeService {
     }
 
     /**
+     * Check whether the given url has been opened in the app.
+     *
+     * @param urlPattern Url pattern.
+     * @param contents Url contents.
+     * @param times How many times it should have been opened.
+     * @returns OK if successful, or ERROR: followed by message
+     */
+    async hasOpenedUrl(urlPattern: string, contents: string, times: number): Promise<string> {
+        const urlRegExp = new RegExp(urlPattern);
+        const urlMatches = await Promise.all(this.openedUrls.map(async (openedUrl) => {
+            const renderedUrl = openedUrl.args[0]?.toString() ?? '';
+
+            if (!urlRegExp.test(renderedUrl)) {
+                return false;
+            }
+
+            if (contents && !('contents' in openedUrl)) {
+                const response = await fetch(renderedUrl);
+
+                openedUrl.contents = await response.text();
+            }
+
+            if (contents && contents !== openedUrl.contents) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        if (urlMatches.filter(matches => !!matches).length === times) {
+            return 'OK';
+        }
+
+        return times === 1
+            ? `ERROR: Url matching '${urlPattern}' with '${contents}' contents has not been opened once`
+            : `ERROR: Url matching '${urlPattern}' with '${contents}' contents has not been opened ${times} times`;
+    }
+
+    /**
      * Load more items form an active list with infinite loader.
      *
      * @returns OK if successful, or ERROR: followed by message
@@ -323,7 +406,7 @@ export class TestingBehatRuntimeService {
                 return 'ERROR: No element matches locator to find.';
             }
 
-            return TestingBehatDomUtils.isElementSelected(element, document.body) ? 'YES' : 'NO';
+            return TestingBehatDomUtils.isElementSelected(element) ? 'YES' : 'NO';
         } catch (error) {
             return 'ERROR: ' + error.message;
         }
@@ -362,6 +445,40 @@ export class TestingBehatRuntimeService {
     }
 
     /**
+     * Get a file input id, adding it if necessary.
+     *
+     * @param locator Input locator.
+     * @returns Input id if successful, or ERROR: followed by message
+     */
+    async getFileInputId(locator: TestingBehatElementLocator): Promise<string> {
+        this.log('Action - Upload File', { locator });
+
+        try {
+            const inputOrContainer = TestingBehatDomUtils.findElementBasedOnText(locator);
+
+            if (!inputOrContainer) {
+                return 'ERROR: No element matches input locator.';
+            }
+
+            const input = inputOrContainer.matches('input[type="file"]')
+                ? inputOrContainer
+                : inputOrContainer.querySelector('input[type="file"]');
+
+            if (!input) {
+                return 'ERROR: Input element does not contain a file input.';
+            }
+
+            if (!input.hasAttribute('id')) {
+                input.setAttribute('id', `file-${Date.now()}`);
+            }
+
+            return input.getAttribute('id') ?? '';
+        } catch (error) {
+            return 'ERROR: ' + error.message;
+        }
+    }
+
+    /**
      * Trigger a pull to refresh gesture in the current page.
      *
      * @returns OK if successful, or ERROR: followed by message
@@ -370,17 +487,13 @@ export class TestingBehatRuntimeService {
         this.log('Action - pullToRefresh');
 
         try {
-            // 'el' is protected, but there's no other way to trigger refresh programatically.
-            const ionRefresher = this.getAngularInstance<{ el: HTMLIonRefresherElement }>(
-                'ion-refresher',
-                'IonRefresher',
-            );
+            const ionRefresher = this.getElement('ion-refresher');
 
             if (!ionRefresher) {
                 return 'ERROR: It\'s not possible to pull to refresh the current page.';
             }
 
-            ionRefresher.el.dispatchEvent(new CustomEvent('ionRefresh'));
+            ionRefresher.dispatchEvent(new CustomEvent('ionRefresh'));
 
             return 'OK';
         } catch (error) {
@@ -396,18 +509,27 @@ export class TestingBehatRuntimeService {
     getHeader(): string {
         this.log('Action - Get header');
 
-        let titles = Array.from(document.querySelectorAll<HTMLElement>('.ion-page:not(.ion-page-hidden) > ion-header h1'));
-        titles = titles.filter((title) => TestingBehatDomUtils.isElementVisible(title, document.body));
+        const getBySelector = (selector: string ) =>  Array.from(document.querySelectorAll<HTMLElement>(selector))
+            .filter((title) => TestingBehatDomUtils.isElementVisible(title, document.body))
+            .map((title) => title.innerText.trim())
+            .filter((title) => title.length > 0);
+
+        let titles = getBySelector('.ion-page:not(.ion-page-hidden) > ion-header h1');
+
+        // Collapsed title, get the floating title.
+        if (titles.length === 0) {
+            titles = getBySelector('.ion-page:not(.ion-page-hidden) h1.collapsible-header-floating-title');
+        }
 
         if (titles.length > 1) {
-            return 'ERROR: Too many possible titles ('+titles.length+').';
-        } else if (!titles.length) {
-            return 'ERROR: No title found.';
-        } else {
-            const title = titles[0].innerText.trim();
-
-            return 'OK:' + title;
+            return `ERROR: Too many possible titles (${titles.length}).`;
         }
+
+        if (!titles.length) {
+            return 'ERROR: No title found.';
+        }
+
+        return `OK: ${titles[0]}`;
     }
 
     /**
@@ -422,15 +544,35 @@ export class TestingBehatRuntimeService {
     async setField(field: string, value: string): Promise<string> {
         this.log('Action - Set field ' + field + ' to: ' + value);
 
-        const found = this.findField(field);
+        const input = TestingBehatDomUtils.findField(field);
 
-        if (!found) {
+        if (!input) {
             return 'ERROR: No element matches field to set.';
         }
 
-        await TestingBehatDomUtils.setElementValue(found, value);
+        if (input instanceof HTMLSelectElement) {
+            const options = Array.from(input.querySelectorAll('option'));
 
-        return 'OK';
+            value = options.find(option => option.value === value)?.value
+                ?? options.find(option => option.text === value)?.value
+                ?? options.find(option => option.text.includes(value))?.value
+                ?? value;
+        } else if (input.tagName === 'ION-SELECT') {
+            const options = Array.from(input.querySelectorAll('ion-select-option'));
+
+            value = options.find(option => option.value?.toString() === value)?.textContent?.trim()
+                ?? options.find(option => option.textContent?.trim() === value)?.textContent?.trim()
+                ?? options.find(option => option.textContent?.includes(value))?.textContent?.trim()
+                ?? value;
+        }
+
+        try {
+            await TestingBehatDomUtils.setInputValue(input, value);
+
+            return 'OK';
+        } catch (error) {
+            return `ERROR: ${error.message ?? 'Unknown error'}`;
+        }
     }
 
     /**
@@ -445,7 +587,7 @@ export class TestingBehatRuntimeService {
     async fieldMatches(field: string, value: string): Promise<string> {
         this.log('Action - Field ' + field + ' matches value: ' + value);
 
-        const found = this.findField(field);
+        const found = TestingBehatDomUtils.findField(field);
 
         if (!found) {
             return 'ERROR: No element matches field to set.';
@@ -460,51 +602,34 @@ export class TestingBehatRuntimeService {
     }
 
     /**
-     * Find a field.
-     *
-     * @param field Field name.
-     * @returns Field element.
-     */
-    protected findField(field: string): HTMLElement | HTMLInputElement | undefined {
-        return TestingBehatDomUtils.findElementBasedOnText(
-            { text: field, selector: 'input, textarea, [contenteditable="true"], ion-select, ion-datetime' },
-            { onlyClickable: false, containerName: '' },
-        );
-    }
-
-    /**
      * Get the value of a certain field.
      *
      * @param element Field to get the value.
      * @returns Value.
      */
     protected getFieldValue(element: HTMLElement | HTMLInputElement): string {
+        if (element.tagName === 'ION-DATETIME-BUTTON' && element.shadowRoot) {
+            return Array.from(element.shadowRoot.querySelectorAll('button')).map(button => button.innerText).join(' ');
+        }
+
         if (element.tagName === 'ION-DATETIME') {
-            // ion-datetime's value is a timestamp in ISO format. Use the text displayed to the user instead.
-            const dateTimeTextElement = element.shadowRoot?.querySelector<HTMLElement>('.datetime-text');
-            if (dateTimeTextElement) {
-                return dateTimeTextElement.innerText;
-            }
+            const value = 'value' in element ? element.value : element.innerText;
+
+            // Remove seconds from the value to ensure stability on tests. It could be improved using moment parsing if needed.
+            return value.substring(0, value.length - 3);
         }
 
         return 'value' in element ? element.value : element.innerText;
     }
 
     /**
-     * Get an Angular component instance.
+     * Get element instance.
      *
-     * @param selector Element selector
-     * @param className Constructor class name
+     * @param selector Element selector.
      * @param referenceLocator The locator to the reference element to start looking for. If not specified, document body.
-     * @returns Component instance
+     * @returns Element instance.
      */
-    getAngularInstance<T = unknown>(
-        selector: string,
-        className: string,
-        referenceLocator?: TestingBehatElementLocator,
-    ): T | null {
-        this.log('Action - Get Angular instance ' + selector + ', ' + className, referenceLocator);
-
+    private getElement<T = Element>(selector: string, referenceLocator?: TestingBehatElementLocator): T | null {
         let startingElement: HTMLElement | undefined = document.body;
         let queryPrefix = '';
 
@@ -522,15 +647,8 @@ export class TestingBehatRuntimeService {
             queryPrefix = '.ion-page:not(.ion-page-hidden) ';
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const activeElement = Array.from(startingElement.querySelectorAll<any>(`${queryPrefix}${selector}`)).pop() ??
-            startingElement.closest(selector);
-
-        if (!activeElement || !activeElement.__ngContext__) {
-            return null;
-        }
-
-        return activeElement.__ngContext__.find(node => node?.constructor?.name === className);
+        return Array.from(startingElement.querySelectorAll(`${queryPrefix}${selector}`)).pop() as T
+            ?? startingElement.closest(selector) as T;
     }
 
     /**
@@ -545,6 +663,13 @@ export class TestingBehatRuntimeService {
                 String(now.getMilliseconds()).padStart(2, '0');
 
         console.log('BEHAT: ' + nowFormatted, ...args); // eslint-disable-line no-console
+    }
+
+    /**
+     * Flush pending notifications.
+     */
+    flushNotifications(): void {
+        (LocalNotifications as unknown as LocalNotificationsMock).flush();
     }
 
     /**
@@ -568,6 +693,23 @@ export class TestingBehatRuntimeService {
         }
 
         return (await LocalNotifications.isPresent(notification.id)) ? 'YES' : 'NO';
+    }
+
+    /**
+     * Check a notification is scheduled.
+     *
+     * @param title Title of the notification
+     * @param date Scheduled notification date.
+     * @returns YES or NO: depending on the result.
+     */
+    async notificationIsScheduledWithText(title: string, date?: number): Promise<string> {
+        const notifications = await LocalNotifications.getAllScheduled();
+
+        const notification = notifications.find(
+            (notification) => notification.title?.includes(title) && (!date || notification.trigger?.at?.getTime() === date),
+        );
+
+        return notification ? 'YES' : 'NO';
     }
 
     /**
@@ -601,29 +743,38 @@ export class TestingBehatRuntimeService {
         this.log('Action - Swipe', { direction, locator });
 
         if (locator) {
-            // Locator specified, try to find ion-slides first.
-            const instance = this.getAngularInstance<IonSlides>('ion-slides', 'IonSlides', locator);
-            if (instance) {
-                direction === 'left' ? instance.slideNext() : instance.slidePrev();
+            // Locator specified, try to find swiper-container first.
+            const swiperContainer = this.getElement<{ swiper: Swiper }>('swiper-container', locator);
+
+            if (swiperContainer) {
+                direction === 'left' ? swiperContainer.swiper.slideNext() : swiperContainer.swiper.slidePrev();
 
                 return 'OK';
             }
         }
 
-        // No locator specified or ion-slides not found, search swipe navigation now.
-        const instance = this.getAngularInstance<CoreSwipeNavigationDirective>(
-            'ion-content',
-            'CoreSwipeNavigationDirective',
+        // No locator specified or swiper-container not found, search swipe navigation now.
+        const ionContent = this.getElement<{ swipeNavigation: CoreSwipeNavigationDirective }>(
+            'ion-content.uses-swipe-navigation',
             locator,
         );
 
-        if (!instance) {
+        if (!ionContent) {
             return 'ERROR: Element to swipe not found.';
         }
 
-        direction === 'left' ? instance.swipeLeft() : instance.swipeRight();
+        direction === 'left' ? ionContent.swipeNavigation.swipeLeft() : ionContent.swipeNavigation.swipeRight();
 
         return 'OK';
+    }
+
+    /**
+     * Wait for toast to be dismissed in the app.
+     *
+     * @returns Promise resolved when toast has been dismissed.
+     */
+    async waitToastDismiss(): Promise<void> {
+        await CoreUtils.ignoreErrors(ToastController.dismiss());
     }
 
 }
@@ -639,8 +790,8 @@ export type BehatTestsWindow = Window & {
 };
 
 export type TestingBehatFindOptions = {
-    containerName: string;
-    onlyClickable: boolean;
+    containerName?: string;
+    onlyClickable?: boolean;
 };
 
 export type TestingBehatElementLocator = {

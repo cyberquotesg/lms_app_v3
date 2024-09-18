@@ -18,15 +18,16 @@ import { CoreConfig } from '@services/config';
 import { CoreEvents } from '@singletons/events';
 import { CoreLang } from '@services/lang';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
 import { CoreSettingsHelper, CoreColorScheme, CoreZoomLevel } from '../../services/settings-helper';
 import { CoreIframeUtils } from '@services/utils/iframe';
-import { Diagnostic, Translate } from '@singletons';
+import { Translate } from '@singletons';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { AlertButton } from '@ionic/angular';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
+import { CoreAnalytics } from '@services/analytics';
+import { CoreNative } from '@features/native/services/native';
 
 /**
  * Page that displays the general settings.
@@ -44,7 +45,7 @@ export class CoreSettingsGeneralPage {
     selectedZoomLevel = CoreZoomLevel.NONE;
     richTextEditor = true;
     debugDisplay = false;
-    analyticsSupported = false;
+    analyticsAvailable = false;
     analyticsEnabled = false;
     colorSchemes: CoreColorScheme[] = [];
     selectedScheme: CoreColorScheme = CoreColorScheme.LIGHT;
@@ -101,8 +102,8 @@ export class CoreSettingsGeneralPage {
 
         this.debugDisplay = await CoreConfig.get(CoreConstants.SETTINGS_DEBUG_DISPLAY, false);
 
-        this.analyticsSupported = CoreConstants.CONFIG.enableanalytics;
-        if (this.analyticsSupported) {
+        this.analyticsAvailable = await CoreAnalytics.isAnalyticsAvailable();
+        if (this.analyticsAvailable) {
             this.analyticsEnabled = await CoreConfig.get(CoreConstants.SETTINGS_ANALYTICS_ENABLED, true);
         }
 
@@ -167,6 +168,9 @@ export class CoreSettingsGeneralPage {
 
     /**
      * Apply language changes and restart the app.
+     *
+     * IMPORTANT NOTE: If for any reason we decide to remove this method,
+     * we'll need to listen to lang change on Slides to change direction.
      */
     protected async applyLanguageAndRestart(): Promise<void> {
         // Invalidate cache for all sites to get the content in the right language.
@@ -249,7 +253,7 @@ export class CoreSettingsGeneralPage {
         ev.stopPropagation();
         ev.preventDefault();
 
-        await CorePushNotifications.enableAnalytics(this.analyticsEnabled);
+        await CoreAnalytics.enableAnalytics(this.analyticsEnabled);
 
         CoreConfig.set(CoreConstants.SETTINGS_ANALYTICS_ENABLED, this.analyticsEnabled ? 1 : 0);
     }
@@ -263,7 +267,7 @@ export class CoreSettingsGeneralPage {
         ev.stopPropagation();
         ev.preventDefault();
 
-        Diagnostic.switchToSettings();
+        CoreNative.plugin('diagnostic')?.switchToSettings();
     }
 
 }

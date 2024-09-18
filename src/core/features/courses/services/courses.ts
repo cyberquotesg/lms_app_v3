@@ -14,17 +14,18 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets, WSObservable } from '@classes/site';
+import { CoreSite  } from '@classes/sites/site';
 import { makeSingleton } from '@singletons';
-import { CoreStatusWithWarningsWSResponse, CoreWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
+import { CoreWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { CoreEvents } from '@singletons/events';
-import { CoreWSError } from '@classes/errors/wserror';
 import { CoreCourseAnyCourseDataWithExtraInfoAndOptions, CoreCourseWithImageAndColor } from './courses-helper';
-import { asyncObservable, firstValueFrom, ignoreErrors, zipIncludingComplete } from '@/core/utils/rxjs';
-import { of } from 'rxjs';
+import { asyncObservable, ignoreErrors, zipIncludingComplete } from '@/core/utils/rxjs';
+import { of, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
-
-const ROOT_CACHE_KEY = 'mmCourses:';
+import { AddonEnrolGuest, AddonEnrolGuestInfo } from '@addons/enrol/guest/services/guest';
+import { AddonEnrolSelf } from '@addons/enrol/self/services/self';
+import { CoreEnrol, CoreEnrolEnrolmentInfo, CoreEnrolEnrolmentMethod } from '@features/enrol/services/enrol';
+import { CoreSiteWSPreSets, WSObservable } from '@classes/sites/authenticated-site';
 
 declare module '@singletons/events' {
 
@@ -47,6 +48,8 @@ declare module '@singletons/events' {
 @Injectable({ providedIn: 'root' })
 export class CoreCoursesProvider {
 
+    protected static readonly ROOT_CACHE_KEY = 'mmCourses:';
+
     static readonly SEARCH_PER_PAGE = 20;
     static readonly RECENT_PER_PAGE = 10;
     static readonly ENROL_INVALID_KEY = 'CoreCoursesEnrolInvalidKey';
@@ -67,16 +70,6 @@ export class CoreCoursesProvider {
 
     protected userCoursesIds?: Set<number>;
     protected downloadOptionsEnabled = false;
-
-    /**
-     * Whether current site supports getting course options.
-     *
-     * @returns Whether current site supports getting course options.
-     * @deprecated since app 4.0
-     */
-    canGetAdminAndNavOptions(): boolean {
-        return true;
-    }
 
     /**
      * Get categories. They can be filtered by id.
@@ -121,7 +114,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getCategoriesCacheKey(categoryId: number, addSubcategories?: boolean): string {
-        return ROOT_CACHE_KEY + 'categories:' + categoryId + ':' + !!addSubcategories;
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}categories:${categoryId}:${!!addSubcategories}`;
     }
 
     /**
@@ -138,16 +131,16 @@ export class CoreCoursesProvider {
         if (courseIds.length == 1) {
             // Only 1 course, check if it belongs to the user courses. If so, use all user courses.
             return this.getCourseIdsIfEnrolled(courseIds[0], siteId);
-        } else {
-            if (courseIds.length > 1 && courseIds.indexOf(siteHomeId) == -1) {
-                courseIds.push(siteHomeId);
-            }
-
-            // Sort the course IDs.
-            courseIds.sort((a, b) => b - a);
-
-            return courseIds;
         }
+
+        if (courseIds.length > 1 && courseIds.indexOf(siteHomeId) == -1) {
+            courseIds.push(siteHomeId);
+        }
+
+        // Sort the course IDs.
+        courseIds.sort((a, b) => b - a);
+
+        return courseIds;
     }
 
     /**
@@ -290,7 +283,7 @@ export class CoreCoursesProvider {
     }
 
     /**
-     * Get course.
+     * Get course information if user has persmissions to view.
      *
      * @param id ID of the course to get.
      * @param siteId Site to get the courses from. If not defined, use current site.
@@ -309,32 +302,13 @@ export class CoreCoursesProvider {
     /**
      * Get the enrolment methods from a course.
      *
-     * @param id ID of the course.
+     * @param courseId ID of the course.
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved with the methods.
+     * @deprecated since 4.3. Use CoreEnrol.getSupportedCourseEnrolmentMethods instead.
      */
-    async getCourseEnrolmentMethods(id: number, siteId?: string): Promise<CoreCourseEnrolmentMethod[]> {
-        const site = await CoreSites.getSite(siteId);
-
-        const params: CoreEnrolGetCourseEnrolmentMethodsWSParams = {
-            courseid: id,
-        };
-        const preSets = {
-            cacheKey: this.getCourseEnrolmentMethodsCacheKey(id),
-            updateFrequency: CoreSite.FREQUENCY_RARELY,
-        };
-
-        return site.read('core_enrol_get_course_enrolment_methods', params, preSets);
-    }
-
-    /**
-     * Get cache key for get course enrolment methods WS call.
-     *
-     * @param id Course ID.
-     * @returns Cache key.
-     */
-    protected getCourseEnrolmentMethodsCacheKey(id: number): string {
-        return ROOT_CACHE_KEY + 'enrolmentmethods:' + id;
+    async getCourseEnrolmentMethods(courseId: number, siteId?: string): Promise<CoreEnrolEnrolmentMethod[]> {
+        return CoreEnrol.getSupportedCourseEnrolmentMethods(courseId, { siteId });
     }
 
     /**
@@ -343,29 +317,10 @@ export class CoreCoursesProvider {
      * @param instanceId Guest instance ID.
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved when the info is retrieved.
+     * @deprecated since 4.3 use AddonEnrolGuest.getCourseGuestEnrolmentInfo instead.
      */
-    async getCourseGuestEnrolmentInfo(instanceId: number, siteId?: string): Promise<CoreCourseEnrolmentGuestMethod> {
-        const site = await CoreSites.getSite(siteId);
-        const params: EnrolGuestGetInstanceInfoWSParams = {
-            instanceid: instanceId,
-        };
-        const preSets: CoreSiteWSPreSets = {
-            cacheKey: this.getCourseGuestEnrolmentInfoCacheKey(instanceId),
-            updateFrequency: CoreSite.FREQUENCY_RARELY,
-        };
-        const response = await site.read<EnrolGuestGetInstanceInfoWSResponse>('enrol_guest_get_instance_info', params, preSets);
-
-        return response.instanceinfo;
-    }
-
-    /**
-     * Get cache key for get course guest enrolment methods WS call.
-     *
-     * @param instanceId Guest instance ID.
-     * @returns Cache key.
-     */
-    protected getCourseGuestEnrolmentInfoCacheKey(instanceId: number): string {
-        return ROOT_CACHE_KEY + 'guestinfo:' + instanceId;
+    async getCourseGuestEnrolmentInfo(instanceId: number, siteId?: string): Promise<AddonEnrolGuestInfo> {
+        return AddonEnrolGuest.getGuestEnrolmentInfo(instanceId, siteId);
     }
 
     /**
@@ -408,7 +363,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getCoursesCacheKey(ids: number[]): string {
-        return ROOT_CACHE_KEY + 'course:' + JSON.stringify(ids);
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}course:${JSON.stringify(ids)}`;
     }
 
     /**
@@ -581,7 +536,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getCoursesByFieldCacheKey(field: string = '', value: string | number = ''): string {
-        return ROOT_CACHE_KEY + 'coursesbyfield:' + field + ':' + value;
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}coursesbyfield:${field}:${value}`;
     }
 
     /**
@@ -639,26 +594,6 @@ export class CoreCoursesProvider {
     }
 
     /**
-     * Check if get courses by field WS is available in a certain site.
-     *
-     * @returns Whether get courses by field is available.
-     * @deprecated since app 4.0
-     */
-    isGetCoursesByFieldAvailable(): boolean {
-        return true;
-    }
-
-    /**
-     * Check if get courses by field WS is available in a certain site, by site ID.
-     *
-     * @returns Promise resolved with boolean: whether get courses by field is available.
-     * @deprecated since app 4.0
-     */
-    async isGetCoursesByFieldAvailableInSite(): Promise<boolean> {
-        return true;
-    }
-
-    /**
      * Get the navigation and administration options for the given courses.
      *
      * @param courseIds IDs of courses to get.
@@ -701,7 +636,10 @@ export class CoreCoursesProvider {
                 ignoreErrors(this.getUserNavigationOptionsObservable(courseIds, options), {}),
                 ignoreErrors(this.getUserAdministrationOptionsObservable(courseIds, options), {}),
             ).pipe(
-                map(([navOptions, admOptions]) => ({ navOptions, admOptions })),
+                map(([navOptions, admOptions]) => ({
+                    navOptions: navOptions as CoreCourseUserAdminOrNavOptionCourseIndexed,
+                    admOptions: admOptions as CoreCourseUserAdminOrNavOptionCourseIndexed,
+                })),
             );
         });
     }
@@ -713,7 +651,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getRecentCoursesCacheKey(userId: number): string {
-        return `${ROOT_CACHE_KEY}:recentcourses:${userId}`;
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}:recentcourses:${userId}`;
     }
 
     /**
@@ -746,7 +684,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getUserAdministrationOptionsCommonCacheKey(): string {
-        return ROOT_CACHE_KEY + 'administrationOptions:';
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}administrationOptions:`;
     }
 
     /**
@@ -763,11 +701,14 @@ export class CoreCoursesProvider {
      * Get user administration options for a set of courses.
      *
      * @param courseIds IDs of courses to get.
-     * @param siteId Site ID. If not defined, current site.
+     * @param options Options.
      * @returns Promise resolved with administration options for each course.
      */
-    getUserAdministrationOptions(courseIds: number[], siteId?: string): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
-        return firstValueFrom(this.getUserAdministrationOptionsObservable(courseIds, { siteId }));
+    getUserAdministrationOptions(
+        courseIds: number[],
+        options?: CoreSitesCommonWSOptions,
+    ): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
+        return firstValueFrom(this.getUserAdministrationOptionsObservable(courseIds, options));
     }
 
     /**
@@ -814,7 +755,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getUserNavigationOptionsCommonCacheKey(): string {
-        return ROOT_CACHE_KEY + 'navigationOptions:';
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}navigationOptions:`;
     }
 
     /**
@@ -830,11 +771,14 @@ export class CoreCoursesProvider {
      * Get user navigation options for a set of courses.
      *
      * @param courseIds IDs of courses to get.
-     * @param siteId Site ID. If not defined, current site.
+     * @param options Options.
      * @returns Promise resolved with navigation options for each course.
      */
-    async getUserNavigationOptions(courseIds: number[], siteId?: string): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
-        return firstValueFrom(this.getUserNavigationOptionsObservable(courseIds, { siteId }));
+    getUserNavigationOptions(
+        courseIds: number[],
+        options?: CoreSitesCommonWSOptions,
+    ): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
+        return firstValueFrom(this.getUserNavigationOptionsObservable(courseIds, options));
     }
 
     /**
@@ -1043,7 +987,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getUserCoursesCacheKey(): string {
-        return ROOT_CACHE_KEY + 'usercourses';
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}usercourses`;
     }
 
     /**
@@ -1074,14 +1018,13 @@ export class CoreCoursesProvider {
     /**
      * Invalidates get course enrolment methods WS call.
      *
-     * @param id Course ID.
+     * @param courseId Course ID.
      * @param siteId Site Id. If not defined, use current site.
      * @returns Promise resolved when the data is invalidated.
+     * @deprecated since 4.3 use CoreEnrol.invalidateCourseEnrolmentMethods instead.
      */
-    async invalidateCourseEnrolmentMethods(id: number, siteId?: string): Promise<void> {
-        const site = await CoreSites.getSite(siteId);
-
-        await site.invalidateWsCacheForKey(this.getCourseEnrolmentMethodsCacheKey(id));
+    async invalidateCourseEnrolmentMethods(courseId: number, siteId?: string): Promise<void> {
+        return CoreEnrol.invalidateCourseEnrolmentMethods(courseId, siteId);
     }
 
     /**
@@ -1090,11 +1033,10 @@ export class CoreCoursesProvider {
      * @param instanceId Guest instance ID.
      * @param siteId Site Id. If not defined, use current site.
      * @returns Promise resolved when the data is invalidated.
+     * @deprecated since 4.3 use CoreEnrolDelegate.invalidate instead.
      */
     async invalidateCourseGuestEnrolmentInfo(instanceId: number, siteId?: string): Promise<void> {
-        const site = await CoreSites.getSite(siteId);
-
-        await site.invalidateWsCacheForKey(this.getCourseGuestEnrolmentInfoCacheKey(instanceId));
+        return AddonEnrolGuest.invalidateGuestEnrolmentInfo(instanceId, siteId);
     }
 
     /**
@@ -1229,13 +1171,19 @@ export class CoreCoursesProvider {
     }
 
     /**
-     * Check if WS to retrieve guest enrolment data is available.
+     * Report a dashboard or my courses page view event.
      *
-     * @returns Whether guest WS is available.
-     * @deprecated since app 3.9.5
+     * @param page Page to view.
      */
-    isGuestWSAvailable(): boolean {
-        return true;
+    async logView(page: 'my' | 'dashboard'): Promise<void> {
+        const site = CoreSites.getRequiredCurrentSite();
+        if (!site.wsAvailable('core_my_view_page')) {
+            return;
+        }
+
+        const params: CoreMyViewPageWSParams = { page };
+
+        await site.write('core_my_view_page', params);
     }
 
     /**
@@ -1281,42 +1229,10 @@ export class CoreCoursesProvider {
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved if the user is enrolled. If the password is invalid, the promise is rejected
      *         with an object with errorcode = CoreCoursesProvider.ENROL_INVALID_KEY.
+     * @deprecated since 4.3 use CoreEnrolDelegate.enrol instead.
      */
     async selfEnrol(courseId: number, password: string = '', instanceId?: number, siteId?: string): Promise<boolean> {
-
-        const site = await CoreSites.getSite(siteId);
-
-        const params: EnrolSelfEnrolUserWSParams = {
-            courseid: courseId,
-            password: password,
-        };
-        if (instanceId) {
-            params.instanceid = instanceId;
-        }
-
-        const response = await site.write<CoreStatusWithWarningsWSResponse>('enrol_self_enrol_user', params);
-
-        if (!response) {
-            throw Error('WS enrol_self_enrol_user failed');
-        }
-
-        if (response.status) {
-            return true;
-        }
-
-        if (response.warnings && response.warnings.length) {
-            // Invalid password warnings.
-            const warning = response.warnings.find((warning) =>
-                warning.warningcode == '2' || warning.warningcode == '3' || warning.warningcode == '4');
-
-            if (warning) {
-                throw new CoreWSError({ errorcode: CoreCoursesProvider.ENROL_INVALID_KEY, message: warning.message });
-            } else {
-                throw new CoreWSError(response.warnings[0]);
-            }
-        }
-
-        throw Error('WS enrol_self_enrol_user failed without warnings');
+        return AddonEnrolSelf.selfEnrol(courseId, password, instanceId, siteId);
     }
 
     /**
@@ -1492,7 +1408,7 @@ export type CoreCourseSearchedData = CoreCourseBasicSearchedData & {
     enablecompletion?: number; // Completion enabled? 1: yes 0: no.
     completionnotify?: number; // 1: yes 0: no.
     lang?: string; // Forced course language.
-    theme?: string; // Fame of the forced theme.
+    theme?: string; // Name of the forced theme.
     marker?: number; // Current course marker.
     legacyfiles?: number; // If legacy files are enabled.
     calendartype?: string; // Calendar type.
@@ -1506,6 +1422,8 @@ export type CoreCourseSearchedData = CoreCourseBasicSearchedData & {
         inheritedstate: number; // 1 or 0 to use when localstate is set to inherit.
     }[];
     courseformatoptions?: CoreCourseFormatOption[]; // Additional options for particular course format.
+    communicationroomname?: string; // @since Moodle 4.4. Communication tool room name.
+    communicationroomurl?: string; // @since Moodle 4.4. Communication tool room URL.
 };
 
 /**
@@ -1526,7 +1444,7 @@ export type CoreCourseGetCoursesData = CoreEnrolledCourseBasicData & {
     /**
      * Number of weeks/topics.
      *
-     * @deprecated use courseformatoptions.
+     * @deprecatedonmoodle since 2.4. Use courseformatoptions. This attribute is deprecated in moodle since 2.4 but still present.
      */
     numsections?: number;
     maxbytes?: number; // Largest size of file that can be uploaded into the course.
@@ -1534,7 +1452,7 @@ export type CoreCourseGetCoursesData = CoreEnrolledCourseBasicData & {
     /**
      * How the hidden sections in the course are displayed to students.
      *
-     * @deprecated use courseformatoptions.
+     * @deprecatedonmoodle since 2.4. Use courseformatoptions. This attribute is deprecated in moodle since 2.4 but still present.
      */
     hiddensections?: number;
     groupmode?: number; // No group, separate, visible.
@@ -1766,38 +1684,18 @@ export type CoreCourseUserAdminOrNavOptionIndexed = {
 };
 
 /**
- * Params of core_enrol_get_course_enrolment_methods WS.
+ * Course enrolment basic info.
+ *
+ * @deprecated since 4.3. Use CoreEnrolEnrolmentInfo instead.
  */
-type CoreEnrolGetCourseEnrolmentMethodsWSParams = {
-    courseid: number; // Course id.
-};
+export type CoreCourseEnrolmentInfo = CoreEnrolEnrolmentInfo;
 
 /**
  * Course enrolment method.
+ *
+ * @deprecated since 4.3. Use CoreEnrolEnrolmentMethod instead.
  */
-export type CoreCourseEnrolmentMethod = {
-    id: number; // Id of course enrolment instance.
-    courseid: number; // Id of course.
-    type: string; // Type of enrolment plugin.
-    name: string; // Name of enrolment plugin.
-    status: string; // Status of enrolment plugin.
-    wsfunction?: string; // Webservice function to get more information.
-};
-
-/**
- * Params of enrol_guest_get_instance_info WS.
- */
-type EnrolGuestGetInstanceInfoWSParams = {
-    instanceid: number; // Instance id of guest enrolment plugin.
-};
-
-/**
- * Data returned by enrol_guest_get_instance_info WS.
- */
-export type EnrolGuestGetInstanceInfoWSResponse = {
-    instanceinfo: CoreCourseEnrolmentGuestMethod;
-    warnings?: CoreWSExternalWarning[];
-};
+export type CoreCourseEnrolmentMethod = CoreEnrolEnrolmentMethod;
 
 /**
  * Params of core_course_get_recent_courses WS.
@@ -1817,22 +1715,6 @@ export type CoreCourseGetRecentCoursesOptions = CoreSitesCommonWSOptions & {
     limit?: number; // Result set limit.
     offset?: number; // Result set offset.
     sort?: string; // Sort string.
-};
-
-/**
- * Course guest enrolment method.
- */
-export type CoreCourseEnrolmentGuestMethod = CoreCourseEnrolmentMethod & {
-    passwordrequired: boolean; // Is a password required?.
-};
-
-/**
- * Params of enrol_self_enrol_user WS.
- */
-type EnrolSelfEnrolUserWSParams = {
-    courseid: number; // Id of the course.
-    password?: string; // Enrolment key.
-    instanceid?: number; // Instance id of self enrolment plugin.
 };
 
 /**
@@ -1856,4 +1738,11 @@ export type CoreCourseAnyCourseData = CoreEnrolledCourseData | CoreCourseSearche
 export type CoreCourseAnyCourseDataWithOptions = CoreCourseAnyCourseData & {
     navOptions?: CoreCourseUserAdminOrNavOptionIndexed;
     admOptions?: CoreCourseUserAdminOrNavOptionIndexed;
+};
+
+/**
+ * Params of core_my_view_page WS.
+ */
+type CoreMyViewPageWSParams = {
+    page: 'my' | 'dashboard'; // My page to trigger a view event.
 };

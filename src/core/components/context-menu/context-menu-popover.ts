@@ -28,14 +28,12 @@ import { CoreContextMenuItemComponent } from './context-menu-item';
 })
 export class CoreContextMenuPopoverComponent {
 
-    title: string;
     uniqueId: string;
     items: CoreContextMenuItemComponent[];
 
     constructor(
         navParams: NavParams,
     ) {
-        this.title = navParams.get('title');
         this.items = navParams.get('items') || [];
         this.uniqueId = navParams.get('id');
     }
@@ -61,7 +59,7 @@ export class CoreContextMenuPopoverComponent {
             item.toggle = !item.toggle;
         }
 
-        if (!!item.action && item.action.observers.length > 0) {
+        if (!!item.action && item.action.observed) {
             event.preventDefault();
             event.stopPropagation();
 
@@ -74,7 +72,7 @@ export class CoreContextMenuPopoverComponent {
             }
 
             item.action.emit(() => this.closeMenu(item));
-        } else if (item.closeOnClick && (item.href || (!!item.onClosed && item.onClosed.observers.length > 0))) {
+        } else if (item.closeOnClick && (item.href || (!!item.onClosed && item.onClosed.observed))) {
             this.closeMenu(item);
         }
 

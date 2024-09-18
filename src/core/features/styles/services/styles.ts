@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSitePublicConfigResponse } from '@classes/site';
+import { CoreSitePublicConfigResponse } from '@classes/sites/unauthenticated-site';
 import { CoreApp } from '@services/app';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
@@ -218,7 +218,7 @@ export class CoreStylesService {
             contents = (await handler.getStyle(siteId, config)).trim();
         }
 
-        const hash = <string>Md5.hashAsciiStr(contents);
+        const hash = Md5.hashAsciiStr(contents);
 
         // Update the styles only if they have changed.
         if (this.stylesEls[siteId][handler.name] === hash) {
@@ -278,8 +278,7 @@ export class CoreStylesService {
             this.disableStyleElement(style, true);
         });
 
-        // Set StatusBar properties.
-        CoreApp.setStatusBarColor();
+        CoreApp.setSystemUIColors();
     }
 
     /**
@@ -341,7 +340,7 @@ export class CoreStylesService {
                 this.disableStyleElementByName(siteId, sourceName, false);
             }
 
-            CoreApp.setStatusBarColor();
+            CoreApp.setSystemUIColors();
         }
     }
 
@@ -371,8 +370,7 @@ export class CoreStylesService {
         }));
 
         if (!disabled) {
-            // Set StatusBar properties.
-            CoreApp.setStatusBarColor();
+            CoreApp.setSystemUIColors();
         }
     }
 
@@ -390,7 +388,7 @@ export class CoreStylesService {
             await this.setStyle(CoreStylesService.TMP_SITE_ID, handler, false, config);
         }));
 
-        CoreApp.setStatusBarColor();
+        CoreApp.setSystemUIColors();
     }
 
     /**
@@ -438,7 +436,7 @@ export class CoreStylesService {
             }
             delete this.stylesEls[siteId];
 
-            CoreApp.setStatusBarColor();
+            CoreApp.setSystemUIColors();
         }
     }
 

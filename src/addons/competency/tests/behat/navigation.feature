@@ -1,8 +1,9 @@
-@mod @competency @app @javascript
+@addon_competency @app @javascript
 Feature: Test competency navigation
 
   Background:
-    Given the following "users" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "users" exist:
       | username  | firstname | lastname |
       | student1  | Student   | first    |
       | student2  | Student   | second   |
@@ -175,6 +176,13 @@ Feature: Test competency navigation
     Then I should find "Desserts are important" in the app
     But I should not find "Cakes" in the app
 
+    # Event logs
+    And the following events should have been logged for "student1" in the app:
+      | name                                                    | object     | objectname | course   |
+      | \core\event\competency_user_competency_viewed_in_plan	|            |            |          |
+      | \core\event\competency_viewed	                        | competency | Desserts   |          |
+      | \core\event\competency_user_competency_viewed_in_course |            |            | Course 1 |
+
   Scenario: Mobile navigation (teacher)
     Given I entered the course "Course 1" as "teacher1" in the app
 
@@ -299,7 +307,7 @@ Feature: Test competency navigation
 
   Scenario: Tablet navigation (student)
     Given I entered the course "Course 1" as "student1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Course competencies
     When I press "Competencies" in the app
@@ -384,12 +392,12 @@ Feature: Test competency navigation
 
   Scenario: Tablet navigation (teacher)
     Given I entered the course "Course 1" as "teacher1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Participant competencies
     When I press "Participants" in the app
     And I press "Student first" in the app
-    And I press "Competencies" in the app
+    And I press "Competencies" within "Student first" "page-core-user-participants" in the app
     Then I should find "Student first" in the app
     And I should find "Salads are important" in the app
     And I should find "Good" within "salads" "ion-item" in the app
@@ -465,3 +473,16 @@ Feature: Test competency navigation
     When I press "Desserts" near "Cross-referenced competencies" in the app
     Then I should find "Desserts are important" in the app
     But I should not find "Cakes" in the app
+
+  @lms_from4.4
+  Scenario: Disable features
+    Given the following config values are set as admin:
+      | enabled | 0 | core_competency |
+
+    When I entered the course "Course 1" as "student1" in the app
+    Then I should not find "Competencies" in the app
+
+    When I press the back button in the app
+    And I press the user menu button in the app
+
+    Then I should not find "Learning plans" in the app

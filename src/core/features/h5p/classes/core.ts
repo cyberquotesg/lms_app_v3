@@ -31,6 +31,11 @@ import { CorePath } from '@singletons/path';
  */
 export class CoreH5PCore {
 
+    static readonly API_VERSION = {
+        majorVersion: 1,
+        minorVersion: 26,
+    };
+
     static readonly STYLES = [
         'styles/h5p.css',
         'styles/h5p-confirmation-dialog.css',
@@ -135,7 +140,7 @@ export class CoreH5PCore {
         toHash.sort((a, b) => a.localeCompare(b));
 
         // Calculate hash.
-        return <string> Md5.hashAsciiStr(toHash.join(''));
+        return Md5.hashAsciiStr(toHash.join(''));
     }
 
     /**

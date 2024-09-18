@@ -20,6 +20,7 @@ require_once(__DIR__ . '/../../../../lib/behat/behat_base.php');
 require_once(__DIR__ . '/behat_app_helper.php');
 
 use Behat\Behat\Hook\Scope\ScenarioScope;
+use Behat\Behat\Hook\Scope\AfterStepScope;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Mink\Exception\DriverException;
 use Behat\Mink\Exception\ExpectationException;
@@ -44,27 +45,50 @@ class behat_app extends behat_app_helper {
         ],
     ];
 
-    protected $windowsize = '360x720';
+    protected $featurepath;
+    protected $coveragepath;
+    protected $scenarioslug;
+    protected $scenariolaststep;
 
     /**
      * @BeforeScenario
      */
     public function before_scenario(ScenarioScope $scope) {
-        if (!$scope->getFeature()->hasTag('app')) {
+        $feature = $scope->getFeature();
+
+        if (!$feature->hasTag('app')) {
             return;
         }
 
-        global $CFG;
+        $steps = $scope->getScenario()->getSteps();
 
-        $performanceLogs = $CFG->behat_profiles['default']['capabilities']['extra_capabilities']['goog:loggingPrefs']['performance'] ?? null;
+        $this->scenarioslug = $this->get_scenario_slug($scope);
+        $this->scenariolaststep = $steps[count($steps) - 1];
+        $this->featurepath = dirname($feature->getFile());
+        $this->coveragepath = get_config('local_moodleappbehat', 'coverage_path') ?: ($this->featurepath . DIRECTORY_SEPARATOR . 'coverage' . DIRECTORY_SEPARATOR);
+    }
 
-        if ($performanceLogs !== 'ALL') {
+    /**
+     * @AfterStep
+     */
+    public function after_step(AfterStepScope $scope) {
+        $step = $scope->getStep();
+
+        if ($step !== $this->scenariolaststep || empty($this->coveragepath)) {
             return;
         }
 
-        // Enable DB Logging only for app tests with performance logs activated.
-        $this->getSession()->visit($this->get_app_url() . '/assets/env.json');
-        $this->execute_script("document.cookie = 'MoodleAppDBLoggingEnabled=true;path=/';");
+        if (!is_dir($this->coveragepath)) {
+            if (!@mkdir($this->coveragepath, 0777, true)) {
+                throw new Exception("Cannot create {$this->coveragepath} directory.");
+            }
+        }
+
+        $coverage = $this->runtime_js('getCoverage()');
+
+        if (!is_null($coverage)) {
+            file_put_contents($this->coveragepath . $this->scenarioslug . '.json', $coverage);
+        }
     }
 
     /**
@@ -204,10 +228,7 @@ class behat_app extends behat_app_helper {
             return true;
         });
 
-        $this->wait_for_pending_js();
-
-        // Wait scroll animation to finish.
-        $this->getSession()->wait(300);
+        $this->wait_animations_done();
     }
 
     /**
@@ -253,10 +274,27 @@ class behat_app extends behat_app_helper {
             throw new DriverException('Error when swiping - ' . $result);
         }
 
-        $this->wait_for_pending_js();
+        $this->wait_animations_done();
+    }
 
-        // Wait swipe animation to finish.
-        $this->getSession()->wait(300);
+    /**
+     * Wait for a BBB room to start.
+     *
+     * @When I wait for the BigBlueButton room to start
+     */
+    public function i_wait_bbb_room_to_start() {
+        $windowNames = $this->getSession()->getWindowNames();
+
+        $this->getSession()->switchToWindow(array_pop($windowNames));
+        $this->spin(function($context) {
+            $joinmodal = $context->getSession()->getPage()->find('css', 'div[role="dialog"][aria-label="How would you like to join the audio?"]');
+
+            if ($joinmodal) {
+                return true;
+            }
+
+            throw new DriverException('BBB room not started');
+        }, false, 30);
     }
 
     /**
@@ -306,7 +344,7 @@ class behat_app extends behat_app_helper {
 
         // Note there are two 'Log in' texts visible (the title and the button) so we have to use
         // a 'near' value here.
-        $this->i_press_in_the_app('"Log in" near "Forgotten"');
+        $this->i_press_in_the_app('"Log in" "ion-button"');
 
         // Wait until the main page appears.
         $this->spin(
@@ -593,7 +631,10 @@ class behat_app extends behat_app_helper {
      */
     public function the_app_has_the_following_config(TableNode $data) {
         foreach ($data->getRows() as $configrow) {
-            $this->appconfig[$configrow[0]] = json_decode($configrow[1]);
+            $name = $configrow[0];
+            $value = $this->replace_wwwroot($configrow[1]);
+
+            $this->appconfig[$name] = json_decode($value);
         }
     }
 
@@ -636,24 +677,43 @@ class behat_app extends behat_app_helper {
     /**
      * Performs a pull to refresh gesture.
      *
-     * @When I pull to refresh in the app
+     * @When /^I pull to refresh (?:until I find (".+") )?in the app$/
      * @throws DriverException If the gesture is not available
      */
-    public function i_pull_to_refresh_in_the_app() {
-        $this->spin(function() {
-            $result = $this->runtime_js('pullToRefresh()');
+    public function i_pull_to_refresh_in_the_app(?string $locator = null) {
+        $timeout = 0;
+        $startTime = time();
 
-            if ($result !== 'OK') {
-                throw new DriverException('Error pulling to refresh - ' . $result);
+        if (!is_null($locator)) {
+            $timeout = 60;
+            $locator = $this->parse_element_locator($locator);
+        }
+
+        do {
+            $this->spin(function() {
+                $result = $this->runtime_js('pullToRefresh()');
+
+                if ($result !== 'OK') {
+                    throw new DriverException('Error pulling to refresh - ' . $result);
+                }
+
+                return true;
+            });
+
+            $this->wait_animations_done();
+
+            if (is_null($locator)) {
+                return;
             }
 
-            return true;
-        });
+            $result = $this->runtime_js("find($locator)");
 
-        $this->wait_for_pending_js();
+            if ($result === 'OK') {
+                return;
+            }
+        } while ($timeout > (time() - $startTime));
 
-        // Wait for UI to settle after refreshing.
-        $this->getSession()->wait(300);
+        throw new DriverException('Error finding element after PTR - ' . $result);
     }
 
     /**
@@ -738,13 +798,10 @@ class behat_app extends behat_app_helper {
     /**
      * Sets a field to the given text value in the app.
      *
-     * Currently this only works for input fields which must be identified using a partial or
-     * exact match on the placeholder text.
-     *
      * @Given /^I set the field "((?:[^"]|\\")+)" to "((?:[^"]|\\")*)" in the app$/
-     * @param string $field Text identifying field
-     * @param string $value Value for field
-     * @throws DriverException If the field set doesn't work
+     * @param string $field Text identifying the field.
+     * @param string $value Value to set. In select fields, this can be either the value or text included in the select option.
+     * @throws DriverException If the field set doesn't work.
      */
     public function i_set_the_field_in_the_app(string $field, string $value) {
         $field = addslashes_js($field);
@@ -754,7 +811,7 @@ class behat_app extends behat_app_helper {
             $result = $this->runtime_js("setField('$field', '$value')");
 
             if ($result !== 'OK') {
-                throw new DriverException('Error setting field - ' . $result);
+                throw new DriverException('Error setting field "' . $field . '" - ' . $result);
             }
 
             return true;
@@ -776,6 +833,35 @@ class behat_app extends behat_app_helper {
         foreach ($datahash as $locator => $value) {
             $this->i_set_the_field_in_the_app($locator, $value);
         }
+    }
+
+    /**
+     * Uploads a file to a file input, the file path should be relative to a fixtures folder next to the feature file.
+     * The ìnput locator can match a container with a file input inside, it doesn't have to be the input itself.
+     *
+     * @Given /^I upload "((?:[^"]|\\")+)" to (".+") in the app$/
+     * @param string $filename
+     * @param string $inputlocator
+     */
+    public function i_upload_a_file_in_the_app(string $filename, string $inputlocator) {
+        $filepath = str_replace('/', DIRECTORY_SEPARATOR, "{$this->featurepath}/fixtures/$filename");
+        $inputlocator = $this->parse_element_locator($inputlocator);
+
+        $id = $this->spin(function() use ($inputlocator) {
+            $result = $this->runtime_js("getFileInputId($inputlocator)");
+
+            if (str_starts_with($result, 'ERROR')) {
+                throw new DriverException('Error finding input - ' . $result);
+            }
+
+            return $result;
+        });
+
+        $this->wait_for_pending_js();
+
+        $fileinput = $this ->getSession()->getPage()->findById($id);
+
+        $fileinput->attachFile($filepath);
     }
 
     /**
@@ -883,6 +969,72 @@ class behat_app extends behat_app_helper {
 
             return true;
         });
+    }
+
+    /**
+     * Check that the app opened a url.
+     *
+     * @Then /^the app should( not)? have opened url "([^"]+)"(?: with contents "([^"]+)")?(?: (once|\d+ times))?$/
+     * @param bool $not Whether to check if the app did not open the url
+     * @param string $urlpattern Url pattern
+     * @param string $contents Url contents
+     * @param string $times How many times the url should have been opened
+     */
+    public function the_app_should_have_opened_url(bool $not, string $urlpattern, ?string $contents = null, ?string $times = null) {
+        if (is_null($times) || $times === 'once') {
+            $times = 1;
+        } else {
+            $times = intval(substr($times, 0, strlen($times) - 6));
+        }
+
+        $this->spin(function() use ($not, $urlpattern, $contents, $times) {
+            $result = $this->runtime_js("hasOpenedUrl('$urlpattern', '$contents', $times)");
+
+            // TODO process times
+            if ($not && $result === 'OK') {
+                throw new DriverException('Error, an url was opened that should not have');
+            }
+
+            if (!$not && $result !== 'OK') {
+                throw new DriverException('Error asserting that url was opened - ' . $result);
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Check that an event has been logged.
+     *
+     * @Then /^the following events should( not)? have been logged for (".+"|the system) in the app:$/
+     */
+    public function the_event_should_have_been_logged(bool $not, string $username, TableNode $data) {
+        $userid = $this->get_event_userid($username);
+
+        foreach ($data->getColumnsHash() as $event) {
+            $eventname = $event['name'];
+            $logs = $this->get_event_logs($userid, $event);
+
+            if (!$not && empty($logs)) {
+                throw new ExpectationException("Logs for event '$eventname' not found", $this->getSession()->getDriver());
+            }
+
+            if ($not && !empty($logs) && empty($event['other'])) {
+                throw new ExpectationException("Logs for event '$eventname' found, but shouldn't have", $this->getSession()->getDriver());
+            }
+
+            if (!empty($event['other'])) {
+                $log = $this->find_event_log_with_other($logs, json_decode($event['other'], true));
+
+                if (!$not && is_null($log)) {
+                    throw new ExpectationException("Other data for event '$eventname' does not match", $this->getSession()->getDriver());
+                }
+
+                if ($not && !is_null($log)) {
+                    throw new ExpectationException("Logs for event '$eventname' found, but shouldn't have", $this->getSession()->getDriver());
+                }
+            }
+        }
     }
 
     /**
@@ -1005,28 +1157,82 @@ class behat_app extends behat_app_helper {
 
 
     /**
+     * Send pending notifications.
+     *
+     * @Then /^I flush pending notifications in the app$/
+     */
+    public function i_flush_notifications() {
+        $this->runtime_js("flushNotifications()");
+    }
+
+    /**
      * Check if a notification has been triggered and is present.
      *
-     * @Then /^a notification with title (".+") is( not)? present in the app$/
+     * @Then /^a notification with title (".+") should( not)? be present in the app$/
      * @param string $title Notification title
      * @param bool $not Whether assert that the notification was not found
      */
     public function notification_present_in_the_app(string $title, bool $not = false) {
-        $result = $this->runtime_js("notificationIsPresentWithText($title)");
+        $this->spin(function() use ($not, $title) {
+            $result = $this->runtime_js("notificationIsPresentWithText($title)");
 
-        if ($not && $result === 'YES') {
-            throw new ExpectationException("Notification is present", $this->getSession()->getDriver());
+            if ($not && $result === 'YES') {
+                throw new ExpectationException("Notification is present", $this->getSession()->getDriver());
+            }
+
+            if (!$not && $result === 'NO') {
+                throw new ExpectationException("Notification is not present", $this->getSession()->getDriver());
+            }
+
+            if ($result !== 'YES' && $result !== 'NO') {
+                throw new DriverException('Error checking notification - ' . $result);
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Check if a notification has been scheduled.
+     *
+     * @Then /^a notification with title (".+") should( not)? be scheduled(?: (\d+) minutes before the "(.+)" assignment due date)? in the app$/
+     * @param string $title Notification title
+     * @param bool $not Whether assert that the notification was not scheduled
+     * @param int $minutes Minutes before the assignment at which the notification was scheduled
+     * @param string $assignment Assignment for which the notification was scheduled
+     */
+    public function notification_scheduled_in_the_app(string $title, bool $not = false, ?int $minutes = null, ?string $assignment = null) {
+        if (!is_null($minutes)) {
+            global $DB;
+
+            $assign = $DB->get_record('assign', ['name' => $assignment]);
+
+            if (!$assign) {
+                throw new ExpectationException("Couldn't find '$assignment' assignment", $this->getSession()->getDriver());
+            }
+
+            $date = ($assign->duedate - $minutes * 60) * 1000;
+        } else {
+            $date = 'undefined';
         }
 
-        if (!$not && $result === 'NO') {
-            throw new ExpectationException("Notification is not present", $this->getSession()->getDriver());
-        }
+        $this->spin(function() use ($not, $title, $date) {
+            $result = $this->runtime_js("notificationIsScheduledWithText($title, $date)");
 
-        if ($result !== 'YES' && $result !== 'NO') {
-            throw new DriverException('Error checking notification - ' . $result);
-        }
+            if ($not && $result === 'YES') {
+                throw new ExpectationException("Notification is scheduled", $this->getSession()->getDriver());
+            }
 
-        return true;
+            if (!$not && $result === 'NO') {
+                throw new ExpectationException("Notification is not scheduled", $this->getSession()->getDriver());
+            }
+
+            if ($result !== 'YES' && $result !== 'NO') {
+                throw new DriverException('Error checking scheduled notification - ' . $result);
+            }
+
+            return true;
+        });
     }
 
     /**
@@ -1061,6 +1267,26 @@ class behat_app extends behat_app_helper {
         ]);
 
         $this->zone_js("navigator.navigateToSitePath('/calendar/index', $options)");
+    }
+
+    /**
+     * Change the viewport size in the browser running the Moodle App.
+     *
+     * @Given /^I change viewport size to "(?P<width>\d+)x(?P<height>\d+)" in the app$/
+     * @param int $width Width
+     * @param int $height Height
+     */
+    public function i_change_viewport_size_in_the_app(int $width, int $height) {
+        $this->resize_app_window($width, $height);
+    }
+
+    /**
+     * Wait until Toast disappears.
+     *
+     * @When I wait toast to dismiss in the app
+     */
+    public function i_wait_toast_to_dismiss_in_the_app() {
+        $this->runtime_js('waitToastDismiss()');
     }
 
 }

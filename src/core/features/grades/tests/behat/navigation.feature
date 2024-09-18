@@ -1,8 +1,9 @@
-@app @javascript
+@core_grades @app @javascript
 Feature: Grades navigation
 
   Background:
-    Given the following "users" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "users" exist:
       | username  | firstname | lastname |
       | student1  | Student   | first    |
       | student2  | Student   | second    |
@@ -150,14 +151,30 @@ Feature: Grades navigation
     When I press the back button in the app
     Then I should find "Course 1" in the app
     And I should find "Course 2" in the app
+    And the following events should have been logged for "student1" in the app:
+      | name                                            | course               | other                    |
+      | \gradereport_overview\event\grade_report_viewed | Acceptance test site |                          |
+      | \gradereport_user\event\grade_report_viewed     | Course 1             |                          |
+      | \gradereport_user\event\grade_report_viewed     | Course 2             |                          |
+      | \core\event\user_list_viewed                    | Course 2             |                          |
+      | \core\event\grade_item_updated                  | Course 1             | {"itemname":"GI C1"}     |
+      | \core\event\grade_item_updated                  | Course 2             | {"itemname":"GI C2.1.1"} |
+      | \core\event\grade_item_updated                  | Course 2             | {"itemname":"GI C2.1.2"} |
+      | \core\event\grade_item_updated                  | Course 2             | {"itemname":"GI C2.2.1"} |
+    And the following events should have been logged for the system in the app:
+      | name                                            | relateduser | course   | other              |
+      | \core\event\user_graded                         | student1    | Course 1 | {"finalgrade":30}  |
+      | \core\event\user_graded                         | student1    | Course 2 | {"finalgrade":40}  |
+      | \core\event\user_graded                         | student1    | Course 2 | {"finalgrade":90}  |
+      | \core\event\user_graded                         | student1    | Course 2 | {"finalgrade":130} |
 
+  @lms_from4.2
   Scenario: Mobile navigation (teacher)
     Given I entered the course "Course 2" as "teacher1" in the app
 
     # Course grades
-    When I press "Participants" in the app
+    When I press "Grades" in the app
     And I press "Student first" in the app
-    And I press "Grades" in the app
     Then I should find "GC C2.1" in the app
     And I should find "70" within "GI C2.1.1" "tr" in the app
     And I should find "20" within "GI C2.1.2" "tr" in the app
@@ -194,9 +211,16 @@ Feature: Grades navigation
     Then I should not find "Weight" in the app
     And I should not find "Percentage" in the app
 
+    # Profile grades
+    When I press the back button in the app
+    And I press "Participants" in the app
+    And I press "Student first" in the app
+    And I press "Grades" in the app
+    Then I should find "GC C2.1" in the app
+
   Scenario: Tablet navigation (student)
     Given I entered the course "Course 2" as "student1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Course grades
     When I press "Grades" in the app
@@ -274,23 +298,53 @@ Feature: Grades navigation
     Then I should not find "Weight" inside the split-view content in the app
     And I should not find "Percentage" inside the split-view content in the app
 
+  @lms_from4.2
   Scenario: Tablet navigation (teacher)
     Given I entered the course "Course 2" as "teacher1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
-    # Course grades
+    # User grades
+    When I press "Grades" in the app
+    And I press "Student first" in the app
+    Then "Student first" should be selected in the app
+    And I should find "GC C2.1" inside the split-view content in the app
+    And I should find "70" within "GI C2.1.1" "tr" inside the split-view content in the app
+    And I should find "20" within "GI C2.1.2" "tr" inside the split-view content in the app
+    And I should find "90" within "GC C2.1 total" "tr" inside the split-view content in the app
+    And I should find "GC C2.2" inside the split-view content in the app
+    And I should find "40" within "GI C2.2.1" "tr" inside the split-view content in the app
+    And I should find "40" within "GC C2.2 total" "tr" inside the split-view content in the app
+    And I should find "130" within "Course total" "tr" inside the split-view content in the app
+    But I should not find "GC C1" inside the split-view content in the app
+    And I should not find "GI C1" inside the split-view content in the app
+
+    # User grades details
+    When I press "GI C2.1.1" in the app
+    Then I should find "Weight" inside the split-view content in the app
+    And I should find "70.00" within "Grade" "ion-item" inside the split-view content in the app
+    And I should find "60–80" within "Range" "ion-item" inside the split-view content in the app
+    And I should find "50.00 %" within "Percentage" "ion-item" inside the split-view content in the app
+    And I should find "Contribution to course total" inside the split-view content in the app
+    And I should find "GI C2.1.2" inside the split-view content in the app
+
+    When I press "GI C2.1.1" in the app
+    Then I should not find "Weight" inside the split-view content in the app
+    And I should not find "Range" inside the split-view content in the app
+    And I should not find "Percentage" inside the split-view content in the app
+    And I should not find "Contribution to course total" inside the split-view content in the app
+    But I should find "GI C2.1.1" inside the split-view content in the app
+    And I should find "GI C2.1.2" inside the split-view content in the app
+
+    When I press "Course total" in the app
+    Then I should find "130" within "Grade" "ion-item" inside the split-view content in the app
+    And I should find "0–270" within "Range" "ion-item" inside the split-view content in the app
+
+    When I press "Course total" in the app
+    Then I should not find "Weight" inside the split-view content in the app
+    And I should not find "Percentage" inside the split-view content in the app
+
+    # Profile grades
     When I press "Participants" in the app
     And I press "Student first" in the app
     And I press "Grades" in the app
     Then I should find "GC C2.1" in the app
-    And I should find "Weight" in the app
-    And I should find "Contribution to course total" in the app
-    And I should find "70.00" within "GI C2.1.1" "tr" in the app
-    And I should find "60–80" within "GI C2.1.1" "tr" in the app
-    And I should find "50.00 %" within "GI C2.1.1" "tr" in the app
-    And I should find "20" within "GI C2.1.2" "tr" in the app
-    And I should find "90" within "GC C2.1 total" "tr" in the app
-    And I should find "GC C2.2" in the app
-    And I should find "40" within "GI C2.2.1" "tr" in the app
-    And I should find "40" within "GC C2.2 total" "tr" in the app
-    And I should find "130" within "Course total" "tr" in the app

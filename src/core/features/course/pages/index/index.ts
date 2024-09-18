@@ -20,7 +20,7 @@ import { CoreCourseFormatDelegate } from '../../services/format-delegate';
 import { CoreCourseOptionsDelegate } from '../../services/course-options-delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreCourse, CoreCourseModuleCompletionStatus, CoreCourseWSSection } from '@features/course/services/course';
+import { CoreCourse, CoreCourseProvider, CoreCourseWSSection } from '@features/course/services/course';
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
@@ -29,56 +29,34 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCoursesHelper, CoreCourseWithImageAndColor } from '@features/courses/services/courses-helper';
 import { CoreColors } from '@singletons/colors';
 import { CorePath } from '@singletons/path';
-
-// by rachmad
-import { IonRefresher } from '@ionic/angular';
-import { Renderer2 } from '@angular/core';
-import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
-import { CoreCourseCompletionActivityStatus } from '@features/course/services/course';
-import { CoreCourses } from '@features/courses/services/courses';
-import { CqPage } from '@features/cq_pages/classes/cq_page';
-import { CqHelper } from '@features/cq_pages/services/cq_helper';
-import { CoreCourseSync, CoreCourseSyncProvider } from '@features/course/services/sync';
-import { CoreSiteWSPreSets, CoreSite, WSObservable } from '@classes/site';
-import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grades';
+import { CoreSites } from '@services/sites';
 
 /**
  * Page that displays the list of courses the user is enrolled in.
  */
 @Component({
     selector: 'page-core-course-index',
-    templateUrl: 'index.new.html',
+    templateUrl: 'index.html',
     styleUrls: ['index.scss'],
 })
-
-// by rachmad
-// export class CoreCourseIndexPage implements OnInit, OnDestroy {
-export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
+export class CoreCourseIndexPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreTabsOutletComponent) tabsComponent?: CoreTabsOutletComponent;
     @ViewChild('courseThumb') courseThumb?: ElementRef;
 
     title = '';
     category = '';
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {courseImage, fullname, basicInformation, hasEnded, hasEnrolled, isSelfEnrol, selfEnrolId, hasAccredited};
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
     fullScreenEnabled = false;
 
-    // by rachmad
-    cqLoading: boolean = false;
-    grades: any = {
-        summary: "-",
-        onCourse: [],
-        onModule: {},
-    };
-
-    sections: CoreCourseWSSection[] = []; // List of course sections.
     protected currentPagePath = '';
     protected fullScreenObserver: CoreEventObserver;
     protected selectTabObserver: CoreEventObserver;
-    protected completionObserver: CoreEventObserver;
+    protected progressObserver: CoreEventObserver;
+    protected sections: CoreCourseWSSection[] = []; // List of course sections.
     protected firstTabName?: string;
     protected module?: CoreCourseModuleData;
     protected modNavOptions?: CoreNavigationOptions;
@@ -90,18 +68,14 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         pageParams: {},
     };
 
-    // by rachmad
-    // constructor(private route: ActivatedRoute) {
-    constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper) {
-        super(renderer, CH);
-
+    constructor(private route: ActivatedRoute) {
         this.selectTabObserver = CoreEvents.on(CoreEvents.SELECT_COURSE_TAB, (data) => {
             if (!data.name) {
                 // If needed, set sectionId and sectionNumber. They'll only be used if the content tabs hasn't been loaded yet.
                 if (data.sectionId) {
                     this.contentsTab.pageParams.sectionId = data.sectionId;
                 }
-                if (data.sectionNumber) {
+                if (data.sectionNumber !== undefined) {
                     this.contentsTab.pageParams.sectionNumber = data.sectionNumber;
                 }
 
@@ -116,48 +90,28 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             }
         });
 
-        // The completion of any of the modules have changed.
-        this.completionObserver = CoreEvents.on(CoreEvents.MANUAL_COMPLETION_CHANGED, (data) => {
-            if (data.completion.courseId != this.course?.id) {
+        const siteId = CoreSites.getCurrentSiteId();
+
+        this.progressObserver = CoreEvents.on(CoreCourseProvider.PROGRESS_UPDATED, (data) => {
+            if (!this.course || this.course.id !== data.courseId || !('progress' in this.course)) {
                 return;
             }
 
-            if (data.completion.valueused !== false || !this.course || !('progress' in this.course) ||
-                    typeof this.course.progress != 'number') {
-                return;
-            }
-
-            // If the completion value is not used, the page won't be reloaded, so update the progress bar.
-            const completionModules = (<CoreCourseModuleData[]> [])
-                .concat(...this.sections.map((section) => section.modules))
-                .map((module) => module.completion && module.completion > 0 ? 1 : module.completion)
-                .reduce((accumulator, currentValue) => (accumulator || 0) + (currentValue || 0), 0);
-
-            const moduleProgressPercent = 100 / (completionModules || 1);
-            // Use min/max here to avoid floating point rounding errors over/under-flowing the progress bar.
-            if (data.completion.state === CoreCourseModuleCompletionStatus.COMPLETION_COMPLETE) {
-                this.course.progress = Math.min(100, this.course.progress + moduleProgressPercent);
-            } else {
-                this.course.progress = Math.max(0, this.course.progress - moduleProgressPercent);
-            }
-
+            this.course.progress = data.progress;
             this.updateProgress();
-        });
+        }, siteId);
 
         this.fullScreenObserver = CoreEvents.on(CoreEvents.FULL_SCREEN_CHANGED, (event: { enabled: boolean }) => {
             this.fullScreenEnabled = event.enabled;
         });
     }
 
-    // by rachmad
-    ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
-
     /**
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
         // Increase route depth.
-        const path = CoreNavigator.getRouteFullPath(this.route.snapshot);
+        const path = CoreNavigator.getRouteFullPath(this.route);
 
         CoreNavigator.increaseRouteDepth(path.replace(/(\/deep)+/, ''));
 
@@ -173,49 +127,36 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         this.firstTabName = CoreNavigator.getRouteParam('selectedTab');
         this.module = CoreNavigator.getRouteParam<CoreCourseModuleData>('module');
-        this.isGuest = !!CoreNavigator.getRouteBooleanParam('isGuest');
+        this.isGuest = CoreNavigator.getRouteBooleanParam('isGuest') ??
+            (!!this.course && (await CoreCourseHelper.courseUsesGuestAccessInfo(this.course.id)).guestAccess);
+
         this.modNavOptions = CoreNavigator.getRouteParam<CoreNavigationOptions>('modNavOptions');
         this.openModule = CoreNavigator.getRouteBooleanParam('openModule') ?? true; // If false, just scroll to module.
-        if (!this.modNavOptions) {
-            // Fallback to old way of passing params. @deprecated since 4.0.
-            const modParams = CoreNavigator.getRouteParam<Params>('modParams');
-            if (modParams) {
-                this.modNavOptions = { params: modParams };
-            }
-        }
-
         this.currentPagePath = CoreNavigator.getCurrentPath();
         this.contentsTab.page = CorePath.concatenatePaths(this.currentPagePath, this.contentsTab.page);
         this.contentsTab.pageParams = {
             course: this.course,
             sectionId: CoreNavigator.getRouteNumberParam('sectionId'),
             sectionNumber: CoreNavigator.getRouteNumberParam('sectionNumber'),
+            blockInstanceId: CoreNavigator.getRouteNumberParam('blockInstanceId'),
             isGuest: this.isGuest,
         };
 
         if (this.module) {
             this.contentsTab.pageParams.moduleId = this.module.id;
-            if (!this.contentsTab.pageParams.sectionId && !this.contentsTab.pageParams.sectionNumber) {
+            if (!this.contentsTab.pageParams.sectionId && this.contentsTab.pageParams.sectionNumber === undefined) {
                 // No section specified, use module section.
                 this.contentsTab.pageParams.sectionId = this.module.section;
             }
         }
 
-        // by rachmad
-        // this.tabs.push(this.contentsTab);
-        // this.loaded = true;
+        this.tabs.push(this.contentsTab);
+        this.loaded = true;
 
         await Promise.all([
             this.loadCourseHandlers(),
             this.loadBasinInfo(),
         ]);
-
-        // by rachmad
-        await this.prepareSections();
-        await this.prepareCourseData("additionals");
-        this.tabs.push(this.contentsTab);
-        this.loaded = true;
-        this.pageStatus = true;
     }
 
     /**
@@ -291,21 +232,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         this.updateProgress();
 
-        // by rachmad
-        let presets: CoreSiteWSPreSets = {
-            getFromCache: false,
-            saveToCache: true,
-            emergencyCache: true,
-        };
-        let sections: CoreCourseWSSection[] = [];
-        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
-        sections = sections.filter((section) => {
-            return section.modules.length;
-        });
-        this.sections = sections;
-
         // Load sections.
-        // this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
+        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
 
         if (!this.sections) {
             return;
@@ -319,11 +247,11 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
      * @inheritdoc
      */
     ngOnDestroy(): void {
-        const path = CoreNavigator.getRouteFullPath(this.route.snapshot);
+        const path = CoreNavigator.getRouteFullPath(this.route);
 
         CoreNavigator.decreaseRouteDepth(path.replace(/(\/deep)+/, ''));
         this.selectTabObserver?.off();
-        this.completionObserver?.off();
+        this.progressObserver?.off();
         this.fullScreenObserver?.off();
     }
 
@@ -393,284 +321,6 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         }
     }
 
-    // ====================================================================================================== by rachmad
-    // overwrite pageForceReferesh() function from parent class, because this class doesn't have approriate things to run it
-    pageForceReferesh(finalCallback?: any): void
-    {
-        this.doRefresh().then(() => {
-            if (typeof finalCallback == "function") finalCallback();
-        });
-    }
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
-        if (!this.course) return;
-
-        this.pageIsLoading = true;
-        
-        // Try to synchronize the course data.
-        // For now we don't allow manual syncing, so ignore errors.
-        const result = await CoreUtils.ignoreErrors(CoreCourseSync.syncCourse(
-            this.course.id,
-            this.course.displayname || this.course.fullname,
-        ));
-        if (result?.warnings?.length) {
-            CoreDomUtils.showErrorModal(result.warnings[0]);
-        }
-
-        await this.loadBasinInfo();
-        await this.prepareSections(true);
-        await this.prepareCourseData("course, additionals");
-
-        this.pageIsLoading = false;
-
-        refresher?.complete();
-    }
-    /**
-     * mode can be: course, additionals, string containing both values
-    */
-    async prepareCourseData(mode: string): Promise<any>
-    {
-        if (!this.course) return {};
-
-        let modeArray = this.CH.toArray(mode);
-        let params: any = {calls: {}};
-        if (modeArray.includes("course"))
-        {
-            params.calls.course = {
-                cluster: 'CqCourseLib',
-                endpoint: 'view_e_learning',
-                course_id: this.course!.id,
-            };
-        }
-        if (modeArray.includes("additionals"))
-        {
-            params.calls.additionals = {
-                cluster: 'CqCourseLib',
-                endpoint: 'additionals_e_learning',
-                course_id: this.course!.id,
-            };
-        }
-        let temp = await this.CH.callApi(params);
-        let data = this.CH.toJson(temp);
-
-        let course: any;
-        if (modeArray.includes("course")) course = this.CH.cloneJson(data.course);
-        else course = this.CH.cloneJson(this.course);
-        if (modeArray.includes("additionals"))
-        {
-            for (let name in data.additionals)
-            {
-                course[name] = data.additionals[name];
-            }
-        }
-        this.course = course;
-
-        // fake values to force compiler accept the variable
-        if (typeof this.course!.courseImage == "undefined") this.course!.courseImage = null;
-        if (typeof this.course!.fullname == "undefined") this.course!.fullname = "";
-        if (typeof this.course!.basicInformation == "undefined") this.course!.basicInformation = [];
-        if (typeof this.course!.hasEnded == "undefined") this.course!.hasEnded = false;
-        if (typeof this.course!.hasEnrolled == "undefined") this.course!.hasEnrolled = false;
-        if (typeof this.course!.hasAccredited == "undefined") this.course!.hasAccredited = false;
-        if (typeof this.course!.isSelfEnrol == "undefined") this.course!.isSelfEnrol = false;
-        if (typeof this.course!.selfEnrolId == "undefined") this.course!.selfEnrolId = 0;
-
-        let tempGrades: any = [],
-            grades: any = {
-                summary: "-",
-                onCourse: [],
-                onModule: {},
-            };
-        
-        if (this.course!.hasEnrolled)
-        {
-            tempGrades = await CoreGrades.getGradeItems(this.course!.id, 0, 0, "", true);
-            tempGrades.forEach((grade) => {
-                // has cmid, so it is onModule
-                if (grade.cmid)
-                {
-                    grades.onModule[grade.cmid] = grade.gradeformatted;
-                }
-
-                // always include to onCourse
-                grades.onCourse.push({
-                    name: grade.itemname ? grade.itemname : grade.itemtype == "course" ? "Total Grade" : "-",
-                    value: grade.gradeformatted === "" ? "-" : grade.gradeformatted,
-                    range: grade.rangeformatted === "" ? "-" : grade.rangeformatted,
-                    inPercent: grade.percentageformatted === "" ? "-" : grade.percentageformatted,
-                });
-
-                // summary
-                if (grade.itemtype == "course")
-                {
-                    grades.summary = grade.gradeformatted === "" ? "-" : grade.gradeformatted;
-                    grades.summary += grade.percentageformatted != "" && grade.percentageformatted != "-" ? (" (" + grade.percentageformatted + ")") : "";
-                }
-            });
-        }
-
-        this.grades = grades;
-
-        // remove link in availability info
-        this.sections.forEach((section) => {
-            section.modules.forEach((courseModule) => {
-                if (courseModule.availabilityinfo)
-                {
-                    courseModule.availabilityinfo = courseModule.availabilityinfo.replace(/\<a /g, "<b ").replace(/\<\/a\>/g, "</b>").replace(/ href/g, " data-href");
-                }
-            });
-        });
-
-        this.CH.log("final data", {
-            course: this.course,
-            sections: this.sections,
-            grades: this.grades,
-            tempGrades,
-        });
-    }
-    async prepareSections(refresh?: boolean): Promise<void> {
-        if (!this.course) return;
-
-        let presets: CoreSiteWSPreSets = {
-            getFromCache: false,
-            saveToCache: true,
-            emergencyCache: true,
-        };
-        let sections: CoreCourseWSSection[] = [];
-        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
-        sections = sections.filter((section) => {
-            return section.modules.length;
-        });
-
-        if (refresh) {
-            // Invalidate the recently downloaded module list. To ensure info can be prefetched.
-            const modules = CoreCourse.getSectionsModules(sections);
-
-            await CoreCourseModulePrefetchDelegate.invalidateModules(modules, this.course.id);
-        }
-
-        let completionStatus: Record<string, CoreCourseCompletionActivityStatus> = {};
-
-        // Get the completion status.
-        if (this.course.enablecompletion !== false) {
-            const sectionWithModules = sections.find((section) => section.modules.length > 0);
-
-            if (sectionWithModules && sectionWithModules.modules[0].completion !== undefined) {
-                await CoreUtils.ignoreErrors(CoreCourseHelper.loadOfflineCompletion(this.course.id, sections));
-            } else {
-                const fetchedData = await CoreUtils.ignoreErrors(
-                    CoreCourse.getActivitiesCompletionStatus(this.course.id),
-                );
-
-                completionStatus = fetchedData || completionStatus;
-            }
-        }
-
-        // Add handlers
-        const result = await CoreCourseHelper.addHandlerDataForModules(
-            sections,
-            this.course.id,
-            completionStatus,
-            this.course.fullname,
-            true,
-        );
-
-        this.sections = result.sections;
-    }
-
-    async takeCourse(): Promise<void>
-    {
-        if (!this.course) return;
-
-        this.cqLoading = true;
-        try
-        {
-            await CoreCourses.selfEnrol(this.course.id, "", this.course.selfEnrolId);
-            await this.doRefresh();
-            this.cqLoading = false;
-            this.CH.alert("Success!", "You have successfully signed up to " + this.course.fullname + " Course");
-        }
-        catch(error)
-        {
-            this.cqLoading = false;
-            this.CH.errorLog("enrolment error", {courseId: this.course.id, media: "online", purpose: "sign_up", error});
-            this.CH.alert("Oops!", "Cannot enrol to the course, please contact course administrator");
-        }
-    }
-    leaveCourse(): void
-    {
-        this.CH.alert('Confirm!', 'Are you sure to withdraw from this course?', {
-            text: 'Sure',
-            role: 'sure',
-            handler: async (): Promise<void> => {
-                if (!this.course) return;
-
-                this.cqLoading = true;
-                try
-                {
-                    const params = {
-                        cluster: 'CqCourseLib',
-                        endpoint: 'unenrol_e_learning',
-                        course_id: this.course.id,
-                    };
-                    await this.CH.callApi(params);
-                    await this.doRefresh();
-                    this.cqLoading = false;
-                    this.CH.alert("Success!", "You have successfully withdrawn from " + this.course.fullname + " Course");
-                }
-                catch(error)
-                {
-                    this.cqLoading = false;
-                    this.CH.errorLog("enrolment error", {courseId: this.course.id, media: "online", purpose: "withdraw", error});
-                    this.CH.alert("Oops!", "Cannot withdraw from the course, please contact course administrator");
-                }
-            }
-        }, {
-            text: 'Cancel',
-            role: 'cancel',
-            handler: (): void => {
-            }
-        });
-    }
-    isModuleDisabled(courseSection: any, courseModule: any): boolean
-    {
-        return !courseSection.uservisible || !courseModule.uservisible || !!courseModule.availabilityinfo;
-    }
-    getModuleClass(courseSection: any, courseModule: any): string
-    {
-        if (!this.course) return "";
-
-        return this.course.hasEnrolled && this.isModuleDisabled(courseSection, courseModule) ? "disabled" : "";
-    }
-    moduleClicked(event: Event, courseSection: any, courseModule: any): void
-    {
-        if (!this.course) return;
-        
-        if (!this.course.hasEnrolled)
-        {
-            this.CH.alert('Oops!', "You are not enrolled to this course");
-        }
-        else if (this.isModuleDisabled(courseSection, courseModule))
-        {
-            if (courseModule.availabilityinfo) this.CH.alert('Oops!', courseModule.availabilityinfo);
-            else this.CH.alert('Oops!', "This course module is not available");
-        }
-        else if (CoreCourseHelper.canUserViewModule(courseModule, courseSection))
-        {
-            if (courseModule.handlerData?.action)
-            {
-                courseModule.handlerData.action(event, courseModule, courseModule.course);
-            }
-            else
-            {
-                this.CH.errorLog("module error", {courseId: this.course.id, courseSection, courseModule, media: "online", error: "courseModule.handlerData?.action is falsy"});
-                this.CH.alert('Oops!', "Cannot open this course module, please contact course administrator");
-            }
-        }
-        else
-        {
-            this.CH.alert('Oops!', "You are not allowed to open this course module");
-        }
-    }
 }
 
 type CourseTab = CoreTabsOutletTab & {

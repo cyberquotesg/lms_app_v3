@@ -14,9 +14,10 @@
 
 import { Injectable } from '@angular/core';
 import { CorePlatform } from '@services/platform';
-import { Network } from '@ionic-native/network/ngx';
-import { makeSingleton } from '@singletons';
+import { Network } from '@awesome-cordova-plugins/network/ngx';
+import { NgZone, makeSingleton } from '@singletons';
 import { Observable, Subject, merge } from 'rxjs';
+import { CoreDomUtils } from './utils/dom';
 
 export enum CoreNetworkConnection {
     UNKNOWN = 'unknown',
@@ -38,9 +39,11 @@ export class CoreNetworkService extends Network {
     type!: string;
 
     protected connectObservable = new Subject<'connected'>();
+    protected connectStableObservable = new Subject<'connected'>();
     protected disconnectObservable = new Subject<'disconnected'>();
     protected forceConnectionMode?: CoreNetworkConnection;
     protected online = false;
+    protected connectStableTimeout?: number;
 
     get connectionType(): CoreNetworkConnection {
         if (this.forceConnectionMode !== undefined) {
@@ -90,6 +93,40 @@ export class CoreNetworkService extends Network {
                 this.fireObservable();
             }, false);
         }
+
+        this.onPlaformReady();
+    }
+
+    /**
+     * Initialize the service when the platform is ready.
+     */
+    async onPlaformReady(): Promise<void> {
+        await CorePlatform.ready();
+
+        // Refresh online status when changes.
+        CoreNetwork.onChange().subscribe(() => {
+            // Execute the callback in the Angular zone, so change detection doesn't stop working.
+            NgZone.run(() => {
+                const isOnline = this.isOnline();
+
+                const hadOfflineMessage = CoreDomUtils.hasModeClass('core-offline');
+
+                CoreDomUtils.toggleModeClass('core-offline', !isOnline, { includeLegacy: true });
+
+                if (isOnline && hadOfflineMessage) {
+                    CoreDomUtils.toggleModeClass('core-online', true, { includeLegacy: true });
+
+                    setTimeout(() => {
+                        CoreDomUtils.toggleModeClass('core-online', false, { includeLegacy: true });
+                    }, 3000);
+                } else if (!isOnline) {
+                    CoreDomUtils.toggleModeClass('core-online', false, { includeLegacy: true });
+                }
+            });
+        });
+
+        const isOnline = this.isOnline();
+        CoreDomUtils.toggleModeClass('core-offline', !isOnline, { includeLegacy: true });
     }
 
     /**
@@ -122,8 +159,15 @@ export class CoreNetworkService extends Network {
             return;
         }
 
-        const type = this.connectionType;
+        // We cannot use navigator.onLine because it has issues in some devices.
+        // See https://bugs.chromium.org/p/chromium/issues/detail?id=811122
+        if (!CorePlatform.isAndroid()) {
+            this.online = navigator.onLine;
 
+            return;
+        }
+
+        const type = this.connectionType;
         let online = type !== null && type !== CoreNetworkConnection.NONE && type !== CoreNetworkConnection.UNKNOWN;
 
         // Double check we are not online because we cannot rely 100% in Cordova APIs.
@@ -146,11 +190,24 @@ export class CoreNetworkService extends Network {
     /**
      * Returns an observable to notify when the app is connected.
      * It will also be fired when connection type changes.
+     * If you're going to perform network requests once the device is connected, please use onConnectShouldBeStable instead.
      *
      * @returns Observable.
      */
     onConnect(): Observable<'connected'> {
         return this.connectObservable;
+    }
+
+    /**
+     * Returns an observable to notify when the app is connected and it should already be a stable a connection.
+     * E.g. when leaving flight mode the device could connect to mobile network first and then to WiFi.
+     * If you're going to perform network requests once the device is connected, it's recommended to use this function instead of
+     * onConnect because some OS (e.g. Android) duplicate a request if the type of connection changes while the request is done.
+     *
+     * @returns Observable.
+     */
+    onConnectShouldBeStable(): Observable<'connected'> {
+        return this.connectStableObservable;
     }
 
     /**
@@ -166,10 +223,14 @@ export class CoreNetworkService extends Network {
      * Fires the correct observable depending on the connection status.
      */
     protected fireObservable(): void {
+        clearTimeout(this.connectStableTimeout);
         this.checkOnline();
 
         if (this.online) {
             this.connectObservable.next('connected');
+            this.connectStableTimeout = window.setTimeout(() => {
+                this.connectStableObservable.next('connected');
+            }, 5000);
         } else {
             this.disconnectObservable.next('disconnected');
         }

@@ -19,10 +19,9 @@ import { CoreSharedModule } from '@/core/shared.module';
 import { AddonModQuizComponentsModule } from './components/components.module';
 
 import { AddonModQuizIndexPage } from './pages/index';
-import { AddonModQuizAttemptPage } from '@addons/mod/quiz/pages/attempt/attempt';
 import { CoreQuestionComponentsModule } from '@features/question/components/components.module';
 import { AddonModQuizPlayerPage } from '@addons/mod/quiz/pages/player/player';
-import { CanLeaveGuard } from '@guards/can-leave';
+import { canLeaveGuard } from '@guards/can-leave';
 import { AddonModQuizReviewPage } from '@addons/mod/quiz/pages/review/review';
 
 const routes: Routes = [
@@ -33,11 +32,7 @@ const routes: Routes = [
     {
         path: ':courseId/:cmId/player',
         component: AddonModQuizPlayerPage,
-        canDeactivate: [CanLeaveGuard],
-    },
-    {
-        path: ':courseId/:cmId/attempt/:attemptId',
-        component: AddonModQuizAttemptPage,
+        canDeactivate: [canLeaveGuard],
     },
     {
         path: ':courseId/:cmId/review/:attemptId',
@@ -54,7 +49,6 @@ const routes: Routes = [
     ],
     declarations: [
         AddonModQuizIndexPage,
-        AddonModQuizAttemptPage,
         AddonModQuizPlayerPage,
         AddonModQuizReviewPage,
     ],

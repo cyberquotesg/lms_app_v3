@@ -1,4 +1,4 @@
-@core @core_course @app @javascript
+@core_course @app @javascript
 Feature: Check course completion feature.
   In order to track the progress of the course on mobile device
   As a student
@@ -15,7 +15,6 @@ Feature: Check course completion feature.
       | user     | course | role    |
       | student1 | C1     | student |
 
-  @lms_from3.11
   Scenario: Activity completion, marking the checkbox manually
     Given the following "activities" exist:
       | activity | name         | course | idnumber | completion | completionview |

@@ -17,11 +17,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { CoreApp } from '@services/app';
 import { CoreNetwork } from '@services/network';
-import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
+import { CoreSiteBasicInfo, CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
-import { CoreSite, CoreSiteIdentityProvider, CoreSitePublicConfigResponse } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreEvents } from '@singletons/events';
 import { CoreError } from '@classes/errors/error';
 import { CoreNavigator, CoreRedirectPayload } from '@services/navigator';
@@ -31,6 +31,8 @@ import { CoreUserSupportConfig } from '@features/user/classes/support/support-co
 import { CoreUserAuthenticatedSupportConfig } from '@features/user/classes/support/authenticated-support-config';
 import { Translate } from '@singletons';
 import { SafeHtml } from '@angular/platform-browser';
+import { CoreSitePublicConfigResponse } from '@classes/sites/unauthenticated-site';
+import { FORGOTTEN_PASSWORD_FEATURE_NAME } from '@features/login/constants';
 
 // by rachmad
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
@@ -49,30 +51,27 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
     @ViewChild('reconnectForm') formElement?: ElementRef;
 
     credForm: FormGroup;
-    siteUrl!: string;
-    username!: string;
-    userFullName!: string;
-    userAvatar?: string;
-    siteName!: string;
+    site!: CoreSite;
     logoUrl?: string;
-    identityProviders?: CoreSiteIdentityProvider[];
+    displaySiteUrl = false;
     showForgottenPassword = true;
-    showSiteAvatar = false;
+    showUserAvatar = false;
     isBrowserSSO = false;
-    isOAuth = false;
     isLoggedOut: boolean;
     siteId!: string;
+    siteInfo?: CoreSiteBasicInfo;
     showScanQR = false;
     showLoading = true;
     reconnectAttempts = 0;
     supportConfig?: CoreUserSupportConfig;
     exceededAttemptsHTML?: SafeHtml | string | null;
+    siteConfig?: CoreSitePublicConfigResponse;
+    redirectData?: CoreRedirectPayload;
 
-    protected siteConfig?: CoreSitePublicConfigResponse;
     protected viewLeft = false;
     protected eventThrown = false;
-    protected redirectData?: CoreRedirectPayload;
     protected loginSuccessful = false;
+    protected username = '';
 
     constructor(
         protected fb: FormBuilder,
@@ -113,26 +112,34 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
                 };
             }
 
-            const site = await CoreSites.getSite(this.siteId);
+            this.site = await CoreSites.getSite(this.siteId);
 
-            if (!site.infos) {
+            if (!this.site.infos) {
                 throw new CoreError('Invalid site');
             }
 
-            this.username = site.infos.username;
-            this.userFullName = site.infos.fullname;
-            this.userAvatar = site.infos.userpictureurl;
-            this.siteUrl = site.infos.siteurl;
-            this.siteName = site.getSiteName();
-            this.supportConfig = new CoreUserAuthenticatedSupportConfig(site);
+            this.siteInfo = {
+                id: this.siteId,
+                siteUrl: this.site.getURL(),
+                siteUrlWithoutProtocol: this.site.getURL().replace(/^https?:\/\//, '').toLowerCase(),
+                fullname: this.site.infos.fullname,
+                firstname: this.site.infos.firstname,
+                lastname: this.site.infos.lastname,
+                siteName: await this.site.getSiteName(),
+                userpictureurl: this.site.infos.userpictureurl,
+                loggedOut: true, // Not used.
+            };
 
-            // If login was OAuth we should only reach this page if the OAuth method ID has changed.
-            this.isOAuth = site.isOAuth();
+            this.displaySiteUrl = this.site.shouldDisplayInformativeLinks();
+            this.username = this.site.infos.username;
+            this.supportConfig = new CoreUserAuthenticatedSupportConfig(this.site);
+
+            const availableSites = await CoreLoginHelper.getAvailableSites();
 
             // Show logo instead of avatar if it's a fixed site.
-            this.showSiteAvatar = !!this.userAvatar && !CoreLoginHelper.getFixedSites();
+            this.showUserAvatar = !availableSites.length;
 
-            this.checkSiteConfig(site);
+            await this.checkSiteConfig();
 
             this.showLoading = false;
         } catch (error) {
@@ -143,7 +150,7 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
     }
 
     /**
-     * Component destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.viewLeft = true;
@@ -171,8 +178,8 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
     /**
      * Get some data (like identity providers) from the site config.
      */
-    protected async checkSiteConfig(site: CoreSite): Promise<void> {
-        this.siteConfig = await CoreUtils.ignoreErrors(site.getPublicConfig({
+    protected async checkSiteConfig(): Promise<void> {
+        this.siteConfig = await CoreUtils.ignoreErrors(this.site.getPublicConfig({
             readingStrategy: CoreSitesReadingStrategy.PREFER_NETWORK,
         }));
 
@@ -180,10 +187,7 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
             return;
         }
 
-        const disabledFeatures = CoreLoginHelper.getDisabledFeatures(this.siteConfig);
-
-        this.identityProviders = CoreLoginHelper.getValidIdentityProviders(this.siteConfig, disabledFeatures);
-        this.showForgottenPassword = !CoreLoginHelper.isForgottenPasswordDisabled(this.siteConfig);
+        this.showForgottenPassword = !this.site.isFeatureDisabled(FORGOTTEN_PASSWORD_FEATURE_NAME);
         this.exceededAttemptsHTML = CoreLoginHelper.buildExceededAttemptsHTML(
             !!this.supportConfig?.canContactSupport(),
             this.showForgottenPassword,
@@ -194,17 +198,10 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
             CoreEvents.trigger(CoreEvents.LOGIN_SITE_CHECKED, { config: this.siteConfig });
         }
 
-        this.isBrowserSSO = !this.isOAuth && CoreLoginHelper.isSSOLoginNeeded(this.siteConfig.typeoflogin);
-        this.showScanQR = CoreLoginHelper.displayQRInSiteScreen() ||
-            CoreLoginHelper.displayQRInCredentialsScreen(this.siteConfig.tool_mobile_qrcodetype);
+        this.isBrowserSSO = CoreLoginHelper.isSSOLoginNeeded(this.siteConfig.typeoflogin);
+        this.logoUrl = this.site.getLogoUrl();
 
         await CoreSites.checkApplication(this.siteConfig);
-
-        // Check logoURL if user avatar is not set.
-        if (this.userAvatar?.startsWith(this.siteUrl + '/theme/image.php')) {
-            this.showSiteAvatar = false;
-        }
-        this.logoUrl = CoreLoginHelper.getLogoUrl(this.siteConfig);
     }
 
     /**
@@ -256,14 +253,14 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
 
         try {
             // Start the authentication process.
-            const data = await CoreSites.getUserToken(this.siteUrl, this.username, password);
+            const data = await CoreSites.getUserToken(this.site.getURL(), this.username, password);
 
-            await CoreSites.updateSiteToken(this.siteUrl, this.username, data.token, data.privateToken);
+            await CoreSites.updateSiteToken(this.site.getURL(), this.username, data.token, data.privateToken);
 
             CoreForms.triggerFormSubmittedEvent(this.formElement, true);
 
             // Update site info too.
-            await CoreSites.updateSiteInfoByUrl(this.siteUrl, this.username);
+            await CoreSites.updateSiteInfoByUrl(this.site.getURL(), this.username);
 
             // Reset fields so the data is not in the view anymore.
             this.credForm.controls['password'].reset();
@@ -275,7 +272,7 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
                 params: this.redirectData,
             });
         } catch (error) {
-            CoreLoginHelper.treatUserTokenError(this.siteUrl, error, this.username, password);
+            CoreLoginHelper.treatUserTokenError(this.site.getURL(), error, this.username, password);
 
             if (error.loggedout) {
                 this.cancel();
@@ -309,7 +306,7 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
      * Forgotten password button clicked.
      */
     forgottenPassword(): void {
-        CoreLoginHelper.forgottenPasswordClicked(this.siteUrl, this.username, this.siteConfig);
+        CoreLoginHelper.forgottenPasswordClicked(this.site.getURL(), this.username, this.siteConfig);
     }
 
     /**
@@ -320,46 +317,13 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
             return;
         }
 
-        CoreLoginHelper.confirmAndOpenBrowserForSSOLogin(
-            this.siteUrl,
+        CoreLoginHelper.openBrowserForSSOLogin(
+            this.site.getURL(),
             this.siteConfig.typeoflogin,
             undefined,
             this.siteConfig.launchurl,
             this.redirectData,
         );
-    }
-
-    /**
-     * An OAuth button was clicked.
-     *
-     * @param provider The provider that was clicked.
-     */
-    oauthClicked(provider: CoreSiteIdentityProvider): void {
-        const result = CoreLoginHelper.openBrowserForOAuthLogin(
-            this.siteUrl,
-            provider,
-            this.siteConfig?.launchurl,
-            this.redirectData,
-        );
-
-        if (!result) {
-            CoreDomUtils.showErrorModal('Invalid data.');
-        }
-    }
-
-    /**
-     * Show instructions and scan QR code.
-     *
-     * @returns Promise resolved when done.
-     */
-    async showInstructionsAndScanQR(): Promise<void> {
-        try {
-            await CoreLoginHelper.showScanQRInstructions();
-
-            await CoreLoginHelper.scanQR();
-        } catch {
-            // Ignore errors.
-        }
     }
 
     /**

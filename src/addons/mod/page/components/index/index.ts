@@ -37,6 +37,7 @@ import { StatusBar } from '@singletons';
 export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit {
 
     component = AddonModPageProvider.COMPONENT;
+    pluginName = 'page';
     contents?: string;
     displayDescription = false;
     displayTimemodified = true;
@@ -123,7 +124,9 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
      * @inheritdoc
      */
     protected async logActivity(): Promise<void> {
-        await AddonModPage.logView(this.module.instance, this.module.name);
+        await CoreUtils.ignoreErrors(AddonModPage.logView(this.module.instance));
+
+        this.analyticsLogEvent('mod_page_view_page');
     }
 
     // by rachmad

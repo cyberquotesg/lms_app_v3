@@ -1,4 +1,4 @@
-@mod @mod_glossary @app @javascript
+@addon_mod_glossary @app @javascript
 Feature: Test glossary navigation
 
   Background:
@@ -146,11 +146,11 @@ Feature: Test glossary navigation
     When I press the back button in the app
     And I scroll to "Acerola" in the app
     And I press "Search" in the app
-    And I set the field "Search" to "something" in the app
+    And I set the field "Search query" to "something" in the app
     And I press enter
     Then I should find "No entries were found." in the app
 
-    When I set the field "Search" to "melon" in the app
+    When I set the field "Search query" to "melon" in the app
     And I press enter
     Then I should find "Honeydew Melon" in the app
     And I should find "Watermelon" in the app
@@ -200,10 +200,20 @@ Feature: Test glossary navigation
     When I swipe to the left in the app
     Then I should find "Acerola is a fruit" in the app
 
-  @ci_jenkins_skip
+    # Edit
+    When I swipe to the right in the app
+    And I press "Edit entry" in the app
+    And I press "Save" in the app
+    Then I should find "Tomato is a fruit" in the app
+
+    When I press the back button in the app
+    Then I should find "Tomato" in the app
+    And I should find "Cashew" in the app
+    And I should find "Acerola" in the app
+
   Scenario: Tablet navigation on glossary
     Given I entered the course "Course 1" as "student1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Alphabetically
     When I press "Fruits glossary" in the app
@@ -255,11 +265,11 @@ Feature: Test glossary navigation
 
     # Search
     When I press "Search" in the app
-    And I set the field "Search" to "something" in the app
+    And I set the field "Search query" to "something" in the app
     And I press enter
     Then I should find "No entries were found." in the app
 
-    When I set the field "Search" to "melon" in the app
+    When I set the field "Search query" to "melon" in the app
     And I press enter
     Then I should find "Honeydew Melon" in the app
     And I should find "Watermelon" in the app
@@ -280,6 +290,7 @@ Feature: Test glossary navigation
       | Concept | Tomato |
       | Definition | Tomato is a fruit |
     And I press "Save" in the app
+    And I press "Add a new entry" in the app
     And I set the following fields to these values in the app:
       | Concept | Cashew |
       | Definition | Cashew is a fruit |
@@ -300,3 +311,12 @@ Feature: Test glossary navigation
     When I press "Acerola" in the app
     Then "Acerola" near "Tomato" should be selected in the app
     And I should find "Acerola is a fruit" inside the split-view content in the app
+
+    # Edit
+    When I press "Tomato" in the app
+    And I press "Edit entry" in the app
+    And I press "Save" in the app
+    Then I should find "Tomato is a fruit" inside the split-view content in the app
+    And I should find "Tomato" in the app
+    And I should find "Cashew" in the app
+    And I should find "Acerola" in the app

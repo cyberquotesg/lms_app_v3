@@ -23,7 +23,7 @@ import { CoreRatingOffline } from '@features/rating/services/rating-offline';
 import { CoreRatingSyncProvider } from '@features/rating/services/rating-sync';
 import { CoreUser } from '@features/user/services/user';
 import { CanLeave } from '@guards/can-leave';
-import { IonContent, IonRefresher } from '@ionic/angular';
+import { IonContent } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
@@ -31,7 +31,6 @@ import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { NgZone, Translate } from '@singletons';
-import { CoreArray } from '@singletons/array';
 import { CoreDom } from '@singletons/dom';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
@@ -51,6 +50,7 @@ import {
 import { AddonModForumHelper } from '../../services/forum-helper';
 import { AddonModForumOffline } from '../../services/forum-offline';
 import { AddonModForumSync, AddonModForumSyncProvider } from '../../services/forum-sync';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 type SortType = 'flat-newest' | 'flat-oldest' | 'nested';
 
@@ -134,7 +134,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
 
     async ngOnInit(): Promise<void> {
         try {
-            const routeData = this.route.snapshot.data;
+            const routeData = CoreNavigator.getRouteData(this.route);
             this.courseId = CoreNavigator.getRouteNumberParam('courseId');
             this.cmId = CoreNavigator.getRouteNumberParam('cmId');
             this.forumId = CoreNavigator.getRouteNumberParam('forumId');
@@ -164,8 +164,11 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             return;
         }
 
+        const currentSite = CoreSites.getCurrentSite();
         this.isOnline = CoreNetwork.isOnline();
-        this.externalUrl = CoreSites.getCurrentSite()?.createSiteUrl('/mod/forum/discuss.php', { d: this.discussionId.toString() });
+        this.externalUrl = currentSite && currentSite.shouldDisplayInformativeLinks() ?
+            currentSite.createSiteUrl('/mod/forum/discuss.php', { d: this.discussionId.toString() }) :
+            undefined;
         this.onlineObserver = CoreNetwork.onChange().subscribe(() => {
             // Execute the callback in the Angular zone, so change detection doesn't stop working.
             NgZone.run(() => {
@@ -562,19 +565,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
 
             if (forceMarkAsRead || (hasUnreadPosts && this.trackPosts)) {
                 // Add log in Moodle and mark unread posts as readed.
-                AddonModForum.logDiscussionView(this.discussionId, this.forumId || -1, this.forum.name).catch(() => {
-                    // Ignore errors.
-                }).finally(() => {
-                    if (!this.courseId || !this.cmId) {
-                        return;
-                    }
-
-                    // Trigger mark read posts.
-                    CoreEvents.trigger(AddonModForumProvider.MARK_READ_EVENT, {
-                        courseId: this.courseId,
-                        moduleId: this.cmId,
-                    }, CoreSites.getCurrentSiteId());
-                });
+                this.logDiscussionView(forceMarkAsRead);
             }
         }
     }
@@ -611,7 +602,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
                 .syncDiscussionReplies(this.discussionId)
                 .then((result) => {
                     if (result.warnings && result.warnings.length) {
-                        CoreDomUtils.showErrorModal(result.warnings[0]);
+                        CoreDomUtils.showAlert(undefined, result.warnings[0]);
                     }
 
                     if (result && result.updated && this.forumId) {
@@ -632,7 +623,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
                 .syncRatings(this.cmId, this.discussionId)
                 .then((result) => {
                     if (result.warnings && result.warnings.length) {
-                        CoreDomUtils.showErrorModal(result.warnings[0]);
+                        CoreDomUtils.showAlert(undefined, result.warnings[0]);
                     }
 
                     return;
@@ -658,7 +649,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
      * @param showErrors If show errors to the user of hide them.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher | null, done?: () => void, showErrors: boolean = false): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement | null, done?: () => void, showErrors: boolean = false): Promise<void> {
         if (this.discussionLoaded) {
             await this.refreshPosts(true, showErrors).finally(() => {
                 refresher?.complete();
@@ -834,7 +825,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
     protected getAllPosts(): Post[] {
         const allPosts = this.posts.map(post => this.flattenPostHierarchy(post));
 
-        return CoreArray.flatten(allPosts);
+        return allPosts.flat();
     }
 
     /**
@@ -852,6 +843,35 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
         }
 
         return posts;
+    }
+
+    /**
+     * Log discussion as viewed. This will also mark the posts as read.
+     *
+     * @param logAnalytics Whether to log analytics too or not.
+     */
+    protected async logDiscussionView(logAnalytics = false): Promise<void> {
+        await CoreUtils.ignoreErrors(AddonModForum.logDiscussionView(this.discussionId, this.forumId || -1));
+
+        if (logAnalytics) {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'mod_forum_view_forum_discussion',
+                name: this.startingPost?.subject ?? this.forum.name ?? '',
+                data: { id: this.discussionId, forumid: this.forumId, category: 'forum' },
+                url: `/mod/forum/discuss.php?d=${this.discussionId}` + (this.postId ? `#p${this.postId}` : ''),
+            });
+        }
+
+        if (!this.courseId || !this.cmId || !this.trackPosts) {
+            return;
+        }
+
+        // Trigger mark read posts.
+        CoreEvents.trigger(AddonModForumProvider.MARK_READ_EVENT, {
+            courseId: this.courseId,
+            moduleId: this.cmId,
+        }, CoreSites.getCurrentSiteId());
     }
 
 }
@@ -872,8 +892,10 @@ class AddonModForumDiscussionDiscussionsSwipeManager extends AddonModForumDiscus
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return this.getSource().DISCUSSIONS_PATH_PREFIX + route.params.discussionId;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const params = CoreNavigator.getRouteParams(route);
+
+        return this.getSource().DISCUSSIONS_PATH_PREFIX + params.discussionId;
     }
 
 }

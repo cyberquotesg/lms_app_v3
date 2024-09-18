@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
 import { Component, Input, OnInit, Optional } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
@@ -57,7 +57,7 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
     @Input() autoPlayData?: AddonModScormAutoPlayData; // Data to use to play the SCORM automatically.
 
     component = AddonModScormProvider.COMPONENT;
-    moduleName = 'scorm';
+    pluginName = 'scorm';
 
     scorm?: AddonModScormScorm; // The SCORM object.
     currentOrganization: Partial<AddonModScormOrganization> & { identifier: string} = {
@@ -301,12 +301,7 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
             return;
         }
 
-        const grade = await AddonModScorm.getAttemptGrade(this.scorm, attempt, offline);
-
-        attempts[attempt] = {
-            num: attempt,
-            grade: grade,
-        };
+        attempts[attempt] = await AddonModScorm.getAttemptGrade(this.scorm, attempt, offline);
     }
 
     /**
@@ -344,10 +339,10 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
 
         // Now format the grades.
         this.onlineAttempts.forEach((attempt) => {
-            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.grade);
+            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.score);
         });
         this.offlineAttempts.forEach((attempt) => {
-            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.grade);
+            attempt.gradeFormatted = AddonModScorm.formatGrade(scorm, attempt.score);
         });
 
         this.gradeFormatted = AddonModScorm.formatGrade(scorm, this.grade);
@@ -361,7 +356,9 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
             return; // Shouldn't happen.
         }
 
-        await AddonModScorm.logView(this.scorm.id, this.scorm.name);
+        await CoreUtils.ignoreErrors(AddonModScorm.logView(this.scorm.id));
+
+        this.analyticsLogEvent('mod_scorm_view_scorm');
     }
 
     /**
@@ -498,10 +495,10 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
             return;
         }
 
-        const isOutdated = this.currentStatus === CoreConstants.OUTDATED;
+        const isOutdated = this.currentStatus === DownloadStatus.OUTDATED;
         const scorm = this.scorm;
 
-        if (!isOutdated && this.currentStatus !== CoreConstants.NOT_DOWNLOADED) {
+        if (!isOutdated && this.currentStatus !== DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED) {
             // Already downloaded, open it.
             this.openScorm(scoId, preview);
 
@@ -581,16 +578,16 @@ export class AddonModScormIndexComponent extends CoreCourseModuleMainActivityCom
     /**
      * @inheritdoc
      */
-    protected async showStatus(status: string): Promise<void> {
+    protected async showStatus(status: DownloadStatus): Promise<void> {
 
-        if (status === CoreConstants.OUTDATED && this.scorm) {
+        if (status === DownloadStatus.OUTDATED && this.scorm) {
             // Only show the outdated message if the file should be downloaded.
             const download = await AddonModScorm.shouldDownloadMainFile(this.scorm, true);
 
             this.statusMessage = download ? 'addon.mod_scorm.scormstatusoutdated' : '';
-        } else if (status === CoreConstants.NOT_DOWNLOADED) {
+        } else if (status === DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED) {
             this.statusMessage = 'addon.mod_scorm.scormstatusnotdownloaded';
-        } else if (status === CoreConstants.DOWNLOADING) {
+        } else if (status === DownloadStatus.DOWNLOADING) {
             if (!this.downloading) {
                 // It's being downloaded right now but the view isn't tracking it. "Restore" the download.
                 this.downloadScormPackage();

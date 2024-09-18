@@ -13,22 +13,26 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { SafeUrl } from '@angular/platform-browser';
-import { IonRefresher } from '@ionic/angular';
 
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreUser, CoreUserProfile, USER_PROFILE_PICTURE_UPDATED, USER_PROFILE_REFRESHED } from '@features/user/services/user';
+import {
+    CoreUser,
+    CoreUserProfile,
+    USER_PROFILE_PICTURE_UPDATED,
+    USER_PROFILE_REFRESHED,
+    USER_PROFILE_SERVER_TIMEZONE,
+} from '@features/user/services/user';
 import { CoreUserHelper } from '@features/user/services/user-helper';
 import { CoreNavigator } from '@services/navigator';
 import { CoreIonLoadingElement } from '@classes/ion-loading';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreFileUploaderHelper } from '@features/fileuploader/services/fileuploader-helper';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { Translate } from '@singletons';
+import { CoreUrlUtils } from '@services/utils/url';
 
 /**
  * Page that displays info about a user.
@@ -48,10 +52,10 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
     hasDetails = false;
     user?: CoreUserProfile;
     title?: string;
-    formattedAddress?: string;
-    encodedAddress?: SafeUrl;
     canChangeProfilePicture = false;
     interests?: string[];
+    displayTimezone = false;
+    canShowDepartment = false;
 
     // by rachmad
     clonedUser: any = {};
@@ -83,7 +87,6 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             }
 
             this.user.email = data.user.email;
-            this.user.address = CoreUserHelper.formatAddress('', data.user.city, data.user.country);
         }, CoreSites.getCurrentSiteId());
     }
 
@@ -93,6 +96,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
     async ngOnInit(): Promise<void> {
         this.userId = CoreNavigator.getRouteNumberParam('userId') || 0;
         this.courseId = CoreNavigator.getRouteNumberParam('courseId') || 0;
+        this.canShowDepartment = this.userId != this.site.getUserId();
 
         // Allow to change the profile image only in the app profile page.
         this.canChangeProfilePicture =
@@ -115,11 +119,6 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
         try {
             const user = await CoreUser.getProfile(this.userId, this.courseId);
 
-            if (user.address) {
-                this.formattedAddress = CoreUserHelper.formatAddress(user.address, user.city, user.country);
-                this.encodedAddress = CoreTextUtils.buildAddressURL(this.formattedAddress);
-            }
-
             this.interests = user.interests ?
                 user.interests.split(',').map(interest => interest.trim()) :
                 undefined;
@@ -130,7 +129,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             this.user = user;
             this.title = user.fullname;
 
-            this.user.address = CoreUserHelper.formatAddress('', user.city, user.country);
+            this.fillTimezone();
 
             // by rachmad
             this.reps = [];
@@ -257,7 +256,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
      * @param event Event.
      * @returns Promise resolved when done.
      */
-    async refreshUser(event?: IonRefresher): Promise<void> {
+    async refreshUser(event?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(CoreUser.invalidateUserCache(this.userId));
 
         await this.fetchUser();
@@ -303,11 +302,35 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             return 'undefined';
         }
 
-        if (avatarUrl.startsWith(`${this.site?.siteUrl}/theme/image.php`)) {
+        if (CoreUrlUtils.isThemeImageUrl(avatarUrl, this.site?.siteUrl)) {
             return 'default';
         }
 
         return avatarUrl;
+    }
+
+    /**
+     * Fill user timezone depending on the server and fix the legacy timezones.
+     */
+    protected fillTimezone(): void {
+        if (!this.user) {
+            return;
+        }
+
+        const serverTimezone = CoreSites.getRequiredCurrentSite().getStoredConfig('timezone');
+        this.displayTimezone = !!serverTimezone;
+
+        if (!this.displayTimezone) {
+            return;
+        }
+
+        if (this.user.timezone === USER_PROFILE_SERVER_TIMEZONE) {
+            this.user.timezone = serverTimezone;
+        }
+
+        if (this.user.timezone) {
+            this.user.timezone = CoreUserHelper.translateLegacyTimezone(this.user.timezone);
+        }
     }
 
     /**

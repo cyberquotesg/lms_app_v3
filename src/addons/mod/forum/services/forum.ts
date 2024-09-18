@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreRatingInfo } from '@features/rating/services/rating';
@@ -29,6 +29,7 @@ import { CoreUtils } from '@services/utils/utils';
 import { CoreStatusWithWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning, CoreWSStoredFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { AddonModForumOffline, AddonModForumOfflineDiscussion, AddonModForumReplyOptions } from './forum-offline';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 const ROOT_CACHE_KEY = 'mmaModForum:';
 
@@ -996,23 +997,19 @@ export class AddonModForumProvider {
      * Report a forum as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the forum.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logView(id: number, name?: string, siteId?: string): Promise<void> {
+    logView(id: number, siteId?: string): Promise<void> {
         const params = {
             forumid: id,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_forum_view_forum',
             params,
             AddonModForumProvider.COMPONENT,
             id,
-            name,
-            'forum',
-            {},
             siteId,
         );
     }
@@ -1022,23 +1019,19 @@ export class AddonModForumProvider {
      *
      * @param id Discussion ID.
      * @param forumId Forum ID.
-     * @param name Name of the forum.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    logDiscussionView(id: number, forumId: number, name?: string, siteId?: string): Promise<void> {
+    logDiscussionView(id: number, forumId: number, siteId?: string): Promise<void> {
         const params = {
             discussionid: id,
         };
 
-        return CoreCourseLogHelper.logSingle(
+        return CoreCourseLogHelper.log(
             'mod_forum_view_forum_discussion',
             params,
             AddonModForumProvider.COMPONENT,
             forumId,
-            name,
-            'forum',
-            params,
             siteId,
         );
     }
@@ -2141,3 +2134,12 @@ export type AddonModForumMarkReadData = {
     courseId: number;
     moduleId: number;
 };
+
+/**
+ * Tracking options.
+ */
+export const enum AddonModForumTracking {
+    OFF = 0,
+    OPTIONAL = 1,
+    FORCED = 2,
+}

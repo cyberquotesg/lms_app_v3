@@ -16,7 +16,6 @@ import { Injectable } from '@angular/core';
 
 import moment, { LongDateFormatKey } from 'moment-timezone';
 import { makeSingleton, Translate } from '@singletons';
-import { CoreTime } from '@singletons/time';
 
 /*
  * "Utils" service with helper functions for date and time.
@@ -156,52 +155,6 @@ export class CoreTimeUtilsProvider {
     }
 
     /**
-     * Returns years, months, days, hours, minutes and seconds in a human readable format.
-     *
-     * @param seconds A number of seconds
-     * @param precision Number of elements to have in precision.
-     * @returns Seconds in a human readable format.
-     * @deprecated since app 4.0. Use CoreTime.formatTime instead.
-     */
-    formatTime(seconds: number, precision = 2): string {
-        return CoreTime.formatTime(seconds, precision);
-    }
-
-    /**
-     * Converts a number of seconds into a short human readable format: minutes and seconds, in fromat: 3' 27''.
-     *
-     * @param duration Seconds
-     * @returns Short human readable text.
-     * @deprecated since app 4.0. Use CoreTime.formatTimeShort instead.
-     */
-    formatTimeShort(duration: number): string {
-        return CoreTime.formatTimeShort(duration);
-    }
-
-    /**
-     * Returns hours, minutes and seconds in a human readable format.
-     *
-     * @param duration Duration in seconds
-     * @param precision Number of elements to have in precision. 0 or undefined to full precission.
-     * @returns Duration in a human readable format.
-     * @deprecated since app 4.0. Use CoreTime.formatTime instead.
-     */
-    formatDuration(duration: number, precision?: number): string {
-        return CoreTime.formatTime(duration, precision);
-    }
-
-    /**
-     * Returns duration in a short human readable format: minutes and seconds, in fromat: 3' 27''.
-     *
-     * @param duration Duration in seconds
-     * @returns Duration in a short human readable format.
-     * @deprecated since app 4.0. Use CoreTime.formatTimeShort instead.
-     */
-    formatDurationShort(duration: number): string {
-        return CoreTime.formatTimeShort(duration);
-    }
-
-    /**
      * Return the current timestamp in a "readable" format: YYYYMMDDHHmmSS.
      *
      * @returns The readable timestamp.
@@ -255,7 +208,11 @@ export class CoreTimeUtilsProvider {
      * @returns Formatted time.
      */
     toDatetimeFormat(timestamp?: number): string {
-        return moment(timestamp || Date.now()).toISOString();
+        const isoString = moment(timestamp || Date.now()).toISOString(true);
+
+        // Remove milliseconds and timezone for consistency with the values used by ion-datetime.
+        // ion-datetime no longer uses timezone, it always uses UTC.
+        return isoString.substring(0, isoString.indexOf('.'));
     }
 
     /**

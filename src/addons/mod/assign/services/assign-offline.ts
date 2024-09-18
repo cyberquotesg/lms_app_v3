@@ -86,8 +86,7 @@ export class AddonModAssignOfflineProvider {
 
         const results = await Promise.all(promises);
         // Flatten array.
-        const flatten: (AddonModAssignSubmissionsDBRecord | AddonModAssignSubmissionsGradingDBRecord)[] =
-            [].concat.apply([], results);
+        const flatten = results.flat();
 
         // Get assign id.
         let assignIds: number[] = flatten.map((assign) => assign.assignid);

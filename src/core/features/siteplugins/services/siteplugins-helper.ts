@@ -20,7 +20,7 @@ import { AddonModAssignSubmissionDelegate } from '@addons/mod/assign/services/su
 import { AddonModQuizAccessRuleDelegate } from '@addons/mod/quiz/services/access-rules-delegate';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreBlockDelegate } from '@features/block/services/block-delegate';
 import { CoreCompile } from '@features/compile/services/compile';
 import { CoreCourseOptionsDelegate } from '@features/course/services/course-options-delegate';
@@ -74,6 +74,7 @@ import {
     CoreSitePluginsHandlerCommonData,
     CoreSitePluginsInitHandlerData,
     CoreSitePluginsMainMenuHomeHandlerData,
+    CoreSitePluginsEnrolHandlerData,
 } from './siteplugins';
 import { makeSingleton } from '@singletons';
 import { CoreMainMenuHomeDelegate } from '@features/mainmenu/services/home-delegate';
@@ -86,6 +87,8 @@ import { CoreContentLinksModuleListHandler } from '@features/contentlinks/classe
 import { CoreObject } from '@singletons/object';
 import { CoreUrlUtils } from '@services/utils/url';
 import { CorePath } from '@singletons/path';
+import { CoreEnrolAction, CoreEnrolDelegate } from '@features/enrol/services/enrol-delegate';
+import { CoreSitePluginsEnrolHandler } from '../classes/handlers/enrol-handler';
 
 const HANDLER_DISABLED = 'core_site_plugins_helper_handler_disabled';
 
@@ -269,6 +272,8 @@ export class CoreSitePluginsHelperProvider {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             HANDLER_DISABLED: HANDLER_DISABLED,
         };
+
+        await CoreCompile.loadLibraries();
         CoreCompile.injectLibraries(instance);
 
         // Add some data of the WS call result.
@@ -286,17 +291,6 @@ export class CoreSitePluginsHelperProvider {
         }
 
         return result;
-    }
-
-    /**
-     * Fetch site plugins.
-     *
-     * @param siteId Site ID. If not defined, current site.
-     * @returns Promise resolved when done. Returns the list of plugins to load.
-     * @deprecated since 3.9.5. The function was moved to CoreSitePlugins.getPlugins.
-     */
-    async fetchSitePlugins(siteId?: string): Promise<CoreSitePluginsPlugin[]> {
-        return CoreSitePlugins.getPlugins(siteId);
     }
 
     /**
@@ -322,18 +316,6 @@ export class CoreSitePluginsHelperProvider {
      */
     protected getPrefixedString(addon: string, key: string): string {
         return this.getPrefixForStrings(addon) + key;
-    }
-
-    /**
-     * Check if a certain plugin is a site plugin and it's enabled in a certain site.
-     *
-     * @param plugin Data of the plugin.
-     * @param site Site affected.
-     * @returns Whether it's a site plugin and it's enabled.
-     * @deprecated since 3.9.5. The function was moved to CoreSitePlugins.isSitePluginEnabled.
-     */
-    isSitePluginEnabled(plugin: CoreSitePluginsPlugin, site: CoreSite): boolean {
-        return CoreSitePlugins.isSitePluginEnabled(plugin, site);
     }
 
     /**
@@ -561,6 +543,10 @@ export class CoreSitePluginsHelperProvider {
                     uniqueName = this.registerMainMenuHomeHandler(plugin, handlerName, handlerSchema, initResult);
                     break;
 
+                case 'CoreEnrolDelegate':
+                    uniqueName = await this.registerEnrolHandler(plugin, handlerName, handlerSchema, initResult);
+                    break;
+
                 default:
                     // Nothing to do.
             }
@@ -627,7 +613,6 @@ export class CoreSitePluginsHelperProvider {
                 for (const property of handlerProperties) {
                     if (property !== 'constructor' && typeof handler[property] === 'function' &&
                             typeof jsResult[property] === 'function') {
-                        // eslint-disable-next-line @typescript-eslint/ban-types
                         handler[property] = (<Function> jsResult[property]).bind(handler);
                     }
                 }
@@ -796,6 +781,68 @@ export class CoreSitePluginsHelperProvider {
                 handler,
             };
         }
+
+        return uniqueName;
+    }
+
+    /**
+     * Given a handler in a plugin, register it in the enrol delegate.
+     *
+     * @param plugin Data of the plugin.
+     * @param handlerName Name of the handler in the plugin.
+     * @param handlerSchema Data about the handler.
+     * @param initResult Result of init function.
+     * @returns A string to identify the handler.
+     */
+    protected async registerEnrolHandler(
+        plugin: CoreSitePluginsPlugin,
+        handlerName: string,
+        handlerSchema: CoreSitePluginsEnrolHandlerData,
+        initResult: CoreSitePluginsContent | null,
+    ): Promise<string | undefined> {
+        const uniqueName = CoreSitePlugins.getHandlerUniqueName(plugin, handlerName);
+        const type = (handlerSchema.moodlecomponent || plugin.component).replace('enrol_', '');
+        const action = handlerSchema.enrolmentAction ?? CoreEnrolAction.BROWSER;
+        const handler = new CoreSitePluginsEnrolHandler(uniqueName, type, action, handlerSchema, initResult);
+
+        if (!handlerSchema.method && (action === CoreEnrolAction.SELF || action === CoreEnrolAction.GUEST)) {
+            this.logger.error('"self" or "guest" enrol plugins must implement a method to override the required JS functions.');
+
+            return;
+        }
+
+        if (handlerSchema.method) {
+            // Execute the main method and its JS to allow implementing the handler functions.
+            const result = await this.executeMethodAndJS(plugin, handlerSchema.method);
+
+            if (action === CoreEnrolAction.SELF && !result.jsResult?.enrol) {
+                this.logger.error('"self" enrol plugins must implement an "enrol" function in the JS returned by the method.');
+
+                return;
+            }
+
+            if (action === CoreEnrolAction.GUEST && (!result.jsResult?.canAccess || !result.jsResult?.validateAccess)) {
+                this.logger.error('"guest" enrol plugins must implement "canAccess" and "validateAccess" functions in the JS ' +
+                    'returned by the method.');
+
+                return;
+            }
+
+            if (result.jsResult) {
+                // Override default handler functions with the result of the method JS.
+                const jsResult = <Record<string, unknown>> result.jsResult;
+                const handlerProperties = CoreObject.getAllPropertyNames(handler);
+
+                for (const property of handlerProperties) {
+                    if (property !== 'constructor' && typeof handler[property] === 'function' &&
+                            typeof jsResult[property] === 'function') {
+                        handler[property] = (<Function> jsResult[property]).bind(handler);
+                    }
+                }
+            }
+        }
+
+        CoreEnrolDelegate.registerHandler(handler);
 
         return uniqueName;
     }

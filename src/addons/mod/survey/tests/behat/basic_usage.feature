@@ -1,11 +1,12 @@
-@mod @mod_survey @app @javascript
+@addon_mod_survey @app @javascript
 Feature: Test basic usage of survey activity in app
   In order to participate in surveys while using the mobile app
   As a student
   I need basic survey functionality to work
 
   Background:
-    Given the following "courses" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "courses" exist:
       | fullname | shortname |
       | Course 1 | C1        |
     And the following "users" exist:
@@ -16,6 +17,7 @@ Feature: Test basic usage of survey activity in app
       | user     | course | role    |
       | student1 | C1     | student |
       | teacher1 | C1     | editingteacher |
+    And I enable "survey" "mod" plugin
     And the following "activities" exist:
       | activity | name             | intro       | course | idnumber | groupmode |
       | survey   | Test survey name | Test survey | C1     | survey   | 0         |
@@ -51,6 +53,10 @@ Feature: Test basic usage of survey activity in app
     And I log in as "student1"
     Then I should see "You've completed this survey.  The graph below shows a summary of your results compared to the class averages."
     And I should see "1 people have completed this survey so far"
+    And the following events should have been logged for "student1" in the app:
+      | name                                   | activity | activityname     | course   |
+      | \mod_survey\event\course_module_viewed | survey   | Test survey name | Course 1 |
+      | \mod_survey\event\response_submitted   | survey   | Test survey name | Course 1 |
 
   Scenario: Answer a survey & View results (Critical incidents)
     Given the following "activities" exist:

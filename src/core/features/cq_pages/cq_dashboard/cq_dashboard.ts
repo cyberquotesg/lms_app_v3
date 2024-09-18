@@ -77,7 +77,7 @@ export class CqDashboard extends CqPage implements OnInit
                     endpoint: 'get_filter_multiple',
                     page: 'dashboard',
                 },
-                mobileCourseMedia: {
+                cqConfig: {
                     cluster: 'CqLib',
                     endpoint: 'get_cq_config',
                     name: 'mobile_course_media',
@@ -87,8 +87,16 @@ export class CqDashboard extends CqPage implements OnInit
 
         this.pageJobExecuter(jobName, params, (data) => {
             let allData = this.CH.toJson(data);
+
+            // filterMultiple
             this.pageData.filterMultiple = allData.filterMultiple;
-            this.pageData.mobileCourseMedia = Array.isArray(allData.mobileCourseMedia[0].value) ? allData.mobileCourseMedia[0].value : [allData.mobileCourseMedia[0].value];
+
+            // cqConfig
+            var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+
+            this.pageData.mobileCourseMedia = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
+            this.pageData.offlineCourse = this.pageData.mobileCourseMedia.includes("offline");
+            this.pageData.onlineCourse = this.pageData.mobileCourseMedia.includes("online");
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);

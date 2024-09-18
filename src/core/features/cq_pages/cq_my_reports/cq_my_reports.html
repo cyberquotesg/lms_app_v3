@@ -24,7 +24,7 @@
             <ion-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
                 <div *ngIf="pageData[availableYear]" class="pb-8">
                     <div class="text-center">
-                        <h5 class="mt-0 mb-20 text-center"><b>Total Training Hours</b></h5>
+                        <h5 class="mt-0 mb-20 text-center"><b>Total Training Hours<br />{{ pageData.userFullName }}</b></h5>
                         
                         <span class="dot as-shield mt-8 mb-8">
                             <div class="time-inside-dot second-font">

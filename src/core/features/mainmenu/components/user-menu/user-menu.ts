@@ -35,6 +35,9 @@ import { CoreUtils } from '@services/utils/utils';
 import { ModalController, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Component to display a user menu.
  */
@@ -60,7 +63,15 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     displayContactSupport = false;
     removeAccountOnLogout = false;
 
+    // by rachmad
+    isProduction: boolean;
+    appVersion: string;
+
     protected subscription!: Subscription;
+
+    // by rachmad
+    constructor(protected CH: CqHelper) {
+    }
 
     /**
      * @inheritdoc
@@ -75,6 +86,9 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         this.displayContactSupport = new CoreUserAuthenticatedSupportConfig(currentSite).canContactSupport();
         this.removeAccountOnLogout = !!CoreConstants.CONFIG.removeaccountonlogout;
         this.displaySiteUrl = currentSite.shouldDisplayInformativeLinks();
+
+        // by rachmad
+        this.displaySwitchAccount = false;
 
         this.loadSiteLogo(currentSite);
 
@@ -99,6 +113,10 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                 }
 
                 let newHandlers = handlers
+
+                    // by rachmad
+                    .filter((handler) => handler.name && handler.name.indexOf("AddonBadges") > -1)
+
                     .filter((handler) => handler.type === CoreUserProfileHandlerType.LIST_ITEM)
                     .map((handler) => handler.data);
 

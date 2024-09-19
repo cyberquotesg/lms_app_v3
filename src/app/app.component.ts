@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+// by rachmad
+// import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, Renderer2 } from '@angular/core';
+
 import { IonRouterOutlet } from '@ionic/angular';
 import { BackButtonEvent } from '@ionic/core';
 
@@ -28,6 +31,13 @@ import { CoreLogger } from '@singletons/logger';
 import { CorePromisedValue } from '@classes/promised-value';
 import { register } from 'swiper/element/bundle';
 
+// by rachmad
+import { CoreEvents } from '@singletons/events';
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { Zoom } from '@awesome-cordova-plugins/zoom';
+import Color from 'color';
+import { AddonNotifications } from '@addons/notifications/services/notifications';
+
 register();
 
 @Component({
@@ -39,6 +49,15 @@ export class AppComponent implements OnInit, AfterViewInit {
     @ViewChild(IonRouterOutlet) outlet?: IonRouterOutlet;
 
     protected logger = CoreLogger.getInstance('AppComponent');
+
+    // by rachmad
+    notificationAnnouncementCountAgent: any;
+
+    // by rachmad
+    constructor(protected renderer: Renderer2, protected CH: CqHelper)
+    {
+        this.CH.zoom = Zoom;
+    }
 
     /**
      * @inheritdoc
@@ -97,6 +116,21 @@ export class AppComponent implements OnInit, AfterViewInit {
 
         // @todo Pause Youtube videos in Android when app is put in background or screen is locked?
         // See: https://github.com/moodlehq/moodleapp/blob/ionic3/src/app/app.component.ts#L312
+
+        // by rachmad
+        CoreEvents.on(CoreEvents.LOGOUT, () => {
+            this.ifLoggedOut();
+        });
+        CoreEvents.on(CoreEvents.LOGIN, () => {
+            this.ifLoggedOut();
+            this.ifLoggedIn();
+        });
+        CoreEvents.on(CoreEvents.SESSION_EXPIRED, () => {
+            this.ifLoggedOut();
+        });
+        CoreEvents.on(CoreEvents.USER_NO_LOGIN, () => {
+            this.ifLoggedOut();
+        });
     }
 
     /**
@@ -147,4 +181,104 @@ export class AppComponent implements OnInit, AfterViewInit {
         return promise;
     }
 
+    // by rachmad
+    ifLoggedIn(): void {
+        this.CH.updateCount("notification, announcement");
+        this.notificationAnnouncementCountAgent = setInterval(() => { this.CH.updateCount("notification, announcement") }, 10 * 1000);
+
+        const institutionParams: any = {
+            calls: {
+                country: {
+                    cluster: "CqInstitutionLib",
+                    endpoint: "get_country_by_user",
+                },
+                organization: {
+                    cluster: "CqInstitutionLib",
+                    endpoint: "get_organization_by_user",
+                },
+            },
+        };
+        this.CH.callApi(institutionParams)
+        .then((data) => {
+            let allData = this.CH.toJson(data);
+            this.CH.log("country data", allData.country);
+            this.CH.log("organization data", allData.organization);
+
+            let country = allData.country ? JSON.stringify(allData.country) : "{}";
+            let organization = allData.organization ? JSON.stringify(allData.organization) : "{}";
+
+            localStorage.setItem('cqCountry', country);
+            localStorage.setItem('cqOrganization', organization);
+
+            // Set cssVars
+            if (allData.organization)
+            {
+                const properties = [
+                    'headerBackgroundColor',
+                    'headerTextColor',
+                    'footerBackgroundColor',
+                    'footerTextColor',
+                    'menuBackgroundColor',
+                    'menuTextColor',
+                    'selectedMenuBackgroundColor',
+                    'selectedMenuTextColor',
+                    'selectedMenuHoverBackgroundColor',
+                    'selectedMenuHoverTextColor',
+                    'buttonColor',
+                    'buttonBorderColor',
+                    'buttonTextColor',
+                    'buttonHoverColor',
+                    'buttonHoverBorderColor',
+                    'buttonHoverTextColor',
+                    'mobileBackgroundColor',
+                    'mobileBackgroundImage',
+                ];
+                let cssVars: string[] = [];
+                properties.forEach((property) => {
+                    if (this.CH.isEmpty(allData.organization[property]) || allData.organization[property] == 'null') return;
+
+                    let cssVar = '';
+
+                    // color
+                    if (property.toLowerCase().indexOf("color") > -1)
+                    {
+                        cssVar = '--' + property + ': #' + allData.organization[property] + ";";
+                        cssVar += '--' + property.replace("Color", "LightenColor") + ': ' + Color('#' + allData.organization[property]).lighten(0.4).hex() + ";";
+                        cssVar += '--' + property.replace("Color", "DarkenColor") + ': ' + Color('#' + allData.organization[property]).darken(0.4).hex() + ";";
+                        cssVar += '--' + property.replace("Color", "LeftenColor") + ': ' + Color('#' + allData.organization[property]).rotate(-15).hex() + ";";
+                        cssVar += '--' + property.replace("Color", "RightenColor") + ': ' + Color('#' + allData.organization[property]).rotate(15).hex();
+                    }
+
+                    // image
+                    else if (property == 'mobileBackgroundImage')
+                    {
+                        cssVar = '--' + property + ': url(\'/assets/img/background/' + allData.organization[property] + '\')';
+                    }
+
+                    // anything else
+                    else cssVar = '--' + property + ': ' + allData.organization[property];
+
+                    // this.log('cssVar', cssVar);
+                    cssVars.push(cssVar);
+                });
+
+                this.renderer.addClass(this.CH.getBody(), 'logged-in');
+                this.renderer.setProperty(this.CH.getBody(), 'style', cssVars.join(';'));
+            }
+        })
+        .catch((error) => {
+            this.CH.errorLog("institution information error", {institutionParams, error});
+        });
+
+        // zoom
+        this.CH.initiateZoom();
+    }
+    ifLoggedOut(): void {
+        clearInterval(this.notificationAnnouncementCountAgent);
+
+        this.renderer.removeClass(this.CH.getBody(), 'logged-in');
+        this.renderer.setProperty(this.CH.getBody(), 'style', '');
+
+        this.CH.zoomInitiated = false;
+    }
 }

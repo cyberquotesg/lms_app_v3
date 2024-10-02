@@ -35,7 +35,7 @@ import {
 import { AddonCalendarOffline } from '../../services/calendar-offline';
 import { AddonCalendarEventTypeOption, AddonCalendarHelper } from '../../services/calendar-helper';
 import { AddonCalendarSync, AddonCalendarSyncProvider } from '../../services/calendar-sync';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { Translate } from '@singletons';
 import { CoreFilterHelper } from '@features/filter/services/filter-helper';
 import { AddonCalendarOfflineEventDBRecord } from '../../services/database/calendar-offline';
@@ -46,10 +46,11 @@ import { CoreForms } from '@singletons/form';
 import { CoreReminders, CoreRemindersService, CoreRemindersUnits } from '@features/reminders/services/reminders';
 import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
 import moment from 'moment-timezone';
-import { CoreAppProvider } from '@services/app';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
+import { ADDON_CALENDAR_COMPONENT } from '@features/cq_pages/cq_calendar/constants';
+import { ContextLevel } from '@/core/constants';
 
 /**
  * Page that displays a form to create/edit an event.
@@ -65,8 +66,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
     @ViewChild('editEventForm') formElement!: ElementRef;
 
     title = 'addon.calendar.newevent';
-    dateFormat: string;
-    component = AddonCalendarProvider.COMPONENT;
+    component = ADDON_CALENDAR_COMPONENT;
     loaded = false;
     hasOffline = false;
     eventTypes: AddonCalendarEventTypeOption[] = [];
@@ -75,20 +75,18 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
     groups: CoreGroup[] = [];
     loadingGroups = false;
     courseGroupSet = false;
-    errors: Record<string, string>;
     error = false;
     eventRepeatId?: number;
     otherEventsCount = 0;
     eventId?: number;
     maxDate: string;
     minDate: string;
-    displayTimezone?: string;
 
     // Form variables.
     form: FormGroup;
-    typeControl: FormControl;
-    groupControl: FormControl;
-    descriptionControl: FormControl;
+    typeControl: FormControl<AddonCalendarEventType | null>;
+    groupControl: FormControl<number | null>;
+    descriptionControl: FormControl<string>;
 
     // Reminders.
     remindersEnabled = false;
@@ -110,21 +108,13 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
 
         this.currentSite = CoreSites.getRequiredCurrentSite();
         this.remindersEnabled = CoreReminders.isEnabled();
-        this.errors = {
-            required: Translate.instant('core.required'),
-        };
-
-        // Calculate format to use. ion-datetime doesn't support escaping characters ([]), so we remove them.
-        this.dateFormat = CoreTimeUtils.convertPHPToMoment(Translate.instant('core.strftimedatetimeshort'))
-            .replace(/[[\]]/g, '');
-        this.displayTimezone = CoreAppProvider.getForcedTimezone();
 
         this.form = new FormGroup({});
 
         // Initialize form variables.
-        this.typeControl = this.fb.control('', Validators.required);
-        this.groupControl = this.fb.control('');
-        this.descriptionControl = this.fb.control('');
+        this.typeControl = this.fb.control(null, Validators.required);
+        this.groupControl = this.fb.control(null);
+        this.descriptionControl = this.fb.control('', { nonNullable: true });
         this.form.addControl('name', this.fb.control('', Validators.required));
         this.form.addControl('eventtype', this.typeControl);
         this.form.addControl('categoryid', this.fb.control(''));
@@ -135,7 +125,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
         this.form.addControl('duration', this.fb.control(0));
         this.form.addControl('timedurationminutes', this.fb.control(''));
         this.form.addControl('repeat', this.fb.control(false));
-        this.form.addControl('repeats', this.fb.control('1'));
+        this.form.addControl('repeats', this.fb.control({ value: '1', disabled: true }));
         this.form.addControl('repeateditall', this.fb.control(1));
 
         this.maxDate = CoreTimeUtils.getDatetimeDefaultMax();
@@ -198,7 +188,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
                 promises.push(AddonCalendarSync.waitForSync(AddonCalendarSyncProvider.SYNC_ID).then(async () => {
                     // Do not block if the scope is already destroyed.
                     if (!this.isDestroyed && this.eventId) {
-                        CoreSync.blockOperation(AddonCalendarProvider.COMPONENT, eventId);
+                        CoreSync.blockOperation(ADDON_CALENDAR_COMPONENT, eventId);
                     }
 
                     let eventForm: AddonCalendarEvent | AddonCalendarOfflineEventDBRecord | undefined;
@@ -284,7 +274,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
 
         const courseFillFullname = async (course: CoreCourseSearchedData | CoreEnrolledCourseData): Promise<void> => {
             try {
-                const result = await CoreFilterHelper.getFiltersAndFormatText(course.fullname, 'course', course.id);
+                const result = await CoreFilterHelper.getFiltersAndFormatText(course.fullname, ContextLevel.COURSE, course.id);
                 course.fullname = result.text;
             } catch {
                 // Ignore errors.
@@ -341,11 +331,11 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
 
         this.form.controls.name.setValue(event.name);
         this.form.controls.timestart.setValue(CoreTimeUtils.toDatetimeFormat(event.timestart * 1000));
-        this.form.controls.eventtype.setValue(event.eventtype);
+        this.typeControl.setValue(event.eventtype as AddonCalendarEventType);
         this.form.controls.categoryid.setValue(event.categoryid || '');
         this.form.controls.courseid.setValue(courseId || '');
         this.form.controls.groupcourseid.setValue(courseId || '');
-        this.form.controls.groupid.setValue(event.groupid || '');
+        this.groupControl.setValue(event.groupid || null);
         this.form.controls.description.setValue(event.description);
         this.form.controls.location.setValue(event.location);
 
@@ -389,7 +379,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
      *
      * @param refresher Refresher.
      */
-    refreshData(refresher?: IonRefresher): void {
+    refreshData(refresher?: HTMLIonRefresherElement): void {
         const promises = [
             AddonCalendar.invalidateAccessInformation(this.courseId),
             AddonCalendar.invalidateAllowedEventTypes(this.courseId),
@@ -429,7 +419,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
         try {
             await this.loadGroups(courseId);
 
-            this.groupControl.setValue('');
+            this.groupControl.setValue(null);
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error getting data.');
         }
@@ -569,7 +559,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
      *
      * @param event Event.
      */
-    protected returnToList(event?: AddonCalendarEvent | AddonCalendarOfflineEventDBRecord): void {
+    protected returnToList(event: AddonCalendarEvent | AddonCalendarOfflineEventDBRecord): void {
         // Unblock the sync because the view will be destroyed and the sync process could be triggered before ngOnDestroy.
         this.unblockSync();
 
@@ -581,48 +571,18 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
                 this.currentSite.getId(),
             );
         } else {
-            if (event) {
-                CoreEvents.trigger(
-                    AddonCalendarProvider.NEW_EVENT_EVENT,
-                    {
-                        eventId: event.id,
-                        oldEventId: this.eventId,
-                    },
-                    this.currentSite.getId(),
-                );
-            } else {
-                CoreEvents.trigger(AddonCalendarProvider.NEW_EVENT_DISCARDED_EVENT, {}, this.currentSite.getId());
-            }
+            CoreEvents.trigger(
+                AddonCalendarProvider.NEW_EVENT_EVENT,
+                {
+                    eventId: event.id,
+                    oldEventId: this.eventId,
+                },
+                this.currentSite.getId(),
+            );
         }
 
         this.originalData = undefined; // Avoid asking for confirmation.
         CoreNavigator.back();
-    }
-
-    /**
-     * Discard an offline saved discussion.
-     */
-    async discard(): Promise<void> {
-        if (!this.eventId) {
-            return;
-        }
-
-        try {
-            await CoreDomUtils.showConfirm(Translate.instant('core.areyousure'));
-
-            try {
-                await AddonCalendarOffline.deleteEvent(this.eventId);
-
-                CoreForms.triggerFormCancelledEvent(this.formElement, this.currentSite.getId());
-
-                this.returnToList();
-            } catch {
-                // Shouldn't happen.
-                CoreDomUtils.showErrorModal('Error discarding event.');
-            }
-        } catch {
-            // Ignore errors
-        }
     }
 
     /**
@@ -646,7 +606,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
      */
     protected unblockSync(): void {
         if (this.eventId) {
-            CoreSync.unblockOperation(AddonCalendarProvider.COMPONENT, this.eventId);
+            CoreSync.unblockOperation(ADDON_CALENDAR_COMPONENT, this.eventId);
         }
     }
 
@@ -682,7 +642,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
      */
     async addReminder(): Promise<void> {
         const formData = this.form.value;
-        const eventTime = CoreTimeUtils.convertToTimestamp(formData.timestart, true);
+        const eventTime = moment(formData.timestart).unix();
 
         const reminderTime = await CoreDomUtils.openPopover<{timeBefore: number}>({
             component: CoreRemindersSetReminderMenuComponent,

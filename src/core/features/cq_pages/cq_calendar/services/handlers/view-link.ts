@@ -47,7 +47,7 @@ export class AddonCalendarViewLinkHandlerService extends CoreContentLinksHandler
         params: Record<string, string>,
     ): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]> {
         return [{
-            action: (siteId?: string): void => {
+            action: async (siteId?: string): Promise<void> => {
                 if (!params.view || params.view == 'month' || params.view == 'mini' || params.view == 'minithree') {
                     // Monthly view, open the calendar tab.
                     const stateParams: Params = {

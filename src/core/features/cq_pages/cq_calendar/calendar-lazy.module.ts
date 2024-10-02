@@ -20,7 +20,7 @@ import { AddonCalendarEventPage } from '@features/cq_pages/cq_calendar/pages/eve
 import { AddonCalendarIndexPage } from '@features/cq_pages/cq_calendar/pages/index';
 import { AddonCalendarSettingsPage } from '@features/cq_pages/cq_calendar/pages/settings/settings';
 import { Injector, NgModule } from '@angular/core';
-import { RouterModule, ROUTES, Routes } from '@angular/router';
+import { ROUTES, Routes } from '@angular/router';
 import { CoreEditorComponentsModule } from '@features/editor/components/components.module';
 import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
 
@@ -73,7 +73,6 @@ function buildRoutes(injector: Injector): Routes {
         CoreEditorComponentsModule,
         CqComponentsModule,
     ],
-    exports: [RouterModule],
     declarations: [
         AddonCalendarDayPage,
         AddonCalendarEditEventPage,

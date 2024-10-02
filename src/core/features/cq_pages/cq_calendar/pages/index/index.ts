@@ -66,7 +66,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
     year?: number;
     month?: number;
     canCreate = false;
-    courses: Partial<CoreEnrolledCourseData>[] = [];
+    courses: CoreEnrolledCourseData[] = [];
     loaded = false;
     hasOffline = false;
     isOnline = false;
@@ -169,7 +169,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
     }
 
     /**
-     * View loaded.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.loadUpcoming = !!CoreNavigator.getRouteBooleanParam('upcoming');
@@ -209,7 +209,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
             try {
                 const result = await AddonCalendarSync.syncEvents();
                 if (result.warnings && result.warnings.length) {
-                    CoreDomUtils.showErrorModal(result.warnings[0]);
+                    CoreDomUtils.showAlert(undefined, result.warnings[0]);
                 }
 
                 if (result.updated) {
@@ -272,7 +272,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
      * @param showErrors Whether to show sync errors to the user.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void, showErrors?: boolean): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void, showErrors?: boolean): Promise<void> {
         if (!this.loaded) {
             return;
         }
@@ -299,14 +299,11 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
         promises.push(AddonCalendar.invalidateAllowedEventTypes());
 
         // Refresh the sub-component.
-        // if (this.showCalendar && this.calendarComponent) {
-        //     promises.push(this.calendarComponent.refreshData(afterChange));
-        // } else if (!this.showCalendar && this.upcomingEventsComponent) {
-        //     promises.push(this.upcomingEventsComponent.refreshData());
-        // }
-
-        if (this.calendarComponent) promises.push(this.calendarComponent.refreshData(afterChange));
-        if (this.upcomingEventsComponent) promises.push(this.upcomingEventsComponent.refreshData());
+        if (this.showCalendar && this.calendarComponent) {
+            promises.push(this.calendarComponent.refreshData(afterChange));
+        } else if (!this.showCalendar && this.upcomingEventsComponent) {
+            promises.push(this.upcomingEventsComponent.refreshData());
+        }
 
         await Promise.all(promises).finally(() => this.fetchData(sync, showErrors));
     }

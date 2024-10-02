@@ -398,29 +398,15 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
     }
     async loginOriginal(captchaOrCsrfToken: string, value: string, e?: Event): Promise<void>
     {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        e?.preventDefault();
+        e?.stopPropagation();
 
         CoreApp.closeKeyboard();
 
         // Get input data.
-        const siteUrl = this.siteUrl;
+        const siteUrl = this.site.getURL();
         const username = this.credForm.value.username;
         const password = this.credForm.value.password;
-
-        if (!this.siteChecked || this.isBrowserSSO) {
-            // Site wasn't checked (it failed) or a previous check determined it was SSO. Let's check again.
-            await this.checkSite(siteUrl);
-
-            if (!this.isBrowserSSO && this.siteChecked) {
-                // Site doesn't use browser SSO, throw app's login again.
-                return this.login();
-            }
-
-            return;
-        }
 
         if (!username) {
             CoreDomUtils.showErrorModal('core.login.usernamerequired', true);
@@ -443,7 +429,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
         // Start the authentication process.
         try {
-            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrCsrfToken, value);
+            const data = await CoreSites.getUserToken(siteUrl, username, password);
 
             const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
 
@@ -455,7 +441,11 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
             await CoreNavigator.navigateToSiteHome({ params: { urlToOpen: this.urlToOpen } });
         } catch (error) {
-            CoreLoginHelper.treatUserTokenError(siteUrl, error, username, password);
+            if (error instanceof CoreSiteError && CoreLoginHelper.isAppUnsupportedError(error)) {
+                await CoreLoginHelper.showAppUnsupportedModal(siteUrl, this.site, error.debug);
+            } else {
+                CoreLoginHelper.treatUserTokenError(siteUrl, error, username, password);
+            }
 
             if (error.loggedout) {
                 CoreNavigator.navigate('/login/sites', { reset: true });

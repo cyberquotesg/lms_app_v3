@@ -15,9 +15,9 @@ export class CqAvailableCoursesViewService extends CoreContentLinksHandlerBase
     getActions(siteIds: string[], url: string, params: any): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]>
     {
         return [{
-            action: (siteId, navCtrl?): void => {
+            action: async (siteId, navCtrl?): Promise<void> => {
                 const stateParams: any = {};
-                CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
+                await CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
                     params: stateParams,
                     siteId,
                     preferCurrentTab: false,

@@ -64,8 +64,8 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     removeAccountOnLogout = false;
 
     // by rachmad
-    isProduction: boolean;
-    appVersion: string;
+    isProduction: boolean = false;
+    appVersion: string = "";
 
     protected subscription!: Subscription;
 
@@ -89,6 +89,8 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
 
         // by rachmad
         this.displaySwitchAccount = false;
+        this.isProduction = this.CH.isProduction();
+        this.appVersion = this.CH.appVersion();
 
         this.loadSiteLogo(currentSite);
 

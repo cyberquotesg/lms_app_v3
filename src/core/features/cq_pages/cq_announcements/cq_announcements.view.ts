@@ -15,9 +15,9 @@ export class CqAnnouncementsViewService extends CoreContentLinksHandlerBase
     getActions(siteIds: string[], url: string, params: any): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]>
     {
         return [{
-            action: (siteId, navCtrl?): void => {
+            action: async (siteId, navCtrl?): Promise<void> => {
                 const stateParams: any = {};
-                CoreNavigator.navigateToSitePath('/CqAnnouncements/index', {
+                await CoreNavigator.navigateToSitePath('/CqAnnouncements/index', {
                     params: stateParams,
                     siteId,
                     preferCurrentTab: false,

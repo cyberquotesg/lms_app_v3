@@ -154,7 +154,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             this.clonedUser = JSON.parse(JSON.stringify(user));
             this.hasReps = this.reps.length > 0;
             this.hasAbout = !!(
-                this.clonedUser.email || this.formattedAddress ||
+                this.clonedUser.email ||
                 this.clonedUser.country_text || this.clonedUser.organization_text || this.clonedUser.departmentid_text || this.clonedUser.branch_text ||
                 this.licenseType || this.licenseCode ||
                 this.interests

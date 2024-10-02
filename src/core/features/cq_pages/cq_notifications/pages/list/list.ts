@@ -49,8 +49,8 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
     @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
-    notificationSubscription: Subscription;
-    announcementSubscription: Subscription;
+    notificationSubscription?: Subscription;
+    announcementSubscription?: Subscription;
 
     notificationNumber = "0";
     announcementNumber = "0";
@@ -298,8 +298,8 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
         this.pushObserver?.unsubscribe();
         this.notifications?.destroy();
 
-        this.notificationSubscription.unsubscribe();
-        this.announcementSubscription.unsubscribe();
+        if (typeof this.notificationSubscription != "undefined") this.notificationSubscription.unsubscribe();
+        if (typeof this.announcementSubscription != "undefined") this.announcementSubscription.unsubscribe();
     }
 
     // =========================================================================================================== by cq

@@ -16,7 +16,7 @@
                 </ion-label>
                 <ion-input type="text" name="name" [placeholder]="'addon.calendar.eventname' | translate" formControlName="name">
                 </ion-input>
-                <core-input-errors [control]="form.controls.name" [errorMessages]="errors"></core-input-errors>
+                <core-input-errors [control]="form.controls.name" />
             </ion-item>
 
             <!-- Date. -->
@@ -24,10 +24,11 @@
                 <ion-label position="stacked">
                     <p class="item-heading" [core-mark-required]="true">{{ 'core.date' | translate }}</p>
                 </ion-label>
-                <ion-datetime formControlName="timestart" [placeholder]="'core.date' | translate" [displayFormat]="dateFormat"
-                    [max]="maxDate" [min]="minDate" [displayTimezone]="displayTimezone">
+                <ion-datetime id="timestart" formControlName="timestart" presentation="date-time" [max]="maxDate" [min]="minDate"
+                    [showDefaultButtons]="true">
+                    <span slot="title">{{'core.date' | translate}}</span>
                 </ion-datetime>
-                <core-input-errors [control]="form.controls.timestart" [errorMessages]="errors"></core-input-errors>
+                <core-input-errors [control]="form.controls.name" />
             </ion-item>
 
             <!-- Type. -->
@@ -149,9 +150,9 @@
                     </ion-item>
                     <ion-item *ngIf="form.controls.duration.value === 1">
                         <ion-label position="stacked"></ion-label>
-                        <ion-datetime formControlName="timedurationuntil" [max]="maxDate" [min]="minDate"
-                            [placeholder]="'addon.calendar.durationuntil' | translate" [displayFormat]="dateFormat"
-                            [displayTimezone]="displayTimezone">
+                        <ion-datetime id="timedurationuntil" formControlName="timedurationuntil" [max]="maxDate" [min]="minDate"
+                            presentation="date-time" [showDefaultButtons]="true">
+                            <span slot="title">{{'addon.calendar.durationuntil' | translate}}</span>
                         </ion-datetime>
                     </ion-item>
                     <ion-item>
@@ -229,10 +230,6 @@
         </form>
         <div collapsible-footer appearOnBottom *ngIf="loaded && !error" slot="fixed">
             <div class="list-item-limited-width adaptable-buttons-row">
-                <ion-button *ngIf="hasOffline && eventId && eventId < 0" expand="block" fill="outline" (click)="discard()"
-                    class="ion-margin ion-text-wrap">
-                    {{ 'core.discard' | translate }}
-                </ion-button>
                 <ion-button expand="block" (click)="submit()" [disabled]="!form.valid" type="submit" class="ion-margin ion-text-wrap">
                     {{ 'core.save' | translate }}
                 </ion-button>

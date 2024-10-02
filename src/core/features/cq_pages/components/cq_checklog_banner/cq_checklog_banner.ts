@@ -25,7 +25,7 @@ export class CqChecklogBannerComponent extends CqComponent implements OnInit, On
     
     ngOnInit(): void
     {
-        let temp = this.time.split(' ');
+        let temp = (this.time || "").split(' ');
         this.timeHI = temp[0];
         this.timeA = temp[1];
     }

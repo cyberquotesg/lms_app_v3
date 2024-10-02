@@ -361,7 +361,8 @@ export class CqHelper
     }
 	beautifulNumber(value: any): string
 	{
-        value = Number(value);
+		if (typeof value == "undefined") value = 0;
+		else value = Number(value);
 
 		if (value < 10) return '0' + value;
 		else return String(value);

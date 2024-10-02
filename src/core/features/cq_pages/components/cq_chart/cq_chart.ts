@@ -144,7 +144,7 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
                 }],
             };
         }
-        this.chart = new Chart(this.cqChart.nativeElement, {
+        this.chart = new Chart(this.cqChart?.nativeElement, {
             type: this.type || "line",
             data: this.data,
             options: options,

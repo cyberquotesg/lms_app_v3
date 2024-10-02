@@ -28,6 +28,7 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
     {
         super(CH);
 
+        if (typeof this.unixtimestamp == "undefined") this.unixtimestamp = 0;
         this.onZero = new EventEmitter();
     }
 
@@ -60,7 +61,7 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
                         date: new Date(),
                     };
                     this.CH.log('emit data', emitData);
-                    this.onZero.emit(emitData);
+                    if (typeof this.onZero != "undefined") this.onZero.emit(emitData);
 
                     clearInterval(this.agent);
                 }

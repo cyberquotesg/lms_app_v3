@@ -11,17 +11,17 @@
         <div class="base-background pb-5">
 
         <div class="text-center">
-            <ion-slides [options]="pageData.yearsSliderOptions">
-                <ion-slide *ngFor="let availableYear of pageData.availableYears" class="mt-36 mb-36">
+            <swiper-container [options]="pageData.yearsSliderOptions">
+                <swiper-slide *ngFor="let availableYear of pageData.availableYears" class="mt-36 mb-36">
                     <button class="{{ availableYear == pageData.selectedYear ? 'active' : '' }}" (click)="selectYear(availableYear)">
                         {{ availableYear }}
                     </button>
-                </ion-slide>
-            </ion-slides>
+                </swiper-slide>
+            </swiper-container>
         </div>
 
-        <ion-slides #pageSlider class="page-slider page-slider-cqmr" [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
-            <ion-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
+        <swiper-container #pageSlider class="page-slider page-slider-cqmr" [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
+            <swiper-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
                 <div *ngIf="pageData[availableYear]" class="pb-8">
                     <div class="text-center">
                         <h5 class="mt-0 mb-20 text-center"><b>Total Training Hours<br />{{ pageData.userFullName }}</b></h5>
@@ -108,8 +108,8 @@
                         <ion-spinner role="progressbar"></ion-spinner>
                     </div>
                 </div>
-            </ion-slide>
-        </ion-slides>
+            </swiper-slide>
+        </swiper-container>
 
         </div>
     </core-loading>

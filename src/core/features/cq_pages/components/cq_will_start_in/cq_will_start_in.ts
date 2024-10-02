@@ -9,20 +9,20 @@ import { CqComponent } from '../../classes/cq_component';
     templateUrl: 'cq_will_start_in.html'
 })
 export class CqWillStartInComponent extends CqComponent implements OnInit, OnChanges {
-    @Input() unixtimestamp: number;
-    @Input() animation: boolean;
-    @Input() big: boolean;
-    @Output() onZero: EventEmitter<any>;
+    @Input() unixtimestamp?: number;
+    @Input() animation?: boolean;
+    @Input() big?: boolean;
+    @Output() onZero?: EventEmitter<any>;
 
-    agent: any;
-    startInDays: number;
-    startInHours: number;
-    startInMinutes: number;
-    startInSeconds: number;
-    willStartIn: number;
-    timeUrgency: number;
-    bigClass: string;
-    focusOn: string;
+    agent?: any;
+    startInDays?: number;
+    startInHours?: number;
+    startInMinutes?: number;
+    startInSeconds?: number;
+    willStartIn?: number;
+    timeUrgency?: number;
+    bigClass?: string;
+    focusOn?: string;
 
     constructor(CH: CqHelper)
     {

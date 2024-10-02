@@ -17,8 +17,8 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     @Input() displayProgress: boolean = false;
 
     number = "0";
-    notificationSubscription: Subscription;
-    announcementSubscription: Subscription;
+    notificationSubscription?: Subscription;
+    announcementSubscription?: Subscription;
 
     constructor(CH: CqHelper)
     {

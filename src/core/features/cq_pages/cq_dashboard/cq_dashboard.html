@@ -78,20 +78,20 @@
                     <span *ngIf="media == 'offline'">Classroom Training You May Like</span>
                     <ion-icon class="this-is-swiping" name="chevron-forward" style="position: absolute; top: 24px; right: 24px; font-size: 22px;"></ion-icon>
                 </div>
-                <ion-slides class="pl-24 pr-48" [options]="pageData.sliderOptions">
-                    <ion-slide *ngFor="let course of pageData[media]" class="mb-24">
+                <swiper-container class="pl-24 pr-48" [options]="pageData.sliderOptions">
+                    <swiper-slide *ngFor="let course of pageData[media]" class="mb-24">
                        <cq_items [items]="course" (onSelectItem)="openCourse($event)"></cq_items>
-                    </ion-slide>
+                    </swiper-slide>
 
-                    <ion-slide class="mb-24">
+                    <swiper-slide class="mb-24">
                         <ion-card class="thin mt-0 mb-0 ml-0 mr-0" style="width: 100%;" (click)="goToAvailableCourses(media)">
                             <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 206px;">
                                 More Courses
                                 <ion-icon name="arrow-forward" style="font-size: 20px; margin-top: 8px;"></ion-icon>
                             </div>
                         </ion-card>
-                    </ion-slide>
-                </ion-slides>
+                    </swiper-slide>
+                </swiper-container>
             </div>
         </div>
 

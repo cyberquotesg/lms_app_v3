@@ -9,14 +9,14 @@ import { CqComponent } from '../../classes/cq_component';
     templateUrl: './cq_checklog_banner.html',
 })
 export class CqChecklogBannerComponent extends CqComponent implements OnInit, OnChanges {
-    @Input() code: string;
-    @Input() type: string;
-    @Input() time: string;
-    @Input() name: string;
-    @Input() message: string;
+    @Input() code?: string;
+    @Input() type?: string;
+    @Input() time?: string;
+    @Input() name?: string;
+    @Input() message?: string;
 
-    timeHI: string;
-    timeA: string;
+    timeHI?: string;
+    timeA?: string;
 
     constructor(CH: CqHelper)
     {

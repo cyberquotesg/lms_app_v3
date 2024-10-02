@@ -40,7 +40,8 @@ import { CoreCourses } from '@features/courses/services/courses';
 import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
 import { CoreCourseSync, CoreCourseSyncProvider } from '@features/course/services/sync';
-import { CoreSiteWSPreSets, CoreSite, WSObservable } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
+import { CoreSiteWSPreSets, WSObservable } from '@classes/sites/authenticated-site';
 import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grades';
 
 /**
@@ -61,7 +62,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {courseImage, fullname, basicInformation, hasEnded, hasEnrolled, isSelfEnrol, selfEnrolId, hasAccredited};
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
@@ -94,6 +95,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     // by rachmad
     // constructor(private route: ActivatedRoute) {
     constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper) {
+        super(renderer, CH);
+
         this.selectTabObserver = CoreEvents.on(CoreEvents.SELECT_COURSE_TAB, (data) => {
             if (!data.name) {
                 // If needed, set sectionId and sectionNumber. They'll only be used if the content tabs hasn't been loaded yet.
@@ -442,7 +445,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         this.course = course;
 
         // fake values to force compiler accept the variable
-        if (typeof this.course!.courseImage == "undefined") this.course!.courseImage = null;
+        if (typeof this.course!.courseImage == "undefined") this.course!.courseImage = "";
         if (typeof this.course!.fullname == "undefined") this.course!.fullname = "";
         if (typeof this.course!.basicInformation == "undefined") this.course!.basicInformation = [];
         if (typeof this.course!.hasEnded == "undefined") this.course!.hasEnded = false;

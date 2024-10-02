@@ -9,8 +9,8 @@ import { CqComponent } from '../../classes/cq_component';
     templateUrl: 'cq_filter_modal.html'
 })
 export class CqFilterComponentModal extends CqComponent implements OnInit, OnChanges {
-    @Input() filterMultiple: any[];
-    @Input() filterMultipleTitle?: string;
+    @Input() filterMultiple: any[] = [];
+    @Input() filterMultipleTitle?: string = "";
 
     filterMultipleInternal: any[] = [];
 

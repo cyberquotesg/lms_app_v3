@@ -20,8 +20,8 @@
                 </button>
             </div>
 
-            <ion-slides #pageSlider class="page-slider page-slider-notification-list" [options]="pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
-                <ion-slide style="display: block;">
+            <swiper-container #pageSlider class="page-slider page-slider-notification-list" [options]="pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
+                <swiper-slide style="display: block;">
                     <div class="pl-cs pr-cs pb-cst">
                         <cq_items type="list" [items]="notificationList" (onSelectItem)="openNotification($event)"></cq_items>
                         <button *ngIf="isAvailable(notificationList)" class="load-more-button {{ notificationIsLoading ? 'loading' : '' }}" (click)="loadMoreNotifications()" [disabled]="!notifications.loaded || notifications.completed">
@@ -41,9 +41,9 @@
                         </div>
                          -->
                     </div>
-                </ion-slide>
+                </swiper-slide>
 
-                <ion-slide style="display: block;">
+                <swiper-slide style="display: block;">
                     <div class="pl-cs pr-cs pb-cst">
                         <cq_items type="list" [items]="announcementList" (onSelectItem)="openAnnouncement($event)"></cq_items>
                         <button *ngIf="isAvailable(announcementList)" class="load-more-button {{ announcementIsLoading ? 'loading' : '' }}" (click)="loadMoreAnnouncements()" [disabled]="announcementReachedEndOfList">
@@ -63,8 +63,8 @@
                         </div>
                          -->
                     </div>
-                </ion-slide>
-            </ion-slides>
+                </swiper-slide>
+            </swiper-container>
 
         </div>
     </core-loading>

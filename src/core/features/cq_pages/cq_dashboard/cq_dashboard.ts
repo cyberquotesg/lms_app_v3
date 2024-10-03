@@ -1,7 +1,7 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
+import { SwiperOptions } from 'swiper/types';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 
@@ -31,6 +31,16 @@ export class CqDashboard extends CqPage implements OnInit
         },
     };
 
+    sliderOptions: SwiperOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: false,
+        centeredSlides: false,
+        centeredSlidesBounds: false,
+        breakpoints: {},
+        watchSlidesProgress: true,
+    };
+
     constructor(renderer: Renderer2, CH: CqHelper)
     {
         super(renderer, CH);
@@ -46,14 +56,7 @@ export class CqDashboard extends CqPage implements OnInit
             this.pageData.year = new Date().getFullYear();
 
             // setup slide options
-            this.pageData.sliderOptions = {
-                initialSlide: 0,
-                speed: 400,
-                centerInsufficientSlides: false,
-                centeredSlides: false,
-                centeredSlidesBounds: false,
-                breakpoints: {},
-            };
+            this.pageDefaults.sliderOptions = this.sliderOptions;
             let slidesPerView, widthIterator = 160, spaceBetween = 24;
             for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
             {

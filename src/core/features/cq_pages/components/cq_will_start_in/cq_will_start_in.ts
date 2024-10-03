@@ -52,7 +52,9 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
         {
             clearInterval(this.agent);
             this.agent = setInterval(() => {
-                this.unixtimestamp--;
+                if (typeof this.unixtimestamp != "undefined") this.unixtimestamp--;
+                else this.unixtimestamp = 0;
+
                 this.translateTime(this.unixtimestamp);
 
                 if (this.unixtimestamp == 0)

@@ -18,7 +18,7 @@ register();
 @Component({
     selector: 'cq_my_reports',
     templateUrl: './cq_my_reports.html',
-    styles: ['./cq_my_reports.scss'],
+    styleUrls: ['./cq_my_reports.scss'],
 })
 export class CqMyReports extends CqPage implements OnInit
 {

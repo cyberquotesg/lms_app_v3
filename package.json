@@ -76,6 +76,7 @@
         "@awesome-cordova-plugins/device": "6.7.0",
         "@awesome-cordova-plugins/file": "6.7.0",
         "@awesome-cordova-plugins/file-opener": "6.7.0",
+        "@awesome-cordova-plugins/file-transfer": "^6.9.0",
         "@awesome-cordova-plugins/geolocation": "6.7.0",
         "@awesome-cordova-plugins/http": "6.7.0",
         "@awesome-cordova-plugins/in-app-browser": "6.7.0",

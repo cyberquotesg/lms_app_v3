@@ -33,7 +33,7 @@ import { CoreCategoryData, CoreCourses, CoreEnrolledCourseData } from '@features
 import { CoreCoursesHelper } from '@features/courses/services/courses-helper';
 import { AddonCalendarFilterComponent } from '../../components/filter/filter';
 import moment from 'moment-timezone';
-import { NgZone } from '@singletons';
+import { NgZone, Translate } from '@singletons';
 import { CoreNavigator } from '@services/navigator';
 import { Params } from '@angular/router';
 import { Subscription } from 'rxjs';

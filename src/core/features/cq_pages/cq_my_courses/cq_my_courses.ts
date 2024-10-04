@@ -7,7 +7,7 @@ import { CqPage } from '../classes/cq_page';
 @Component({
     selector: 'cq_my_courses',
     templateUrl: './cq_my_courses.html',
-    styles: ['cq_my_courses.scss'],
+    styleUrls: ['cq_my_courses.scss'],
 })
 export class CqMyCourses extends CqPage implements OnInit
 {

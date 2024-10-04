@@ -1,6 +1,7 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { CoreNavigator } from '@services/navigator';
 import { SwiperOptions } from 'swiper/types';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
@@ -8,7 +9,7 @@ import { CqPage } from '../classes/cq_page';
 @Component({
     selector: 'cq_dashboard',
     templateUrl: './cq_dashboard.html',
-    styles: ['cq_dashboard.scss'],
+    styleUrls: ['cq_dashboard.scss'],
 })
 export class CqDashboard extends CqPage implements OnInit
 {

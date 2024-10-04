@@ -19,7 +19,7 @@ register();
 @Component({
     selector: 'cq_available_courses',
     templateUrl: './cq_available_courses.html',
-    styles: ['cq_available_courses.scss'],
+    styleUrls: ['cq_available_courses.scss'],
 })
 export class CqAvailableCourses extends CqPage implements OnInit
 {

@@ -1,3 +1,7 @@
+GENERAL
+- go to ./cordova-plugin-moodleapp
+- npm run prod
+
 WEB
 - Branch: cyberquote-development
 - npm run web_dev

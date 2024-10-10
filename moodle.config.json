@@ -137,6 +137,9 @@
         }
     },
     "clearIABSessionWhenAutoLogin": "android",
+    "siteurl": "https://qaslms.cyberquote.com",
+    "isProduction": false,
+    "sendErrorLog": false,
     "notificationInterval": 10000,
     "appToken": "cq_academy_official_app",
     "recaptchaSiteKey" : "6LcTWaIaAAAAAM95sNdgh8wOdLmjd5241OqIZuRA",

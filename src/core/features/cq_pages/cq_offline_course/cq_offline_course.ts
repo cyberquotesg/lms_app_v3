@@ -353,6 +353,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 return;
             }
 
+            // warning! the api function has been updated
             const params: any = {
                 cluster: 'CqLib',
                 endpoint: 'get_zoom_jwt',

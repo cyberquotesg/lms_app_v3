@@ -429,7 +429,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
         // Start the authentication process.
         try {
-            const data = await CoreSites.getUserToken(siteUrl, username, password);
+            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrCsrfToken, value);
 
             const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
 

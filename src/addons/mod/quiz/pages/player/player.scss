@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 $quiz-timer-warn-color: $red !default;
 $quiz-timer-iterations: 15 !default;

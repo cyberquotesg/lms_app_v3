@@ -1,4 +1,4 @@
-@import "~theme/globals.scss";
+@use "theme/globals.scss";
 
 :host-context(.ios) {
     ion-footer .toolbar:last-child {

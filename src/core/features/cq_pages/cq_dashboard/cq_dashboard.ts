@@ -8,7 +8,7 @@ import { CqPage } from '../classes/cq_page';
 @Component({
     selector: 'cq_dashboard',
     templateUrl: './cq_dashboard.html',
-    styles: ['cq_dashboard.scss'],
+    styleUrls: ['cq_dashboard.scss'],
 })
 export class CqDashboard extends CqPage implements OnInit
 {

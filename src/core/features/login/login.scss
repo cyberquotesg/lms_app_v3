@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 // by rachmad
 @import "../cq_pages/styles/cq_style.scss";

@@ -1,4 +1,4 @@
-@import "~theme/components/discussion.scss";
+@use "theme/components/discussion.scss";
 
 :host {
     .addon-mod_chat-notice {

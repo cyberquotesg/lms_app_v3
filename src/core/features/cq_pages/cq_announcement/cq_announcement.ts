@@ -7,9 +7,9 @@ import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
-import { FileTransfer, FileTransferObject } from '@ionic-native/file-transfer/ngx';
-import { FileOpener } from '@ionic-native/file-opener/ngx';
-import { File } from '@ionic-native/file/ngx';
+import { FileTransfer, FileTransferObject } from '@awesome-cordova-plugins/file-transfer/ngx';
+import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
+import { File } from '@awesome-cordova-plugins/file/ngx';
 import { AddonNotifications } from '@features/cq_pages/cq_notifications/services/notifications';
 
 @Component({

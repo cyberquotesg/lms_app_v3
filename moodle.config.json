@@ -15,18 +15,18 @@
     "sendErrorLog": false,
     "languages": {
         "af": "Afrikaans",
-        "ar": "عربي",
+        "ar": "العربية",
         "az": "Azərbaycanca",
         "bg": "Български",
         "ca": "Català",
         "cs": "Čeština",
         "da": "Dansk",
         "de": "Deutsch",
-        "de-du": "Deutsch - Du",
+        "de-du": "Deutsch (du)",
         "el": "Ελληνικά",
         "en": "English",
-        "en-us": "English - United States",
-        "es": "Español",
+        "en-us": "English (United States)",
+        "es": "Español - Internacional",
         "es-mx": "Español - México",
         "eu": "Euskara",
         "fa": "فارسی",
@@ -36,10 +36,10 @@
         "he": "עברית",
         "hi": "हिंदी",
         "hr": "Hrvatski",
-        "hsb": "Hornjoserbsski",
+        "hsb": "Hornjoserbsce",
         "hu": "magyar",
         "hy": "Հայերեն",
-        "id": "Indonesian",
+        "id": "Bahasa Indonesia",
         "it": "Italiano",
         "ja": "日本語",
         "km": "ខ្មែរ",
@@ -51,8 +51,9 @@
         "mn": "Монгол",
         "mr": "मराठी",
         "nl": "Nederlands",
-        "no": "Norsk - bokmål",
+        "no": "Norsk",
         "pl": "Polski",
+        "ps": "لیسي",
         "pt": "Português - Portugal",
         "pt-br": "Português - Brasil",
         "ro": "Română",
@@ -62,6 +63,7 @@
         "sr-cr": "Српски",
         "sr-lt": "Srpski",
         "sv": "Svenska",
+        "szl": "Ślōnski",
         "tg": "Тоҷикӣ",
         "tr": "Türkçe",
         "uk": "Українська",
@@ -90,6 +92,7 @@
         "high": 120
     },
     "customurlscheme": "moodlemobile",
+    "sites": [],
     "multisitesdisplay": "",
     "sitefindersettings": {},
     "onlyallowlistedsites": false,
@@ -115,6 +118,29 @@
         "sticky": 0
     },
     "disableTokenFile": false,
+    "iconsPrefixes": {
+        "font-awesome": {
+            "brands": [
+                "fab"
+            ],
+            "regular": [
+                "far"
+            ],
+            "solid": [
+                "fa",
+                "fas"
+            ]
+        },
+        "moodle": {
+            "font-awesome": [
+                "fam"
+            ],
+            "moodle": [
+                "moodle"
+            ]
+        }
+    },
+    "clearIABSessionWhenAutoLogin": "android",
     "notificationInterval": 10000,
     "appToken": "cq_academy_official_app",
     "recaptchaSiteKey" : "6LcTWaIaAAAAAM95sNdgh8wOdLmjd5241OqIZuRA",

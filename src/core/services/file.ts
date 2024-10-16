@@ -23,11 +23,12 @@ import { CoreConstants } from '@/core/constants';
 import { CoreError } from '@classes/errors/error';
 
 import { CoreLogger } from '@singletons/logger';
-import { makeSingleton, File, Zip, WebView } from '@singletons';
+import { makeSingleton, File, WebView } from '@singletons';
 import { CoreFileEntry } from '@services/file-helper';
 import { CoreText } from '@singletons/text';
 import { CorePlatform } from '@services/platform';
 import { CorePath } from '@singletons/path';
+import { Zip } from '@features/native/plugins';
 
 /**
  * Progress event used when writing a file data into a file.

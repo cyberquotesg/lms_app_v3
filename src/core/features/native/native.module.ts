@@ -31,7 +31,7 @@ import { Keyboard } from '@awesome-cordova-plugins/keyboard/ngx';
 import { LocalNotifications } from '@awesome-cordova-plugins/local-notifications/ngx';
 import { MediaCapture } from '@awesome-cordova-plugins/media-capture/ngx';
 import { Push } from '@awesome-cordova-plugins/push/ngx';
-import { QRScanner } from '@awesome-cordova-plugins/qr-scanner/ngx';
+import { QRScanner } from './plugins/qrscanner';
 import { SplashScreen } from '@awesome-cordova-plugins/splash-screen/ngx';
 import { SQLite } from '@awesome-cordova-plugins/sqlite/ngx';
 import { StatusBar } from '@awesome-cordova-plugins/status-bar/ngx';

@@ -20,6 +20,7 @@ import {
     Injector,
     NgZone as NgZoneService,
     Type,
+    EnvironmentInjector,
 } from '@angular/core';
 import { Router as RouterService } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -54,7 +55,7 @@ import { Keyboard as KeyboardService } from '@awesome-cordova-plugins/keyboard/n
 import { LocalNotifications as LocalNotificationsService } from '@awesome-cordova-plugins/local-notifications/ngx';
 import { MediaCapture as MediaCaptureService } from '@awesome-cordova-plugins/media-capture/ngx';
 import { Push as PushService } from '@awesome-cordova-plugins/push/ngx';
-import { QRScanner as QRScannerService } from '@awesome-cordova-plugins/qr-scanner/ngx';
+import { QRScanner as QRScannerService } from '@features/native/plugins/qrscanner';
 import { StatusBar as StatusBarService } from '@awesome-cordova-plugins/status-bar/ngx';
 import { SplashScreen as SplashScreenService } from '@awesome-cordova-plugins/splash-screen/ngx';
 import { SQLite as SQLiteService } from '@awesome-cordova-plugins/sqlite/ngx';
@@ -226,5 +227,5 @@ export const Translate: Omit<CoreSingletonProxy<TranslateService>, 'instant'> & 
 export const AngularFrameworkDelegate = asyncInstance(async () => {
     const injector = await singletonsInjector;
 
-    return AngularDelegate.create(ComponentFactoryResolver.instance, injector);
+    return AngularDelegate.create(injector.get(EnvironmentInjector), injector);
 });

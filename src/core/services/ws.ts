@@ -18,7 +18,7 @@ import { HttpResponse, HttpParams, HttpErrorResponse } from '@angular/common/htt
 import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { FileUploadOptions, FileUploadResult } from '@awesome-cordova-plugins/file-transfer/ngx';
 import { Md5 } from 'ts-md5/dist/md5';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 
 import { CoreNativeToAngularHttpResponse } from '@classes/native-to-angular-http';
@@ -1105,7 +1105,7 @@ export class CoreWSProvider {
                 observable = observable.pipe(timeout(angularOptions.timeout));
             }
 
-            return observable.toPromise();
+            return firstValueFrom(observable);
         }
     }
 

@@ -94,7 +94,7 @@ export class AddonModGlossaryEditPage implements OnInit, OnDestroy, CanLeave {
      */
     async ngOnInit(): Promise<void> {
         try {
-            const routeData = this.route.snapshot.data;
+            const routeData = CoreNavigator.getRouteData(this.route);
             this.cmId = CoreNavigator.getRequiredRouteNumberParam('cmId');
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
             this.timecreated = CoreNavigator.getRequiredRouteNumberParam('timecreated');

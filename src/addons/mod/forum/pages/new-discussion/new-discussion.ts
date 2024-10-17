@@ -113,7 +113,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
      */
     async ngOnInit(): Promise<void> {
         try {
-            const routeData = this.route.snapshot.data;
+            const routeData = CoreNavigator.getRouteData(this.route);
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
             this.cmId = CoreNavigator.getRequiredRouteNumberParam('cmId');
             this.forumId = CoreNavigator.getRequiredRouteNumberParam('forumId');

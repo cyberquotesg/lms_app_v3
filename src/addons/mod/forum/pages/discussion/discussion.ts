@@ -134,7 +134,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
 
     async ngOnInit(): Promise<void> {
         try {
-            const routeData = this.route.snapshot.data;
+            const routeData = CoreNavigator.getRouteData(this.route);
             this.courseId = CoreNavigator.getRouteNumberParam('courseId');
             this.cmId = CoreNavigator.getRouteNumberParam('cmId');
             this.forumId = CoreNavigator.getRouteNumberParam('forumId');

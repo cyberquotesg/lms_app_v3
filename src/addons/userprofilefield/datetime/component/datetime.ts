@@ -33,6 +33,7 @@ import { CoreAppProvider } from '@services/app';
 })
 export class AddonUserProfileFieldDatetimeComponent extends CoreUserProfileFieldBaseComponent {
 
+    ionDateTimePresentation = 'date';
     format?: string;
     min?: string;
     max?: string;
@@ -62,6 +63,9 @@ export class AddonUserProfileFieldDatetimeComponent extends CoreUserProfileField
 
         // Check if it's only date or it has time too.
         const hasTime = CoreUtils.isTrueOrOne(field.param3);
+
+        // Calculate format to use.
+        this.ionDateTimePresentation = hasTime ? 'date-time' : 'date';
 
         // Calculate format to use.
         this.format = CoreTimeUtils.fixFormatForDatetime(CoreTimeUtils.convertPHPToMoment(

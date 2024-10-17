@@ -66,7 +66,7 @@ export class AddonModGlossaryEntryPage implements OnInit, OnDestroy {
      */
     async ngOnInit(): Promise<void> {
         try {
-            const routeData = this.route.snapshot.data;
+            const routeData = CoreNavigator.getRouteData(this.route);
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
             this.entryId = CoreNavigator.getRequiredRouteNumberParam('entryId');
             this.tagsEnabled = CoreTag.areTagsAvailableInSite();

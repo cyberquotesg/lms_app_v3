@@ -2113,7 +2113,7 @@ export class CoreSite {
                 CoreConstants.SECONDS_MINUTE * 6,
             );
 
-            if (CoreTimeUtils.timestamp() - this.lastAutoLogin < timeBetweenRequests) {
+            if (CoreTimeUtils.timestamp() - this.lastAutoLogin < Number(timeBetweenRequests)) {
                 // Not enough time has passed since last auto login.
                 return url;
             }

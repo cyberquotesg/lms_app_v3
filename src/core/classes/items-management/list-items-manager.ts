@@ -258,7 +258,7 @@ export class CoreListItemsManager<
      */
     private buildRouteMatcher(): (route: ActivatedRouteSnapshot) => boolean {
         if (this.pageRouteLocator instanceof ActivatedRoute) {
-            const pageRoutePath = CoreNavigator.getRouteFullPath(this.pageRouteLocator.snapshot);
+            const pageRoutePath = CoreNavigator.getRouteFullPath(this.pageRouteLocator);
 
             return route => CoreNavigator.getRouteFullPath(route) === pageRoutePath;
         }

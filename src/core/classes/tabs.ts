@@ -218,8 +218,12 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements OnInit, Aft
      * @param tabId Tab ID.
      * @returns Selected tab.
      */
-    protected getTabIndex(tabId: string): number {
-        return this.tabs.findIndex((tab) => tabId == tab.id);
+    protected getTabIndex(tabId?: string): number {
+        if (!tabId) {
+            return -1;
+        }
+
+        return this.tabs.findIndex((tab) => tabId === tab.id);
     }
 
     /**
@@ -228,9 +232,9 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements OnInit, Aft
      * @returns Selected tab.
      */
     getSelected(): T | undefined {
-        const index = this.selected && this.getTabIndex(this.selected);
+        const index = this.getTabIndex(this.selected);
 
-        return index !== undefined && index >= 0 ? this.tabs[index] : undefined;
+        return index >= 0 ? this.tabs[index] : undefined;
     }
 
     /**

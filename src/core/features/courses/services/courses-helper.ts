@@ -30,6 +30,7 @@ import { of } from 'rxjs';
 import { firstValueFrom, zipIncludingComplete } from '@/core/utils/rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { chainRequests, WSObservable } from '@classes/site';
+import { LazyRoutesModule } from '@/app/app-routing.module';
 
 /**
  * Helper to gather some common courses functions.
@@ -414,7 +415,7 @@ export class CoreCoursesHelperProvider {
      *
      * @returns My courses page module.
      */
-    async getMyRouteModule(): Promise<unknown> {
+    async getMyRouteModule(): Promise<LazyRoutesModule> {
         return import('../courses-my-lazy.module').then(m => m.CoreCoursesMyLazyModule);
     }
 

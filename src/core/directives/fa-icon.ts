@@ -170,6 +170,8 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
                 responseType: 'json',
             }).toPromise();
 
+            if (typeof aliases == "undefined") throw new Error("aliases is undefined");
+
             CoreFaIconDirective.aliases.resolve(aliases);
 
             return aliases;

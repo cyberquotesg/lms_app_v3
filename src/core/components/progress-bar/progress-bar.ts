@@ -38,6 +38,7 @@ export class CoreProgressBarComponent implements OnInit, OnChanges {
 
     width?: SafeStyle;
     progressBarValueText?: string;
+    progressNumber = 0;
 
     protected textSupplied = false;
     protected element: HTMLElement;
@@ -96,6 +97,33 @@ export class CoreProgressBarComponent implements OnInit, OnChanges {
         if (changes.text || changes.progress || changes.a11yText) {
             this.progressBarValueText = (this.a11yText ? Translate.instant(this.a11yText) + ' ' : '') + this.text;
         }
+
+        if (changes.progress) {
+            // Progress has changed.
+            this.updateProgress();
+        }
     }
 
+    /**
+     * Update progress because it has changed.
+     */
+    protected updateProgress(): void {
+        // Progress has changed.
+        this.progressNumber = Number(this.progress);
+
+        if (this.progressNumber < 0 || isNaN(this.progressNumber)) {
+            this.progressNumber = -1;
+
+            return;
+        }
+
+        // Remove decimals.
+        this.progressNumber = Math.floor(this.progressNumber);
+
+        if (!this.textSupplied) {
+            this.text = Translate.instant('core.percentagenumber', { $a: this.progressNumber });
+        }
+
+        this.width = DomSanitizer.bypassSecurityTrustStyle(this.progressNumber + '%');
+    }
 }

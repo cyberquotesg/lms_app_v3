@@ -74,6 +74,7 @@ import { CoreCourseWithImageAndColor } from '@features/courses/services/courses-
 import { CoreCourseSummaryPage } from '../pages/course-summary/course-summary.page';
 import { CoreRemindersPushNotificationData } from '@features/reminders/services/reminders';
 import { CoreLocalNotifications } from '@services/local-notifications';
+import { LazyRoutesModule } from '@/app/app-routing.module';
 
 /**
  * Prefetch info of a module.
@@ -2042,7 +2043,7 @@ export class CoreCourseHelperProvider {
      *
      * @returns Course summary page module.
      */
-    async getCourseSummaryRouteModule(): Promise<unknown> {
+    async getCourseSummaryRouteModule(): Promise<LazyRoutesModule> {
         return import('../course-summary-lazy.module').then(m => m.CoreCourseSummaryLazyModule);
     }
 

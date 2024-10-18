@@ -1,10 +1,15 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { IonSlides } from '@ionic/angular';
+import { Swiper } from 'swiper';
+import { SwiperOptions } from 'swiper/types';
+import { register } from 'swiper/element/bundle';
+import { CoreSwiper } from '@singletons/swiper';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { ChartData } from 'chart.js';
+
+register();
 
 @Component({
     selector: 'cq_my_reports',
@@ -13,7 +18,25 @@ import { ChartData } from 'chart.js';
 })
 export class CqMyReports extends CqPage implements OnInit
 {
-    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
+    protected element: HTMLElement;
+    protected domPromise?: CoreCancellablePromise<void>;
+    protected pageSlider?: Swiper;
+    @ViewChild('swiperRef', { static: true }) set swiperRef(swiperRef: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(async () => {
+            await this.waitLoadingsDone();
+
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef, this.yearsSliderOptions);
+            if (!swiper) {
+                return;
+            }
+
+            this.pageSlider = swiper;
+        });
+    }
 
     pageParams: any = {
     };
@@ -32,22 +55,27 @@ export class CqMyReports extends CqPage implements OnInit
         },
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    yearsSliderOptions: SwiperOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: false,
+        centeredSlidesBounds: true,
+        breakpoints: {},
+        watchSlidesProgress: true,
+    };
+
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
         super(renderer, CH);
+
+        this.element = elementRef.nativeElement;
 
         CH.getUser().getUserFullNameWithDefault(CH.getUserId()).then((userFullName) => {
             this.pageData.userFullName = userFullName;
         });
 
-        this.pageData.yearsSliderOptions = {
-            initialSlide: 0,
-            speed: 400,
-            centerInsufficientSlides: true,
-            centeredSlides: false,
-            centeredSlidesBounds: true,
-            breakpoints: {},
-        };
+        this.pageDefaults.yearsSliderOptions = this.yearsSliderOptions;
         let slidesPerView, widthIterator = 80, spaceBetween = 10;
         for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
         {
@@ -278,7 +306,7 @@ export class CqMyReports extends CqPage implements OnInit
         {
             this.pageData.selectedYear = year;
             let yearIndex = this.pageData.availableYears.indexOf(this.pageData.selectedYear);
-            this.pageSlider.slideTo(yearIndex);
+            this.pageSlider?.slideTo(yearIndex);
             if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
         }
     }
@@ -286,15 +314,14 @@ export class CqMyReports extends CqPage implements OnInit
     {
         if (this.pageStatus)
         {
-            this.pageSlider.getActiveIndex().then((index) => {
-                this.pageData.selectedYear = this.pageData.availableYears[index];
-                if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
-                else
-                {
-                    this.adjustScreenHeight(".page-slider-cqmr");
-                    this.CH.log('final data', this.pageData);
-                }
-            });
+            let index = this.pageSlider?.activeIndex || 0;
+            this.pageData.selectedYear = this.pageData.availableYears[index];
+            if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
+            else
+            {
+                this.adjustScreenHeight(".page-slider-cqmr");
+                this.CH.log('final data', this.pageData);
+            }
         }
         else
         {

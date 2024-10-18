@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { AfterViewInit, Component, OnInit, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
-import { IonRefresher, IonSlides, Platform } from '@ionic/angular';
+import { IonRefresher, Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
 import { CoreDomUtils } from '@services/utils/dom';
@@ -34,7 +34,13 @@ import { CoreListItemsManager } from '@classes/items-management/list-items-manag
 import { AddonNotificationsNotificationToRender } from '@features/cq_pages/cq_notifications/services/notifications-helper';
 import { AddonLegacyNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/legacy-notifications-source';
 
+import { Swiper } from 'swiper';
+import { SwiperOptions } from 'swiper/types';
+import { register } from 'swiper/element/bundle';
+import { CoreSwiper } from '@singletons/swiper';
 import { CqHelper } from '../../../services/cq_helper';
+
+register();
 
 /**
  * Page that displays the list of notifications.
@@ -47,10 +53,29 @@ import { CqHelper } from '../../../services/cq_helper';
 export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
-    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
 
-    notificationSubscription: Subscription;
-    announcementSubscription: Subscription;
+    protected element: HTMLElement;
+    protected domPromise?: CoreCancellablePromise<void>;
+    protected pageSlider?: Swiper;
+    @ViewChild('swiperRef', { static: true }) set swiperRef(swiperRef: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(async () => {
+            await this.waitLoadingsDone();
+
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef, this.pageSliderOptions);
+            if (!swiper) {
+                return;
+            }
+
+            this.pageSlider = swiper;
+        });
+    }
+
+    notificationSubscription?: Subscription;
+    announcementSubscription?: Subscription;
 
     notificationNumber = "0";
     announcementNumber = "0";
@@ -62,13 +87,14 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
 
     subject: string = "Notification";
     selectedOne: string = "notification";
-    pageSliderOptions: any = {
+    pageSliderOptions: SwiperOptions = {
         initialSlide: 0,
         speed: 400,
         centerInsufficientSlides: true,
         centeredSlides: true,
         centeredSlidesBounds: true,
         slidesPerView: 1,
+        watchSlidesProgress: true,
     };
 
     notificationList: any[] = [];
@@ -298,8 +324,8 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
         this.pushObserver?.unsubscribe();
         this.notifications?.destroy();
 
-        this.notificationSubscription.unsubscribe();
-        this.announcementSubscription.unsubscribe();
+        if (typeof this.notificationSubscription != "undefined") this.notificationSubscription.unsubscribe();
+        if (typeof this.announcementSubscription != "undefined") this.announcementSubscription.unsubscribe();
     }
 
     // =========================================================================================================== by cq
@@ -333,17 +359,16 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
             this.selectedOne = target;
             this.subject = this.CH.capitalize(this.selectedOne);
             let index = target == "notification" ? 0 : 1;
-            this.pageSlider.slideTo(index);
+            this.pageSlider?.slideTo(index);
             this.adjustScreenHeight(".page-slider-notification-list");
         }
     }
     pageSliderChange(): void
     {
-        this.pageSlider.getActiveIndex().then((index) => {
-            this.selectedOne = index ? "announcement" : "notification";
-            this.subject = this.CH.capitalize(this.selectedOne);
-            this.adjustScreenHeight(".page-slider-notification-list");
-        });
+        let index = this.pageSlider?.activeIndex || 0;
+        this.selectedOne = index ? "announcement" : "notification";
+        this.subject = this.CH.capitalize(this.selectedOne);
+        this.adjustScreenHeight(".page-slider-notification-list");
     }
     isAvailable(data: any): boolean
     {

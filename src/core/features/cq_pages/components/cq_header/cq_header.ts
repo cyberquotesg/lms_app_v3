@@ -17,8 +17,8 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     @Input() displayProgress: boolean = false;
 
     number = "0";
-    notificationSubscription: Subscription;
-    announcementSubscription: Subscription;
+    notificationSubscription?: Subscription;
+    announcementSubscription?: Subscription;
 
     constructor(CH: CqHelper)
     {
@@ -45,8 +45,8 @@ export class CqHeaderComponent extends CqComponent implements OnInit, OnChanges,
     {
         if (this.displayNotification)
         {
-            this.notificationSubscription.unsubscribe();
-            // this.announcementSubscription.unsubscribe();
+            if (this.notificationSubscription) this.notificationSubscription.unsubscribe();
+            // if (this.announcementSubscription) this.announcementSubscription.unsubscribe();
         }
     }
 }

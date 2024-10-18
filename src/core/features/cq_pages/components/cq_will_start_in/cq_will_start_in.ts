@@ -9,25 +9,26 @@ import { CqComponent } from '../../classes/cq_component';
     templateUrl: 'cq_will_start_in.html'
 })
 export class CqWillStartInComponent extends CqComponent implements OnInit, OnChanges {
-    @Input() unixtimestamp: number;
-    @Input() animation: boolean;
-    @Input() big: boolean;
-    @Output() onZero: EventEmitter<any>;
+    @Input() unixtimestamp?: number;
+    @Input() animation?: boolean;
+    @Input() big?: boolean;
+    @Output() onZero?: EventEmitter<any>;
 
-    agent: any;
-    startInDays: number;
-    startInHours: number;
-    startInMinutes: number;
-    startInSeconds: number;
-    willStartIn: number;
-    timeUrgency: number;
-    bigClass: string;
-    focusOn: string;
+    agent?: any;
+    startInDays?: number;
+    startInHours?: number;
+    startInMinutes?: number;
+    startInSeconds?: number;
+    willStartIn?: number;
+    timeUrgency?: number;
+    bigClass?: string;
+    focusOn?: string;
 
     constructor(CH: CqHelper)
     {
         super(CH);
 
+        if (typeof this.unixtimestamp == "undefined") this.unixtimestamp = 0;
         this.onZero = new EventEmitter();
     }
 
@@ -51,7 +52,9 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
         {
             clearInterval(this.agent);
             this.agent = setInterval(() => {
-                this.unixtimestamp--;
+                if (typeof this.unixtimestamp != "undefined") this.unixtimestamp--;
+                else this.unixtimestamp = 0;
+
                 this.translateTime(this.unixtimestamp);
 
                 if (this.unixtimestamp == 0)
@@ -60,7 +63,7 @@ export class CqWillStartInComponent extends CqComponent implements OnInit, OnCha
                         date: new Date(),
                     };
                     this.CH.log('emit data', emitData);
-                    this.onZero.emit(emitData);
+                    if (typeof this.onZero != "undefined") this.onZero.emit(emitData);
 
                     clearInterval(this.agent);
                 }

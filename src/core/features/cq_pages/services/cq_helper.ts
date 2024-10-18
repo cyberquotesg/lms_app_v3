@@ -361,7 +361,8 @@ export class CqHelper
     }
 	beautifulNumber(value: any): string
 	{
-        value = Number(value);
+		if (typeof value == "undefined") value = 0;
+		else value = Number(value);
 
 		if (value < 10) return '0' + value;
 		else return String(value);
@@ -1084,10 +1085,9 @@ export class CqHelper
         return courses;
     }
 
-    initiateZoomEngine(apiKey: string, apiSecret: string): Promise<boolean>
+    initiateZoomEngine(jwt: string): Promise<boolean>
     {
-    	this.log("try to initiate zoom, apiKey", apiKey);
-    	this.log("try to initiate zoom, apiSecret", apiSecret);
+    	this.log("try to initiate zoom");
 
     	if (!CorePlatform.is('cordova'))
     	{
@@ -1097,15 +1097,14 @@ export class CqHelper
 	    	});
     	}
 
-    	this.log("init zoom", {apiKey, apiSecret});
-    	return this.zoom.initialize(apiKey, apiSecret)
+    	return this.zoom.initialize(jwt)
     	.then((success: any) => {
     		this.log("init zoom ok", success);
     	    
     	    return true;
     	})
     	.catch((error: any) => {
-    		this.errorLog("init zoom error", {apiKey, apiSecret, error});
+    		this.errorLog("init zoom error", {error});
 
     	    return false;
     	});
@@ -1117,28 +1116,15 @@ export class CqHelper
 
     	const zoomKeysParams = {
     	    cluster: "CqLib",
-    	    endpoint: "get_zoom_keys",
+    	    endpoint: "get_zoom_jwt",
     	};
     	let data = await this.callApi(zoomKeysParams);
     	let jsonData = this.toJson(data);
 
     	if (jsonData.success)
     	{
-    		this.log("init zoom jsonData.list", JSON.stringify(jsonData.list));
-    		
-    	    let initiated = false;
-    	    for (let key of jsonData.list)
-    	    {
-    	        initiated = await this.initiateZoomEngine(key.apiKey, key.secretKey);
-    	        if (initiated)
-    	        {
-    	    		this.zoomInitiated = true;
-    	        	return true;
-    	        }
-    	    }
-
-    		this.errorLog("init zoom error", {data: jsonData, error: "connection to Zoom was failed"});
-			this.alert("Oops!", "Connection to Zoom was failed, please check your internet connection or contact your course administrator.");
+    	    await this.initiateZoomEngine(jsonData.jwt);
+    		this.log("init zoom jsonData", JSON.stringify(jsonData));
     	}
     	else
     	{

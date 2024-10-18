@@ -1,11 +1,16 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Swiper } from 'swiper';
+import { SwiperOptions } from 'swiper/types';
+import { register } from 'swiper/element/bundle';
+import { CoreSwiper } from '@singletons/swiper';
 import { Router, Event, NavigationStart, NavigationEnd, NavigationError} from '@angular/router';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
-import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
+
+register();
 
 @Component({
     selector: 'cq_available_courses',
@@ -14,7 +19,25 @@ import { CqPage } from '../classes/cq_page';
 })
 export class CqAvailableCourses extends CqPage implements OnInit
 {
-    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
+    protected element: HTMLElement;
+    protected domPromise?: CoreCancellablePromise<void>;
+    protected pageSlider?: Swiper;
+    @ViewChild('swiperRef', { static: true }) set swiperRef(swiperRef: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(async () => {
+            await this.waitLoadingsDone();
+
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef, this.sliderOptions);
+            if (!swiper) {
+                return;
+            }
+
+            this.pageSlider = swiper;
+        });
+    }
 
     pageParams: any = {
         media: "",
@@ -56,9 +79,21 @@ export class CqAvailableCourses extends CqPage implements OnInit
         courses: 0,
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper, private router: Router)
+    sliderOptions: SwiperOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: true,
+        centeredSlidesBounds: true,
+        slidesPerView: 1,
+        watchSlidesProgress: true,
+    }
+
+    constructor(renderer: Renderer2, CH: CqHelper, private router: Router, elementRef: ElementRef)
     {
         super(renderer, CH);
+
+        this.element = elementRef.nativeElement;
 
         this.router.events.subscribe((event: Event) => {
             // if (event instanceof NavigationStart || event instanceof NavigationEnd)
@@ -145,14 +180,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageData.online.length = this.pageData.offline.length = cqConfig.mobileListLength;
             this.pageData.medias = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
             this.pageData.media = this.pageParams.media != "" ? this.pageParams.media : this.pageData.medias[0];
-            this.pageData.sliderOptions = {
-                initialSlide: this.pageData.medias.indexOf(this.pageData.media),
-                speed: 400,
-                centerInsufficientSlides: true,
-                centeredSlides: true,
-                centeredSlidesBounds: true,
-                slidesPerView: 1,
-            };
+            this.pageData.sliderOptions = this.sliderOptions;
+            this.pageData.sliderOptions.initialSlide = this.pageData.medias.indexOf(this.pageData.media);
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);
@@ -267,7 +296,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageData.media = media;
             let mediaIndex = this.pageData.medias.indexOf(this.pageData.media);
             this.CH.log('select media is accepted, sliding to', mediaIndex);
-            this.pageSlider.slideTo(mediaIndex);
+            this.pageSlider?.slideTo(mediaIndex);
 
             if (forceRefresh && !this.pageData[this.pageData.media].initiated)
             {
@@ -284,31 +313,29 @@ export class CqAvailableCourses extends CqPage implements OnInit
     {
         if (this.pageStatus)
         {
-            this.CH.log('slider change and reacting for it');
-            this.pageSlider.getActiveIndex().then((index) => {
-                this.CH.log('have done reacting the slider change');
+            this.CH.log('have done reacting the slider change');
 
-                this.pageData.media = this.pageData.medias[index];
-                const stateParams: any = {
-                    media: this.pageData.media,
-                };
-                CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
-                    params: stateParams,
-                    preferCurrentTab: false,
-                });
-
-                if (!this.pageData[this.pageData.media].initiated)
-                {
-                    this.CH.log("haven't initiated yet, force refresh");
-                    this.pageForceReferesh();
-                }
-                else
-                {
-                    this.CH.log("have initiated, no need to force refresh");
-                    this.adjustScreenHeight(".page-slider-cqac");
-                    this.CH.log('final data', this.pageData);
-                }
+            let index = this.pageSlider?.activeIndex || 0;
+            this.pageData.media = this.pageData.medias[index];
+            const stateParams: any = {
+                media: this.pageData.media,
+            };
+            CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
+                params: stateParams,
+                preferCurrentTab: false,
             });
+
+            if (!this.pageData[this.pageData.media].initiated)
+            {
+                this.CH.log("haven't initiated yet, force refresh");
+                this.pageForceReferesh();
+            }
+            else
+            {
+                this.CH.log("have initiated, no need to force refresh");
+                this.adjustScreenHeight(".page-slider-cqac");
+                this.CH.log('final data', this.pageData);
+            }
         }
         else
         {

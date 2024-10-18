@@ -1,7 +1,7 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { IonSlides, Platform } from '@ionic/angular';
+import { Platform } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
@@ -15,8 +15,6 @@ import { CoreUtils } from '@services/utils/utils';
 })
 export class CqOfflineCourse extends CqPage implements OnInit
 {
-    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
-
     pageParams: any = {
         courseId: 0,
         courseName: '',
@@ -355,6 +353,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
                 return;
             }
 
+            // warning! the api function has been updated
             const params: any = {
                 cluster: 'CqLib',
                 endpoint: 'get_zoom_jwt',

@@ -59,8 +59,8 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     // by rachmad
     // displaySwitchAccount = true;
     displaySwitchAccount = false;
-    isProduction: boolean;
-    appVersion: string;
+    isProduction: boolean = false;
+    appVersion: string = "";
 
     displayContactSupport = false;
     removeAccountOnLogout = false;
@@ -267,7 +267,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
             cssClass: 'core-modal-lateral core-modal-lateral-sm',
         });
 
-        if (closeAll) {
+        if (thisModal && closeAll) {
             await ModalController.dismiss(undefined, undefined, thisModal.id);
         }
     }

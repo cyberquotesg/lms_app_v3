@@ -94,7 +94,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
             this.courseId = undefined;
         }
 
-        if (this.courseId && this.route.snapshot.data.swipeManagerSource === 'participants') {
+        if (this.courseId && CoreNavigator.getRouteData(this.route).swipeManagerSource === 'participants') {
             const search = CoreNavigator.getRouteParam('search');
             const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(
                 CoreUserParticipantsSource,

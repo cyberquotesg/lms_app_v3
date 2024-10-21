@@ -72,7 +72,7 @@ export class CoreGradesCoursePage implements AfterViewInit, OnDestroy {
             this.collapseLabel = Translate.instant('core.collapse');
             this.useLegacyLayout = !CoreSites.getRequiredCurrentSite().isVersionGreaterEqualThan('4.1');
 
-            if (route.snapshot.data.swipeEnabled ?? true) {
+            if (route.snapshot?.data.swipeEnabled ?? true) {
                 const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(CoreGradesCoursesSource, []);
 
                 this.courses = new CoreSwipeNavigationItemsManager(source);

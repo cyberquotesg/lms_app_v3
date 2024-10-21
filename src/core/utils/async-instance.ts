@@ -22,10 +22,22 @@ import { CorePromisedValue } from '@classes/promised-value';
  */
 function createAsyncInstanceWrapper<T>(lazyConstructor?: () => T | Promise<T>): AsyncInstanceWrapper<T> {
     let promisedInstance: CorePromisedValue<T> | null = null;
+    let lazyMethods: Array<string | number | symbol> | null = null;
+    let lazyOverrides: Array<keyof T> | null = null;
+    let eagerInstance: T;
 
     return {
         get instance() {
             return promisedInstance?.value ?? undefined;
+        },
+        get lazyMethods() {
+            return lazyMethods;
+        },
+        get lazyOverrides() {
+            return lazyOverrides;
+        },
+        get eagerInstance() {
+            return eagerInstance;
         },
         async getInstance() {
             if (!promisedInstance) {
@@ -54,6 +66,15 @@ function createAsyncInstanceWrapper<T>(lazyConstructor?: () => T | Promise<T>): 
 
             promisedInstance.resolve(instance);
         },
+        setLazyMethods(methods) {
+            lazyMethods = methods;
+        },
+        setLazyOverrides(overrides) {
+            lazyOverrides = overrides;
+        },
+        setEagerInstance(instance) {
+            eagerInstance = instance;
+        },
         setLazyConstructor(constructor) {
             if (!promisedInstance) {
                 lazyConstructor = constructor;
@@ -76,6 +97,16 @@ function createAsyncInstanceWrapper<T>(lazyConstructor?: () => T | Promise<T>): 
             promisedInstance.reset();
         },
     };
+}
+
+/**
+ * Check whether the given value is a method.
+ *
+ * @param value Value.
+ * @returns Whether the given value is a method.
+ */
+function isMethod(value: unknown): value is (...args: unknown[]) => unknown {
+    return typeof value === 'function';
 }
 
 /**

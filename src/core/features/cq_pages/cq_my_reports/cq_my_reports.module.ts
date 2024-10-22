@@ -9,6 +9,7 @@ import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
 
 import { CqMyReports } from './cq_my_reports';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 const routes: Routes = [
     {
@@ -35,5 +36,6 @@ const routes: Routes = [
         CqMyReports,
     ],
     exports: [RouterModule],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class CqMyReportsModule {}

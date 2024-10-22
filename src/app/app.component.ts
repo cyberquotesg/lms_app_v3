@@ -35,6 +35,7 @@ import { CoreSitePlugins } from '@features/siteplugins/services/siteplugins';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreDom } from '@singletons/dom';
 import { CorePlatform } from '@services/platform';
+import { register } from 'swiper/element/bundle';
 
 // by rachmad
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
@@ -44,6 +45,8 @@ import { AddonNotifications } from '@addons/notifications/services/notifications
 
 const MOODLE_VERSION_PREFIX = 'version-';
 const MOODLEAPP_VERSION_PREFIX = 'moodleapp-';
+
+register();
 
 @Component({
     selector: 'app-root',

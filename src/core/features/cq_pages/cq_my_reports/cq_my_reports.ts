@@ -1,6 +1,10 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, ElementRef } from '@angular/core';
+import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreCancellablePromise } from '@classes/cancellable-promise';
+import { CoreLoadingComponent } from '@components/loading/loading';
+import { CoreDom } from '@singletons/dom';
 import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
@@ -38,6 +42,16 @@ export class CqMyReports extends CqPage implements OnInit
         });
     }
 
+    yearsSliderOptions: SwiperOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: false,
+        centeredSlidesBounds: true,
+        breakpoints: {},
+        watchSlidesProgress: true,
+    };
+
     pageParams: any = {
     };
     pageDefaults: any = {
@@ -53,16 +67,6 @@ export class CqMyReports extends CqPage implements OnInit
                 getCoursesReports: 0,
             },
         },
-    };
-
-    yearsSliderOptions: SwiperOptions = {
-        initialSlide: 0,
-        speed: 400,
-        centerInsufficientSlides: true,
-        centeredSlides: false,
-        centeredSlidesBounds: true,
-        breakpoints: {},
-        watchSlidesProgress: true,
     };
 
     constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
@@ -344,5 +348,30 @@ export class CqMyReports extends CqPage implements OnInit
         }
 
         this.adjustScreenHeight(".page-slider-cqmr");
+    }
+
+    /**
+     * @inheritdoc
+     */
+    ngOnDestroy(): void {
+        this.domPromise?.cancel();
+    }
+
+    /**
+     * Wait until all <core-loading> children inside the page.
+     *
+     * @returns Promise resolved when loadings are done.
+     */
+    protected async waitLoadingsDone(): Promise<void> {
+        this.domPromise = CoreDom.waitToBeInDOM(this.element);
+
+        await this.domPromise;
+
+        const page = this.element.closest('.ion-page');
+        if (!page) {
+            return;
+        }
+
+        await CoreDirectivesRegistry.waitDirectivesReady(page, 'core-loading', CoreLoadingComponent);
     }
 }

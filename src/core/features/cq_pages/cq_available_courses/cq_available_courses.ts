@@ -1,6 +1,10 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, ElementRef } from '@angular/core';
+import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreCancellablePromise } from '@classes/cancellable-promise';
+import { CoreLoadingComponent } from '@components/loading/loading';
+import { CoreDom } from '@singletons/dom';
 import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
@@ -37,6 +41,16 @@ export class CqAvailableCourses extends CqPage implements OnInit
 
             this.pageSlider = swiper;
         });
+    }
+
+    sliderOptions: SwiperOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: true,
+        centeredSlidesBounds: true,
+        slidesPerView: 1,
+        watchSlidesProgress: true,
     }
 
     pageParams: any = {
@@ -78,16 +92,6 @@ export class CqAvailableCourses extends CqPage implements OnInit
     pageJobRefresh: any = {
         courses: 0,
     };
-
-    sliderOptions: SwiperOptions = {
-        initialSlide: 0,
-        speed: 400,
-        centerInsufficientSlides: true,
-        centeredSlides: true,
-        centeredSlidesBounds: true,
-        slidesPerView: 1,
-        watchSlidesProgress: true,
-    }
 
     constructor(renderer: Renderer2, CH: CqHelper, private router: Router, elementRef: ElementRef)
     {
@@ -390,5 +394,30 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageData[media].page = 1;
             this.pageForceReferesh();
         }, 1000);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    ngOnDestroy(): void {
+        this.domPromise?.cancel();
+    }
+
+    /**
+     * Wait until all <core-loading> children inside the page.
+     *
+     * @returns Promise resolved when loadings are done.
+     */
+    protected async waitLoadingsDone(): Promise<void> {
+        this.domPromise = CoreDom.waitToBeInDOM(this.element);
+
+        await this.domPromise;
+
+        const page = this.element.closest('.ion-page');
+        if (!page) {
+            return;
+        }
+
+        await CoreDirectivesRegistry.waitDirectivesReady(page, 'core-loading', CoreLoadingComponent);
     }
 }

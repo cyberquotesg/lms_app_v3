@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AfterViewInit, Component, OnInit, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
+import { AfterViewInit, Component, OnInit, OnDestroy, ViewChild, Renderer2, ElementRef } from '@angular/core';
 import { IonRefresher, Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
@@ -34,10 +34,15 @@ import { CoreListItemsManager } from '@classes/items-management/list-items-manag
 import { AddonNotificationsNotificationToRender } from '@features/cq_pages/cq_notifications/services/notifications-helper';
 import { AddonLegacyNotificationsNotificationsSource } from '@features/cq_pages/cq_notifications/classes/legacy-notifications-source';
 
+import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreCancellablePromise } from '@classes/cancellable-promise';
+import { CoreLoadingComponent } from '@components/loading/loading';
+import { CoreDom } from '@singletons/dom';
 import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
 import { CoreSwiper } from '@singletons/swiper';
+
 import { CqHelper } from '../../../services/cq_helper';
 
 register();
@@ -74,6 +79,16 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
         });
     }
 
+    pageSliderOptions: SwiperOptions = {
+        initialSlide: 0,
+        speed: 400,
+        centerInsufficientSlides: true,
+        centeredSlides: true,
+        centeredSlidesBounds: true,
+        slidesPerView: 1,
+        watchSlidesProgress: true,
+    };
+
     notificationSubscription?: Subscription;
     announcementSubscription?: Subscription;
 
@@ -87,15 +102,6 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
 
     subject: string = "Notification";
     selectedOne: string = "notification";
-    pageSliderOptions: SwiperOptions = {
-        initialSlide: 0,
-        speed: 400,
-        centerInsufficientSlides: true,
-        centeredSlides: true,
-        centeredSlidesBounds: true,
-        slidesPerView: 1,
-        watchSlidesProgress: true,
-    };
 
     notificationList: any[] = [];
     notificationIsLoading = false;
@@ -113,7 +119,9 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     protected pushObserver?: Subscription;
     protected pendingRefresh = false;
 
-    constructor(protected CH: CqHelper) {
+    constructor(protected CH: CqHelper, elementRef: ElementRef) {
+        this.element = elementRef.nativeElement;
+
         try {
             const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(
                 CoreSites.getRequiredCurrentSite().isVersionGreaterEqualThan('4.0')
@@ -324,6 +332,8 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
         this.pushObserver?.unsubscribe();
         this.notifications?.destroy();
 
+        this.domPromise?.cancel();
+
         if (typeof this.notificationSubscription != "undefined") this.notificationSubscription.unsubscribe();
         if (typeof this.announcementSubscription != "undefined") this.announcementSubscription.unsubscribe();
     }
@@ -518,5 +528,23 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
     }
     markAllAnnouncementsAsRead(): void
     {
+    }
+
+    /**
+     * Wait until all <core-loading> children inside the page.
+     *
+     * @returns Promise resolved when loadings are done.
+     */
+    protected async waitLoadingsDone(): Promise<void> {
+        this.domPromise = CoreDom.waitToBeInDOM(this.element);
+
+        await this.domPromise;
+
+        const page = this.element.closest('.ion-page');
+        if (!page) {
+            return;
+        }
+
+        await CoreDirectivesRegistry.waitDirectivesReady(page, 'core-loading', CoreLoadingComponent);
     }
 }

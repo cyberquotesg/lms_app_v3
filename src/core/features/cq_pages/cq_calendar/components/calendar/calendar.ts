@@ -63,7 +63,7 @@ import { CqComponent } from '../../../classes/cq_component';
 })
 export class AddonCalendarCalendarComponent extends CqComponent implements OnInit, DoCheck, OnDestroy {
 
-    @ViewChild(CoreSwipeSlidesComponent) slides?: CoreSwipeSlidesComponent<PreloadedMonth>;
+    @ViewChild(CoreSwipeSlidesComponent) swipeSlidesComponent?: CoreSwipeSlidesComponent<PreloadedMonth>;
 
     @Input() initialYear?: number; // Initial year to load.
     @Input() initialMonth?: number; // Initial month to load.
@@ -119,7 +119,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
     }
 
     /**
-     * Component loaded.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.canNavigate = typeof this.canNavigate == 'undefined' ? true : CoreUtils.isTrueOrOne(this.canNavigate);
@@ -141,7 +141,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
     }
 
     /**
-     * Detect and act upon changes that Angular can’t or won’t detect on its own (objects and arrays).
+     * @inheritdoc
      */
     ngDoCheck(): void {
         const items = this.manager?.getSource().getItems();
@@ -162,7 +162,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
             this.hiddenDiffer = this.hidden;
 
             if (!this.hidden) {
-                this.slides?.slides?.getSwiper().then(swipper => swipper.update());
+                this.swipeSlidesComponent?.updateSlidesComponent();
             }
         }
     }
@@ -223,14 +223,14 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
      * Load next month.
      */
     loadNext(): void {
-        this.slides?.slideNext();
+        this.swipeSlidesComponent?.slideNext();
     }
 
     /**
      * Load previous month.
      */
     loadPrevious(): void {
-        this.slides?.slidePrev();
+        this.swipeSlidesComponent?.slidePrev();
     }
 
     /**
@@ -318,8 +318,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
      */
     async viewMonth(month: number, year: number): Promise<void> {
         const manager = this.manager;
-        const slides = this.slides;
-        if (!manager || !slides) {
+        if (!manager || !this.swipeSlidesComponent) {
             return;
         }
 
@@ -335,7 +334,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
             // Make sure the day is loaded.
             await manager.getSource().loadItem(item);
 
-            slides.slideToItem(item);
+            this.swipeSlidesComponent.slideToItem(item);
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'addon.calendar.errorloadevents', true);
         } finally {
@@ -344,7 +343,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
     }
 
     /**
-     * Component destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.undeleteEventObserver?.off();

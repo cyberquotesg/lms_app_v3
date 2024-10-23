@@ -34,7 +34,12 @@ import { CoreSiteInfoCronHandler } from '@services/handlers/site-info-cron';
 import { moodleTransitionAnimation } from '@classes/page-transition';
 import { TestingModule } from '@/testing/testing.module';
 
-// For translate loader. AoT requires an exported function for factories.
+/**
+ * For translate loader. AoT requires an exported function for factories.
+ *
+ * @param http Http client.
+ * @returns Translate loader.
+ */
 export function createTranslateLoader(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/lang/', '.json');
 }
@@ -47,6 +52,8 @@ export function createTranslateLoader(http: HttpClient): TranslateHttpLoader {
         IonicModule.forRoot(
             {
                 navAnimation: moodleTransitionAnimation,
+                innerHTMLTemplatesEnabled: true,
+                sanitizerEnabled: true,
             },
         ),
         HttpClientModule, // HttpClient is used to make JSON requests. It fails for HEAD requests because there is no content.

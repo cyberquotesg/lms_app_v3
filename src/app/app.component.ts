@@ -222,6 +222,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         CoreSubscriptions.once(this.outlet.activateEvents, () => SplashScreen.hide());
     }
 
+    // by rachmad
     ifLoggedIn(): void {
         this.CH.updateCount("notification, announcement");
         this.notificationAnnouncementCountAgent = setInterval(() => { this.CH.updateCount("notification, announcement") }, 10 * 1000);

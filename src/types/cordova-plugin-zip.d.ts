@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UrlTree } from '@angular/router';
-import { NavigationOptions } from '@ionic/angular/common/providers/nav-controller';
+/**
+ * Types for file cordova plugin.
+ *
+ * @see https://github.com/moodlemobile/cordova-plugin-zip
+ */
 
-declare module '@ionic/angular' {
+interface Window {
 
-    export class NavController {
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        navigateForward(url: string | UrlTree | any[], options?: NavigationOptions): Promise<boolean | null>;
-
-    }
+    zip: {
+        unzip(source: string, destination: string, onSuccess: Function, onProgress?: Function): void;
+    };
 
 }

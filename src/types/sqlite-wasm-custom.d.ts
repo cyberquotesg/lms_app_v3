@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UrlTree } from '@angular/router';
-import { NavigationOptions } from '@ionic/angular/common/providers/nav-controller';
+export {};
 
-declare module '@ionic/angular' {
+declare module '@sqlite.org/sqlite-wasm' {
 
-    export class NavController {
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        navigateForward(url: string | UrlTree | any[], options?: NavigationOptions): Promise<boolean | null>;
-
+    export interface SqliteRowData {
+        rowId?: number;
     }
 
 }

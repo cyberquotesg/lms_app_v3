@@ -12,16 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UrlTree } from '@angular/router';
-import { NavigationOptions } from '@ionic/angular/common/providers/nav-controller';
+/**
+ * Types for chooser cordova plugin.
+ *
+ * @see https://github.com/cyph/cordova-plugin-chooser
+ */
 
-declare module '@ionic/angular' {
+interface IChooserResult {
+    data?: Uint8Array;
+    dataURI?: string;
+    mediaType: string;
+    name: string;
+    uri: string;
+}
 
-    export class NavController {
+interface Window {
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        navigateForward(url: string | UrlTree | any[], options?: NavigationOptions): Promise<boolean | null>;
+    chooser: {
+        getFile(accept?: string): Promise<IChooserResult | undefined>;
+        getFileMetadata(accept?: string): Promise<IChooserResult | undefined>;
+    };
 
-    }
+}
 
+declare module 'cordova-plugin-chooser' {
+    export type ChooserResult = IChooserResult;
 }

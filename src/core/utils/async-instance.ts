@@ -114,9 +114,15 @@ function isMethod(value: unknown): value is (...args: unknown[]) => unknown {
  */
 export interface AsyncInstanceWrapper<T> {
     instance?: T;
+    lazyMethods?: Array<string | number | symbol> | null;
+    lazyOverrides?: Array<keyof T> | null;
+    eagerInstance?: T;
     getInstance(): Promise<T>;
     getProperty<P extends keyof T>(property: P): Promise<T[P]>;
     setInstance(instance: T): void;
+    setLazyMethods<const T extends Array<string | number | symbol>>(methods: Array<keyof T>): void;
+    setLazyOverrides(methods: Array<keyof T>): void;
+    setEagerInstance(eagerInstance: T): void;
     setLazyConstructor(lazyConstructor: () => T | Promise<T>): void;
     resetInstance(): void;
 }

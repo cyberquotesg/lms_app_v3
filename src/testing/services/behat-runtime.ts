@@ -29,7 +29,7 @@ import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesProvider } from '@services/sites';
 import { CoreNavigator, CoreNavigatorService } from '@services/navigator';
 import { CoreSwipeNavigationDirective } from '@directives/swipe-navigation';
-import { IonSlides } from '@ionic/angular';
+import { Swiper } from 'swiper';
 
 /**
  * Behat runtime servive with public API.
@@ -534,6 +534,35 @@ export class TestingBehatRuntimeService {
     }
 
     /**
+     * Get element instance.
+     *
+     * @param selector Element selector.
+     * @param referenceLocator The locator to the reference element to start looking for. If not specified, document body.
+     * @returns Element instance.
+     */
+    private getElement<T = Element>(selector: string, referenceLocator?: TestingBehatElementLocator): T | null {
+        let startingElement: HTMLElement | undefined = document.body;
+        let queryPrefix = '';
+
+        if (referenceLocator) {
+            startingElement = TestingBehatDomUtils.findElementBasedOnText(referenceLocator, {
+                onlyClickable: false,
+                containerName: '',
+            });
+
+            if (!startingElement) {
+                return null;
+            }
+        } else {
+            // Searching the whole DOM, search only in visible pages.
+            queryPrefix = '.ion-page:not(.ion-page-hidden) ';
+        }
+
+        return Array.from(startingElement.querySelectorAll(`${queryPrefix}${selector}`)).pop() as T
+            ?? startingElement.closest(selector) as T;
+    }
+
+    /**
      * Logs information from this Behat runtime JavaScript, including the time and the 'BEHAT'
      * keyword so we can easily filter for it if needed.
      */
@@ -601,27 +630,27 @@ export class TestingBehatRuntimeService {
         this.log('Action - Swipe', { direction, locator });
 
         if (locator) {
-            // Locator specified, try to find ion-slides first.
-            const instance = this.getAngularInstance<IonSlides>('ion-slides', 'IonSlides', locator);
-            if (instance) {
-                direction === 'left' ? instance.slideNext() : instance.slidePrev();
+            // Locator specified, try to find swiper-container first.
+            const swiperContainer = this.getElement<{ swiper: Swiper }>('swiper-container', locator);
+
+            if (swiperContainer) {
+                direction === 'left' ? swiperContainer.swiper.slideNext() : swiperContainer.swiper.slidePrev();
 
                 return 'OK';
             }
         }
 
-        // No locator specified or ion-slides not found, search swipe navigation now.
-        const instance = this.getAngularInstance<CoreSwipeNavigationDirective>(
-            'ion-content',
-            'CoreSwipeNavigationDirective',
+        // No locator specified or swiper-container not found, search swipe navigation now.
+        const ionContent = this.getElement<{ swipeNavigation: CoreSwipeNavigationDirective }>(
+            'ion-content.uses-swipe-navigation',
             locator,
         );
 
-        if (!instance) {
+        if (!ionContent) {
             return 'ERROR: Element to swipe not found.';
         }
 
-        direction === 'left' ? instance.swipeLeft() : instance.swipeRight();
+        direction === 'left' ? ionContent.swipeNavigation.swipeLeft() : ionContent.swipeNavigation.swipeRight();
 
         return 'OK';
     }
@@ -639,8 +668,8 @@ export type BehatTestsWindow = Window & {
 };
 
 export type TestingBehatFindOptions = {
-    containerName: string;
-    onlyClickable: boolean;
+    containerName?: string;
+    onlyClickable?: boolean;
 };
 
 export type TestingBehatElementLocator = {

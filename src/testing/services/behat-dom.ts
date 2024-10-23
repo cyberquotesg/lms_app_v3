@@ -409,7 +409,7 @@ export class TestingBehatDomUtilsService {
         locator: TestingBehatElementLocator,
         options: TestingBehatFindOptions,
     ): HTMLElement[] {
-        const topContainers = this.getCurrentTopContainerElements(options.containerName);
+        const topContainers = this.getCurrentTopContainerElements(options.containerName ?? '');
         let elements: HTMLElement[] = [];
 
         for (let i = 0; i < topContainers.length; i++) {

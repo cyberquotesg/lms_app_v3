@@ -22,7 +22,7 @@ import { AsyncInstance, AsyncObject, asyncInstance } from '@/core/utils/async-in
  */
 @Injectable({ providedIn: 'root' })
 export class CoreNativeService {
-
+    /* *a/
     private plugins: Partial<Record<keyof MoodleAppPlugins, AsyncInstance<AsyncObject>>> = {};
     private mocks: Partial<Record<keyof MoodleAppPlugins, MoodleAppPlugins[keyof MoodleAppPlugins]>> = {};
 
@@ -31,7 +31,7 @@ export class CoreNativeService {
      *
      * @param plugin Plugin name.
      * @returns Plugin instance, null if plugin is not supported for current platform.
-     */
+     *a/
     plugin<Plugin extends keyof MoodleAppPlugins>(plugin: Plugin): AsyncInstance<MoodleAppPlugins[Plugin]> | null {
         if (plugin === 'installReferrer' && !CorePlatform.isAndroid()) {
             return null;
@@ -58,11 +58,11 @@ export class CoreNativeService {
      *
      * @param plugin Plugin name.
      * @param instance Instance to use.
-     */
+     *a/
     registerBrowserMock<Plugin extends keyof MoodleAppPlugins>(plugin: Plugin, instance: MoodleAppPlugins[Plugin]): void {
         this.mocks[plugin] = instance;
     }
-
+    /* */
 }
 
 export const CoreNative = makeSingleton(CoreNativeService);

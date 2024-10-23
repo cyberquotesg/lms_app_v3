@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { NgModule } from '@angular/core';
+import { NgModule, Type } from '@angular/core';
 
 import { Badge } from '@awesome-cordova-plugins/badge/ngx';
 import { Camera } from '@awesome-cordova-plugins/camera/ngx';
-import { Chooser } from '@awesome-cordova-plugins/chooser/ngx';
+import { Chooser } from '@features/native/plugins/chooser';
 import { Clipboard } from '@awesome-cordova-plugins/clipboard/ngx';
 import { Device } from '@awesome-cordova-plugins/device/ngx';
 import { Diagnostic } from '@awesome-cordova-plugins/diagnostic/ngx';
@@ -30,13 +30,13 @@ import { WebView } from '@awesome-cordova-plugins/ionic-webview/ngx';
 import { Keyboard } from '@awesome-cordova-plugins/keyboard/ngx';
 import { LocalNotifications } from '@awesome-cordova-plugins/local-notifications/ngx';
 import { MediaCapture } from '@awesome-cordova-plugins/media-capture/ngx';
-import { Push } from '@awesome-cordova-plugins/push/ngx';
+import { Push } from '@features/native/plugins/push';
 import { QRScanner } from './plugins/qrscanner';
 import { SplashScreen } from '@awesome-cordova-plugins/splash-screen/ngx';
 import { SQLite } from '@awesome-cordova-plugins/sqlite/ngx';
 import { StatusBar } from '@awesome-cordova-plugins/status-bar/ngx';
 import { WebIntent } from '@awesome-cordova-plugins/web-intent/ngx';
-import { Zip } from '@awesome-cordova-plugins/zip/ngx';
+import { Zip } from '@features/native/plugins/zip';
 
 export const CORE_NATIVE_SERVICES = [
     Badge,

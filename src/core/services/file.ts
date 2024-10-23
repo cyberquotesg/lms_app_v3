@@ -97,6 +97,7 @@ export class CoreFileProvider {
     // Folders.
     static readonly SITESFOLDER = 'sites';
     static readonly TMPFOLDER = 'tmp';
+    static readonly NO_SITE_FOLDER = 'nosite';
 
     static readonly CHUNK_SIZE = 1048576; // 1 MB. Same chunk size as Ionic Native.
 
@@ -241,7 +242,7 @@ export class CoreFileProvider {
 
             const newDirEntry = await File.createDir(base, firstDir, true);
 
-            return this.create(isDirectory, restOfPath, failIfExists, newDirEntry.toURL());
+            return this.create(isDirectory, restOfPath, failIfExists, this.getFileEntryURL(newDirEntry));
         }
     }
 
@@ -896,10 +897,27 @@ export class CoreFileProvider {
     getInternalURL(fileEntry: FileEntry): string {
         if (!fileEntry.toInternalURL) {
             // File doesn't implement toInternalURL, use toURL.
-            return fileEntry.toURL();
+            return this.getFileEntryURL(fileEntry);
         }
 
         return fileEntry.toInternalURL();
+    }
+
+    /**
+     * Get the URL (absolute path) of a file.
+     * Use this function instead of doing fileEntry.toURL because the latter causes problems with WebView and other plugins.
+     *
+     * @param fileEntry File Entry.
+     * @returns URL.
+     */
+    getFileEntryURL(fileEntry: Entry): string {
+        if (CorePlatform.isAndroid()) {
+            // Cordova plugin file v7 changed the format returned by toURL, the new format it's not compatible with
+            // Ionic WebView or FileTransfer plugin.
+            return fileEntry.nativeURL;
+        }
+
+        return fileEntry.toURL();
     }
 
     /**
@@ -956,7 +974,7 @@ export class CoreFileProvider {
         // If destFolder is not set, use same location as ZIP file. We need to use absolute paths (including basePath).
         destFolder = this.addBasePathIfNeeded(destFolder || CoreMimetypeUtils.removeExtension(path));
 
-        const result = await Zip.unzip(fileEntry.toURL(), destFolder, onProgress);
+        const result = await Zip.unzip(this.getFileEntryURL(fileEntry), destFolder, onProgress);
 
         if (result == -1) {
             throw new CoreError('Unzip failed.');
@@ -1155,6 +1173,38 @@ export class CoreFileProvider {
     async clearTmpFolder(): Promise<void> {
         // Ignore errors because the folder might not exist.
         await CoreUtils.ignoreErrors(this.removeDir(CoreFileProvider.TMPFOLDER));
+    }
+
+    /**
+     * Remove deleted sites folders.
+     *
+     * @returns Promise resolved when done.
+     */
+    async clearDeletedSitesFolder(existingSiteNames: string[]): Promise<void> {
+        // Ignore errors because the folder might not exist.
+        const dirPath = CoreFileProvider.SITESFOLDER;
+
+        // Get the directory contents.
+        try {
+            const contents = await this.getDirectoryContents(dirPath);
+
+            if (!contents.length) {
+                return;
+            }
+
+            const promises: Promise<void>[] = contents.map(async (file) => {
+                if (file.isDirectory) {
+                    if (!existingSiteNames.includes(file.name)) {
+                        // Site does not exist... delete it.
+                        await CoreUtils.ignoreErrors(this.removeDir(this.getSiteFolder(file.name)));
+                    }
+                }
+            });
+
+            await Promise.all(promises);
+        } catch {
+            // Ignore errors, maybe it doesn't exist.
+        }
     }
 
     /**

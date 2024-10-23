@@ -127,6 +127,8 @@ export interface AsyncInstanceWrapper<T> {
     resetInstance(): void;
 }
 
+export type AsyncObject = object;
+
 /**
  * Asynchronous version of a method.
  */

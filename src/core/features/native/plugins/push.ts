@@ -26,9 +26,9 @@ export class Push extends IonicPush {
      * Returns null if the device doesn't support the encryption methods.
      *
      * @returns Public key or null.
-     */
+     *a/
     getPublicKey(): Promise<string | null> {
         return new Promise((resolve, reject) => PushNotification.getPublicKey(resolve, reject));
     }
-
+    /* */
 }

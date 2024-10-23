@@ -23,7 +23,7 @@ import {
     EventEmitter,
     OnDestroy,
 } from '@angular/core';
-import { CoreFile } from '@services/file';
+import { CoreFile, CoreFileProvider } from '@services/file';
 import { CoreFilepool, CoreFilepoolFileActions, CoreFilepoolFileEventData } from '@services/filepool';
 import { CoreSites } from '@services/sites';
 import { CoreUrlUtils } from '@services/utils/url';
@@ -58,9 +58,20 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
     @Input() siteId?: string; // Site ID to use.
     @Input() component?: string; // Component to link the file to.
     @Input() componentId?: string | number; // Component ID to use in conjunction with the component.
+    @Input() url?: string | null; // The URL to use in the element, either as src or href.
+    @Input() posterUrl?: string | null; // The poster URL.
+    /**
+     * @deprecated since 4.4. Use url instead.
+     */
     @Input() src?: string;
+    /**
+     * @deprecated since 4.4. Use url instead.
+     */
     @Input() href?: string;
     @Input('target-src') targetSrc?: string; // eslint-disable-line @angular-eslint/no-input-rename
+    /**
+     * @deprecated since 4.4. Use posterUrl instead.
+     */
     @Input() poster?: string;
     @Output() onLoad = new EventEmitter(); // Emitted when content is loaded. Only for images.
 
@@ -81,7 +92,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
     }
 
     /**
-     * View has been initialized
+     * @inheritdoc
      */
     ngAfterViewInit(): void {
         this.checkAndHandleExternalContent();
@@ -90,9 +101,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
     }
 
     /**
-     * Listen to changes.
-     *
-     * * @param {{[name: string]: SimpleChange}} changes Changes.
+     * @inheritdoc
      */
     ngOnChanges(changes: { [name: string]: SimpleChange }): void {
         if (changes && this.initialized) {
@@ -134,31 +143,30 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
     protected async checkAndHandleExternalContent(): Promise<void> {
         const siteId = this.siteId || CoreSites.getRequiredCurrentSite().getId();
         const tagName = this.element.tagName.toUpperCase();
-        let targetAttr;
-        let url;
+        let targetAttr: string;
+        let url: string;
 
         // Always handle inline styles (if any).
         this.handleInlineStyles(siteId);
 
         if (tagName === 'A' || tagName == 'IMAGE') {
             targetAttr = 'href';
-            url = this.href;
+            url = this.url ?? this.href ?? ''; // eslint-disable-line deprecation/deprecation
 
         } else if (tagName === 'IMG') {
             targetAttr = 'src';
-            url = this.src;
+            url = this.url ?? this.src ?? ''; // eslint-disable-line deprecation/deprecation
 
         } else if (tagName === 'AUDIO' || tagName === 'VIDEO' || tagName === 'SOURCE' || tagName === 'TRACK') {
             targetAttr = 'src';
-            url = this.targetSrc || this.src;
+            url = this.url ?? this.src ?? ''; // eslint-disable-line deprecation/deprecation
 
-            if (tagName === 'VIDEO') {
-                if (this.poster) {
-                    // Handle poster.
-                    this.handleExternalContent('poster', this.poster, siteId).catch(() => {
-                        // Ignore errors.
-                    });
-                }
+            if (tagName === 'VIDEO' && (this.posterUrl || this.poster)) { // eslint-disable-line deprecation/deprecation
+                // Handle poster.
+                // eslint-disable-next-line deprecation/deprecation
+                this.handleExternalContent('poster', this.posterUrl ?? this.poster ?? '').catch(() => {
+                    // Ignore errors.
+                });
             }
 
         } else {

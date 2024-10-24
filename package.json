@@ -95,7 +95,6 @@
         "@ionic/angular": "7.8.6",
         "@ionic/cordova-builders": "11.0.0",
         "@moodlehq/cordova-plugin-advanced-http": "3.3.1-moodle.1",
-        "@moodlehq/cordova-plugin-badge": "0.8.8-moodle.1",
         "@moodlehq/cordova-plugin-camera": "7.0.0-moodle.1",
         "@moodlehq/cordova-plugin-file-opener": "4.0.0-moodle.1",
         "@moodlehq/cordova-plugin-file-transfer": "2.0.0-moodle.2",
@@ -130,7 +129,6 @@
         "cordova-plugin-prevent-override": "1.0.1",
         "cordova-plugin-screen-orientation": "3.0.4",
         "cordova-plugin-splashscreen": "6.0.0",
-        "cordova-plugin-statusbar": "3.0.0",
         "cordova-plugin-wkuserscript": "1.0.1",
         "cordova-plugin-wkwebview-cookies": "1.0.1",
         "cordova-sqlite-storage": "6.1.0",
@@ -178,6 +176,7 @@
         "concurrently": "8.2.2",
         "cordova-android": "^13.0.0",
         "cordova-ios": "^7.1.1",
+        "cordova-plugin-badge": "^0.8.9",
         "cordova.plugin.zoom": "github:cyberquotesg/zoom-sdk-ionic#cyberquote",
         "cross-env": "7.0.3",
         "eslint": "8.57.0",
@@ -224,7 +223,6 @@
             "@moodlehq/cordova-plugin-advanced-http": {
                 "ANDROIDBLACKLISTSECURESOCKETPROTOCOLS": "SSLv3,TLSv1"
             },
-            "@moodlehq/cordova-plugin-badge": {},
             "@moodlehq/cordova-plugin-camera": {
                 "ANDROID_SUPPORT_V4_VERSION": "27.+",
                 "ANDROIDX_CORE_VERSION": "1.6.+"
@@ -249,6 +247,7 @@
             },
             "cordova-clipboard": {},
             "cordova-plugin-androidx-adapter": {},
+            "cordova-plugin-badge": {},
             "cordova-plugin-chooser": {},
             "cordova-plugin-customurlscheme": {
                 "URL_SCHEME": "moodlemobile",
@@ -266,7 +265,6 @@
             "cordova-plugin-prevent-override": {},
             "cordova-plugin-screen-orientation": {},
             "cordova-plugin-splashscreen": {},
-            "cordova-plugin-statusbar": {},
             "cordova-plugin-wkuserscript": {},
             "cordova-plugin-wkwebview-cookies": {},
             "cordova-sqlite-storage": {},

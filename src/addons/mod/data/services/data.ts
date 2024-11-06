@@ -28,10 +28,15 @@ import { CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { AddonModDataFieldsDelegate } from './data-fields-delegate';
 import { AddonModDataOffline } from './data-offline';
-import { AddonModDataAutoSyncData, AddonModDataSyncProvider } from './data-sync';
+import { AddonModDataAutoSyncData } from './data-sync';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
-
-const ROOT_CACHE_KEY = 'mmaModData:';
+import {
+    ADDON_MOD_DATA_AUTO_SYNCED,
+    ADDON_MOD_DATA_COMPONENT,
+    ADDON_MOD_DATA_ENTRIES_PER_PAGE,
+    ADDON_MOD_DATA_ENTRY_CHANGED,
+    AddonModDataAction,
+} from '../constants';
 
 declare module '@singletons/events' {
 
@@ -41,47 +46,9 @@ declare module '@singletons/events' {
      * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
      */
     export interface CoreEventsData {
-        [AddonModDataSyncProvider.AUTO_SYNCED]: AddonModDataAutoSyncData;
-        [AddonModDataProvider.ENTRY_CHANGED]: AddonModDataEntryChangedEventData;
+        [ADDON_MOD_DATA_AUTO_SYNCED]: AddonModDataAutoSyncData;
+        [ADDON_MOD_DATA_ENTRY_CHANGED]: AddonModDataEntryChangedEventData;
     }
-}
-
-export enum AddonModDataAction {
-    ADD = 'add',
-    EDIT = 'edit',
-    DELETE = 'delete',
-    APPROVE = 'approve',
-    DISAPPROVE = 'disapprove',
-    USER = 'user',
-    USERPICTURE = 'userpicture',
-    MORE = 'more',
-    MOREURL = 'moreurl',
-    COMMENTS = 'comments',
-    TIMEADDED = 'timeadded',
-    TIMEMODIFIED = 'timemodified',
-    TAGS = 'tags',
-    APPROVALSTATUS = 'approvalstatus',
-    APPROVALSTATUSCLASS = 'approvalstatusclass',
-    DELCHECK = 'delcheck', // Unused.
-    EXPORT = 'export', // Unused.
-    ACTIONSMENU = 'actionsmenu',
-    ID = 'id',
-}
-
-export enum AddonModDataTemplateType {
-    LIST_HEADER = 'listtemplateheader',
-    LIST = 'listtemplate',
-    LIST_FOOTER = 'listtemplatefooter',
-    ADD = 'addtemplate',
-    SEARCH = 'asearchtemplate',
-    SINGLE = 'singletemplate',
-}
-
-export enum AddonModDataTemplateMode {
-    LIST = 'list',
-    EDIT = 'edit',
-    SHOW = 'show',
-    SEARCH = 'search',
 }
 
 /**
@@ -90,9 +57,7 @@ export enum AddonModDataTemplateMode {
 @Injectable({ providedIn: 'root' })
 export class AddonModDataProvider {
 
-    static readonly COMPONENT = 'mmaModData';
-    static readonly PER_PAGE = 25;
-    static readonly ENTRY_CHANGED = 'addon_mod_data_entry_changed';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModData:';
 
     /**
      * Adds a new entry to a database.
@@ -504,7 +469,7 @@ export class AddonModDataProvider {
         options.siteId = options.siteId || CoreSites.getCurrentSiteId();
         options = Object.assign({
             page: 0,
-            perPage: AddonModDataProvider.PER_PAGE,
+            perPage: ADDON_MOD_DATA_ENTRIES_PER_PAGE,
         }, options);
 
         return this.fetchEntriesRecursive(dataId, [], options);
@@ -543,7 +508,7 @@ export class AddonModDataProvider {
      * @returns Cache key.
      */
     protected getDatabaseDataCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'data:' + courseId;
+        return AddonModDataProvider.ROOT_CACHE_KEY + 'data:' + courseId;
     }
 
     /**
@@ -553,7 +518,7 @@ export class AddonModDataProvider {
      * @returns Cache key.
      */
     protected getDatabaseDataPrefixCacheKey(dataId: number): string {
-        return ROOT_CACHE_KEY + dataId;
+        return AddonModDataProvider.ROOT_CACHE_KEY + dataId;
     }
 
     /**
@@ -579,7 +544,7 @@ export class AddonModDataProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getDatabaseDataCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModDataProvider.COMPONENT,
+            component: ADDON_MOD_DATA_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
         const response =
@@ -660,7 +625,7 @@ export class AddonModDataProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getDatabaseAccessInformationDataCacheKey(dataId, options.groupId),
-            component: AddonModDataProvider.COMPONENT,
+            component: ADDON_MOD_DATA_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -681,7 +646,7 @@ export class AddonModDataProvider {
             sort: 0,
             order: 'DESC',
             page: 0,
-            perPage: AddonModDataProvider.PER_PAGE,
+            perPage: ADDON_MOD_DATA_ENTRIES_PER_PAGE,
         }, options);
 
         const site = await CoreSites.getSite(options.siteId);
@@ -699,7 +664,7 @@ export class AddonModDataProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getEntriesCacheKey(dataId, options.groupId),
             updateFrequency: CoreSite.FREQUENCY_SOMETIMES,
-            component: AddonModDataProvider.COMPONENT,
+            component: ADDON_MOD_DATA_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -757,7 +722,7 @@ export class AddonModDataProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getEntryCacheKey(dataId, entryId),
             updateFrequency: CoreSite.FREQUENCY_SOMETIMES,
-            component: AddonModDataProvider.COMPONENT,
+            component: ADDON_MOD_DATA_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -809,7 +774,7 @@ export class AddonModDataProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getFieldsCacheKey(dataId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModDataProvider.COMPONENT,
+            component: ADDON_MOD_DATA_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -911,7 +876,7 @@ export class AddonModDataProvider {
      * @returns Promise resolved when the files are invalidated.
      */
     async invalidateFiles(moduleId: number, siteId?: string): Promise<void> {
-        await CoreFilepool.invalidateFilesByComponent(siteId, AddonModDataProvider.COMPONENT, moduleId);
+        await CoreFilepool.invalidateFilesByComponent(siteId, ADDON_MOD_DATA_COMPONENT, moduleId);
     }
 
     /**
@@ -969,7 +934,7 @@ export class AddonModDataProvider {
         await CoreCourseLogHelper.log(
             'mod_data_view_database',
             params,
-            AddonModDataProvider.COMPONENT,
+            ADDON_MOD_DATA_COMPONENT,
             id,
             siteId,
         );
@@ -989,7 +954,7 @@ export class AddonModDataProvider {
         options.sort = options.sort || 0;
         options.order = options.order || 'DESC';
         options.page = options.page || 0;
-        options.perPage = options.perPage || AddonModDataProvider.PER_PAGE;
+        options.perPage = options.perPage || ADDON_MOD_DATA_ENTRIES_PER_PAGE;
         options.readingStrategy = options.readingStrategy || CoreSitesReadingStrategy.PREFER_NETWORK;
 
         const params: AddonModDataSearchEntriesWSParams = {
@@ -1000,7 +965,7 @@ export class AddonModDataProvider {
             perpage: options.perPage,
         };
         const preSets: CoreSiteWSPreSets = {
-            component: AddonModDataProvider.COMPONENT,
+            component: ADDON_MOD_DATA_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -1087,7 +1052,7 @@ export type AddonModDataGetEntriesOptions = CoreCourseCommonModWSOptions & {
     // -4: timemodified
     order?: string; // The direction of the sorting: 'ASC' or 'DESC'. Defaults to 'DESC'.
     page?: number; // Page of records to return. Defaults to 0.
-    perPage?: number; // Records per page to return. Defaults to AddonModDataProvider.PER_PAGE.
+    perPage?: number; // Records per page to return. Defaults to ADDON_MOD_DATA_ENTRIES_PER_PAGE.
 };
 
 /**

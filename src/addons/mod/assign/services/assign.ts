@@ -19,7 +19,6 @@ import { CoreInterceptor } from '@classes/interceptor';
 import { CoreWSExternalWarning, CoreWSExternalFile, CoreWSFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
-import { CoreTextUtils } from '@services/utils/text';
 import { CoreGrades } from '@features/grades/services/grades';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
@@ -31,14 +30,22 @@ import { AddonModAssignSubmissionDelegate } from './submission-delegate';
 import { CoreComments } from '@features/comments/services/comments';
 import { AddonModAssignSubmissionFormatted } from './assign-helper';
 import { CoreWSError } from '@classes/errors/wserror';
-import { AddonModAssignAutoSyncData, AddonModAssignManualSyncData, AddonModAssignSyncProvider } from './assign-sync';
+import { AddonModAssignAutoSyncData, AddonModAssignManualSyncData } from './assign-sync';
 import { CoreFormFields } from '@singletons/form';
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreIonicColorNames } from '@singletons/colors';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { ContextLevel } from '@/core/constants';
-
-const ROOT_CACHE_KEY = 'mmaModAssign:';
+import {
+    ADDON_MOD_ASSIGN_AUTO_SYNCED,
+    ADDON_MOD_ASSIGN_COMPONENT,
+    ADDON_MOD_ASSIGN_GRADED_EVENT,
+    ADDON_MOD_ASSIGN_MANUAL_SYNCED,
+    ADDON_MOD_ASSIGN_STARTED_EVENT,
+    ADDON_MOD_ASSIGN_SUBMISSION_REMOVED_EVENT,
+    ADDON_MOD_ASSIGN_SUBMISSION_SAVED_EVENT,
+    ADDON_MOD_ASSIGN_SUBMITTED_FOR_GRADING_EVENT,
+} from '../constants';
 
 declare module '@singletons/events' {
 
@@ -48,12 +55,13 @@ declare module '@singletons/events' {
      * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
      */
     export interface CoreEventsData {
-        [AddonModAssignProvider.SUBMISSION_SAVED_EVENT]: AddonModAssignSubmissionSavedEventData;
-        [AddonModAssignProvider.SUBMITTED_FOR_GRADING_EVENT]: AddonModAssignSubmittedForGradingEventData;
-        [AddonModAssignProvider.GRADED_EVENT]: AddonModAssignGradedEventData;
-        [AddonModAssignProvider.STARTED_EVENT]: AddonModAssignStartedEventData;
-        [AddonModAssignSyncProvider.MANUAL_SYNCED]: AddonModAssignManualSyncData;
-        [AddonModAssignSyncProvider.AUTO_SYNCED]: AddonModAssignAutoSyncData;
+        [ADDON_MOD_ASSIGN_SUBMISSION_SAVED_EVENT]: AddonModAssignSubmissionSavedEventData;
+        [ADDON_MOD_ASSIGN_SUBMISSION_REMOVED_EVENT]: AddonModAssignSubmissionRemovedEventData;
+        [ADDON_MOD_ASSIGN_SUBMITTED_FOR_GRADING_EVENT]: AddonModAssignSubmittedForGradingEventData;
+        [ADDON_MOD_ASSIGN_GRADED_EVENT]: AddonModAssignGradedEventData;
+        [ADDON_MOD_ASSIGN_STARTED_EVENT]: AddonModAssignStartedEventData;
+        [ADDON_MOD_ASSIGN_MANUAL_SYNCED]: AddonModAssignManualSyncData;
+        [ADDON_MOD_ASSIGN_AUTO_SYNCED]: AddonModAssignAutoSyncData;
     }
 
 }
@@ -64,19 +72,7 @@ declare module '@singletons/events' {
 @Injectable({ providedIn: 'root' })
 export class AddonModAssignProvider {
 
-    static readonly COMPONENT = 'mmaModAssign';
-    static readonly SUBMISSION_COMPONENT = 'mmaModAssignSubmission';
-    static readonly UNLIMITED_ATTEMPTS = -1;
-
-    // Group submissions warnings.
-    static readonly WARN_GROUPS_REQUIRED = 'warnrequired';
-    static readonly WARN_GROUPS_OPTIONAL = 'warnoptional';
-
-    // Events.
-    static readonly SUBMISSION_SAVED_EVENT = 'addon_mod_assign_submission_saved';
-    static readonly SUBMITTED_FOR_GRADING_EVENT = 'addon_mod_assign_submitted_for_grading';
-    static readonly GRADED_EVENT = 'addon_mod_assign_graded';
-    static readonly STARTED_EVENT = 'addon_mod_assign_started';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModAssign:';
 
     /**
      * Check if the user can submit in offline. This should only be used if submissionStatus.lastattempt.cansubmit cannot
@@ -179,7 +175,7 @@ export class AddonModAssignProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getAssignmentCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModAssignProvider.COMPONENT,
+            component: ADDON_MOD_ASSIGN_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
 
@@ -226,7 +222,7 @@ export class AddonModAssignProvider {
      * @returns Cache key.
      */
     protected getAssignmentCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'assignment:' + courseId;
+        return AddonModAssignProvider.ROOT_CACHE_KEY + 'assignment:' + courseId;
     }
 
     /**
@@ -251,7 +247,7 @@ export class AddonModAssignProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getAssignmentUserMappingsCacheKey(assignId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModAssignProvider.COMPONENT,
+            component: ADDON_MOD_ASSIGN_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
@@ -279,7 +275,7 @@ export class AddonModAssignProvider {
      * @returns Cache key.
      */
     protected getAssignmentUserMappingsCacheKey(assignId: number): string {
-        return ROOT_CACHE_KEY + 'usermappings:' + assignId;
+        return AddonModAssignProvider.ROOT_CACHE_KEY + 'usermappings:' + assignId;
     }
 
     /**
@@ -297,7 +293,7 @@ export class AddonModAssignProvider {
         };
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getAssignmentGradesCacheKey(assignId),
-            component: AddonModAssignProvider.COMPONENT,
+            component: ADDON_MOD_ASSIGN_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
@@ -326,7 +322,7 @@ export class AddonModAssignProvider {
      * @returns Cache key.
      */
     protected getAssignmentGradesCacheKey(assignId: number): string {
-        return ROOT_CACHE_KEY + 'assigngrades:' + assignId;
+        return AddonModAssignProvider.ROOT_CACHE_KEY + 'assigngrades:' + assignId;
     }
 
     /**
@@ -436,7 +432,7 @@ export class AddonModAssignProvider {
         });
 
         if (!keepUrls && submissionPlugin.fileareas && submissionPlugin.fileareas[0]) {
-            text = CoreTextUtils.replacePluginfileUrls(text, submissionPlugin.fileareas[0].files || []);
+            text = CoreFileHelper.replacePluginfileUrls(text, submissionPlugin.fileareas[0].files || []);
         }
 
         return text;
@@ -461,7 +457,7 @@ export class AddonModAssignProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSubmissionsCacheKey(assignId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModAssignProvider.COMPONENT,
+            component: ADDON_MOD_ASSIGN_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
@@ -489,7 +485,7 @@ export class AddonModAssignProvider {
      * @returns Cache key.
      */
     protected getSubmissionsCacheKey(assignId: number): string {
-        return ROOT_CACHE_KEY + 'submissions:' + assignId;
+        return AddonModAssignProvider.ROOT_CACHE_KEY + 'submissions:' + assignId;
     }
 
     /**
@@ -529,7 +525,7 @@ export class AddonModAssignProvider {
             getCacheUsingCacheKey: true,
             filter: options.filter,
             rewriteurls: options.filter,
-            component: AddonModAssignProvider.COMPONENT,
+            component: ADDON_MOD_ASSIGN_COMPONENT,
             componentId: options.cmId,
             // Don't cache when getting text without filters.
             // @todo Change this to support offline editing.
@@ -659,7 +655,7 @@ export class AddonModAssignProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.listParticipantsCacheKey(assignId, groupId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModAssignProvider.COMPONENT,
+            component: ADDON_MOD_ASSIGN_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
@@ -685,7 +681,7 @@ export class AddonModAssignProvider {
      * @returns Cache key.
      */
     protected listParticipantsPrefixCacheKey(assignId: number): string {
-        return ROOT_CACHE_KEY + 'participants:' + assignId;
+        return AddonModAssignProvider.ROOT_CACHE_KEY + 'participants:' + assignId;
     }
 
     /**
@@ -891,7 +887,7 @@ export class AddonModAssignProvider {
         await CoreCourseLogHelper.log(
             'mod_assign_view_submission_status',
             params,
-            AddonModAssignProvider.COMPONENT,
+            ADDON_MOD_ASSIGN_COMPONENT,
             assignid,
             siteId,
         );
@@ -912,7 +908,7 @@ export class AddonModAssignProvider {
         await CoreCourseLogHelper.log(
             'mod_assign_view_grading_table',
             params,
-            AddonModAssignProvider.COMPONENT,
+            ADDON_MOD_ASSIGN_COMPONENT,
             assignid,
             siteId,
         );
@@ -933,7 +929,7 @@ export class AddonModAssignProvider {
         await CoreCourseLogHelper.log(
             'mod_assign_view_assign',
             params,
-            AddonModAssignProvider.COMPONENT,
+            ADDON_MOD_ASSIGN_COMPONENT,
             assignid,
             siteId,
         );
@@ -1318,6 +1314,125 @@ export class AddonModAssignProvider {
             // The WebService returned warnings, reject.
             throw new CoreWSError(warnings[0]);
         }
+    }
+
+    /**
+     * Remove the assignment submission of a user.
+     *
+     * @param assign Assign.
+     * @param submission Last online submission.
+     * @param siteId Site ID. If not defined, current site.
+     * @returns Promise resolved with true if sent to server, resolved with false if stored in offline.
+     * @since 4.5
+     */
+    async removeSubmission(
+        assign: AddonModAssignAssign,
+        submission: AddonModAssignSubmission,
+        siteId?: string,
+    ): Promise<boolean> {
+        siteId = siteId || CoreSites.getCurrentSiteId();
+
+        // Function to store the submission to be synchronized later.
+        const storeOffline = async (): Promise<boolean> => {
+            await AddonModAssignOffline.saveSubmission(
+                assign.id,
+                assign.course,
+                {},
+                submission.timemodified,
+                !!assign.submissiondrafts,
+                submission.userid,
+                siteId,
+            );
+
+            return false;
+        };
+
+        if (submission.status === AddonModAssignSubmissionStatusValues.NEW ||
+                submission.status == AddonModAssignSubmissionStatusValues.REOPENED) {
+            // The submission was created offline and not synced, just delete the offline submission.
+            await AddonModAssignOffline.deleteSubmission(assign.id, submission.userid, siteId);
+
+            return false;
+        }
+
+        if (!CoreNetwork.isOnline()) {
+            // App is offline, store the action.
+            return storeOffline();
+        }
+
+        try {
+            // If there's an offline submission, discard it first.
+            const offlineData = await AddonModAssignOffline.getSubmission(assign.id, submission.userid, siteId);
+
+            if (offlineData) {
+                if (submission.plugins) {
+                    // Delete all plugin data.
+                    await Promise.all(submission.plugins.map((plugin) =>
+                        AddonModAssignSubmissionDelegate.deletePluginOfflineData(
+                            assign,
+                            submission,
+                            plugin,
+                            offlineData,
+                            siteId,
+                        )));
+                }
+
+                await AddonModAssignOffline.deleteSubmission(assign.id, submission.userid, siteId);
+            }
+
+            await this.removeSubmissionOnline(assign.id, submission.userid, siteId);
+
+            return true;
+        } catch (error) {
+            if (error && !CoreUtils.isWebServiceError(error)) {
+                // Couldn't connect to server, store in offline.
+                return storeOffline();
+            } else {
+                // The WebService has thrown an error or offline not supported, reject.
+                throw error;
+            }
+        }
+    }
+
+    /**
+     * Remove the assignment submission of a user.
+     *
+     * @param assignId Assign ID.
+     * @param userId User ID. If not defined, current user.
+     * @param siteId Site ID. If not defined, current site.
+     * @returns Promise resolved when submitted, rejected otherwise.
+     * @since 4.5
+     */
+    async removeSubmissionOnline(assignId: number, userId?: number, siteId?: string): Promise<void> {
+        const site = await CoreSites.getSite(siteId);
+        userId = userId || site.getUserId();
+
+        const params: AddonModAssignRemoveSubmissionWSParams = {
+            assignid: assignId,
+            userid: userId,
+        };
+        const result = await site.write<AddonModAssignRemoveSubmissionWSResponse>('mod_assign_remove_submission', params);
+
+        if (!result.status) {
+            if (result.warnings?.length) {
+                throw new CoreWSError(result.warnings[0]);
+            } else {
+                throw new CoreError('Error removing assignment submission.');
+            }
+        }
+    }
+
+    /**
+     * Returns whether or not remove submission WS available or not.
+     *
+     * @param site Site. If not defined, current site.
+     * @returns If WS is available.
+     * @since 4.5
+     */
+    isRemoveSubmissionAvailable(site?: CoreSite): boolean {
+        site = site ?? CoreSites.getRequiredCurrentSite();
+
+        return site.wsAvailable('mod_assign_remove_submission');
     }
 
 }
@@ -1762,6 +1877,22 @@ type AddonModAssignStartSubmissionWSParams = {
 };
 
 /**
+ * Params of mod_assign_remove_submission WS.
+ */
+type AddonModAssignRemoveSubmissionWSParams = {
+    userid: number; // User id.
+    assignid: number; // Assignment instance id.
+};
+
+/**
+ * Data returned by mod_assign_remove_submission WS.
+ */
+export type AddonModAssignRemoveSubmissionWSResponse = {
+    status: boolean;
+    warnings?: CoreWSExternalWarning[];
+};
+
+/**
  * Data returned by mod_assign_start_submission WS.
  *
  * @since 4.0
@@ -1789,6 +1920,11 @@ export type AddonModAssignSubmittedForGradingEventData = {
  * Data sent by SUBMISSION_SAVED_EVENT event.
  */
 export type AddonModAssignSubmissionSavedEventData = AddonModAssignSubmittedForGradingEventData;
+
+/**
+ * Data sent by SUBMISSION_REMOVED_EVENT event.
+ */
+export type AddonModAssignSubmissionRemovedEventData = AddonModAssignSubmittedForGradingEventData;
 
 /**
  * Data sent by GRADED_EVENT event.

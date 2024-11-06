@@ -15,11 +15,11 @@
 import { Component, OnInit, Optional } from '@angular/core';
 import { CoreCourseModuleMainResourceComponent } from '@features/course/classes/main-resource-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
-import { CoreCourse } from '@features/course/services/course';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
-import { AddonModPageProvider, AddonModPagePage, AddonModPage } from '../../services/page';
+import { AddonModPagePage, AddonModPage } from '../../services/page';
 import { AddonModPageHelper } from '../../services/page-helper';
+import { ADDON_MOD_PAGE_COMPONENT } from '../../constants';
 
 // by rachmad
 import { StatusBar } from '@singletons';
@@ -36,14 +36,13 @@ import { StatusBar } from '@singletons';
 })
 export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit {
 
-    component = AddonModPageProvider.COMPONENT;
+    component = ADDON_MOD_PAGE_COMPONENT;
     pluginName = 'page';
     contents?: string;
     displayDescription = false;
     displayTimemodified = true;
     timemodified?: number;
     page?: AddonModPagePage;
-    warning?: string;
 
     // by rachmad
     isFullscreen = false;
@@ -76,19 +75,12 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
      * @inheritdoc
      */
     protected async fetchContent(refresh?: boolean): Promise<void> {
-        // Download the resource if it needs to be downloaded.
-        const downloadResult = await this.downloadResourceIfNeeded(refresh);
-
-        // Get contents. No need to refresh, it has been done in downloadResourceIfNeeded.
-        const contents = await CoreCourse.getModuleContents(this.module);
-
-        const results = await Promise.all([
+        const [contents] = await Promise.all([
+            this.getModuleContents(refresh),
             this.loadPageData(),
-            AddonModPageHelper.getPageHtml(contents, this.module.id),
         ]);
 
-        this.contents = results[1];
-        this.warning = downloadResult?.failed ? this.getErrorDownloadingSomeFilesMessage(downloadResult.error!) : '';
+        this.contents = await AddonModPageHelper.getPageHtml(contents, this.module.id);
     }
 
     /**
@@ -106,7 +98,7 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
         // Check if description and timemodified should be displayed.
         if (this.page.displayoptions) {
             const options: Record<string, string | boolean> =
-                CoreTextUtils.unserialize(this.page.displayoptions) || {};
+                CoreText.unserialize(this.page.displayoptions) || {};
 
             this.displayDescription = options.printintro === undefined ||
                     CoreUtils.isTrueOrOne(options.printintro);

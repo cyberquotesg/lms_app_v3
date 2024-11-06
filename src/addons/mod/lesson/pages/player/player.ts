@@ -23,12 +23,11 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreSync } from '@services/sync';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile } from '@services/ws';
 import { ModalController, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
-import { AddonModLessonMenuModalPage } from '../../components/menu-modal/menu-modal';
 import {
     AddonModLesson,
     AddonModLessonEOLPageDataEntry,
@@ -43,7 +42,6 @@ import {
     AddonModLessonPossibleJumps,
     AddonModLessonProcessPageOptions,
     AddonModLessonProcessPageResponse,
-    AddonModLessonProvider,
 } from '../../services/lesson';
 import {
     AddonModLessonActivityLink,
@@ -55,6 +53,8 @@ import { AddonModLessonOffline } from '../../services/lesson-offline';
 import { AddonModLessonSync } from '../../services/lesson-sync';
 import { CoreFormFields, CoreForms } from '@singletons/form';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { ADDON_MOD_LESSON_COMPONENT, AddonModLessonJumpTo } from '../../constants';
+import { CoreModals } from '@services/modals';
 
 /**
  * Page that allows attempting and reviewing a lesson.
@@ -69,8 +69,8 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
     @ViewChild(IonContent) content?: IonContent;
     @ViewChild('questionFormEl') formElement?: ElementRef;
 
-    component = AddonModLessonProvider.COMPONENT;
-    readonly LESSON_EOL = AddonModLessonProvider.LESSON_EOL;
+    component = ADDON_MOD_LESSON_COMPONENT;
+    readonly LESSON_EOL = AddonModLessonJumpTo.EOL;
     questionForm?: FormGroup; // The FormGroup for question pages.
     title?: string; // The page title.
     lesson?: AddonModLessonLessonWSData; // The lesson object.
@@ -439,7 +439,7 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
 
         // Format review lesson if present.
         if (this.eolData.reviewlesson) {
-            const params = CoreUrlUtils.extractUrlParams(<string> this.eolData.reviewlesson.value);
+            const params = CoreUrl.extractUrlParams(<string> this.eolData.reviewlesson.value);
 
             if (!params || !params.pageid) {
                 // No pageid in the URL, the user cannot review (probably didn't answer any question).
@@ -449,7 +449,7 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
             }
         }
 
-        this.logPageLoaded(AddonModLessonProvider.LESSON_EOL, Translate.instant('addon.mod_lesson.congratulations'));
+        this.logPageLoaded(AddonModLessonJumpTo.EOL, Translate.instant('addon.mod_lesson.congratulations'));
     }
 
     /**
@@ -466,7 +466,7 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
             CoreNavigator.back();
 
             return;
-        } else if (pageId == AddonModLessonProvider.LESSON_EOL) {
+        } else if (pageId == AddonModLessonJumpTo.EOL) {
             // End of lesson reached.
             return this.finishRetake();
         }
@@ -496,7 +496,7 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
             const finished = await AddonModLessonOffline.hasFinishedRetake(this.lesson!.id);
             if (finished) {
                 // Always show EOL page.
-                pageId = AddonModLessonProvider.LESSON_EOL;
+                pageId = AddonModLessonJumpTo.EOL;
             }
         }
 
@@ -556,7 +556,7 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
      * @returns Promise resolved when done.
      */
     protected async loadPage(pageId: number): Promise<void> {
-        if (pageId == AddonModLessonProvider.LESSON_EOL) {
+        if (pageId == AddonModLessonJumpTo.EOL) {
             // End of lesson reached.
             return this.finishRetake();
         } else if (!this.lesson) {
@@ -580,7 +580,7 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
             options,
         );
 
-        if (data.newpageid == AddonModLessonProvider.LESSON_EOL) {
+        if (data.newpageid == AddonModLessonJumpTo.EOL) {
             // End of lesson reached.
             return this.finishRetake();
         }
@@ -829,7 +829,9 @@ export class AddonModLessonPlayerPage implements OnInit, OnDestroy, CanLeave {
     async showMenu(): Promise<void> {
         this.menuShown = true;
 
-        await CoreDomUtils.openSideModal({
+        const { AddonModLessonMenuModalPage } = await import('../../components/menu-modal/menu-modal');
+
+        await CoreModals.openSideModal({
             component: AddonModLessonMenuModalPage,
             componentProps: {
                 pageInstance: this,

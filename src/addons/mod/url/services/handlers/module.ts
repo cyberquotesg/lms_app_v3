@@ -20,13 +20,13 @@ import { CoreCourse, CoreCourseModuleContentFile } from '@features/course/servic
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleHandler, CoreCourseModuleHandlerData } from '@features/course/services/module-delegate';
 import { CoreNavigationOptions } from '@services/navigator';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreLoadings } from '@services/loadings';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
 import { AddonModUrl } from '../url';
 import { AddonModUrlHelper } from '../url-helper';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { ADDON_MOD_URL_ADDON_NAME, ADDON_MOD_URL_MODNAME, ADDON_MOD_URL_PAGE_NAME } from '../../constants';
 
@@ -82,7 +82,7 @@ export class AddonModUrlModuleHandlerService extends CoreModuleHandlerBase imple
             class: 'addon-mod_url-handler',
             showDownloadButton: false,
             action: async (event: Event, module: CoreCourseModuleData, courseId: number, options?: CoreNavigationOptions) => {
-                const modal = await CoreDomUtils.showModalLoading();
+                const modal = await CoreLoadings.show();
 
                 try {
                     const shouldOpen = await this.shouldOpenLink(module);
@@ -122,14 +122,14 @@ export class AddonModUrlModuleHandlerService extends CoreModuleHandlerBase imple
             return modIcon;
         }
 
-        const component = CoreUrlUtils.getThemeImageUrlParam(module.modicon, 'component');
+        const component = CoreUrl.getThemeImageUrlParam(module.modicon, 'component');
         if (component === this.modName) {
             return modIcon;
         }
 
         let icon: string | undefined;
 
-        let image = CoreUrlUtils.getThemeImageUrlParam(module.modicon, 'image');
+        let image = CoreUrl.getThemeImageUrlParam(module.modicon, 'image');
         if (image.startsWith('f/')) {
             // Remove prefix, and hyphen + numbered suffix.
             image = image.substring(2).replace(/-[0-9]+$/, '');

@@ -14,8 +14,8 @@
 
 import { Component, OnInit, ElementRef } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
-import { AddonModAssign, AddonModAssignProvider } from '@addons/mod/assign/services/assign';
-import { CoreTextUtils } from '@services/utils/text';
+import { AddonModAssign } from '@addons/mod/assign/services/assign';
+import { CoreFileHelper } from '@services/file-helper';
 import {
     AddonModAssignFeedbackCommentsDraftData,
     AddonModAssignFeedbackCommentsHandler,
@@ -26,6 +26,9 @@ import { AddonModAssignOffline } from '@addons/mod/assign/services/assign-offlin
 import { CoreUtils } from '@services/utils/utils';
 import { AddonModAssignFeedbackPluginBaseComponent } from '@addons/mod/assign/classes/base-feedback-plugin-component';
 import { ContextLevel } from '@/core/constants';
+import { ADDON_MOD_ASSIGN_COMPONENT } from '@addons/mod/assign/constants';
+import { CoreViewer } from '@features/viewer/services/viewer';
+
 /**
  * Component to render a comments feedback plugin.
  */
@@ -36,7 +39,7 @@ import { ContextLevel } from '@/core/constants';
 export class AddonModAssignFeedbackCommentsComponent extends AddonModAssignFeedbackPluginBaseComponent implements OnInit {
 
     control?: FormControl<string>;
-    component = AddonModAssignProvider.COMPONENT;
+    component = ADDON_MOD_ASSIGN_COMPONENT;
     text = '';
     isSent = false;
     loaded = false;
@@ -66,7 +69,7 @@ export class AddonModAssignFeedbackCommentsComponent extends AddonModAssignFeedb
 
                     if (this.text) {
                         // Open a new state with the text.
-                        CoreTextUtils.viewText(this.plugin.name, this.text, {
+                        CoreViewer.viewText(this.plugin.name, this.text, {
                             component: this.component,
                             componentId: this.assign.cmid,
                             filter: true,
@@ -156,7 +159,7 @@ export class AddonModAssignFeedbackCommentsComponent extends AddonModAssignFeedb
     replacePluginfileUrls(text: string): string {
         const files = this.plugin.fileareas && this.plugin.fileareas[0] && this.plugin.fileareas[0].files;
 
-        return CoreTextUtils.replacePluginfileUrls(text, files || []);
+        return CoreFileHelper.replacePluginfileUrls(text, files || []);
     }
 
 }

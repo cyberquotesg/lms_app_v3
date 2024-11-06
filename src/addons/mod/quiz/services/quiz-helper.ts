@@ -23,7 +23,6 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate } from '@singletons';
 import { AddonModQuizAccessRuleDelegate } from './access-rules-delegate';
-import { AddonModQuizModuleHandlerService } from './handlers/module';
 import {
     AddonModQuiz,
     AddonModQuizAttemptWSData,
@@ -34,12 +33,16 @@ import {
 import { AddonModQuizOffline } from './quiz-offline';
 import {
     ADDON_MOD_QUIZ_IMMEDIATELY_AFTER_PERIOD,
+    ADDON_MOD_QUIZ_PAGE_NAME,
     AddonModQuizAttemptStates,
     AddonModQuizDisplayOptionsAttemptStates,
 } from '../constants';
 import { QuestionDisplayOptionsMarks } from '@features/question/constants';
 import { CoreGroups } from '@services/groups';
 import { CoreTimeUtils } from '@services/utils/time';
+import { CoreModals } from '@services/modals';
+import { CoreLoadings } from '@services/loadings';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
 
 /**
  * Helper service that provides some features for quiz.
@@ -269,10 +272,10 @@ export class AddonModQuizHelperProvider {
         }
 
         const { AddonModQuizPreflightModalComponent } =
-            await import('@addons/mod/quiz/components/preflight-modal/preflight-modal.module');
+            await import('@addons/mod/quiz/components/preflight-modal/preflight-modal');
 
         // Create and show the modal.
-        const modalData = await CoreDomUtils.openModal<Record<string, string>>({
+        const modalData = await CoreModals.openModal<Record<string, string>>({
             component: AddonModQuizPreflightModalComponent,
             componentProps: {
                 title: options.title,
@@ -299,7 +302,7 @@ export class AddonModQuizHelperProvider {
      * @returns Question's mark.
      */
     getQuestionMarkFromHtml(html: string): string | undefined {
-        const element = CoreDomUtils.convertToElement(html);
+        const element = convertTextToHTMLElement(html);
 
         return CoreDomUtils.getContentsOfElement(element, '.grade');
     }
@@ -334,7 +337,7 @@ export class AddonModQuizHelperProvider {
     async handleReviewLink(attemptId: number, page?: number, quizId?: number, siteId?: string): Promise<void> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             if (!quizId) {
@@ -349,7 +352,7 @@ export class AddonModQuizHelperProvider {
 
             // Go to the review page.
             await CoreNavigator.navigateToSitePath(
-                `${AddonModQuizModuleHandlerService.PAGE_NAME}/${module.course}/${module.id}/review/${attemptId}`,
+                `${ADDON_MOD_QUIZ_PAGE_NAME}/${module.course}/${module.id}/review/${attemptId}`,
                 {
                     params: {
                         page: page == undefined || isNaN(page) ? -1 : page,

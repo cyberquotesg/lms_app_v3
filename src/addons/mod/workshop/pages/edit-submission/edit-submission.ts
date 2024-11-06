@@ -24,24 +24,28 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreSync } from '@services/sync';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { CoreForms } from '@singletons/form';
 import {
-    AddonModWorkshopProvider,
     AddonModWorkshop,
-    AddonModWorkshopSubmissionType,
     AddonModWorkshopSubmissionChangedEventData,
-    AddonModWorkshopAction,
     AddonModWorkshopGetWorkshopAccessInformationWSResponse,
     AddonModWorkshopData,
 } from '../../services/workshop';
 import { AddonModWorkshopHelper, AddonModWorkshopSubmissionDataWithOfflineData } from '../../services/workshop-helper';
 import { AddonModWorkshopOffline } from '../../services/workshop-offline';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { ADDON_MOD_WORKSHOP_COMPONENT } from '@addons/mod/workshop/constants';
+import {
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED,
+    AddonModWorkshopAction,
+    AddonModWorkshopSubmissionType,
+} from '@addons/mod/workshop/constants';
+import { CoreLoadings } from '@services/loadings';
+import { CoreDom } from '@singletons/dom';
 
 /**
  * Page that displays the workshop edit submission.
@@ -340,7 +344,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
             throw new CoreError(Translate.instant('addon.mod_workshop.submissionrequiredtitle'));
         }
 
-        const noText = CoreTextUtils.htmlIsBlank(inputData.content);
+        const noText = CoreDom.htmlIsBlank(inputData.content);
         const noFiles = !inputData.attachmentfiles.length;
 
         if ((this.textRequired && noText) || (this.fileRequired && noFiles) || (noText && noFiles)) {
@@ -351,12 +355,12 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
 
         let saveOffline = false;
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
         const submissionId = this.submission?.id;
 
         // Add some HTML to the message if needed.
         if (this.textAvailable) {
-            inputData.content = CoreTextUtils.formatHtmlLines(inputData.content);
+            inputData.content = CoreText.formatHtmlLines(inputData.content);
         }
 
         // Upload attachments first if any.
@@ -473,7 +477,7 @@ export class AddonModWorkshopEditSubmissionPage implements OnInit, OnDestroy, Ca
                 Promise.resolve();
 
             await promise.finally(() => {
-                CoreEvents.trigger(AddonModWorkshopProvider.SUBMISSION_CHANGED, data, this.siteId);
+                CoreEvents.trigger(ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED, data, this.siteId);
 
                 // Delete the local files from the tmp folder.
                 CoreFileUploader.clearTmpFiles(inputData.attachmentfiles);

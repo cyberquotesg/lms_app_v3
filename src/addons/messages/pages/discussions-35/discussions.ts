@@ -23,7 +23,6 @@ import {
 } from '../../services/messages';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreApp } from '@services/app';
 import { ActivatedRoute, Params } from '@angular/router';
 import { CorePushNotificationsNotificationBasicData } from '@features/pushnotifications/services/pushnotifications';
 import { CorePushNotificationsDelegate } from '@features/pushnotifications/services/push-delegate';
@@ -31,9 +30,9 @@ import { Subscription } from 'rxjs';
 import { Translate } from '@singletons';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 import { CorePlatform } from '@services/platform';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
+import { CoreKeyboard } from '@singletons/keyboard';
 
 /**
  * Page that displays the list of discussions.
@@ -145,8 +144,6 @@ export class AddonMessagesDiscussions35Page implements OnInit, OnDestroy {
             this.discussionUserId = CoreNavigator.getRouteNumberParam('userId', { params }) ?? this.discussionUserId;
         });
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-
         await this.fetchData();
 
         if (!this.discussionUserId && this.discussions.length > 0 && CoreScreen.isTablet && this.discussions[0].message) {
@@ -154,8 +151,8 @@ export class AddonMessagesDiscussions35Page implements OnInit, OnDestroy {
             await this.gotoDiscussion(this.discussions[0].message.user);
         }
 
-        // Treat deep link now that the conversation route has been loaded if needed.
-        deepLinkManager.treatLink();
+        // Mark login navigation finished now that the conversation route has been loaded if needed.
+        CoreSites.loginNavigationFinished();
     }
 
     /**
@@ -234,7 +231,7 @@ export class AddonMessagesDiscussions35Page implements OnInit, OnDestroy {
      * @returns Resolved when done.
      */
     async searchMessage(query: string): Promise<void> {
-        CoreApp.closeKeyboard();
+        CoreKeyboard.close();
         this.loaded = false;
         this.loadingMessage = this.search.loading;
 

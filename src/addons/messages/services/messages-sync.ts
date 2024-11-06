@@ -30,8 +30,9 @@ import { CoreNetwork } from '@services/network';
 import { CoreConstants } from '@/core/constants';
 import { CoreUser } from '@features/user/services/user';
 import { CoreError } from '@classes/errors/error';
-import { CoreTextErrorObject, CoreTextUtils } from '@services/utils/text';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreWait } from '@singletons/wait';
+import { CoreErrorHelper, CoreErrorObject } from '@services/error-helper';
 
 /**
  * Service to sync messages.
@@ -177,7 +178,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
 
         const groupMessagingEnabled = AddonMessages.isGroupMessagingEnabled();
         let messages: AddonMessagesOfflineAnyMessagesFormatted[];
-        const errors: (string | CoreError | CoreTextErrorObject)[] = [];
+        const errors: (string | CoreError | CoreErrorObject)[] = [];
 
         if (conversationId) {
             this.logger.debug(`Try to sync conversation '${conversationId}'`);
@@ -252,7 +253,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
             // In some Moodle versions, wait 1 second to make sure timecreated is different.
             // This is because there was a bug where messages with the same timecreated had a wrong order.
             if (!groupMessagingEnabled && i < messages.length - 1) {
-                await CoreUtils.wait(1000);
+                await CoreWait.wait(1000);
             }
         }
 
@@ -335,7 +336,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
     protected async handleSyncErrors(
         conversationId?: number,
         userId?: number,
-        errors: (string | CoreError | CoreTextErrorObject)[] = [],
+        errors: (string | CoreError | CoreErrorObject)[] = [],
         warnings: string[] = [],
     ): Promise<void> {
         if (!errors || errors.length <= 0) {
@@ -355,7 +356,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
             errors.forEach((error) => {
                 warnings.push(Translate.instant('addon.messages.warningconversationmessagenotsent', {
                     conversation: conversationIdentifier,
-                    error: CoreTextUtils.getErrorMessageFromError(error),
+                    error: CoreErrorHelper.getErrorMessageFromError(error),
                 }));
             });
         } else if (userId) {
@@ -372,7 +373,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
             errors.forEach((error) => {
                 warnings.push(Translate.instant('addon.messages.warningmessagenotsent', {
                     user: userIdentifier,
-                    error: CoreTextUtils.getErrorMessageFromError(error),
+                    error: CoreErrorHelper.getErrorMessageFromError(error),
                 }));
             });
         }

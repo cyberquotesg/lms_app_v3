@@ -17,8 +17,9 @@ import { CoreCourseModuleMainResourceComponent } from '@features/course/classes/
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreNavigator } from '@services/navigator';
-import { AddonModImscpProvider, AddonModImscp, AddonModImscpTocItem } from '../../services/imscp';
+import { AddonModImscp, AddonModImscpTocItem } from '../../services/imscp';
 import { CoreUtils } from '@services/utils/utils';
+import { ADDON_MOD_IMSCP_COMPONENT, ADDON_MOD_IMSCP_PAGE_NAME } from '../../constants';
 
 /**
  * Component that displays a IMSCP.
@@ -30,7 +31,7 @@ import { CoreUtils } from '@services/utils/utils';
 })
 export class AddonModImscpIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit {
 
-    component = AddonModImscpProvider.COMPONENT;
+    component = ADDON_MOD_IMSCP_COMPONENT;
     pluginName = 'imscp';
 
     items: AddonModImscpTocItem[] = [];
@@ -112,14 +113,17 @@ export class AddonModImscpIndexComponent extends CoreCourseModuleMainResourceCom
      *
      * @param href Item href to open, undefined for last item seen.
      */
-    openImscp(href?: string): void {
-        CoreNavigator.navigate('view', {
-            params: {
-                cmId: this.module.id,
-                courseId: this.courseId,
-                initialHref: href,
+    async openImscp(href?: string): Promise<void> {
+        await CoreNavigator.navigateToSitePath(
+            `${ADDON_MOD_IMSCP_PAGE_NAME}/${this.courseId}/${this.module.id}/view`,
+            {
+                params: {
+                    cmId: this.module.id,
+                    courseId: this.courseId,
+                    initialHref: href,
+                },
             },
-        });
+        );
 
         this.hasStarted = true;
     }

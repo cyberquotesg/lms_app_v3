@@ -21,7 +21,7 @@ import { CoreApp } from '@services/app';
 import { CoreGroupInfo, CoreGroups } from '@services/groups';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
@@ -30,8 +30,10 @@ import {
     AddonModBBBData,
     AddonModBBBMeetingInfo,
     AddonModBBBRecordingPlaybackTypes,
-    AddonModBBBService,
 } from '../../services/bigbluebuttonbn';
+import { ADDON_MOD_BBB_COMPONENT } from '../../constants';
+import { CoreLoadings } from '@services/loadings';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
 
 /**
  * Component that displays a Big Blue Button activity.
@@ -43,7 +45,7 @@ import {
 })
 export class AddonModBBBIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit {
 
-    component = AddonModBBBService.COMPONENT;
+    component = ADDON_MOD_BBB_COMPONENT;
     pluginName = 'bigbluebuttonbn';
     bbb?: AddonModBBBData;
     groupInfo?: CoreGroupInfo;
@@ -146,7 +148,7 @@ export class AddonModBBBIndexComponent extends CoreCourseModuleMainActivityCompo
 
         this.recordings = recordingsTable.parsedData.map(recordingData => {
             const details: RecordingDetail[] = [];
-            const playbacksEl = CoreDomUtils.convertToElement(String(recordingData.playback));
+            const playbacksEl = convertTextToHTMLElement(String(recordingData.playback));
             const playbacks: RecordingPlayback[] = Array.from(playbacksEl.querySelectorAll('a')).map(playbackAnchor => ({
                 name: playbackAnchor.textContent ?? '',
                 url: playbackAnchor.href,
@@ -163,7 +165,7 @@ export class AddonModBBBIndexComponent extends CoreCourseModuleMainActivityCompo
                     value = CoreTimeUtils.userDate(Number(value), 'core.strftimedaydate');
                 } else if (columnData.allowHTML && typeof value === 'string') {
                     // If the HTML is empty, don't display it.
-                    const valueElement = CoreDomUtils.convertToElement(value);
+                    const valueElement = convertTextToHTMLElement(value);
                     if (!valueElement.querySelector('img') && (valueElement.textContent ?? '').trim() === '') {
                         return;
                     }
@@ -184,7 +186,7 @@ export class AddonModBBBIndexComponent extends CoreCourseModuleMainActivityCompo
             });
 
             return {
-                name: CoreTextUtils.cleanTags(String(recordingData.recording), { singleLine: true }),
+                name: CoreText.cleanTags(String(recordingData.recording), { singleLine: true }),
                 playbackLabel: columns.playback.label,
                 playbacks,
                 details,
@@ -295,7 +297,7 @@ export class AddonModBBBIndexComponent extends CoreCourseModuleMainActivityCompo
      * @returns Promise resolved when done.
      */
     async joinRoom(): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             const joinUrl = await AddonModBBB.getJoinUrl(this.module.id, this.groupId);
@@ -336,7 +338,7 @@ export class AddonModBBBIndexComponent extends CoreCourseModuleMainActivityCompo
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             await AddonModBBB.endMeeting(this.bbb.id, this.groupId);

@@ -19,6 +19,7 @@ import { AddonModForum, AddonModForumPost } from '@addons/mod/forum/services/for
 import { PopoverController } from '@singletons';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreNetworkError } from '@classes/errors/network-error';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * This component is meant to display a popover with the post options.
@@ -26,13 +27,17 @@ import { CoreNetworkError } from '@classes/errors/network-error';
 @Component({
     selector: 'addon-forum-post-options-menu',
     templateUrl: 'post-options-menu.html',
-    styleUrls: ['./post-options-menu.scss'],
+    styleUrl: 'post-options-menu.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonModForumPostOptionsMenuComponent implements OnInit {
 
-    @Input() post!: AddonModForumPost; // The post.
-    @Input() cmId!: number;
-    @Input() forumId!: number; // The forum Id.
+    @Input({ required: true }) post!: AddonModForumPost; // The post.
+    @Input({ required: true }) cmId!: number;
+    @Input({ required: true }) forumId!: number; // The forum Id.
 
     canEdit = false;
     canDelete = false;

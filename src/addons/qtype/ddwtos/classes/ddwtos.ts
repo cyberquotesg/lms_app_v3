@@ -13,13 +13,14 @@
 // limitations under the License.
 
 import { CoreFormatTextDirective } from '@directives/format-text';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUtils } from '@services/utils/utils';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CoreCoordinates, CoreDom } from '@singletons/dom';
 import { CoreEventObserver } from '@singletons/events';
 import { CoreLogger } from '@singletons/logger';
 import { AddonModQuizDdwtosQuestionData } from '../component/ddwtos';
+import { CoreWait } from '@singletons/wait';
+import { CoreLinkDirective } from '@directives/link';
+import { ElementRef } from '@angular/core';
 
 /**
  * Class to make a question of ddwtos type work.
@@ -68,6 +69,13 @@ export class AddonQtypeDdwtosQuestion {
 
         drag.style.visibility = 'visible';
         drag.style.position = 'absolute';
+
+        Array.from(drag.querySelectorAll('a')).forEach((anchor) => {
+            // Cloning the item doesn't clone its directives. Add core-link to the anchors.
+            const linkDir = new CoreLinkDirective(new ElementRef(anchor));
+            linkDir.capture = true;
+            linkDir.ngOnInit();
+        });
 
         const container = this.container.querySelector(this.selectors.dragContainer());
         container?.appendChild(drag);
@@ -480,10 +488,6 @@ export class AddonQtypeDdwtosQuestion {
             return;
         }
 
-        groupItems.forEach((item) => {
-            item.innerHTML = CoreTextUtils.decodeHTML(item.innerHTML);
-        });
-
         // Wait to render in order to calculate size.
         if (groupItems[0].parentElement) {
             // Wait for parent to be visible. We cannot wait for group items because they have visibility hidden.
@@ -491,7 +495,7 @@ export class AddonQtypeDdwtosQuestion {
         } else {
             // Group items should always have a parent, add a fallback just in case.
             await CoreDom.waitToBeInDOM(groupItems[0]);
-            await CoreUtils.nextTicks(5);
+            await CoreWait.nextTicks(5);
         }
 
         // Find max height and width.

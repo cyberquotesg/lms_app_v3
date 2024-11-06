@@ -15,6 +15,7 @@
 import { Component, Input } from '@angular/core';
 import { PopoverController } from '@singletons';
 import { AddonModWikiSubwiki, AddonModWikiSubwikiListGrouping } from '../../services/wiki';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to display the a list of subwikis in a wiki.
@@ -22,12 +23,16 @@ import { AddonModWikiSubwiki, AddonModWikiSubwikiListGrouping } from '../../serv
 @Component({
     selector: 'addon-mod-wiki-subwiki-picker',
     templateUrl: 'addon-mod-wiki-subwiki-picker.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonModWikiSubwikiPickerComponent {
 
     @Input() courseId?: number;
     @Input() subwikis: AddonModWikiSubwikiListGrouping[] = [];
-    @Input() currentSubwiki!: AddonModWikiSubwiki;
+    @Input({ required: true }) currentSubwiki!: AddonModWikiSubwiki;
 
     /**
      * Checks if the given subwiki is the one currently selected.

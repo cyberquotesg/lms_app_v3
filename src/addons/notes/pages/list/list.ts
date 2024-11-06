@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { CoreConstants } from '@/core/constants';
-import { AddonNotesAddComponent, AddonNotesAddModalReturn } from '@addons/notes/components/add/add-modal';
+import { AddonNotesAddModalReturn } from '@addons/notes/components/add/add-modal';
 import { AddonNotes, AddonNotesNoteFormatted, AddonNotesPublishState } from '@addons/notes/services/notes';
 import { AddonNotesOffline } from '@addons/notes/services/notes-offline';
 import { AddonNotesSync, AddonNotesSyncProvider } from '@addons/notes/services/notes-sync';
@@ -24,13 +24,15 @@ import { IonContent } from '@ionic/angular';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreDomUtils } from '@services/utils/dom';
+import { CoreText } from '@singletons/text';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreTime } from '@singletons/time';
+import { CoreToasts, ToastDuration } from '@services/toasts';
+import { CoreModals } from '@services/modals';
 
 /**
  * Page that displays a list of notes.
@@ -118,7 +120,7 @@ export class AddonNotesListPage implements OnInit, OnDestroy {
             const notesList: AddonNotesNoteFormatted[] = allNotes[this.type + 'notes'] || [];
 
             notesList.forEach((note) => {
-                note.content = CoreTextUtils.decodeHTML(note.content);
+                note.content = CoreText.decodeHTML(note.content);
             });
 
             await AddonNotes.setOfflineDeletedNotes(notesList, this.courseId);
@@ -194,7 +196,9 @@ export class AddonNotesListPage implements OnInit, OnDestroy {
 
         this.logViewAdd();
 
-        const modalData = await CoreDomUtils.openModal<AddonNotesAddModalReturn>({
+        const { AddonNotesAddComponent } = await import('@addons/notes/components/add/add-modal');
+
+        const modalData = await CoreModals.openModal<AddonNotesAddModalReturn>({
             component: AddonNotesAddComponent,
             componentProps: {
                 userId: this.userId,
@@ -238,7 +242,11 @@ export class AddonNotesListPage implements OnInit, OnDestroy {
 
                 this.refreshNotes(false);
 
-                CoreDomUtils.showToast('addon.notes.eventnotedeleted', true, ToastDuration.LONG);
+                CoreToasts.show({
+                    message: 'addon.notes.eventnotedeleted',
+                    translateMessage: true,
+                    duration: ToastDuration.LONG,
+                });
 
             } catch (error) {
                 CoreDomUtils.showErrorModalDefault(error, 'Delete note failed.');
@@ -293,7 +301,7 @@ export class AddonNotesListPage implements OnInit, OnDestroy {
      * @param warnings the warnings
      */
     protected showSyncWarnings(warnings: string[]): void {
-        const message = CoreTextUtils.buildMessage(warnings);
+        const message = CoreText.buildMessage(warnings);
 
         if (message) {
             CoreDomUtils.showAlert(undefined, message);
@@ -311,7 +319,7 @@ export class AddonNotesListPage implements OnInit, OnDestroy {
             ws: 'core_notes_view_notes',
             name: Translate.instant('addon.notes.notes'),
             data: { courseid: this.courseId, userid: this.userId || 0, category: 'notes' },
-            url: CoreUrlUtils.addParamsToUrl('/notes/index.php', {
+            url: CoreUrl.addParamsToUrl('/notes/index.php', {
                 user: this.userId,
                 course: this.courseId !== CoreSites.getCurrentSiteHomeId() ? this.courseId : undefined,
             }),
@@ -327,7 +335,7 @@ export class AddonNotesListPage implements OnInit, OnDestroy {
             ws: 'core_notes_create_notes',
             name: Translate.instant('addon.notes.notes'),
             data: { courseid: this.courseId, userid: this.userId || 0, category: 'notes' },
-            url: CoreUrlUtils.addParamsToUrl('/notes/edit.php', {
+            url: CoreUrl.addParamsToUrl('/notes/edit.php', {
                 courseid: this.courseId,
                 userid: this.userId,
                 publishstate: this.type === 'personal' ? 'draft' : (this.type === 'course' ? 'public' : 'site'),

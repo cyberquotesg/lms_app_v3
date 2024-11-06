@@ -30,9 +30,7 @@ import { AddonModDataComponentsCompileModule } from '../../components/components
 import {
     AddonModDataData,
     AddonModDataField,
-    AddonModDataProvider,
     AddonModData,
-    AddonModDataTemplateType,
     AddonModDataEntry,
     AddonModDataEntryFields,
     AddonModDataEditEntryResult,
@@ -42,9 +40,11 @@ import {
 import { AddonModDataHelper } from '../../services/data-helper';
 import { CoreDom } from '@singletons/dom';
 import { AddonModDataEntryFieldInitialized } from '../../classes/base-field-plugin-component';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { ADDON_MOD_DATA_COMPONENT, ADDON_MOD_DATA_ENTRY_CHANGED, AddonModDataTemplateType } from '../../constants';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays the view edit page.
@@ -75,7 +75,7 @@ export class AddonModDataEditPage implements OnInit {
     moduleId = 0;
     database?: AddonModDataData;
     title = '';
-    component = AddonModDataProvider.COMPONENT;
+    component = ADDON_MOD_DATA_COMPONENT;
     loaded = false;
     selectedGroup = 0;
     cssClass = '';
@@ -286,7 +286,7 @@ export class AddonModDataEditPage implements OnInit {
                 throw new CoreError(Translate.instant('addon.mod_data.emptyaddform'));
             }
 
-            const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            const modal = await CoreLoadings.show('core.sending', true);
 
             // Create an ID to assign files.
             const entryTemp = this.entryId ? this.entryId : - (Date.now());
@@ -369,7 +369,7 @@ export class AddonModDataEditPage implements OnInit {
                     try {
                         await Promise.all(promises);
                         CoreEvents.trigger(
-                            AddonModDataProvider.ENTRY_CHANGED,
+                            ADDON_MOD_DATA_ENTRY_CHANGED,
                             { dataId: this.database!.id, entryId: this.entryId },
 
                             this.siteId,
@@ -395,7 +395,7 @@ export class AddonModDataEditPage implements OnInit {
                     if (updateEntryResult.generalnotifications?.length) {
                         CoreDomUtils.showAlertWithOptions({
                             header: Translate.instant('core.notice'),
-                            message: CoreTextUtils.buildMessage(updateEntryResult.generalnotifications),
+                            message: CoreText.buildMessage(updateEntryResult.generalnotifications),
                             buttons: [Translate.instant('core.ok')],
                         });
                     }

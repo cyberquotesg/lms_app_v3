@@ -20,12 +20,11 @@ import { CoreCourseContentsPage } from '@features/course/pages/contents/contents
 import { IonContent } from '@ionic/angular';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { getPrefetchHandlerInstance } from '../../services/handlers/prefetch';
 import {
-    AddonModSurveyProvider,
     AddonModSurveySurvey,
     AddonModSurvey,
     AddonModSurveySubmitAnswerData,
@@ -35,10 +34,11 @@ import { AddonModSurveyOffline } from '../../services/survey-offline';
 import {
     AddonModSurveyAutoSyncData,
     AddonModSurveySync,
-    AddonModSurveySyncProvider,
     AddonModSurveySyncResult,
 } from '../../services/survey-sync';
 import { CoreUtils } from '@services/utils/utils';
+import { ADDON_MOD_SURVEY_AUTO_SYNCED, ADDON_MOD_SURVEY_COMPONENT } from '../../constants';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Component that displays a survey.
@@ -50,7 +50,7 @@ import { CoreUtils } from '@services/utils/utils';
 })
 export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit {
 
-    component = AddonModSurveyProvider.COMPONENT;
+    component = ADDON_MOD_SURVEY_COMPONENT;
     pluginName = 'survey';
 
     survey?: AddonModSurveySurvey;
@@ -58,7 +58,7 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
     answers: Record<string, string> = {};
 
     protected currentUserId?: number;
-    protected syncEventName = AddonModSurveySyncProvider.AUTO_SYNCED;
+    protected syncEventName = ADDON_MOD_SURVEY_AUTO_SYNCED;
 
     constructor(
         protected content?: IonContent,
@@ -156,7 +156,7 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
 
             if (question.multiArray && !question.multiArray.length && question.parent === 0 && question.type > 0) {
                 // Options shown in a select. Remove all HTML.
-                question.optionsArray = question.optionsArray?.map((option) => CoreTextUtils.cleanTags(option));
+                question.optionsArray = question.optionsArray?.map((option) => CoreText.cleanTags(option));
             }
         });
     }
@@ -198,7 +198,7 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
             await CoreDomUtils.showConfirm(Translate.instant('core.areyousure'));
 
             const answers: AddonModSurveySubmitAnswerData[] = [];
-            modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            modal = await CoreLoadings.show('core.sending', true);
 
             for (const x in this.answers) {
                 answers.push({

@@ -22,32 +22,13 @@ import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreCourse, CoreCourseModuleContentFile } from '@features/course/services/course';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreFilepool } from '@services/filepool';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreFile } from '@services/file';
 import { CoreError } from '@classes/errors/error';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
-
-/**
- * Constants to define how the chapters and subchapters of a book should be displayed in that table of contents.
- */
-export const enum AddonModBookNumbering {
-    NONE = 0,
-    NUMBERS = 1,
-    BULLETS = 2,
-    INDENTED = 3,
-}
-
-/**
- * Constants to define the navigation style used within a book.
- */
-export const enum AddonModBookNavStyle {
-    TOC_ONLY = 0,
-    IMAGE = 1,
-    TEXT = 2,
-}
-
-const ROOT_CACHE_KEY = 'mmaModBook:';
+import { ADDON_MOD_BOOK_COMPONENT } from '../constants';
+import { CoreUrl } from '@singletons/url';
 
 /**
  * Service that provides some features for books.
@@ -55,7 +36,7 @@ const ROOT_CACHE_KEY = 'mmaModBook:';
 @Injectable({ providedIn: 'root' })
 export class AddonModBookProvider {
 
-    static readonly COMPONENT = 'mmaModBook';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModBook:';
 
     /**
      * Get a book by course module ID.
@@ -92,7 +73,7 @@ export class AddonModBookProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getBookDataCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModBookProvider.COMPONENT,
+            component: ADDON_MOD_BOOK_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
 
@@ -114,7 +95,7 @@ export class AddonModBookProvider {
      * @returns Cache key.
      */
     protected getBookDataCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'book:' + courseId;
+        return AddonModBookProvider.ROOT_CACHE_KEY + 'book:' + courseId;
     }
 
     /**
@@ -140,7 +121,7 @@ export class AddonModBookProvider {
 
         const siteId = CoreSites.getCurrentSiteId();
 
-        const url = await CoreFilepool.downloadUrl(siteId, indexUrl, false, AddonModBookProvider.COMPONENT, moduleId);
+        const url = await CoreFilepool.downloadUrl(siteId, indexUrl, false, ADDON_MOD_BOOK_COMPONENT, moduleId);
 
         const content = await CoreWS.getText(url);
 
@@ -197,7 +178,7 @@ export class AddonModBookProvider {
                 key = content.filepath.replace('/' + chapter + '/', '') + content.filename;
             }
 
-            map[chapter].paths[CoreTextUtils.decodeURIComponent(key)] = content.fileurl;
+            map[chapter].paths[CoreUrl.decodeURIComponent(key)] = content.fileurl;
         });
 
         return map;
@@ -226,7 +207,7 @@ export class AddonModBookProvider {
      */
     async getLastChapterViewed(id: number, siteId?: string): Promise<number | undefined> {
         const site = await CoreSites.getSite(siteId);
-        const entry = await site.getLastViewed(AddonModBookProvider.COMPONENT, id);
+        const entry = await site.getLastViewed(ADDON_MOD_BOOK_COMPONENT, id);
 
         const chapterId = Number(entry?.value);
 
@@ -244,7 +225,7 @@ export class AddonModBookProvider {
             return [];
         }
 
-        return CoreTextUtils.parseJSON(contents[0].content, []);
+        return CoreText.parseJSON(contents[0].content, []);
     }
 
     /**
@@ -327,7 +308,7 @@ export class AddonModBookProvider {
         const promises: Promise<void>[] = [];
 
         promises.push(this.invalidateBookData(courseId, siteId));
-        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, AddonModBookProvider.COMPONENT, moduleId));
+        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, ADDON_MOD_BOOK_COMPONENT, moduleId));
         promises.push(CoreCourse.invalidateModule(moduleId, siteId));
 
         return CoreUtils.allPromises(promises);
@@ -372,7 +353,7 @@ export class AddonModBookProvider {
         await CoreCourseLogHelper.log(
             'mod_book_view_book',
             params,
-            AddonModBookProvider.COMPONENT,
+            ADDON_MOD_BOOK_COMPONENT,
             id,
             siteId,
         );
@@ -390,7 +371,7 @@ export class AddonModBookProvider {
     async storeLastChapterViewed(id: number, chapterId: number, courseId: number, siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);
 
-        await site.storeLastViewed(AddonModBookProvider.COMPONENT, id, chapterId, { data: String(courseId) });
+        await site.storeLastViewed(ADDON_MOD_BOOK_COMPONENT, id, chapterId, { data: String(courseId) });
     }
 
 }

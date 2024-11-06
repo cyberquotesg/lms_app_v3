@@ -1,8 +1,15 @@
 <!-- Buttons to add to the header. -->
 <core-navbar-buttons slot="end">
+    @if (!courseContentsPage) {
     <ion-button fill="clear" (click)="openModuleSummary()" aria-haspopup="true" [ariaLabel]="'core.info' | translate">
         <ion-icon name="fas-circle-info" slot="icon-only" aria-hidden="true" />
     </ion-button>
+    } @else {
+    <core-context-menu>
+        <core-context-menu-item [priority]="5000" [content]="'core.info' | translate" (action)="openModuleSummary()"
+            iconAction="fas-circle-info" />
+    </core-context-menu>
+    }
 </core-navbar-buttons>
 
 <!-- Content. -->
@@ -133,7 +140,7 @@
                         <p>{{ currentOrganization.title }}</p>
                         <div *ngFor="let sco of toc" class="core-padding-{{sco.level}} addon-mod_scorm-type-{{sco.scormtype}}">
                             <p *ngIf="sco.isvisible">
-                                <ion-icon *ngIf="sco.icon" [name]="sco.icon.icon" [attr.aria-label]="sco.icon.description" slot="start" />
+                                <ion-icon *ngIf="sco.icon" [name]="sco.icon.icon" [attr.aria-label]="sco.icon.description" />
                                 <button class="as-link" *ngIf="sco.prereq && sco.launch" (click)="open($event, false, sco.id)">
                                     <core-format-text [text]="sco.title" contextLevel="module" [contextInstanceId]="module.id"
                                         [courseId]="courseId" />

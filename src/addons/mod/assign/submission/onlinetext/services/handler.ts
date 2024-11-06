@@ -25,7 +25,7 @@ import { AddonModAssignSubmissionHandler } from '@addons/mod/assign/services/sub
 import { Injectable, Type } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreFileHelper } from '@services/file-helper';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
@@ -57,6 +57,29 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
         // If the text is empty, we can ignore files because they won't be visible anyways.
         return text.trim().length === 0;
     }
+
+    /**
+     * @inheritdoc
+     */
+    isEmptyForEdit(
+        assign: AddonModAssignAssign,
+        plugin: AddonModAssignPlugin,
+        inputData: AddonModAssignSubmissionOnlineTextData,
+     ): boolean {
+        const text = this.getTextToSubmit(plugin, inputData);
+
+        if (CoreText.countWords(text) > 0) {
+            return false;
+        }
+
+        // Check if the online text submission contains video, audio or image elements
+        // that can be ignored and stripped by count_words().
+        if (/<\s*((video|audio)[^>]*>(.*?)<\s*\/\s*(video|audio)>)|(img[^>]*>)/.test(text)) {
+            return false;
+        }
+
+        return true;
+     }
 
     /**
      * @inheritdoc
@@ -139,7 +162,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
         const text = inputData.onlinetext_editor_text;
         const files = plugin.fileareas && plugin.fileareas[0] && plugin.fileareas[0].files || [];
 
-        return CoreTextUtils.restorePluginfileUrls(text, files || []);
+        return CoreFileHelper.restorePluginfileUrls(text, files || []);
     }
 
     /**
@@ -198,7 +221,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
         // Check word limit.
         const configs = AddonModAssignHelper.getPluginConfig(assign, 'assignsubmission', plugin.type);
         if (parseInt(configs.wordlimitenabled, 10)) {
-            const words = CoreTextUtils.countWords(text);
+            const words = CoreText.countWords(text);
             const wordlimit = parseInt(configs.wordlimit, 10);
             if (words > wordlimit) {
                 const params = { $a: { count: words, limit: wordlimit } };
@@ -209,7 +232,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
         }
 
         // Add some HTML to the text if needed.
-        text = CoreTextUtils.formatHtmlLines(text);
+        text = CoreText.formatHtmlLines(text);
 
         pluginData.onlinetext_editor = {
             text: text,

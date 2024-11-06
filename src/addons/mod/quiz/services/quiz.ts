@@ -29,7 +29,7 @@ import {
 } from '@features/question/services/question';
 import { CoreQuestionDelegate } from '@features/question/services/question-delegate';
 import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreStatusWithWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
@@ -37,7 +37,7 @@ import { makeSingleton, Translate } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { AddonModQuizAccessRuleDelegate } from './access-rules-delegate';
 import { AddonModQuizOffline, AddonModQuizQuestionsWithAnswers } from './quiz-offline';
-import { AddonModQuizAutoSyncData, AddonModQuizSyncProvider } from './quiz-sync';
+import { AddonModQuizAutoSyncData } from './quiz-sync';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import {
     QUESTION_INVALID_STATE_CLASSES,
@@ -52,6 +52,7 @@ import {
     AddonModQuizGradeMethods,
     AddonModQuizDisplayOptionsAttemptStates,
     ADDON_MOD_QUIZ_IMMEDIATELY_AFTER_PERIOD,
+    ADDON_MOD_QUIZ_AUTO_SYNCED,
 } from '../constants';
 import { CoreIonicColorNames } from '@singletons/colors';
 
@@ -64,7 +65,7 @@ declare module '@singletons/events' {
      */
     export interface CoreEventsData {
         [ADDON_MOD_QUIZ_ATTEMPT_FINISHED_EVENT]: AddonModQuizAttemptFinishedData;
-        [AddonModQuizSyncProvider.AUTO_SYNCED]: AddonModQuizAutoSyncData;
+        [ADDON_MOD_QUIZ_AUTO_SYNCED]: AddonModQuizAutoSyncData;
     }
 
 }
@@ -1587,7 +1588,7 @@ export class AddonModQuizProvider {
      * @returns Whether it's blocked.
      */
     isQuestionBlocked(question: CoreQuestionQuestionParsed): boolean {
-        const element = CoreDomUtils.convertToElement(question.html);
+        const element = convertTextToHTMLElement(question.html);
 
         return !!element.querySelector('.mod_quiz-blocked_question_warning');
     }

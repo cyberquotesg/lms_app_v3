@@ -22,7 +22,7 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreSync } from '@services/sync';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { Translate } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreForms } from '@singletons/form';
@@ -31,16 +31,20 @@ import {
     AddonModWorkshopAssessmentSavedChangedEventData,
     AddonModWorkshopData,
     AddonModWorkshopGetWorkshopAccessInformationWSResponse,
-    AddonModWorkshopPhase,
-    AddonModWorkshopProvider,
     AddonModWorkshopSubmissionData,
 } from '../../services/workshop';
 import { AddonModWorkshopHelper, AddonModWorkshopSubmissionAssessmentWithFormData } from '../../services/workshop-helper';
 import { AddonModWorkshopOffline } from '../../services/workshop-offline';
-import { AddonModWorkshopSyncProvider } from '../../services/workshop-sync';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { ADDON_MOD_WORKSHOP_COMPONENT } from '@addons/mod/workshop/constants';
+import {
+    ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED,
+    ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED,
+    ADDON_MOD_WORKSHOP_AUTO_SYNCED,
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    AddonModWorkshopPhase,
+} from '@addons/mod/workshop/constants';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays a workshop assessment.
@@ -107,7 +111,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
         this.evaluateForm.addControl('text', this.fb.control(''));
 
         // Refresh workshop on sync.
-        this.syncObserver = CoreEvents.on(AddonModWorkshopSyncProvider.AUTO_SYNCED, (data) => {
+        this.syncObserver = CoreEvents.on(ADDON_MOD_WORKSHOP_AUTO_SYNCED, (data) => {
             // Update just when all database is synced.
             if (this.workshopId === data.workshopId) {
                 this.loaded = false;
@@ -331,7 +335,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
         try {
             await Promise.all(promises);
         } finally {
-            CoreEvents.trigger(AddonModWorkshopProvider.ASSESSMENT_INVALIDATED, null, this.siteId);
+            CoreEvents.trigger(ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED, null, this.siteId);
 
             await this.fetchAssessmentData();
         }
@@ -369,12 +373,12 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
      * @returns Resolved when done.
      */
     protected async sendEvaluation(): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
         const inputData: AddonModWorkshopAssessmentEvaluation = this.evaluateForm.value;
 
         const grade = inputData.grade >= 0 ? String(inputData.grade) : '';
         // Add some HTML to the message if needed.
-        const text = CoreTextUtils.formatHtmlLines(inputData.text);
+        const text = CoreText.formatHtmlLines(inputData.text);
 
         try {
             // Try to send it to server.
@@ -396,7 +400,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
             };
 
             return AddonModWorkshop.invalidateAssessmentData(this.workshopId, this.assessmentId).finally(() => {
-                CoreEvents.trigger(AddonModWorkshopProvider.ASSESSMENT_SAVED, data, this.siteId);
+                CoreEvents.trigger(ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED, data, this.siteId);
             });
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Cannot save assessment evaluation');

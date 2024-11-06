@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 
 import { CoreConfig } from '@services/config';
 import { CoreLocalNotifications } from '@services/local-notifications';
@@ -39,6 +39,8 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { Translate } from '@singletons';
+import { CoreErrorHelper } from '@services/error-helper';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays notifications settings.
@@ -58,6 +60,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
     canChangeSound: boolean;
     processorHandlers: AddonMessageOutputHandlerData[] = [];
     loggedInOffLegacyMode = false;
+    warningMessage = signal<string | undefined>(undefined);
 
     protected updateTimeout?: number;
     protected logView: () => void;
@@ -99,6 +102,8 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
         try {
             const preferences = await AddonNotifications.getNotificationPreferences();
 
+            this.warningMessage.set(undefined);
+
             // Initialize current processor. Load "Mobile" (airnotifier) if available.
             let currentProcessor = preferences.processors.find((processor) => processor.name == this.currentProcessorName);
             if (!currentProcessor) {
@@ -116,6 +121,12 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
 
             this.logView();
         } catch (error) {
+            if (error.errorcode === 'nopermissions') {
+                this.warningMessage.set(CoreErrorHelper.getErrorMessageFromError(error));
+
+                return;
+            }
+
             CoreDomUtils.showErrorModal(error);
         } finally {
             this.preferencesLoaded = true;
@@ -301,7 +312,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             CoreUser.updateUserPreferences([], !enable);

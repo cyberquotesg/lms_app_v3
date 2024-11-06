@@ -8,13 +8,15 @@
     }
 
     ion-card.section {
-        ion-card-header {
+        ion-item.card-header {
             padding: 0;
+            --border-width: 0px;
 
             .item-heading {
                 font: var(--mdl-typography-heading4-font);
             }
         }
+
         ion-card-content {
             padding: 0;
 

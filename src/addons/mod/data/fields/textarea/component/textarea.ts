@@ -14,9 +14,10 @@
 
 import { Component } from '@angular/core';
 import { AddonModDataFieldPluginBaseComponent } from '../../../classes/base-field-plugin-component';
-import { AddonModDataEntryField, AddonModDataProvider } from '@addons/mod/data/services/data';
-import { CoreTextUtils } from '@services/utils/text';
+import { AddonModDataEntryField } from '@addons/mod/data/services/data';
+import { CoreFileHelper } from '@services/file-helper';
 import { CoreWSFile } from '@services/ws';
+import { ADDON_MOD_DATA_COMPONENT } from '@addons/mod/data/constants';
 
 /**
  * Component to render data number field.
@@ -39,14 +40,14 @@ export class AddonModDataFieldTextareaComponent extends AddonModDataFieldPluginB
     format(value?: Partial<AddonModDataEntryField>): string {
         const files: CoreWSFile[] = (value && <CoreWSFile[]>value.files) || [];
 
-        return value ? CoreTextUtils.replacePluginfileUrls(value.content || '', files) : '';
+        return value ? CoreFileHelper.replacePluginfileUrls(value.content || '', files) : '';
     }
 
     /**
      * Initialize field.
      */
     protected init(): void {
-        this.component = AddonModDataProvider.COMPONENT;
+        this.component = ADDON_MOD_DATA_COMPONENT;
         this.componentId = this.database?.coursemodule;
 
         if (this.displayMode) {

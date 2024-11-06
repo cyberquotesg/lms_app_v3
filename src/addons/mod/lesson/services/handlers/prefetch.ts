@@ -21,7 +21,7 @@ import { CoreFilepool } from '@services/filepool';
 import { CoreGroups } from '@services/groups';
 import { CoreFileSizeSum, CorePluginFileDelegate } from '@services/plugin-file-delegate';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreModals } from '@services/modals';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
@@ -30,9 +30,9 @@ import {
     AddonModLessonGetAccessInformationWSResponse,
     AddonModLessonLessonWSData,
     AddonModLessonPasswordOptions,
-    AddonModLessonProvider,
 } from '../lesson';
 import { AddonModLessonSync, AddonModLessonSyncResult } from '../lesson-sync';
+import { ADDON_MOD_LESSON_COMPONENT, AddonModLessonJumpTo, AddonModLessonPageSubtype } from '../../constants';
 
 /**
  * Handler to prefetch lessons.
@@ -42,7 +42,7 @@ export class AddonModLessonPrefetchHandlerService extends CoreCourseActivityPref
 
     name = 'AddonModLesson';
     modName = 'lesson';
-    component = AddonModLessonProvider.COMPONENT;
+    component = ADDON_MOD_LESSON_COMPONENT;
     // Don't check timers to decrease positives. If a user performs some action it will be reflected in other items.
     updatesNames = /^configuration$|^.*files$|^grades$|^gradeitems$|^pages$|^answers$|^questionattempts$|^pagesviewed$/;
 
@@ -136,7 +136,7 @@ export class AddonModLessonPrefetchHandlerService extends CoreCourseActivityPref
         }
 
         // Create and show the modal.
-        const response = await CoreDomUtils.promptPassword({
+        const response = await CoreModals.promptPassword({
             title: 'addon.mod_lesson.enterpassword',
             placeholder: 'core.login.password',
             submit: 'addon.mod_lesson.continue',
@@ -351,7 +351,7 @@ export class AddonModLessonPrefetchHandlerService extends CoreCourseActivityPref
         const promises = pages.map(async (data) => {
             // Check if any page has a RANDOMBRANCH jump.
             if (!hasRandomBranch) {
-                hasRandomBranch = data.jumps.some((jump) => jump === AddonModLessonProvider.LESSON_RANDOMBRANCH);
+                hasRandomBranch = data.jumps.some((jump) => jump === AddonModLessonJumpTo.RANDOMBRANCH);
             }
 
             // Get the page data. We don't pass accessInfo because we don't need to calculate the offline data.
@@ -464,7 +464,7 @@ export class AddonModLessonPrefetchHandlerService extends CoreCourseActivityPref
             // Download embedded files in essays.
             const files: CoreWSFile[] = [];
             attempt.answerpages.forEach((answerPage) => {
-                if (!answerPage.page || answerPage.page.qtype != AddonModLessonProvider.LESSON_PAGE_ESSAY) {
+                if (!answerPage.page || answerPage.page.qtype !== AddonModLessonPageSubtype.ESSAY) {
                     return;
                 }
 

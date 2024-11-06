@@ -22,9 +22,10 @@ import {
 import { makeSingleton } from '@singletons';
 import { AddonEnrolGuest } from './guest';
 import { CorePasswordModalResponse } from '@components/password-modal/password-modal';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreLoadings } from '@services/loadings';
 import { CoreWSError } from '@classes/errors/wserror';
 import { CoreEnrol, CoreEnrolEnrolmentMethod } from '@features/enrol/services/enrol';
+import { CoreModals } from '@services/modals';
 
 /**
  * Enrol handler.
@@ -99,7 +100,7 @@ export class AddonEnrolGuestHandlerService implements CoreEnrolGuestHandler {
         }
 
         const validatePassword = async (password = ''): Promise<CorePasswordModalResponse> => {
-            const modal = await CoreDomUtils.showModalLoading('core.loading', true);
+            const modal = await CoreLoadings.show('core.loading', true);
 
             try {
                 const response = await AddonEnrolGuest.validateGuestAccessPassword(method.id, password);
@@ -118,7 +119,7 @@ export class AddonEnrolGuestHandlerService implements CoreEnrolGuestHandler {
         };
 
         try {
-            const response = await CoreDomUtils.promptPassword<CorePasswordModalResponse>({
+            const response = await CoreModals.promptPassword<CorePasswordModalResponse>({
                 title: method.name,
                 validator: validatePassword,
             });

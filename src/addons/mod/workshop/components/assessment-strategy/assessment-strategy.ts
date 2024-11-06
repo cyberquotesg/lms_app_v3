@@ -22,15 +22,12 @@ import { CoreFileSession } from '@services/file-session';
 import { CoreSites } from '@services/sites';
 import { CoreSync } from '@services/sync';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreFormFields, CoreForms } from '@singletons/form';
 import { AddonWorkshopAssessmentStrategyDelegate } from '../../services/assessment-strategy-delegate';
 import {
-    AddonModWorkshopProvider,
-    AddonModWorkshopOverallFeedbackMode,
     AddonModWorkshop,
     AddonModWorkshopData,
     AddonModWorkshopGetWorkshopAccessInformationWSResponse,
@@ -38,7 +35,14 @@ import {
 } from '../../services/workshop';
 import { AddonModWorkshopHelper, AddonModWorkshopSubmissionAssessmentWithFormData } from '../../services/workshop-helper';
 import { AddonModWorkshopOffline } from '../../services/workshop-offline';
-import { ADDON_MOD_WORKSHOP_COMPONENT } from '@addons/mod/workshop/constants';
+import {
+    ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED,
+    ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED,
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    AddonModWorkshopOverallFeedbackMode,
+} from '@addons/mod/workshop/constants';
+import { toBoolean } from '@/core/transforms/boolean';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Component that displays workshop assessment strategy form.
@@ -49,12 +53,12 @@ import { ADDON_MOD_WORKSHOP_COMPONENT } from '@addons/mod/workshop/constants';
 })
 export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDestroy {
 
-    @Input() workshop!: AddonModWorkshopData;
-    @Input() access!: AddonModWorkshopGetWorkshopAccessInformationWSResponse;
-    @Input() assessmentId!: number;
-    @Input() userId!: number;
-    @Input() strategy!: string;
-    @Input() edit = false;
+    @Input({ required: true }) workshop!: AddonModWorkshopData;
+    @Input({ required: true }) access!: AddonModWorkshopGetWorkshopAccessInformationWSResponse;
+    @Input({ required: true }) assessmentId!: number;
+    @Input({ required: true }) userId!: number;
+    @Input({ required: true }) strategy!: string;
+    @Input({ transform: toBoolean }) edit = false;
 
     @ViewChild('assessmentForm') formElement!: ElementRef;
 
@@ -135,7 +139,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
             try {
                 await this.load();
                 this.obsInvalidated = CoreEvents.on(
-                    AddonModWorkshopProvider.ASSESSMENT_INVALIDATED,
+                    ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED,
                     () => this.load(),
                     CoreSites.getCurrentSiteId(),
                 );
@@ -255,7 +259,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
         }
 
         // Compare feedback text.
-        const text = CoreTextUtils.restorePluginfileUrls(this.feedbackText, this.data.assessment?.feedbackcontentfiles || []);
+        const text = CoreFileHelper.restorePluginfileUrls(this.feedbackText, this.data.assessment?.feedbackcontentfiles || []);
         if (this.originalData.text != text) {
             return true;
         }
@@ -298,7 +302,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
         let saveOffline = false;
         let allowOffline = !files.length;
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         this.data.fieldErrors = {};
 
@@ -329,7 +333,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
                 );
             }
 
-            const text = CoreTextUtils.restorePluginfileUrls(this.feedbackText, this.data.assessment?.feedbackcontentfiles || []);
+            const text = CoreFileHelper.restorePluginfileUrls(this.feedbackText, this.data.assessment?.feedbackcontentfiles || []);
 
             let assessmentData: CoreFormFields<unknown>;
             try {
@@ -382,7 +386,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
 
             await CoreUtils.ignoreErrors(Promise.all(promises));
 
-            CoreEvents.trigger(AddonModWorkshopProvider.ASSESSMENT_SAVED, {
+            CoreEvents.trigger(ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED, {
                 workshopId: this.workshop.id,
                 assessmentId: this.assessmentId,
                 userId: CoreSites.getCurrentSiteUserId(),

@@ -21,16 +21,19 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreSync } from '@services/sync';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSFile } from '@services/ws';
 import { Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { CoreForms } from '@singletons/form';
-import { AddonModWiki, AddonModWikiProvider } from '../../services/wiki';
+import { AddonModWiki } from '../../services/wiki';
 import { AddonModWikiOffline } from '../../services/wiki-offline';
 import { AddonModWikiSync } from '../../services/wiki-sync';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { ADDON_MOD_WIKI_COMPONENT, ADDON_MOD_WIKI_PAGE_CREATED_EVENT, ADDON_MOD_WIKI_RENEW_LOCK_TIME } from '../../constants';
+import { CoreLoadings } from '@services/loadings';
+import { CoreFileHelper } from '@services/file-helper';
 
 /**
  * Page that allows adding or editing a wiki page.
@@ -50,7 +53,7 @@ export class AddonModWikiEditPage implements OnInit, OnDestroy, CanLeave {
     contentControl: FormControl<string>; // The FormControl for the page content.
     canEditTitle = false; // Whether title can be edited.
     loaded = false; // Whether the data has been loaded.
-    component = AddonModWikiProvider.COMPONENT; // Component to link the files to.
+    component = ADDON_MOD_WIKI_COMPONENT; // Component to link the files to.
     wrongVersionLock = false; // Whether the page lock doesn't match the initial one.
     editorExtraParams: Record<string, unknown> = {};
 
@@ -92,7 +95,7 @@ export class AddonModWikiEditPage implements OnInit, OnDestroy, CanLeave {
         this.userId = CoreNavigator.getRouteNumberParam('userId');
 
         const pageTitle = CoreNavigator.getRouteParam<string>('pageTitle');
-        this.originalTitle = pageTitle ? CoreTextUtils.cleanTags(pageTitle.replace(/\+/g, ' '), { singleLine: true }) : '';
+        this.originalTitle = pageTitle ? CoreText.cleanTags(pageTitle.replace(/\+/g, ' '), { singleLine: true }) : '';
 
         this.canEditTitle = !this.originalTitle;
         this.title = this.originalTitle ?
@@ -180,7 +183,7 @@ export class AddonModWikiEditPage implements OnInit, OnDestroy, CanLeave {
                 const editContents = await AddonModWiki.getPageForEditing(this.pageId, this.section);
 
                 // Get the original page contents, treating file URLs if needed.
-                const content = CoreTextUtils.replacePluginfileUrls(editContents.content || '', this.subwikiFiles);
+                const content = CoreFileHelper.replacePluginfileUrls(editContents.content || '', this.subwikiFiles);
 
                 this.contentControl.setValue(content);
                 this.originalContent = content;
@@ -190,7 +193,7 @@ export class AddonModWikiEditPage implements OnInit, OnDestroy, CanLeave {
                     // Renew the lock every certain time.
                     this.renewLockInterval = window.setInterval(() => {
                         this.renewLock();
-                    }, AddonModWikiProvider.RENEW_LOCK_TIME);
+                    }, ADDON_MOD_WIKI_RENEW_LOCK_TIME);
                 }
             } else {
                 const pageTitle = this.pageForm.controls.title.value;
@@ -361,10 +364,10 @@ export class AddonModWikiEditPage implements OnInit, OnDestroy, CanLeave {
         const title = values.title;
         let text = values.text ?? '';
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
-        text = CoreTextUtils.restorePluginfileUrls(text, this.subwikiFiles);
-        text = CoreTextUtils.formatHtmlLines(text);
+        text = CoreFileHelper.restorePluginfileUrls(text, this.subwikiFiles);
+        text = CoreText.formatHtmlLines(text);
 
         try {
             if (this.editing && this.pageId) {
@@ -442,7 +445,7 @@ export class AddonModWikiEditPage implements OnInit, OnDestroy, CanLeave {
             await CoreUtils.ignoreErrors(Promise.all(promises));
 
             // Notify page created.
-            CoreEvents.trigger(AddonModWikiProvider.PAGE_CREATED_EVENT, {
+            CoreEvents.trigger(ADDON_MOD_WIKI_PAGE_CREATED_EVENT, {
                 pageId: this.pageId,
                 subwikiId: this.subwikiId,
                 pageTitle: title,

@@ -30,7 +30,6 @@ import { AddonCalendarFilter, AddonCalendarHelper } from '../../services/calenda
 import { AddonCalendarSync, AddonCalendarSyncProvider } from '../../services/calendar-sync';
 import { CoreCategoryData, CoreCourses, CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { CoreCoursesHelper } from '@features/courses/services/courses-helper';
-import { AddonCalendarFilterComponent } from '../../components/filter/filter';
 import moment from 'moment-timezone';
 import { NgZone, Translate } from '@singletons';
 import { CoreNavigator } from '@services/navigator';
@@ -47,8 +46,9 @@ import {
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { AddonCalendarEventsSource } from '@addons/calendar/classes/events-source';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreTime } from '@singletons/time';
+import { CoreModals } from '@services/modals';
 
 /**
  * Page that displays the calendar events for a certain day.
@@ -201,7 +201,7 @@ export class AddonCalendarDayPage implements OnInit, OnDestroy {
                     ...params,
                     category: 'calendar',
                 },
-                url: CoreUrlUtils.addParamsToUrl('/calendar/view.php?view=day', params),
+                url: CoreUrl.addParamsToUrl('/calendar/view.php?view=day', params),
             });
         });
     }
@@ -375,7 +375,9 @@ export class AddonCalendarDayPage implements OnInit, OnDestroy {
      * Show the filter menu.
      */
     async openFilter(): Promise<void> {
-        await CoreDomUtils.openSideModal({
+        const { AddonCalendarFilterComponent } = await import('../../components/filter/filter');
+
+        await CoreModals.openSideModal({
             component: AddonCalendarFilterComponent,
             componentProps: {
                 courses: this.manager?.getSource().courses,

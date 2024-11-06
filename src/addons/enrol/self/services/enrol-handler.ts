@@ -20,6 +20,8 @@ import { CorePasswordModalResponse } from '@components/password-modal/password-m
 import { CoreCoursesProvider } from '@features/courses/services/courses';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreEnrol, CoreEnrolEnrolmentMethod } from '@features/enrol/services/enrol';
+import { CoreModals } from '@services/modals';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Enrol handler.
@@ -111,7 +113,7 @@ export class AddonEnrolSelfHandlerService implements CoreEnrolSelfHandler {
      */
     protected async performEnrol(method: CoreEnrolEnrolmentMethod): Promise<boolean> {
         const validatePassword = async (password = ''): Promise<CorePasswordModalResponse> => {
-            const modal = await CoreDomUtils.showModalLoading('core.loading', true);
+            const modal = await CoreLoadings.show('core.loading', true);
 
             const response: CorePasswordModalResponse = {
                 password,
@@ -145,7 +147,7 @@ export class AddonEnrolSelfHandlerService implements CoreEnrolSelfHandler {
 
         if (!response.validated) {
             try {
-                const response = await CoreDomUtils.promptPassword({
+                const response = await CoreModals.promptPassword({
                     validator: validatePassword,
                     title: method.name,
                     placeholder: 'addon.enrol_self.password',

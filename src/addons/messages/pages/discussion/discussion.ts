@@ -32,9 +32,7 @@ import { AddonMessagesSync, AddonMessagesSyncProvider } from '../../services/mes
 import { CoreUser } from '@features/user/services/user';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
 import { CoreLogger } from '@singletons/logger';
-import { CoreApp } from '@services/app';
 import { CoreInfiniteLoadingComponent } from '@components/infinite-loading/infinite-loading';
 import { Md5 } from 'ts-md5/dist/md5';
 import moment from 'moment-timezone';
@@ -45,6 +43,11 @@ import { CoreIonLoadingElement } from '@classes/ion-loading';
 import { ActivatedRoute } from '@angular/router';
 import { CoreConstants } from '@/core/constants';
 import { CoreDom } from '@singletons/dom';
+import { CoreKeyboard } from '@singletons/keyboard';
+import { CoreText } from '@singletons/text';
+import { CoreWait } from '@singletons/wait';
+import { CoreModals } from '@services/modals';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays a message discussion page.
@@ -93,7 +96,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
     groupMessagingEnabled: boolean;
     isGroup = false;
     members: {[id: number]: AddonMessagesConversationMember} = {}; // Members that wrote a message, indexed by ID.
-    favouriteIcon = 'fa-star';
+    favouriteIcon = 'fas-star';
     deleteIcon = 'fas-trash';
     blockIcon = 'fas-user-lock';
     addRemoveIcon = 'fas-user-plus';
@@ -229,7 +232,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
     protected async fetchData(): Promise<void> {
         let loader: CoreIonLoadingElement | undefined;
         if (this.showLoadingModal) {
-            loader = await CoreDomUtils.showModalLoading();
+            loader = await CoreLoadings.show();
         }
 
         if (!this.groupMessagingEnabled && this.userId) {
@@ -883,7 +886,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
             return;
         }
 
-        await CoreUtils.wait(400);
+        await CoreWait.wait(400);
         await CoreUtils.ignoreErrors(this.waitForFetch());
     }
 
@@ -924,7 +927,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
      */
     copyMessage(message: AddonMessagesConversationMessageFormatted): void {
         const text = 'smallmessage' in message ? message.smallmessage || message.text || '' : message.text || '';
-        CoreUtils.copyToClipboard(CoreTextUtils.decodeHTMLEntities(text));
+        CoreText.copyToClipboard(CoreText.decodeHTMLEntities(text));
     }
 
     /**
@@ -962,7 +965,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
                 options,
             );
 
-            const modal = await CoreDomUtils.showModalLoading('core.deleting', true);
+            const modal = await CoreLoadings.show('core.deleting', true);
 
             try {
                 await AddonMessages.deleteMessage(message, data && data[0]);
@@ -1071,7 +1074,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
             this.setNewMessagesBadge(0);
 
             // Leave time for the view to be rendered.
-            await CoreUtils.nextTicks(5);
+            await CoreWait.nextTicks(5);
 
             if (!this.viewDestroyed && this.content) {
                 this.content.scrollToBottom(0);
@@ -1177,7 +1180,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
 
                 // Only close the keyboard if an error happens.
                 // We want the user to be able to send multiple messages without the keyboard being closed.
-                CoreApp.closeKeyboard();
+                CoreKeyboard.close();
 
                 CoreDomUtils.showErrorModalDefault(error, 'addon.messages.messagenotsent', true);
                 this.removeMessage(message.hash!);
@@ -1248,7 +1251,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
                 await import('@addons/messages/components/conversation-info/conversation-info.module');
 
             // Display the group information.
-            const userId = await CoreDomUtils.openSideModal<number>({
+            const userId = await CoreModals.openSideModal<number>({
                 component: AddonMessagesConversationInfoComponent,
                 componentProps: {
                     conversationId: this.conversationId,
@@ -1403,7 +1406,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
             await CoreDomUtils.showConfirm(template, undefined, okText);
             this.blockIcon = CoreConstants.ICON_LOADING;
 
-            const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            const modal = await CoreLoadings.show('core.sending', true);
             this.showLoadingModal = true;
 
             try {
@@ -1485,7 +1488,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
 
             this.blockIcon = CoreConstants.ICON_LOADING;
 
-            const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            const modal = await CoreLoadings.show('core.sending', true);
             this.showLoadingModal = true;
 
             try {
@@ -1524,7 +1527,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
 
             this.addRemoveIcon = CoreConstants.ICON_LOADING;
 
-            const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            const modal = await CoreLoadings.show('core.sending', true);
             this.showLoadingModal = true;
 
             try {
@@ -1555,7 +1558,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
             throw new CoreError('No member selected to be confirmed.');
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
         this.showLoadingModal = true;
 
         try {
@@ -1581,7 +1584,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
             throw new CoreError('No member selected to be declined.');
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
         this.showLoadingModal = true;
 
         try {
@@ -1615,7 +1618,7 @@ export class AddonMessagesDiscussionPage implements OnInit, OnDestroy, AfterView
 
             this.addRemoveIcon = CoreConstants.ICON_LOADING;
 
-            const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            const modal = await CoreLoadings.show('core.sending', true);
             this.showLoadingModal = true;
 
             try {

@@ -33,11 +33,9 @@ import { CorePath } from '@singletons/path';
 import { Subscription } from 'rxjs';
 import { Md5 } from 'ts-md5';
 import { AddonModWikiPageDBRecord } from '../../services/database/wiki';
-import { AddonModWikiModuleHandlerService } from '../../services/handlers/module';
 import {
     AddonModWiki,
     AddonModWikiPageContents,
-    AddonModWikiProvider,
     AddonModWikiSubwiki,
     AddonModWikiSubwikiListData,
     AddonModWikiSubwikiListGrouping,
@@ -49,12 +47,19 @@ import { AddonModWikiOffline } from '../../services/wiki-offline';
 import {
     AddonModWikiAutoSyncData,
     AddonModWikiSync,
-    AddonModWikiSyncProvider,
     AddonModWikiSyncWikiResult,
     AddonModWikiSyncWikiSubwiki,
 } from '../../services/wiki-sync';
-import { AddonModWikiMapModalComponent, AddonModWikiMapModalReturn } from '../map/map';
-import { AddonModWikiSubwikiPickerComponent } from '../subwiki-picker/subwiki-picker';
+import { AddonModWikiMapModalReturn } from '../map/map';
+import {
+    ADDON_MOD_WIKI_AUTO_SYNCED,
+    ADDON_MOD_WIKI_COMPONENT,
+    ADDON_MOD_WIKI_MANUAL_SYNCED,
+    ADDON_MOD_WIKI_PAGE_CREATED_EVENT,
+    ADDON_MOD_WIKI_PAGE_NAME,
+} from '../../constants';
+import { CoreModals } from '@services/modals';
+import { CorePopovers } from '@services/popovers';
 
 /**
  * Component that displays a wiki entry page.
@@ -73,7 +78,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
     @Input() userId?: number;
     @Input() groupId?: number;
 
-    component = AddonModWikiProvider.COMPONENT;
+    component = ADDON_MOD_WIKI_COMPONENT;
     componentId?: number;
     pluginName = 'wiki';
     groupWiki = false;
@@ -99,7 +104,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
         count: 0,
     };
 
-    protected syncEventName = AddonModWikiSyncProvider.AUTO_SYNCED;
+    protected syncEventName = ADDON_MOD_WIKI_AUTO_SYNCED;
     protected currentSubwiki?: AddonModWikiSubwiki; // Current selected subwiki.
     protected currentPage?: number; // Current loaded page ID.
     protected subwikiPages?: (AddonModWikiSubwikiPage | AddonModWikiPageDBRecord)[]; // List of subwiki pages.
@@ -155,7 +160,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
      */
     protected listenEvents(): void {
         // Listen for manual sync events.
-        this.manualSyncObserver = CoreEvents.on(AddonModWikiSyncProvider.MANUAL_SYNCED, (data) => {
+        this.manualSyncObserver = CoreEvents.on(ADDON_MOD_WIKI_MANUAL_SYNCED, (data) => {
             if (!data || !this.wiki || data.wikiId != this.wiki.id) {
                 return;
             }
@@ -313,7 +318,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
             this.pageIsOffline = true;
             if (!this.newPageObserver) {
                 // It's an offline page, listen for new pages event to detect if the user goes to Edit and submits the page.
-                this.newPageObserver = CoreEvents.on(AddonModWikiProvider.PAGE_CREATED_EVENT, async (data) => {
+                this.newPageObserver = CoreEvents.on(ADDON_MOD_WIKI_PAGE_CREATED_EVENT, async (data) => {
                     if (data.subwikiId != this.currentSubwiki?.id || data.pageTitle != title) {
                         return;
                     }
@@ -528,7 +533,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
      */
     protected goToCreateFirstPage(): void {
         CoreNavigator.navigateToSitePath(
-            `${AddonModWikiModuleHandlerService.PAGE_NAME}/${this.courseId}/${this.module.id}/edit`,
+            `${ADDON_MOD_WIKI_PAGE_NAME}/${this.courseId}/${this.module.id}/edit`,
             {
                 params: {
                     pageTitle: this.wiki?.firstpagetitle ?? '',
@@ -566,7 +571,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
             }
 
             CoreNavigator.navigateToSitePath(
-                `${AddonModWikiModuleHandlerService.PAGE_NAME}/${this.courseId}/${this.module.id}/edit`,
+                `${ADDON_MOD_WIKI_PAGE_NAME}/${this.courseId}/${this.module.id}/edit`,
                 { params: pageParams },
             );
         } else if (this.currentSubwiki) {
@@ -596,7 +601,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
             }
 
             CoreNavigator.navigateToSitePath(
-                `${AddonModWikiModuleHandlerService.PAGE_NAME}/${this.courseId}/${this.module.id}/edit`,
+                `${ADDON_MOD_WIKI_PAGE_NAME}/${this.courseId}/${this.module.id}/edit`,
                 { params: pageParams },
             );
         } else if (this.currentSubwiki) {
@@ -644,7 +649,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
         }));
 
         CoreNavigator.navigateToSitePath(
-            `${AddonModWikiModuleHandlerService.PAGE_NAME}/${this.courseId}/${this.module.id}/page/${hash}`,
+            `${ADDON_MOD_WIKI_PAGE_NAME}/${this.courseId}/${this.module.id}/page/${hash}`,
             {
                 params: {
                     module: this.module,
@@ -660,8 +665,10 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
      * Show the map.
      */
     async openMap(): Promise<void> {
-        // Create the toc modal.
-        const modalData = await CoreDomUtils.openSideModal<AddonModWikiMapModalReturn>({
+        const { AddonModWikiMapModalComponent } = await import('../map/map');
+
+        // Create the map modal.
+        const modalData = await CoreModals.openSideModal<AddonModWikiMapModalReturn>({
             component: AddonModWikiMapModalComponent,
             componentProps: {
                 pages: this.subwikiPages,
@@ -771,7 +778,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
         if (result.updated && this.wiki) {
             // Trigger event.
             this.ignoreManualSyncEvent = true;
-            CoreEvents.trigger(AddonModWikiSyncProvider.MANUAL_SYNCED, {
+            CoreEvents.trigger(ADDON_MOD_WIKI_MANUAL_SYNCED, {
                 ...result,
                 wikiId: this.wiki.id,
             });
@@ -879,7 +886,9 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
      * @param event Event.
      */
     async showSubwikiPicker(event: MouseEvent): Promise<void> {
-        const subwiki = await CoreDomUtils.openPopover<AddonModWikiSubwiki>({
+        const { AddonModWikiSubwikiPickerComponent } = await import('../subwiki-picker/subwiki-picker');
+
+        const subwiki = await CorePopovers.open<AddonModWikiSubwiki>({
             component: AddonModWikiSubwikiPickerComponent,
             componentProps: {
                 courseId: this.courseId,

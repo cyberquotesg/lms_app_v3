@@ -23,12 +23,10 @@ import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { AddonModScormDataModel12 } from '../../classes/data-model-12';
-import { AddonModScormTocComponent } from '../../components/toc/toc';
 import {
     AddonModScorm,
     AddonModScormAttemptCountResult,
     AddonModScormGetScormAccessInformationWSResponse,
-    AddonModScormProvider,
     AddonModScormScorm,
     AddonModScormScoWithData,
     AddonModScormUserDataMap,
@@ -36,6 +34,16 @@ import {
 import { AddonModScormHelper, AddonModScormTOCScoWithIcon } from '../../services/scorm-helper';
 import { AddonModScormSync } from '../../services/scorm-sync';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import {
+    ADDON_MOD_SCORM_COMPONENT,
+    AddonModScormMode,
+    ADDON_MOD_SCORM_GO_OFFLINE_EVENT,
+    ADDON_MOD_SCORM_LAUNCH_NEXT_SCO_EVENT,
+    ADDON_MOD_SCORM_LAUNCH_PREV_SCO_EVENT,
+    ADDON_MOD_SCORM_UPDATE_TOC_EVENT,
+} from '../../constants';
+import { CoreWait } from '@singletons/wait';
+import { CoreModals } from '@services/modals';
 
 /**
  * Page that allows playing a SCORM.
@@ -63,7 +71,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
     navigationItems: CoreNavigationBarItem<AddonModScormTOCScoWithIcon>[] = [];
 
     protected siteId!: string;
-    protected mode!: string; // Mode to play the SCORM.
+    protected mode!: AddonModScormMode; // Mode to play the SCORM.
     protected moduleUrl!: string; // Module URL.
     protected newAttempt = false; // Whether to start a new attempt.
     protected organizationId?: string; // Organization ID to load.
@@ -92,7 +100,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
         try {
             this.cmId = CoreNavigator.getRequiredRouteNumberParam('cmId');
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
-            this.mode = CoreNavigator.getRouteParam('mode') || AddonModScormProvider.MODENORMAL;
+            this.mode = CoreNavigator.getRouteParam('mode') || AddonModScormMode.NORMAL;
             this.moduleUrl = CoreNavigator.getRouteParam('moduleUrl') || '';
             this.newAttempt = !!CoreNavigator.getRouteBooleanParam('newAttempt');
             this.organizationId = CoreNavigator.getRouteParam('organizationId');
@@ -150,7 +158,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
         });
 
         // Block the SCORM so it cannot be synchronized.
-        CoreSync.blockOperation(AddonModScormProvider.COMPONENT, this.scorm.id, 'player');
+        CoreSync.blockOperation(ADDON_MOD_SCORM_COMPONENT, this.scorm.id, 'player');
 
         // We use SCORM name at start, later we'll use the SCO title.
         this.title = this.scorm.name;
@@ -169,7 +177,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
         }
 
         // Listen for events to update the TOC, navigate through SCOs and go offline.
-        this.tocObserver = CoreEvents.on(AddonModScormProvider.UPDATE_TOC_EVENT, (data) => {
+        this.tocObserver = CoreEvents.on(ADDON_MOD_SCORM_UPDATE_TOC_EVENT, (data) => {
             if (data.scormId !== this.scorm.id) {
                 return;
             }
@@ -182,7 +190,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
             }
         }, this.siteId);
 
-        this.launchNextObserver = CoreEvents.on(AddonModScormProvider.LAUNCH_NEXT_SCO_EVENT, (data) => {
+        this.launchNextObserver = CoreEvents.on(ADDON_MOD_SCORM_LAUNCH_NEXT_SCO_EVENT, (data) => {
             if (data.scormId === this.scorm.id && this.currentSco) {
                 const nextSco = AddonModScormHelper.getNextScoFromToc(this.toc, this.currentSco.id);
                 if (nextSco) {
@@ -191,7 +199,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
             }
         }, this.siteId);
 
-        this.launchPrevObserver = CoreEvents.on(AddonModScormProvider.LAUNCH_PREV_SCO_EVENT, (data) => {
+        this.launchPrevObserver = CoreEvents.on(ADDON_MOD_SCORM_LAUNCH_PREV_SCO_EVENT, (data) => {
             if (data.scormId === this.scorm.id && this.currentSco) {
                 const previousSco = AddonModScormHelper.getPreviousScoFromToc(this.toc, this.currentSco.id);
                 if (previousSco) {
@@ -200,7 +208,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
             }
         }, this.siteId);
 
-        this.goOfflineObserver = CoreEvents.on(AddonModScormProvider.GO_OFFLINE_EVENT, (data) => {
+        this.goOfflineObserver = CoreEvents.on(ADDON_MOD_SCORM_GO_OFFLINE_EVENT, (data) => {
             if (data.scormId !== this.scorm.id || this.offline) {
                 return;
             }
@@ -429,7 +437,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
             // Changing SCO. First unload the existing SCO to make sure the callback to send the data has been called.
             this.src = '';
 
-            await CoreUtils.nextTick();
+            await CoreWait.nextTick();
 
             // Load the SCO in the existing model.
             this.dataModel.loadSco(sco.id);
@@ -505,7 +513,9 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
      * Show the TOC.
      */
     async openToc(): Promise<void> {
-        const modalData = await CoreDomUtils.openSideModal<AddonModScormScoWithData>({
+        const { AddonModScormTocComponent } = await import('../../components/toc/toc');
+
+        const modalData = await CoreModals.openSideModal<AddonModScormScoWithData>({
             component: AddonModScormTocComponent,
             componentProps: {
                 toc: this.toc,
@@ -605,7 +615,7 @@ export class AddonModScormPlayerPage implements OnInit, OnDestroy {
         }, 500);
 
         // Unblock the SCORM so it can be synced.
-        CoreSync.unblockOperation(AddonModScormProvider.COMPONENT, this.scorm.id, 'player');
+        CoreSync.unblockOperation(ADDON_MOD_SCORM_COMPONENT, this.scorm.id, 'player');
     }
 
 }

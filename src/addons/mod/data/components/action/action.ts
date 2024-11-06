@@ -20,18 +20,20 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreEvents } from '@singletons/events';
 import {
-    AddonModDataAction,
     AddonModDataData,
     AddonModDataEntry,
     AddonModDataGetDataAccessInformationWSResponse,
-    AddonModDataProvider,
-    AddonModDataTemplateMode,
 } from '../../services/data';
 import { AddonModDataHelper } from '../../services/data-helper';
 import { AddonModDataOffline } from '../../services/data-offline';
-import { AddonModDataModuleHandlerService } from '../../services/handlers/module';
-import { CoreDomUtils } from '@services/utils/dom';
-import { AddonModDataActionsMenuComponent, AddonModDataActionsMenuItem } from '../actionsmenu/actionsmenu';
+import { CorePopovers } from '@services/popovers';
+import { AddonModDataActionsMenuItem } from '../actionsmenu/actionsmenu';
+import {
+    ADDON_MOD_DATA_ENTRY_CHANGED,
+    ADDON_MOD_DATA_PAGE_NAME,
+    AddonModDataAction,
+    AddonModDataTemplateMode,
+} from '../../constants';
 
 /**
  * Component that displays a database action.
@@ -43,10 +45,10 @@ import { AddonModDataActionsMenuComponent, AddonModDataActionsMenuItem } from '.
 export class AddonModDataActionComponent implements OnInit {
 
     @Input() access?: AddonModDataGetDataAccessInformationWSResponse; // Access info.
-    @Input() mode!: AddonModDataTemplateMode; // The render mode.
-    @Input() action!: AddonModDataAction; // The field to render.
-    @Input() entry!: AddonModDataEntry; // The value of the field.
-    @Input() database!: AddonModDataData; // Database object.
+    @Input({ required: true }) mode!: AddonModDataTemplateMode; // The render mode.
+    @Input({ required: true }) action!: AddonModDataAction; // The field to render.
+    @Input({ required: true }) entry!: AddonModDataEntry; // The value of the field.
+    @Input({ required: true }) database!: AddonModDataData; // Database object.
     @Input() title = ''; // Name of the module.
     @Input() group = 0; // Module group.
     @Input() offset?: number; // Offset of the entry.
@@ -101,7 +103,7 @@ export class AddonModDataActionComponent implements OnInit {
             title: this.title,
         };
 
-        const basePath = AddonModDataModuleHandlerService.PAGE_NAME;
+        const basePath = ADDON_MOD_DATA_PAGE_NAME;
         CoreNavigator.navigateToSitePath(
             `${basePath}/${this.database.course}/${this.database.coursemodule}/edit/${this.entry.id}`,
             { params },
@@ -120,7 +122,7 @@ export class AddonModDataActionComponent implements OnInit {
             sortDirection: this.sortDirection,
         };
 
-        const basePath = AddonModDataModuleHandlerService.PAGE_NAME;
+        const basePath = ADDON_MOD_DATA_PAGE_NAME;
         CoreNavigator.navigateToSitePath(
             `${basePath}/${this.database.course}/${this.database.coursemodule}/${this.entry.id}`,
             { params },
@@ -140,7 +142,7 @@ export class AddonModDataActionComponent implements OnInit {
 
         // Found. Just delete the action.
         await AddonModDataOffline.deleteEntry(dataId, entryId, AddonModDataAction.DELETE, this.siteId);
-        CoreEvents.trigger(AddonModDataProvider.ENTRY_CHANGED, { dataId: dataId, entryId: entryId }, this.siteId);
+        CoreEvents.trigger(ADDON_MOD_DATA_ENTRY_CHANGED, { dataId: dataId, entryId: entryId }, this.siteId);
     }
 
     /**
@@ -200,7 +202,9 @@ export class AddonModDataActionComponent implements OnInit {
             });
         }
 
-        await CoreDomUtils.openPopoverWithoutResult({
+        const { AddonModDataActionsMenuComponent } = await import('../actionsmenu/actionsmenu');
+
+        await CorePopovers.openWithoutResult({
             component: AddonModDataActionsMenuComponent,
             componentProps: { items },
             id: 'actionsmenu-popover',

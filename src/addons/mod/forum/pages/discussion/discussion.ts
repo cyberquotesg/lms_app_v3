@@ -42,15 +42,26 @@ import {
     AddonModForumData,
     AddonModForumDiscussion,
     AddonModForumPost,
-    AddonModForumProvider,
     AddonModForumPostFormData,
     AddonModForumChangeDiscussionData,
     AddonModForumReplyDiscussionData,
 } from '../../services/forum';
 import { AddonModForumHelper } from '../../services/forum-helper';
 import { AddonModForumOffline } from '../../services/forum-offline';
-import { AddonModForumSync, AddonModForumSyncProvider } from '../../services/forum-sync';
+import { AddonModForumSync } from '../../services/forum-sync';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import {
+    ADDON_MOD_FORUM_AUTO_SYNCED,
+    ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT,
+    ADDON_MOD_FORUM_COMPONENT,
+    ADDON_MOD_FORUM_MANUAL_SYNCED,
+    ADDON_MOD_FORUM_MARK_READ_EVENT,
+    ADDON_MOD_FORUM_REPLY_DISCUSSION_EVENT,
+    AddonModForumType,
+} from '../../constants';
+import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
+import { CoreToasts } from '@services/toasts';
+import { CoreLoadings } from '@services/loadings';
 
 type SortType = 'flat-newest' | 'flat-oldest' | 'nested';
 
@@ -101,7 +112,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
     refreshIcon = CoreConstants.ICON_LOADING;
     syncIcon = CoreConstants.ICON_LOADING;
     discussionStr = '';
-    component = AddonModForumProvider.COMPONENT;
+    component = ADDON_MOD_FORUM_COMPONENT;
     cmId?: number;
     canPin = false;
     availabilityMessage: string | null = null;
@@ -126,6 +137,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
         @Optional() protected splitView: CoreSplitViewComponent,
         protected elementRef: ElementRef,
         protected route: ActivatedRoute,
+        @Optional() protected courseContentsPage?: CoreCourseContentsPage,
     ) {}
 
     get isMobile(): boolean {
@@ -216,7 +228,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
         const discussion = this.discussion;
 
         // Refresh data if this discussion is synchronized automatically.
-        this.syncObserver = CoreEvents.on(AddonModForumSyncProvider.AUTO_SYNCED, data => {
+        this.syncObserver = CoreEvents.on(ADDON_MOD_FORUM_AUTO_SYNCED, data => {
             if (data.forumId == this.forumId && this.discussionId == data.discussionId
                     && data.userId == CoreSites.getCurrentSiteUserId()) {
                 // Refresh the data.
@@ -226,7 +238,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
         }, CoreSites.getCurrentSiteId());
 
         // Refresh data if this forum discussion is synchronized from discussions list.
-        this.syncManualObserver = CoreEvents.on(AddonModForumSyncProvider.MANUAL_SYNCED, data => {
+        this.syncManualObserver = CoreEvents.on(ADDON_MOD_FORUM_MANUAL_SYNCED, data => {
             if (data.source != 'discussion' && data.forumId == this.forumId &&
                     data.userId == CoreSites.getCurrentSiteUserId()) {
                 // Refresh the data.
@@ -255,7 +267,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             }
         });
 
-        this.changeDiscObserver = CoreEvents.on(AddonModForumProvider.CHANGE_DISCUSSION_EVENT, data => {
+        this.changeDiscObserver = CoreEvents.on(ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT, data => {
             if (discussion && this.forumId && (this.forumId === data.forumId || data.cmId === this.cmId)) {
                 AddonModForum.invalidateDiscussionsList(this.forumId).finally(() => {
                     if (data.locked !== undefined) {
@@ -309,7 +321,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
         }
 
         if (this.splitView?.outletActivated) {
-            CoreNavigator.navigate('../');
+            CoreNavigator.navigate((this.courseContentsPage ? '../' : '') + '../');
         } else {
             CoreNavigator.back();
         }
@@ -501,7 +513,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
 
                             // Show Q&A message if user hasn't posted.
                             const currentUserId = CoreSites.getCurrentSiteUserId();
-                            this.showQAMessage = forum.type === 'qanda' && !accessInfo.canviewqandawithoutposting &&
+                            this.showQAMessage = forum.type === AddonModForumType.QANDA && !accessInfo.canviewqandawithoutposting &&
                                 !posts.some(post => post.author.id === currentUserId);
 
                             return;
@@ -523,7 +535,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
                 throw new Error('Invalid forum discussion.');
             }
 
-            if (this.startingPost && this.startingPost.author && this.forum.type == 'single') {
+            if (this.startingPost && this.startingPost.author && this.forum.type === AddonModForumType.SINGLE) {
                 // Hide author and groups for first post and type single.
                 delete this.startingPost.author.fullname;
                 delete this.startingPost.author.groups;
@@ -607,7 +619,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
 
                     if (result && result.updated && this.forumId) {
                         // Sync successful, send event.
-                        CoreEvents.trigger(AddonModForumSyncProvider.MANUAL_SYNCED, {
+                        CoreEvents.trigger(ADDON_MOD_FORUM_MANUAL_SYNCED, {
                             forumId: this.forumId,
                             userId: CoreSites.getCurrentSiteUserId(),
                             source: 'discussion',
@@ -707,7 +719,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             const response = await AddonModForum.setLockState(this.forumId, this.discussionId, locked);
@@ -719,9 +731,12 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
                 cmId: this.cmId,
                 locked: this.discussion.locked,
             };
-            CoreEvents.trigger(AddonModForumProvider.CHANGE_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
+            CoreEvents.trigger(ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
 
-            CoreDomUtils.showToast('addon.mod_forum.lockupdated', true);
+            CoreToasts.show({
+                message: 'addon.mod_forum.lockupdated',
+                translateMessage: true,
+            });
         } catch (error) {
             CoreDomUtils.showErrorModal(error);
         } finally {
@@ -739,7 +754,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             await AddonModForum.setPinState(this.discussionId, pinned);
@@ -752,9 +767,12 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
                 cmId: this.cmId,
                 pinned: this.discussion.pinned,
             };
-            CoreEvents.trigger(AddonModForumProvider.CHANGE_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
+            CoreEvents.trigger(ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
 
-            CoreDomUtils.showToast('addon.mod_forum.pinupdated', true);
+            CoreToasts.show({
+                message: 'addon.mod_forum.pinupdated',
+                translateMessage: true,
+            });
         } catch (error) {
             CoreDomUtils.showErrorModal(error);
         } finally {
@@ -772,7 +790,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             await AddonModForum.toggleFavouriteState(this.discussionId, starred);
@@ -785,9 +803,12 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
                 cmId: this.cmId,
                 starred: this.discussion.starred,
             };
-            CoreEvents.trigger(AddonModForumProvider.CHANGE_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
+            CoreEvents.trigger(ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
 
-            CoreDomUtils.showToast('addon.mod_forum.favouriteupdated', true);
+            CoreToasts.show({
+                message: 'addon.mod_forum.favouriteupdated',
+                translateMessage: true,
+            });
         } catch (error) {
             CoreDomUtils.showErrorModal(error);
         } finally {
@@ -809,7 +830,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             discussionId: this.discussionId,
             cmId: this.cmId,
         };
-        CoreEvents.trigger(AddonModForumProvider.REPLY_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
+        CoreEvents.trigger(ADDON_MOD_FORUM_REPLY_DISCUSSION_EVENT, data, CoreSites.getCurrentSiteId());
 
         this.discussionLoaded = false;
         this.refreshPosts().finally(() => {
@@ -868,7 +889,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
         }
 
         // Trigger mark read posts.
-        CoreEvents.trigger(AddonModForumProvider.MARK_READ_EVENT, {
+        CoreEvents.trigger(ADDON_MOD_FORUM_MARK_READ_EVENT, {
             courseId: this.courseId,
             moduleId: this.cmId,
         }, CoreSites.getCurrentSiteId());

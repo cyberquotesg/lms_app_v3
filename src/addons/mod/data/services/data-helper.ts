@@ -19,31 +19,36 @@ import { CoreFileUploader, CoreFileUploaderStoreFilesResult } from '@features/fi
 import { CoreRatingOffline } from '@features/rating/services/rating-offline';
 import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
+import { CoreDomUtils } from '@services/utils/dom';
 import { CoreFormFields } from '@singletons/form';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import {
     AddonModDataEntry,
     AddonModData,
-    AddonModDataProvider,
     AddonModDataSearchEntriesOptions,
     AddonModDataEntries,
     AddonModDataEntryFields,
-    AddonModDataAction,
     AddonModDataGetEntryFormatted,
     AddonModDataData,
-    AddonModDataTemplateType,
     AddonModDataGetDataAccessInformationWSResponse,
-    AddonModDataTemplateMode,
     AddonModDataField,
     AddonModDataEntryWSField,
 } from './data';
 import { AddonModDataFieldsDelegate } from './data-fields-delegate';
 import { AddonModDataOffline, AddonModDataOfflineAction } from './data-offline';
 import { CoreFileEntry } from '@services/file-helper';
+import {
+    ADDON_MOD_DATA_COMPONENT,
+    ADDON_MOD_DATA_ENTRY_CHANGED,
+    AddonModDataAction,
+    AddonModDataTemplateType,
+    AddonModDataTemplateMode,
+} from '../constants';
+import { CoreToasts, ToastDuration } from '@services/toasts';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Service that provides helper functions for datas.
@@ -92,9 +97,9 @@ export class AddonModDataHelperProvider {
 
                         if (offlineContent.subfield) {
                             offlineContents[offlineContent.fieldid][offlineContent.subfield] =
-                                CoreTextUtils.parseJSON(offlineContent.value, '');
+                                CoreText.parseJSON(offlineContent.value, '');
                         } else {
-                            offlineContents[offlineContent.fieldid][''] = CoreTextUtils.parseJSON(offlineContent.value, '');
+                            offlineContents[offlineContent.fieldid][''] = CoreText.parseJSON(offlineContent.value, '');
                         }
                     });
 
@@ -150,7 +155,7 @@ export class AddonModDataHelperProvider {
     ): Promise<void> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             courseId = await this.getActivityCourseIdIfNotSet(dataId, courseId, siteId);
@@ -171,13 +176,13 @@ export class AddonModDataHelperProvider {
 
             await CoreUtils.ignoreErrors(Promise.all(promises));
 
-            CoreEvents.trigger(AddonModDataProvider.ENTRY_CHANGED, { dataId: dataId, entryId: entryId }, siteId);
+            CoreEvents.trigger(ADDON_MOD_DATA_ENTRY_CHANGED, { dataId: dataId, entryId: entryId }, siteId);
 
-            CoreDomUtils.showToast(
-                approve ? 'addon.mod_data.recordapproved' : 'addon.mod_data.recorddisapproved',
-                true,
-                ToastDuration.LONG,
-            );
+            CoreToasts.show({
+                message: approve ? 'addon.mod_data.recordapproved' : 'addon.mod_data.recorddisapproved',
+                translateMessage: true,
+                duration: ToastDuration.LONG,
+            });
         } catch {
             // Ignore error, it was already displayed.
         } finally {
@@ -853,7 +858,7 @@ export class AddonModDataHelperProvider {
         try {
             await CoreDomUtils.showDeleteConfirm('addon.mod_data.confirmdeleterecord');
 
-            const modal = await CoreDomUtils.showModalLoading();
+            const modal = await CoreLoadings.show();
 
             try {
                 if (entryId > 0) {
@@ -878,9 +883,13 @@ export class AddonModDataHelperProvider {
                 // Ignore errors.
             }
 
-            CoreEvents.trigger(AddonModDataProvider.ENTRY_CHANGED, { dataId, entryId, deleted: true }, siteId);
+            CoreEvents.trigger(ADDON_MOD_DATA_ENTRY_CHANGED, { dataId, entryId, deleted: true }, siteId);
 
-            CoreDomUtils.showToast('addon.mod_data.recorddeleted', true, ToastDuration.LONG);
+            CoreToasts.show({
+                message: 'addon.mod_data.recorddeleted',
+                translateMessage: true,
+                duration: ToastDuration.LONG,
+            });
 
             modal.dismiss();
         } catch {
@@ -969,7 +978,7 @@ export class AddonModDataHelperProvider {
             return 0;
         }
 
-        return CoreFileUploader.uploadOrReuploadFiles(files, AddonModDataProvider.COMPONENT, itemId, siteId);
+        return CoreFileUploader.uploadOrReuploadFiles(files, ADDON_MOD_DATA_COMPONENT, itemId, siteId);
     }
 
 }

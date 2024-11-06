@@ -19,9 +19,10 @@ import {
     AddonBlockRecentlyAccessedItems,
     AddonBlockRecentlyAccessedItemsItemCalculatedData,
 } from '../../services/recentlyaccesseditems';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreText } from '@singletons/text';
+import { CoreLoadings } from '@services/loadings';
 import { CoreUtils } from '@services/utils/utils';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render a recently accessed items block.
@@ -29,7 +30,11 @@ import { CoreUtils } from '@services/utils/utils';
 @Component({
     selector: 'addon-block-recentlyaccesseditems',
     templateUrl: 'addon-block-recentlyaccesseditems.html',
-    styleUrls: ['recentlyaccesseditems.scss'],
+    styleUrl: 'recentlyaccesseditems.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonBlockRecentlyAccessedItemsComponent extends CoreBlockBaseComponent implements OnInit {
 
@@ -87,8 +92,8 @@ export class AddonBlockRecentlyAccessedItemsComponent extends CoreBlockBaseCompo
         e.preventDefault();
         e.stopPropagation();
 
-        const url = CoreTextUtils.decodeHTMLEntities(item.viewurl);
-        const modal = await CoreDomUtils.showModalLoading();
+        const url = CoreText.decodeHTMLEntities(item.viewurl);
+        const modal = await CoreLoadings.show();
 
         try {
             await CoreSites.visitLink(url);

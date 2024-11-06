@@ -13,7 +13,9 @@
 // limitations under the License.
 
 // by rachmad
-// import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+/* *a/
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+/* */
 import { AfterViewInit, Component, OnInit, ViewChild, Renderer2 } from '@angular/core';
 
 import { IonRouterOutlet } from '@ionic/angular';
@@ -30,6 +32,7 @@ import { CorePlatform } from '@services/platform';
 import { CoreLogger } from '@singletons/logger';
 import { CorePromisedValue } from '@classes/promised-value';
 import { register } from 'swiper/element/bundle';
+import { CoreWait } from '@singletons/wait';
 
 // by rachmad
 import { CoreEvents } from '@singletons/events';
@@ -102,7 +105,7 @@ export class AppComponent implements OnInit, AfterViewInit {
                 // Check if the path changes due to the back navigation handler, to know if we're at root level.
                 // Ionic doc recommends IonRouterOutlet.canGoBack, but there's no easy way to get the current outlet from here.
                 // The path seems to change immediately (0 ms timeout), but use 50ms just in case.
-                await CoreUtils.wait(50);
+                await CoreWait.wait(50);
 
                 if (CoreNavigator.getCurrentPath() != initialPath) {
                     // Ionic has navigated back, nothing else to do.

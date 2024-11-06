@@ -18,7 +18,7 @@ import { CoreQuestionHelper } from '@features/question/services/question-helper'
 import { CoreDomUtils } from '@services/utils/dom';
 import { ItemReorderEventDetail } from '@ionic/angular';
 import { Translate } from '@singletons';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreWait } from '@singletons/wait';
 import { CorePlatform } from '@services/platform';
 
 /**
@@ -74,7 +74,10 @@ export class AddonQtypeOrderingComponent extends CoreQuestionBaseComponent<Addon
         this.question.items = itemsElements.map(element => {
             // Remove correctness icons from the content.
             const itemContentEl = element.querySelector<HTMLElement>('[data-itemcontent]');
-            itemContentEl?.querySelector('.icon.fa-check, .icon.fa-remove, .icon.fa-check-square')?.remove();
+            itemContentEl?.querySelector(
+                '.icon.fa-check, .icon.fa-remove, .icon.fa-check-square, .icon.fa-circle-check, .icon.fa-xmark, ' +
+                '.icon.fa-circle-xmark, .icon.fa-square-check, .icon.circle-half-stroke',
+            )?.remove();
 
             return {
                 id: element.id,
@@ -153,7 +156,7 @@ export class AddonQtypeOrderingComponent extends CoreQuestionBaseComponent<Addon
             complete: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
         });
 
-        await CoreUtils.nextTick();
+        await CoreWait.nextTick();
 
         // When moving an item to the first or last position, the button that was clicked will be hidden. In this case, we need to
         // focus the other button. Otherwise, re-focus the same button since the focus is lost in some cases.

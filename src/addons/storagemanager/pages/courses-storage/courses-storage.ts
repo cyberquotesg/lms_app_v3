@@ -17,10 +17,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CoreQueueRunner } from '@classes/queue-runner';
 import { CoreCourse, CoreCourseProvider } from '@features/course/services/course';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
-import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import { CoreCourses, CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { CoreSettingsHelper, CoreSiteSpaceUsage } from '@features/settings/services/settings-helper';
 import { CoreSiteHome } from '@features/sitehome/services/sitehome';
+import { CoreLoadings } from '@services/loadings';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -121,7 +121,7 @@ export class AddonStorageManagerCoursesStoragePage implements OnInit, OnDestroy 
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.deleting', true);
+        const modal = await CoreLoadings.show('core.deleting', true);
         const deletedCourseIds = this.completelyDownloadedCourses.map((course) => course.id);
 
         try {
@@ -160,7 +160,7 @@ export class AddonStorageManagerCoursesStoragePage implements OnInit, OnDestroy 
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.deleting', true);
+        const modal = await CoreLoadings.show('core.deleting', true);
 
         try {
             await CoreCourseHelper.deleteCourseFiles(course.id);
@@ -239,15 +239,9 @@ export class AddonStorageManagerCoursesStoragePage implements OnInit, OnDestroy 
      */
     private async calculateDownloadedCourseSize(courseId: number): Promise<number> {
         const sections = await CoreCourse.getSections(courseId);
-        const modules = sections.map((section) => section.modules).flat();
-        const promisedModuleSizes = modules.map(async (module) => {
-            const size = await CoreCourseModulePrefetchDelegate.getModuleStoredSize(module, courseId);
+        const modules = CoreCourse.getSectionsModules(sections);
 
-            return isNaN(size) ? 0 : size;
-        });
-        const moduleSizes = await Promise.all(promisedModuleSizes);
-
-        return moduleSizes.reduce((totalSize, moduleSize) => totalSize + moduleSize, 0);
+        return CoreCourseHelper.getModulesDownloadedSize(modules, courseId);
     }
 
     /**

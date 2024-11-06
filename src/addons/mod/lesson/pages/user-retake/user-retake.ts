@@ -19,7 +19,7 @@ import { CoreUser } from '@features/user/services/user';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
 import {
@@ -28,13 +28,13 @@ import {
     AddonModLessonAttemptsOverviewsStudentWSData,
     AddonModLessonGetUserAttemptWSResponse,
     AddonModLessonLessonWSData,
-    AddonModLessonProvider,
     AddonModLessonUserAttemptAnswerData,
     AddonModLessonUserAttemptAnswerPageWSData,
 } from '../../services/lesson';
 import { AddonModLessonAnswerData, AddonModLessonHelper } from '../../services/lesson-helper';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { ADDON_MOD_LESSON_COMPONENT } from '../../constants';
 
 /**
  * Page that displays a retake made by a certain user.
@@ -46,7 +46,7 @@ import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 })
 export class AddonModLessonUserRetakePage implements OnInit {
 
-    component = AddonModLessonProvider.COMPONENT;
+    component = ADDON_MOD_LESSON_COMPONENT;
     lesson?: AddonModLessonLessonWSData; // The lesson the retake belongs to.
     courseId!: number; // Course ID the lesson belongs to.
     selectedRetake?: number; // The retake to see.
@@ -145,7 +145,7 @@ export class AddonModLessonUserRetakePage implements OnInit {
                 throw new CoreError(Translate.instant('addon.mod_lesson.cannotfindattempt'));
             }
 
-            student.bestgrade = CoreTextUtils.roundToDecimals(student.bestgrade, 2);
+            student.bestgrade = CoreText.roundToDecimals(student.bestgrade, 2);
             student.attempts.forEach((retake) => {
                 if (!this.selectedRetake && this.retakeNumber == retake.try) {
                     // The retake specified as parameter exists. Use it.
@@ -222,7 +222,7 @@ export class AddonModLessonUserRetakePage implements OnInit {
 
         if (formattedData.userstats.gradeinfo) {
             // Completed.
-            formattedData.userstats.grade = CoreTextUtils.roundToDecimals(formattedData.userstats.grade, 2);
+            formattedData.userstats.grade = CoreText.roundToDecimals(formattedData.userstats.grade, 2);
             this.timeTakenReadable = CoreTime.formatTime(formattedData.userstats.timetotake);
         }
 

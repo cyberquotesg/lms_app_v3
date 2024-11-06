@@ -16,12 +16,13 @@ import { Injectable } from '@angular/core';
 import { CoreFileUploaderStoreFilesResult } from '@features/fileuploader/services/fileuploader';
 import { CoreFile } from '@services/file';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { makeSingleton } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { CorePath } from '@singletons/path';
 import { AddonModGlossaryOfflineEntryDBRecord, OFFLINE_ENTRIES_TABLE_NAME } from './database/glossary';
-import { AddonModGlossaryEntryOption, GLOSSARY_ENTRY_ADDED, GLOSSARY_ENTRY_DELETED, GLOSSARY_ENTRY_UPDATED } from './glossary';
+import { AddonModGlossaryEntryOption } from './glossary';
+import { ADDON_MOD_GLOSSARY_ENTRY_DELETED, ADDON_MOD_GLOSSARY_ENTRY_ADDED, ADDON_MOD_GLOSSARY_ENTRY_UPDATED } from '../constants';
 
 /**
  * Service to handle offline glossary.
@@ -47,7 +48,7 @@ export class AddonModGlossaryOfflineProvider {
 
         await site.getDb().deleteRecords(OFFLINE_ENTRIES_TABLE_NAME, conditions);
 
-        CoreEvents.trigger(GLOSSARY_ENTRY_DELETED, { glossaryId, timecreated });
+        CoreEvents.trigger(ADDON_MOD_GLOSSARY_ENTRY_DELETED, { glossaryId, timecreated });
     }
 
     /**
@@ -188,7 +189,7 @@ export class AddonModGlossaryOfflineProvider {
 
         await site.getDb().insertRecord(OFFLINE_ENTRIES_TABLE_NAME, entry);
 
-        CoreEvents.trigger(GLOSSARY_ENTRY_ADDED, { glossaryId, timecreated }, siteId);
+        CoreEvents.trigger(ADDON_MOD_GLOSSARY_ENTRY_ADDED, { glossaryId, timecreated }, siteId);
 
         return false;
     }
@@ -223,7 +224,7 @@ export class AddonModGlossaryOfflineProvider {
             userid: site.getUserId(),
         });
 
-        CoreEvents.trigger(GLOSSARY_ENTRY_UPDATED, {
+        CoreEvents.trigger(ADDON_MOD_GLOSSARY_ENTRY_UPDATED, {
             glossaryId: originalEntry.glossaryid,
             timecreated: originalEntry.timecreated,
         });
@@ -268,9 +269,9 @@ export class AddonModGlossaryOfflineProvider {
      */
     protected parseRecord(record: AddonModGlossaryOfflineEntryDBRecord): AddonModGlossaryOfflineEntry {
         return Object.assign(record, {
-            options: <Record<string, AddonModGlossaryEntryOption>> CoreTextUtils.parseJSON(record.options),
+            options: <Record<string, AddonModGlossaryEntryOption>> CoreText.parseJSON(record.options),
             attachments: record.attachments ?
-                <CoreFileUploaderStoreFilesResult> CoreTextUtils.parseJSON(record.attachments) : undefined,
+                <CoreFileUploaderStoreFilesResult> CoreText.parseJSON(record.attachments) : undefined,
         });
     }
 

@@ -19,15 +19,13 @@ import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { CoreFile } from '@services/file';
 import { CoreFileEntry } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils, CoreTextFormat } from '@services/utils/text';
+import { CoreText, CoreTextFormat } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreFormFields } from '@singletons/form';
 import { AddonModWorkshopAssessmentStrategyFieldErrors } from '../components/assessment-strategy/assessment-strategy';
 import { AddonWorkshopAssessmentStrategyDelegate } from './assessment-strategy-delegate';
 import {
-    AddonModWorkshopExampleMode,
-    AddonModWorkshopPhase,
     AddonModWorkshopUserOptions,
     AddonModWorkshopData,
     AddonModWorkshop,
@@ -36,12 +34,16 @@ import {
     AddonModWorkshopPhaseTaskData,
     AddonModWorkshopSubmissionAssessmentData,
     AddonModWorkshopGetAssessmentFormDefinitionData,
-    AddonModWorkshopAction,
-    AddonModWorkshopOverallFeedbackMode,
     AddonModWorkshopGetAssessmentFormFieldsParsedData,
 } from './workshop';
 import { AddonModWorkshopOffline, AddonModWorkshopOfflineSubmission } from './workshop-offline';
-import { ADDON_MOD_WORKSHOP_COMPONENT } from '@addons/mod/workshop/constants';
+import {
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    AddonModWorkshopAction,
+    AddonModWorkshopExampleMode,
+    AddonModWorkshopOverallFeedbackMode,
+    AddonModWorkshopPhase,
+} from '@addons/mod/workshop/constants';
 
 /**
  * Helper to gather some common functions for workshop.
@@ -562,7 +564,7 @@ export class AddonModWorkshopHelperProvider {
             return '0';
         }
 
-        value = CoreTextUtils.roundToDecimals(max * value / 100, decimals);
+        value = CoreText.roundToDecimals(max * value / 100, decimals);
 
         return CoreUtils.formatFloat(value);
     }

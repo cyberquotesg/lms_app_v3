@@ -16,9 +16,7 @@ import { NgModule } from '@angular/core';
 
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreCourseComponentsModule } from '@features/course/components/components.module';
-import { AddonModQuizConnectionErrorComponent } from './connection-error/connection-error';
 import { AddonModQuizIndexComponent } from './index/index';
-import { AddonModQuizNavigationModalComponent } from './navigation-modal/navigation-modal';
 import { AddonModQuizAttemptInfoComponent } from './attempt-info/attempt-info';
 import { AddonModQuizAttemptStateComponent } from './attempt-state/attempt-state';
 import { AddonModQuizQuestionCardComponent } from './question-card/question-card';
@@ -28,8 +26,6 @@ import { AddonModQuizQuestionCardComponent } from './question-card/question-card
         AddonModQuizAttemptInfoComponent,
         AddonModQuizAttemptStateComponent,
         AddonModQuizIndexComponent,
-        AddonModQuizConnectionErrorComponent,
-        AddonModQuizNavigationModalComponent,
         AddonModQuizQuestionCardComponent,
     ],
     imports: [
@@ -40,8 +36,6 @@ import { AddonModQuizQuestionCardComponent } from './question-card/question-card
         AddonModQuizAttemptInfoComponent,
         AddonModQuizAttemptStateComponent,
         AddonModQuizIndexComponent,
-        AddonModQuizConnectionErrorComponent,
-        AddonModQuizNavigationModalComponent,
         AddonModQuizQuestionCardComponent,
 
     ],

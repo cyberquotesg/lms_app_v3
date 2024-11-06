@@ -28,6 +28,7 @@
     <allow-intent href="sms:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
+    <hook src="scripts/cordova-hooks/before_plugin_add.sh" type="before_plugin_add" />
     <preference name="permissions" value="none" />
     <preference name="orientation" value="default" />
     <preference name="target-device" value="universal" />
@@ -37,7 +38,7 @@
     <preference name="UIWebViewBounce" value="false" />
     <preference name="DisallowOverscroll" value="true" />
     <preference name="prerendered-icon" value="true" />
-    <preference name="AppendUserAgent" value="MoodleMobile 4.4.1 (44100)" />
+    <preference name="AppendUserAgent" value="MoodleMobile 4.5.0 (45002)" />
     <preference name="BackupWebStorage" value="none" />
     <preference name="ScrollEnabled" value="false" />
     <preference name="KeyboardDisplayRequiresUserAction" value="false" />
@@ -62,7 +63,7 @@
     <preference name="iosPersistentFileLocation" value="Compatibility" />
     <preference name="iosScheme" value="moodleappfs" />
     <preference name="WKWebViewOnly" value="true" />
-    <preference name="WKFullScreenEnabled" value="false" />
+    <preference name="WKFullScreenEnabled" value="true" />
     <preference name="AndroidXEnabled" value="true" />
     <preference name="GradlePluginGoogleServicesEnabled" value="true" />
     <preference name="GradlePluginGoogleServicesVersion" value="4.3.15" />

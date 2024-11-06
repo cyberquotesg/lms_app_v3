@@ -1,13 +1,13 @@
 @import "./globals.scss";
 
-html.force-safe-area-margins {
+:root.force-safe-area-margins {
     --ion-safe-area-left: 40px;
     --ion-safe-area-right: 40px;
     --ion-safe-area-top: 40px;
     --ion-safe-area-bottom: 40px;
 }
 
-html {
+:root {
     --zoom-level: 100%;
     zoom: var(--zoom-level);
 
@@ -21,7 +21,7 @@ a {
     cursor: pointer;
 }
 
-html[dir=rtl] {
+:root[dir=rtl] {
     --rotate-expandable: rotate(-90deg);
 }
 
@@ -180,6 +180,8 @@ core-split-view.menu-and-content {
 [aria-current="page"],
 .item.item-current {
     @include safe-area-border-start(var(--selected-item-border-width), solid,  var(--selected-item-color));
+    --padding-start: calc(16px - var(--selected-item-border-width));
+
     > * {
         --ion-safe-area-left: 0px;
     }
@@ -207,9 +209,7 @@ img[core-external-content]:not([src]) {
     border-radius: var(--mdl-shape-borderRadius-lg);
 }
 
-ion-list.core-course-module-list-wrapper,
 .list-item-limited-width,
-.core-course-module-list-wrapper,
 ion-content.limited-width > :not([slot]) {
     max-width: var(--list-item-max-width);
     margin-left: auto !important;
@@ -280,7 +280,7 @@ mark, .matchtext {
 // Different levels of padding.
 @for $i from 0 through 15 {
     .core-padding-#{$i} {
-        @include padding(null, null, null, 15px * $i + 16px);
+        @include padding(null, null, null, 16px * $i);
     }
 }
 
@@ -488,7 +488,7 @@ video::-webkit-media-text-track-display {
 /**
  * https://github.com/ionic-team/ionic-framework/blob/6ffbdbb3b2b69290cf25753d535bc7483bd7c6e8/BREAKING.md#css-utilities
  */
-[hidden] {
+[hidden], .hidden {
     display: none !important;
 }
 

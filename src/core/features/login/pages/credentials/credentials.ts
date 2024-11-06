@@ -24,7 +24,7 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { Translate } from '@singletons';
 import { CoreSitePublicConfigResponse, CoreUnauthenticatedSite } from '@classes/sites/unauthenticated-site';
-import { CoreEvents } from '@singletons/events';
+import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreNavigator } from '@services/navigator';
 import { CoreForms } from '@singletons/form';
 import { CoreUserSupport } from '@features/user/services/support';
@@ -33,19 +33,22 @@ import { CoreUserGuestSupportConfig } from '@features/user/classes/support/guest
 import { SafeHtml } from '@angular/platform-browser';
 import { CorePlatform } from '@services/platform';
 import { CoreSitesFactory } from '@services/sites-factory';
-import { EMAIL_SIGNUP_FEATURE_NAME, FORGOTTEN_PASSWORD_FEATURE_NAME } from '@features/login/constants';
+import {
+    ALWAYS_SHOW_LOGIN_FORM_CHANGED,
+    EMAIL_SIGNUP_FEATURE_NAME,
+    FORGOTTEN_PASSWORD_FEATURE_NAME,
+} from '@features/login/constants';
 import { CoreCustomURLSchemes } from '@services/urlschemes';
 import { CoreSiteError } from '@classes/errors/siteerror';
-
-// by rachmad
-import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { CoreKeyboard } from '@singletons/keyboard';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page to enter the user credentials.
  */
 @Component({
     selector: 'page-core-login-credentials',
-    templateUrl: 'credentials.new.html',
+    templateUrl: 'credentials.html',
     styleUrls: ['../../login.scss'],
 })
 export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
@@ -68,6 +71,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
     siteConfig?: CoreSitePublicConfigResponse;
     siteCheckError = '';
     displaySiteUrl = false;
+    showLoginForm = true;
 
     protected siteCheck?: CoreSiteCheckResponse;
     protected eventThrown = false;
@@ -75,13 +79,17 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
     protected siteId?: string;
     protected urlToOpen?: string;
     protected valueChangeSubscription?: Subscription;
+    protected alwaysShowLoginFormObserver?: CoreEventObserver;
+    protected loginObserver?: CoreEventObserver;
 
     constructor(
         protected fb: FormBuilder,
-
-        // by rachmad
-        protected CH: CqHelper,
-    ) {}
+    ) {
+        // Listen to LOGIN event to determine if login was successful, since the login can be done using QR, SSO, etc.
+        this.loginObserver = CoreEvents.on(CoreEvents.LOGIN, ({ siteId }) => {
+            this.siteId = siteId;
+        });
+    }
 
     /**
      * @inheritdoc
@@ -142,6 +150,10 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
                 }
             });
         }
+
+        this.alwaysShowLoginFormObserver = CoreEvents.on(ALWAYS_SHOW_LOGIN_FORM_CHANGED, async () => {
+            this.showLoginForm = await CoreLoginHelper.shouldShowLoginForm(this.siteConfig);
+        });
     }
 
     /**
@@ -196,6 +208,8 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
      * Treat the site configuration (if it exists).
      */
     protected async treatSiteConfig(): Promise<void> {
+        this.showLoginForm = await CoreLoginHelper.shouldShowLoginForm(this.siteConfig);
+
         if (!this.siteConfig) {
             this.authInstructions = undefined;
             this.canSignup = false;
@@ -255,12 +269,11 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
      * @param e Event.
      * @returns Promise resolved when done.
      */
-    /* by rachmad *a/
     async login(e?: Event): Promise<void> {
         e?.preventDefault();
         e?.stopPropagation();
 
-        CoreApp.closeKeyboard();
+        CoreKeyboard.close();
 
         // Get input data.
         const siteUrl = this.site.getURL();
@@ -284,19 +297,17 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         // Start the authentication process.
         try {
             const data = await CoreSites.getUserToken(siteUrl, username, password);
 
-            const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
+            await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
 
             // Reset fields so the data is not in the view anymore.
             this.credForm.controls['username'].reset();
             this.credForm.controls['password'].reset();
-
-            this.siteId = id;
 
             await CoreNavigator.navigateToSiteHome({ params: { urlToOpen: this.urlToOpen } });
         } catch (error) {
@@ -320,7 +331,6 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             CoreForms.triggerFormSubmittedEvent(this.formElement, true);
         }
     }
-    /**/
 
     /**
      * Exceeded attempts message clicked.
@@ -372,94 +382,8 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             this.siteId,
         );
         this.valueChangeSubscription?.unsubscribe();
+        this.alwaysShowLoginFormObserver?.off();
+        this.loginObserver?.off();
     }
 
-    /* by rachmad */
-    login(e?: Event): void
-    {
-        this.CH.getSiteConfig().then((publicConfig) => {
-            if (publicConfig.captcha_enabled)
-            {
-                this.CH.getRecaptcha("login", (value) => {
-                    this.loginOriginal("captcha", value, e);
-                });
-            }
-            else if (publicConfig.csrf_token_enabled)
-            {
-                this.CH.requestCsrfToken("login", (value) => {
-                    this.loginOriginal("csrf_token", value, e);
-                });
-            }
-            else
-            {
-                this.loginOriginal("", "", e);
-            }
-        });
-    }
-    async loginOriginal(captchaOrCsrfToken: string, value: string, e?: Event): Promise<void>
-    {
-        e?.preventDefault();
-        e?.stopPropagation();
-
-        CoreApp.closeKeyboard();
-
-        // Get input data.
-        const siteUrl = this.site.getURL();
-        const username = this.credForm.value.username;
-        const password = this.credForm.value.password;
-
-        if (!username) {
-            CoreDomUtils.showErrorModal('core.login.usernamerequired', true);
-
-            return;
-        }
-        if (!password) {
-            CoreDomUtils.showErrorModal('core.login.passwordrequired', true);
-
-            return;
-        }
-
-        if (!CoreNetwork.isOnline()) {
-            CoreDomUtils.showErrorModal('core.networkerrormsg', true);
-
-            return;
-        }
-
-        const modal = await CoreDomUtils.showModalLoading();
-
-        // Start the authentication process.
-        try {
-            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrCsrfToken, value);
-
-            const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
-
-            // Reset fields so the data is not in the view anymore.
-            this.credForm.controls['username'].reset();
-            this.credForm.controls['password'].reset();
-
-            this.siteId = id;
-
-            await CoreNavigator.navigateToSiteHome({ params: { urlToOpen: this.urlToOpen } });
-        } catch (error) {
-            if (error instanceof CoreSiteError && CoreLoginHelper.isAppUnsupportedError(error)) {
-                await CoreLoginHelper.showAppUnsupportedModal(siteUrl, this.site, error.debug);
-            } else {
-                CoreLoginHelper.treatUserTokenError(siteUrl, error, username, password);
-            }
-
-            if (error.loggedout) {
-                CoreNavigator.navigate('/login/sites', { reset: true });
-            } else if (error.errorcode == 'forcepasswordchangenotice') {
-                // Reset password field.
-                this.credForm.controls.password.reset();
-            } else if (error.errorcode === 'invalidlogin') {
-                this.loginAttempts++;
-            }
-        } finally {
-            modal.dismiss();
-
-            CoreForms.triggerFormSubmittedEvent(this.formElement, true);
-        }
-    }
 }
-

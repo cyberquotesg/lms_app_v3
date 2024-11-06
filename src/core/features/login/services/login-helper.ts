@@ -22,8 +22,7 @@ import { CoreEvents, CoreEventSessionExpiredData, CoreEventSiteData } from '@sin
 import { CoreSites, CoreLoginSiteInfo, CoreSiteBasicInfo } from '@services/sites';
 import { CoreWS, CoreWSExternalWarning } from '@services/ws';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlParams, CoreUrlUtils } from '@services/utils/url';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreConstants } from '@/core/constants';
 import { CoreSite } from '@classes/sites/site';
@@ -31,10 +30,9 @@ import { CoreError } from '@classes/errors/error';
 import { CoreWSError } from '@classes/errors/wserror';
 import { DomSanitizer, makeSingleton, Translate } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
-import { CoreUrl } from '@singletons/url';
+import { CoreUrl, CoreUrlParams } from '@singletons/url';
 import { CoreNavigator, CoreRedirectPayload } from '@services/navigator';
 import { CoreCanceledError } from '@classes/errors/cancelederror';
-import { CoreCustomURLSchemes } from '@services/urlschemes';
 import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
 import { CorePath } from '@singletons/path';
 import { CorePromisedValue } from '@classes/promised-value';
@@ -48,6 +46,8 @@ import {
     TypeOfLogin,
 } from '@classes/sites/unauthenticated-site';
 import {
+    ALWAYS_SHOW_LOGIN_FORM,
+    ALWAYS_SHOW_LOGIN_FORM_CHANGED,
     APP_UNSUPPORTED_CHURN,
     EMAIL_SIGNUP_FEATURE_NAME,
     FAQ_QRCODE_IMAGE_HTML,
@@ -58,6 +58,9 @@ import {
 } from '../constants';
 import { LazyRoutesModule } from '@/app/app-routing.module';
 import { CoreSiteError, CoreSiteErrorDebug } from '@classes/errors/siteerror';
+import { CoreQRScan } from '@services/qrscan';
+import { CoreLoadings } from '@services/loadings';
+import { CoreErrorHelper } from '@services/error-helper';
 
 /**
  * Helper provider that provides some common features regarding authentication.
@@ -174,7 +177,7 @@ export class CoreLoginHelperProvider {
         }
 
         // Check if password reset can be done through the app.
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             const canReset = await this.canRequestPasswordReset(siteUrl);
@@ -233,7 +236,7 @@ export class CoreLoginHelperProvider {
      *
      * @param config Site public config.
      * @returns Disabled features.
-     * @deprecated since 4.4. No longer needed.
+     * @deprecated since 4.4. Shoudn't be used since disabled features are not treated by this function anymore.
      */
     getDisabledFeatures(config?: CoreSitePublicConfigResponse): string {
         const disabledFeatures = config?.tool_mobile_disabledfeatures;
@@ -241,7 +244,7 @@ export class CoreLoginHelperProvider {
             return '';
         }
 
-        return CoreTextUtils.treatDisabledFeatures(disabledFeatures);
+        return disabledFeatures;
     }
 
     /**
@@ -356,7 +359,7 @@ export class CoreLoginHelperProvider {
 
         if (siteConfig.identityproviders && siteConfig.identityproviders.length) {
             siteConfig.identityproviders.forEach((provider) => {
-                const urlParams = CoreUrlUtils.extractUrlParams(provider.url);
+                const urlParams = CoreUrl.extractUrlParams(provider.url);
 
                 if (
                     provider.url &&
@@ -397,7 +400,7 @@ export class CoreLoginHelperProvider {
 
         if (siteConfig.identityproviders && siteConfig.identityproviders.length) {
             siteConfig.identityproviders.forEach((provider) => {
-                const urlParams = CoreUrlUtils.extractUrlParams(provider.url);
+                const urlParams = CoreUrl.extractUrlParams(provider.url);
 
                 if (provider.url && (provider.url.indexOf(httpsUrl) != -1 || provider.url.indexOf(httpUrl) != -1) &&
                         !site.isFeatureDisabled(IDENTITY_PROVIDER_FEATURE_NAME_PREFIX + urlParams.id)) {
@@ -510,8 +513,12 @@ export class CoreLoginHelperProvider {
      * @deprecated since 4.4. Please use isFeatureDisabled in a site instance.
      */
     isFeatureDisabled(feature: string, config?: CoreSitePublicConfigResponse): boolean {
-        // eslint-disable-next-line deprecation/deprecation
-        return this.isFeatureDisabled(feature, config);
+       // eslint-disable-next-line deprecation/deprecation
+       const disabledFeatures = this.getDisabledFeatures(config);
+
+        const regEx = new RegExp('(,|^)' + feature + '(,|$)', 'g');
+
+        return !!disabledFeatures.match(regEx);
     }
 
     /**
@@ -638,13 +645,13 @@ export class CoreLoginHelperProvider {
             return false;
         }
 
-        const params = CoreUrlUtils.extractUrlParams(provider.url);
+        const params = CoreUrl.extractUrlParams(provider.url);
 
         if (!params.id) {
             return false;
         }
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             const loginUrl = await this.prepareForSSOLogin(siteUrl, undefined, launchUrl, redirectData, {
@@ -681,7 +688,7 @@ export class CoreLoginHelperProvider {
         launchUrl?: string,
         redirectData?: CoreRedirectPayload,
     ): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             const loginUrl = await this.prepareForSSOLogin(siteUrl, service, launchUrl, redirectData);
@@ -826,7 +833,7 @@ export class CoreLoginHelperProvider {
         loginUrl += '&urlscheme=' + CoreConstants.CONFIG.customurlscheme;
 
         if (urlParams) {
-            loginUrl = CoreUrlUtils.addParamsToUrl(loginUrl, urlParams);
+            loginUrl = CoreUrl.addParamsToUrl(loginUrl, urlParams);
         }
 
         // Store the siteurl and passport in CoreConfigProvider for persistence.
@@ -853,11 +860,11 @@ export class CoreLoginHelperProvider {
         const params: Record<string, string> = {};
 
         if (username) {
-            params.username = username;
+            params.username = username.trim();
         }
 
         if (email) {
-            params.email = email;
+            params.email = email.trim();
         }
 
         return CoreWS.callAjax('core_auth_request_password_reset', params, { siteUrl });
@@ -919,6 +926,21 @@ export class CoreLoginHelperProvider {
         } finally {
             this.sessionExpiredCheckingSite[siteId || ''] = false;
         }
+    }
+
+    /**
+     * Check if the default login form should be displayed.
+     *
+     * @param config Site public config.
+     * @returns True if the login form should be displayed.
+     */
+    async shouldShowLoginForm(config?: CoreSitePublicConfigResponse): Promise<boolean> {
+        // Only hide the form if the setting exists and is set to 0.
+        if (config?.showloginform === 0) {
+            return Boolean(await CoreConfig.get(ALWAYS_SHOW_LOGIN_FORM, 0));
+        }
+
+        return true;
     }
 
     /**
@@ -1062,7 +1084,7 @@ export class CoreLoginHelperProvider {
             await CoreDomUtils.showConfirm(message, title, okText, cancelText);
 
             // Call the WS to resend the confirmation email.
-            const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            const modal = await CoreLoadings.show('core.sending', true);
             const data = { username, password };
             const preSets = { siteUrl };
 
@@ -1098,7 +1120,7 @@ export class CoreLoginHelperProvider {
      * @returns Promise.
      */
     protected async canResendEmail(siteUrl: string): Promise<boolean> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         // We don't have site info before login, the only way to check if the WS is available is by calling it.
         try {
@@ -1140,16 +1162,16 @@ export class CoreLoginHelperProvider {
 
         switch (errorCode) {
             case 'forcepasswordchangenotice':
-                this.openChangePassword(siteUrl, CoreTextUtils.getErrorMessageFromError(error) ?? '');
+                this.openChangePassword(siteUrl, CoreErrorHelper.getErrorMessageFromError(error) ?? '');
                 break;
             case 'usernotconfirmed':
                 this.showNotConfirmedModal(siteUrl, undefined, username, password);
                 break;
             case 'connecttomoodleapp':
-                this.showMoodleAppNoticeModal(CoreTextUtils.getErrorMessageFromError(error) ?? '');
+                this.showMoodleAppNoticeModal(CoreErrorHelper.getErrorMessageFromError(error) ?? '');
                 break;
             case 'connecttoworkplaceapp':
-                this.showWorkplaceNoticeModal(CoreTextUtils.getErrorMessageFromError(error) ?? '');
+                this.showWorkplaceNoticeModal(CoreErrorHelper.getErrorMessageFromError(error) ?? '');
                 break;
             case 'invalidlogin':
                 this.showInvalidLoginModal(error);
@@ -1172,7 +1194,7 @@ export class CoreLoginHelperProvider {
 
         const serializedData = await CoreConfig.get<string>(CoreConstants.LOGIN_LAUNCH_DATA);
 
-        const data = <StoredLoginLaunchData | null> CoreTextUtils.parseJSON(serializedData, null);
+        const data = <StoredLoginLaunchData | null> CoreText.parseJSON(serializedData, null);
         if (data === null) {
             throw new CoreError('No launch data stored.');
         }
@@ -1251,7 +1273,7 @@ export class CoreLoginHelperProvider {
      * @returns Whether the QR reader should be displayed in site screen.
      */
     displayQRInSiteScreen(): boolean {
-        return CoreUtils.canScanQR() && (CoreConstants.CONFIG.displayqronsitescreen === undefined ||
+        return CoreQRScan.canScanQR() && (CoreConstants.CONFIG.displayqronsitescreen === undefined ||
             !!CoreConstants.CONFIG.displayqronsitescreen);
     }
 
@@ -1262,7 +1284,7 @@ export class CoreLoginHelperProvider {
      * @returns Whether the QR reader should be displayed in credentials screen.
      */
     async displayQRInCredentialsScreen(qrCodeType = CoreSiteQRCodeType.QR_CODE_LOGIN): Promise<boolean> {
-        if (!CoreUtils.canScanQR()) {
+        if (!CoreQRScan.canScanQR()) {
             return false;
         }
 
@@ -1320,23 +1342,19 @@ export class CoreLoginHelperProvider {
      */
     async scanQR(): Promise<void> {
         // Scan for a QR code.
-        const text = await CoreUtils.scanQR();
+        const text = await CoreQRScan.scanQRWithUrlHandling();
 
-        if (text && CoreCustomURLSchemes.isCustomURL(text)) {
-            try {
-                await CoreCustomURLSchemes.handleCustomURL(text);
-            } catch (error) {
-                CoreCustomURLSchemes.treatHandleCustomURLError(error);
-            }
-        } else if (text) {
-            // Not a custom URL scheme, check if it's a URL scheme to another app.
-            const scheme = CoreUrlUtils.getUrlProtocol(text);
+        if (!text) {
+            return;
+        }
 
-            if (scheme && scheme != 'http' && scheme != 'https') {
-                CoreDomUtils.showErrorModal(Translate.instant('core.errorurlschemeinvalidscheme', { $a: text }));
-            } else {
-                CoreDomUtils.showErrorModal('core.login.errorqrnoscheme', true);
-            }
+        // Not a custom URL scheme, check if it's a URL scheme to another app.
+        const scheme = CoreUrl.getUrlProtocol(text);
+
+        if (scheme && scheme != 'http' && scheme != 'https') {
+            CoreDomUtils.showErrorModal(Translate.instant('core.errorurlschemeinvalidscheme', { $a: text }));
+        } else {
+            CoreDomUtils.showErrorModal('core.login.errorqrnoscheme', true);
         }
     }
 
@@ -1554,7 +1572,7 @@ export class CoreLoginHelperProvider {
     protected async getPasswordResets(): Promise<Record<string, number>> {
         const passwordResetsJson = await CoreConfig.get(CoreLoginHelperProvider.PASSWORD_RESETS_CONFIG_KEY, '{}');
 
-        return CoreTextUtils.parseJSON<Record<string, number>>(passwordResetsJson, {});
+        return CoreText.parseJSON<Record<string, number>>(passwordResetsJson, {});
     }
 
 }
@@ -1689,6 +1707,7 @@ declare module '@singletons/events' {
      * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
      */
     export interface CoreEventsData {
+        [ALWAYS_SHOW_LOGIN_FORM_CHANGED]: { value: number };
         [APP_UNSUPPORTED_CHURN]: { siteUrl: string; debug?: CoreSiteErrorDebug };
     }
 

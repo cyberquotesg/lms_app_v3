@@ -17,6 +17,7 @@ import { findElement, mock, mockSingleton, renderPageComponent, requireElement }
 import { CoreLoginError } from '@classes/errors/loginerror';
 import { CoreLoginComponentsModule } from '@features/login/components/components.module';
 import { CoreLoginCredentialsPage } from '@features/login/pages/credentials/credentials';
+import { CoreLoginCredentialsPageNew } from '@features/login/pages/credentials/credentials.new';
 import { CoreLang } from '@services/lang';
 import { CoreSites } from '@services/sites';
 import { Http } from '@singletons';
@@ -82,7 +83,7 @@ describe('Credentials page', () => {
         mockSingleton(CoreLoginHelper, { getAvailableSites: async () => [{ url: siteUrl, name: 'Example Campus' }] });
 
         // Act.
-        const fixture = await renderPageComponent(CoreLoginCredentialsPage, {
+        const fixture = await renderPageComponent(CoreLoginCredentialsPageNew, {
             routeParams: { siteUrl },
             imports: [
                 CoreSharedModule,
@@ -135,7 +136,7 @@ describe('Credentials page', () => {
 
         mockSingleton(CoreLoginHelper, { getAvailableSites: async () => [] });
 
-        const fixture = await renderPageComponent(CoreLoginCredentialsPage, {
+        const fixture = await renderPageComponent(CoreLoginCredentialsPageNew, {
             routeParams: { siteUrl, siteCheck },
             imports: [CoreSharedModule, CoreLoginComponentsModule],
         });

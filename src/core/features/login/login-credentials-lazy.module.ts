@@ -18,11 +18,12 @@ import { RouterModule, Routes } from '@angular/router';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreLoginComponentsModule } from '@features/login/components/components.module';
 import { CoreLoginCredentialsPage } from '@features/login/pages/credentials/credentials';
+import { CoreLoginCredentialsPageNew } from '@features/login/pages/credentials/credentials.new';
 
 const routes: Routes = [
     {
         path: '',
-        component: CoreLoginCredentialsPage,
+        component: CoreLoginCredentialsPageNew,
     },
 ];
 
@@ -34,6 +35,7 @@ const routes: Routes = [
     ],
     declarations: [
         CoreLoginCredentialsPage,
+        CoreLoginCredentialsPageNew,
     ],
 })
 export class CoreLoginCredentialsLazyModule {}

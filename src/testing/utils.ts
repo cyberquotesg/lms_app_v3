@@ -20,14 +20,14 @@ import { sep } from 'path';
 
 import { CORE_SITE_SCHEMAS } from '@services/sites';
 import { ApplicationInit, CoreSingletonProxy, Translate } from '@singletons';
-import { CoreTextUtilsProvider } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 
 import { CoreExternalContentDirectiveStub } from './stubs/directives/core-external-content';
 import { CoreNetwork } from '@services/network';
 import { CorePlatform } from '@services/platform';
 import { CoreDB } from '@services/db';
 import { CoreNavigator, CoreNavigatorService } from '@services/navigator';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreLoadings } from '@services/loadings';
 import { TranslateModule, TranslateService, TranslateStore } from '@ngx-translate/core';
 import { CoreIonLoadingElement } from '@classes/ion-loading';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -44,7 +44,6 @@ abstract class WrapperComponent<U> {
 type ServiceInjectionToken = AbstractType<unknown> | Type<unknown> | string;
 
 let testBedInitialized = false;
-const textUtils = new CoreTextUtilsProvider();
 const DEFAULT_SERVICE_SINGLETON_MOCKS: [CoreSingletonProxy, unknown][] = [
     [Translate, mock({
         instant: key => key,
@@ -71,8 +70,8 @@ const DEFAULT_SERVICE_SINGLETON_MOCKS: [CoreSingletonProxy, unknown][] = [
         isOnline: () => true,
         onChange: () => new Observable(),
     })],
-    [CoreDomUtils, mock({
-        showModalLoading: () => Promise.resolve(mock<CoreIonLoadingElement>({ dismiss: jest.fn() })),
+    [CoreLoadings, mock({
+        show: () => Promise.resolve(mock<CoreIonLoadingElement>({ dismiss: jest.fn() })),
     })],
     [CoreUtils, mock(new CoreUtilsProvider(), {
         nextTick: () => Promise.resolve(),
@@ -479,7 +478,7 @@ export async function renderWrapperComponent<T>(
 ): Promise<WrapperComponentFixture<T>> {
     const inputAttributes = Object
         .entries(inputs)
-        .map(([name, value]) => `[${name}]="${textUtils.escapeHTML(JSON.stringify(value)).replace(/\//g, '\\/')}"`)
+        .map(([name, value]) => `[${name}]="${CoreText.escapeHTML(JSON.stringify(value)).replace(/\//g, '\\/')}"`)
         .join(' ');
 
     return renderTemplate(component, `<${tag} ${inputAttributes}></${tag}>`, config);

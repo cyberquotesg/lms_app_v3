@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CorePromisedValue } from '@classes/promised-value';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreWait } from '@singletons/wait';
 import { makeSingleton, NgZone } from '@singletons';
 import { TestingBehatElementLocator, TestingBehatFindOptions } from './behat-runtime';
 
@@ -44,7 +44,26 @@ export class TestingBehatDomUtilsService {
      * @returns Whether the element is visible or not.
      */
     isElementVisible(element: HTMLElement, container?: HTMLElement): boolean {
-        if (element.getAttribute('aria-hidden') === 'true' || getComputedStyle(element).display === 'none') {
+        if (element.getAttribute('aria-hidden') === 'true') {
+            if (
+                element.tagName === 'ION-ROUTER-OUTLET' &&
+                element === document.body.querySelector('ion-app > ion-router-outlet') &&
+                (document.body.querySelector('ion-toast.hydrated:not(.overlay-hidden)') ||
+                !document.body.querySelector(
+                    'ion-action-sheet.hydrated:not(.overlay-hidden), ion-alert.hydrated:not(.overlay-hidden)\
+                    ion-loading.hydrated:not(.overlay-hidden), ion-modal.hydrated:not(.overlay-hidden),\
+                    ion-picker.hydrated:not(.overlay-hidden), ion-popover.hydrated:not(.overlay-hidden)',
+                ))
+            ) {
+                // Main ion-router-outlet is aria-hidden when a toast is open but the UI is not blocked...
+                // It also may be hidden due to an error in Ionic. See fixOverlayAriaHidden function.
+                return true;
+            }
+
+            return false;
+        }
+
+        if (getComputedStyle(element).display === 'none') {
             return false;
         }
 
@@ -124,9 +143,13 @@ export class TestingBehatDomUtilsService {
      */
     protected findElementsBasedOnTextWithinWithExact(
         container: HTMLElement,
-        text: string,
+        text: string | string[],
         options: TestingBehatFindOptions,
     ): ElementsWithExact[] {
+        if (Array.isArray(text)) {
+            return text.map((text) => this.findElementsBasedOnTextWithinWithExact(container, text, options)).flat();
+        }
+
         // Escape double quotes to prevent breaking the query selector.
         const escapedText = text.replace(/"/g, '\\"');
         const attributesSelector = `[aria-label*="${escapedText}"], a[title*="${escapedText}"], ` +
@@ -266,7 +289,7 @@ export class TestingBehatDomUtilsService {
      */
     protected findElementsBasedOnTextWithin(
         container: HTMLElement,
-        text: string,
+        text: string | string[],
         options: TestingBehatFindOptions,
     ): HTMLElement[] {
         const elements = this.findElementsBasedOnTextWithinWithExact(container, text, options);
@@ -352,11 +375,12 @@ export class TestingBehatDomUtilsService {
             return element;
         }
 
-        if (element === container || !element.parentElement) {
+        const parent = this.getParentElement(element);
+        if (element === container || !parent) {
             return null;
         }
 
-        return this.getClosestMatching(element.parentElement, selector, container);
+        return this.getClosestMatching(parent, selector, container);
     }
 
     /**
@@ -365,25 +389,22 @@ export class TestingBehatDomUtilsService {
      * @param containerName Whether to search inside the a container name.
      * @returns Found top container elements.
      */
-    protected getCurrentTopContainerElements(containerName: string): HTMLElement[] {
-        const topContainers: HTMLElement[] = [];
-        let containers = Array.from(document.querySelectorAll<HTMLElement>([
-            'ion-alert.hydrated',
-            'ion-popover.hydrated',
-            'ion-action-sheet.hydrated',
-            'ion-modal.hydrated',
+    protected getCurrentTopContainerElements(containerName?: string): HTMLElement[] {
+        let containers = Array.from(document.body.querySelectorAll<HTMLElement>([
+            'ion-alert.hydrated:not(.overlay-hidden)',
+            'ion-popover.hydrated:not(.overlay-hidden)',
+            'ion-action-sheet.hydrated:not(.overlay-hidden)',
+            'ion-modal.hydrated:not(.overlay-hidden)',
             'core-user-tours-user-tour.is-active',
-            'ion-toast.hydrated',
-            'page-core-mainmenu',
-            'ion-app',
+            'ion-toast.hydrated:not(.overlay-hidden)',
+            'page-core-mainmenu > ion-tabs:not(.tabshidden) > .mainmenu-tabs',
+            'page-core-mainmenu > .core-network-message',
+            '.ion-page:not(.ion-page-hidden)',
         ].join(', ')));
+        const ionApp = document.querySelector<HTMLElement>('ion-app') ?? undefined;
 
         containers = containers
             .filter(container => {
-                if (!this.isElementVisible(container)) {
-                    // Ignore containers not visible.
-                    return false;
-                }
 
                 if (container.tagName === 'ION-ALERT') {
                     // For some reason, in Behat sometimes alerts aren't removed from DOM, the close animation doesn't finish.
@@ -391,32 +412,40 @@ export class TestingBehatDomUtilsService {
                     return container.style.pointerEvents !== 'none';
                 }
 
-                // Ignore pages that are inside other visible pages.
-                return container.tagName !== 'ION-PAGE' || !container.closest('.ion-page.ion-page-hidden');
+                // Avoid searching in the whole app.
+                if (container.tagName === 'ION-APP' || container.tagName === 'PAGE-CORE-MAINMENU') {
+                    return false;
+                }
+
+                // Ignore not visible containers.
+                return this.isElementVisible(container, ionApp);
             })
             // Sort them by z-index.
             .sort((a, b) =>  Number(getComputedStyle(b).zIndex) - Number(getComputedStyle(a).zIndex));
 
         if (containerName === 'split-view content') {
+
+            let splitViewContainer: HTMLElement | null = null;
+
             // Find non hidden pages inside the containers.
             containers.some(container => {
                 if (!container.classList.contains('ion-page')) {
                     return false;
                 }
+                if (container.closest('ion-router-outlet.content-outlet')) {
+                    splitViewContainer = container;
 
-                const pageContainers = Array.from(container.querySelectorAll<HTMLElement>('.ion-page:not(.ion-page-hidden)'));
-                let topContainer = pageContainers.find((page) => !page.closest('.ion-page.ion-page-hidden')) ?? null;
+                    return true;
+                }
 
-                topContainer = (topContainer || container).querySelector<HTMLElement>('core-split-view ion-router-outlet');
-                topContainer && topContainers.push(topContainer);
-
-                return !!topContainer;
+                return false;
             });
 
-            return topContainers;
+            return splitViewContainer ? [splitViewContainer] : [];
         }
 
         // Get containers until one blocks other views.
+        const topContainers: HTMLElement[] = [];
         containers.some(container => {
             if (container.tagName === 'ION-TOAST') {
                 container = container.shadowRoot?.querySelector('.toast-container') || container;
@@ -442,7 +471,7 @@ export class TestingBehatDomUtilsService {
 
         let input = this.findElementBasedOnText(
             { text: field, selector },
-            { onlyClickable: false, containerName: '' },
+            { onlyClickable: false },
         );
 
         if (input?.tagName === 'CORE-RICH-TEXT-EDITOR') {
@@ -455,7 +484,7 @@ export class TestingBehatDomUtilsService {
 
         const label = this.findElementBasedOnText(
             { text: field, selector: 'label' },
-            { onlyClickable: false, containerName: '' },
+            { onlyClickable: false },
         );
 
         if (label) {
@@ -469,7 +498,7 @@ export class TestingBehatDomUtilsService {
 
                 // Search the ion-datetime associated with the button.
                 const datetimeId = (<HTMLIonDatetimeButtonElement> element).datetime;
-                const datetime = document.querySelector<HTMLElement>(`ion-datetime#${datetimeId}`);
+                const datetime = document.body.querySelector<HTMLElement>(`ion-datetime#${datetimeId}`);
 
                 return datetime || undefined;
             }
@@ -495,6 +524,17 @@ export class TestingBehatDomUtilsService {
         locator: TestingBehatElementLocator,
         options: TestingBehatFindOptions = {},
     ): HTMLElement | undefined {
+        if (Array.isArray(locator.text)) {
+            for (const text of locator.text) {
+                const element = this.findElementBasedOnText({ ...locator, text });
+                if (element) {
+                    return element;
+                }
+            }
+
+            return undefined;
+        }
+
         // Remove extra spaces.
         const treatedText = locator.text.trim().replace(/\s\s+/g, ' ');
         if (treatedText !== locator.text) {
@@ -524,7 +564,7 @@ export class TestingBehatDomUtilsService {
         timeout: number = 2000,
         retryFrequency: number = 100,
     ): Promise<T> {
-        const element = document.querySelector<T>(selector);
+        const element = document.body.querySelector<T>(selector);
 
         if (!element) {
             if (timeout < retryFrequency) {
@@ -550,15 +590,14 @@ export class TestingBehatDomUtilsService {
         locator: TestingBehatElementLocator,
         options: TestingBehatFindOptions,
     ): HTMLElement[] {
-        const topContainers = this.getCurrentTopContainerElements(options.containerName ?? '');
+        const topContainers = this.getCurrentTopContainerElements(options.containerName);
         let elements: HTMLElement[] = [];
 
-        for (let i = 0; i < topContainers.length; i++) {
-            elements = elements.concat(this.findElementsBasedOnTextInContainer(locator, topContainers[i], options));
-            if (elements.length) {
-                break;
-            }
-        }
+        topContainers.some((container) => {
+            elements = this.findElementsBasedOnTextInContainer(locator, container, options);
+
+            return elements.length > 0;
+        });
 
         return elements;
     }
@@ -756,7 +795,7 @@ export class TestingBehatDomUtilsService {
 
             // Pretend we have cut and pasted the new text.
             if (element.tagName !== 'ION-SELECT' && getValue() !== '') {
-                await CoreUtils.nextTick();
+                await CoreWait.nextTick();
                 await setValue('');
 
                 element.dispatchEvent(new InputEvent('input', {
@@ -768,7 +807,7 @@ export class TestingBehatDomUtilsService {
             }
 
             if (value !== '') {
-                await CoreUtils.nextTick();
+                await CoreWait.nextTick();
                 await setValue(value);
 
                 element.dispatchEvent(new InputEvent('input', {

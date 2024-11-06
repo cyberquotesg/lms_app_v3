@@ -159,11 +159,46 @@ export class TestingBehatRuntimeService {
      */
     async waitLoadingToFinish(): Promise<void> {
         await NgZone.run(async () => {
-            const elements = Array.from(document.body.querySelectorAll<HTMLElement>('core-loading'))
-                .filter((element) => CoreDom.isElementVisible(element));
+            const coreLoadingsPromises: Promise<unknown>[] =
+            Array.from(document.body.querySelectorAll<HTMLElement>('core-loading'))
+                .filter((element) => CoreDom.isElementVisible(element))
+                .map(element => CoreDirectivesRegistry.waitDirectiveReady(element, CoreLoadingComponent));
 
-            await Promise.all(elements.map(element =>
-                CoreDirectivesRegistry.waitDirectiveReady(element, CoreLoadingComponent)));
+            const ionLoadingsPromises: Promise<unknown>[] =
+            Array.from(document.body.querySelectorAll<HTMLIonLoadingElement>('ion-loading'))
+                .filter((element) => CoreDom.isElementVisible(element))
+                .map(element => element.onDidDismiss());
+
+            const promises = coreLoadingsPromises.concat(ionLoadingsPromises);
+
+            await Promise.all(promises);
+
+            // Wait for ion-spinner to be removed from the DOM after loadings because loadings can contain spinners.
+            const ionSpinnerPromises: Promise<unknown>[] =
+            Array.from(document.body.querySelectorAll<HTMLIonSpinnerElement>('ion-spinner'))
+                .filter((element) => CoreDom.isElementVisible(element))
+                .map((element) =>
+                    // Wait to the spinner to be removed from the DOM.
+                    new Promise<void>((resolve) => {
+                        const parentElement = element.parentElement;
+
+                        if (!parentElement) {
+                            resolve();
+
+                            return;
+                        }
+
+                        const observer = new MutationObserver(() => {
+                            if (!parentElement.contains(element)) {
+                                observer.disconnect();
+                                resolve();
+                            }
+                        });
+
+                        observer.observe(parentElement, { childList: true });
+                }));
+
+            await Promise.all(ionSpinnerPromises);
         });
     }
 
@@ -176,18 +211,23 @@ export class TestingBehatRuntimeService {
     async pressStandard(button: string): Promise<string> {
         this.log('Action - Click standard button: ' + button);
 
+        // @deprecated usage, use goBack instead.
+        if (button === 'back') {
+            const success = await this.goBack();
+            if (success) {
+                return 'OK';
+            } else {
+                return 'ERROR: Back button not found';
+            }
+        }
+
         // Find button
         let foundButton: HTMLElement | undefined;
         const options: TestingBehatFindOptions = {
             onlyClickable: true,
-            containerName: '',
         };
 
         switch (button) {
-            case 'back':
-                foundButton = TestingBehatDomUtils.findElementBasedOnText({ text: 'Back' }, options);
-                break;
-            case 'main menu': // Deprecated name.
             case 'more menu':
                 foundButton = TestingBehatDomUtils.findElementBasedOnText({
                     text: 'More',
@@ -211,7 +251,80 @@ export class TestingBehatRuntimeService {
         // Click button
         await TestingBehatDomUtils.pressElement(foundButton);
 
+        // Block Behat for at least 500ms, WS calls or DOM changes might not begin immediately.
+        TestingBehatBlocking.wait(500);
+
         return 'OK';
+    }
+
+    /**
+     * Function to go back the maximum number of times possible.
+     *
+     * @returns OK if successful, or ERROR: followed by message.
+     */
+    async goBackToRoot(): Promise<string> {
+        this.log('Action - Go back to root');
+
+        let success = true;
+
+        do {
+            success = await this.goBack();
+
+            await TestingBehatBlocking.waitForPending();
+        } while (success);
+
+        return 'OK';
+    }
+
+    /**
+     * Function to go back many times in the app.
+     *
+     * @param times How many times to go back.
+     * @returns OK if successful, or ERROR: followed by message.
+     */
+    async goBackTimes(times = 1): Promise<string> {
+        this.log(`Action - Go back ${times} times`);
+
+        for (let i = 0; i < times; i++) {
+            const success = await this.goBack();
+
+            if (!success) {
+                return 'ERROR: Back button not found';
+            }
+
+            await TestingBehatBlocking.waitForPending();
+        }
+
+        return 'OK';
+    }
+
+    /**
+     * Function to go back in the app.
+     *
+     * @returns Whether the action is successful or not.
+     */
+    protected async goBack(): Promise<boolean> {
+        const options: TestingBehatFindOptions = {
+            onlyClickable: true,
+            containerName: '',
+        };
+
+        const foundButton = TestingBehatDomUtils.findElementBasedOnText({
+            text: 'Back',
+            selector: 'ion-back-button',
+        }, options);
+
+        if (!foundButton) {
+            return false;
+        }
+
+        // Click button
+        await TestingBehatDomUtils.pressElement(foundButton);
+
+        // Block Behat for at least 500ms, WS calls or DOM changes might not begin immediately.
+        TestingBehatBlocking.wait(500);
+
+        return true;
     }
 
     /**
@@ -224,11 +337,11 @@ export class TestingBehatRuntimeService {
 
         const backdrops = [
             ...Array
-                .from(document.querySelectorAll('ion-popover, ion-modal'))
+                .from(document.body.querySelectorAll('ion-popover, ion-modal'))
                 .map(popover => popover.shadowRoot?.querySelector('ion-backdrop'))
                 .filter(backdrop => !!backdrop),
             ...Array
-                .from(document.querySelectorAll('ion-backdrop'))
+                .from(document.body.querySelectorAll('ion-backdrop'))
                 .filter(backdrop => !!backdrop.offsetParent),
         ];
 
@@ -261,7 +374,6 @@ export class TestingBehatRuntimeService {
         try {
             const element = TestingBehatDomUtils.findElementBasedOnText(locator, {
                 onlyClickable: false,
-                containerName: '',
                 ...options,
             });
 
@@ -287,7 +399,7 @@ export class TestingBehatRuntimeService {
         this.log('Action - scrollTo', { locator });
 
         try {
-            let element = TestingBehatDomUtils.findElementBasedOnText(locator, { onlyClickable: false, containerName: '' });
+            let element = TestingBehatDomUtils.findElementBasedOnText(locator, { onlyClickable: false });
 
             if (!element) {
                 return 'ERROR: No element matches element to scroll to.';
@@ -354,7 +466,7 @@ export class TestingBehatRuntimeService {
 
         try {
             const infiniteLoading = Array
-                .from(document.querySelectorAll<HTMLElement>('core-infinite-loading'))
+                .from(document.body.querySelectorAll<HTMLElement>('core-infinite-loading'))
                 .find(element => !element.closest('.ion-page-hidden'));
 
             if (!infiniteLoading) {
@@ -400,7 +512,7 @@ export class TestingBehatRuntimeService {
         this.log('Action - Is Selected', locator);
 
         try {
-            const element = TestingBehatDomUtils.findElementBasedOnText(locator, { onlyClickable: false, containerName: '' });
+            const element = TestingBehatDomUtils.findElementBasedOnText(locator, { onlyClickable: false });
 
             if (!element) {
                 return 'ERROR: No element matches locator to find.';
@@ -430,13 +542,16 @@ export class TestingBehatRuntimeService {
         this.log('Action - Press', locator);
 
         try {
-            const found = TestingBehatDomUtils.findElementBasedOnText(locator, { onlyClickable: true, containerName: '' });
+            const found = TestingBehatDomUtils.findElementBasedOnText(locator, { onlyClickable: true });
 
             if (!found) {
                 return 'ERROR: No element matches locator to press.';
             }
 
             await TestingBehatDomUtils.pressElement(found);
+
+            // Block Behat for at least 500ms, WS calls or DOM changes might not begin immediately.
+            TestingBehatBlocking.wait(500);
 
             return 'OK';
         } catch (error) {
@@ -509,7 +624,7 @@ export class TestingBehatRuntimeService {
     getHeader(): string {
         this.log('Action - Get header');
 
-        const getBySelector = (selector: string ) =>  Array.from(document.querySelectorAll<HTMLElement>(selector))
+        const getBySelector = (selector: string ) =>  Array.from(document.body.querySelectorAll<HTMLElement>(selector))
             .filter((title) => TestingBehatDomUtils.isElementVisible(title, document.body))
             .map((title) => title.innerText.trim())
             .filter((title) => title.length > 0);
@@ -636,7 +751,6 @@ export class TestingBehatRuntimeService {
         if (referenceLocator) {
             startingElement = TestingBehatDomUtils.findElementBasedOnText(referenceLocator, {
                 onlyClickable: false,
-                containerName: '',
             });
 
             if (!startingElement) {
@@ -795,7 +909,7 @@ export type TestingBehatFindOptions = {
 };
 
 export type TestingBehatElementLocator = {
-    text: string;
+    text: string | string[];
     within?: TestingBehatElementLocator;
     near?: TestingBehatElementLocator;
     selector?: string;

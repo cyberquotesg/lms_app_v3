@@ -24,9 +24,9 @@ import { CoreSites } from '@services/sites';
 import { CoreWS, CoreWSExternalFile, CoreWSFile } from '@services/ws';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreTimeUtils } from '@services/utils/time';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl, CoreUrlPartNames } from '@singletons/url';
 import { CoreUtils, CoreUtilsOpenFileOptions } from '@services/utils/utils';
 import { CoreError } from '@classes/errors/error';
 import { DownloadStatus } from '@/core/constants';
@@ -51,7 +51,6 @@ import {
     QUEUE_TABLE_PRIMARY_KEYS,
 } from '@services/database/filepool';
 import { CoreFileHelper } from './file-helper';
-import { CoreUrl } from '@singletons/url';
 import { CoreDatabaseTable } from '@classes/database/database-table';
 import { CoreDatabaseCachingStrategy, CoreDatabaseTableProxy } from '@classes/database/database-table-proxy';
 import { lazyMap, LazyMap } from '../utils/lazy-map';
@@ -59,6 +58,7 @@ import { asyncInstance, AsyncInstance } from '../utils/async-instance';
 import { CorePath } from '@singletons/path';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CoreAnalytics, CoreAnalyticsEventType } from './analytics';
+import { convertTextToHTMLElement } from '../utils/create-html-element';
 
 /*
  * Factory for handling downloading files and retrieve downloaded files.
@@ -97,6 +97,7 @@ export class CoreFilepoolProvider {
         new RegExp('(\\?|&)forcedownload=[0-1]'),
         new RegExp('(\\?|&)preview=[A-Za-z0-9]+'),
         new RegExp('(\\?|&)offline=[0-1]', 'g'),
+        new RegExp(/(\\?|&)lang=[A-Za-z\-_]+/, 'g'),
     ];
 
     // To handle file downloads using the queue.
@@ -112,6 +113,9 @@ export class CoreFilepoolProvider {
 
     protected packagesTables: LazyMap<AsyncInstance<CoreDatabaseTable<CoreFilepoolPackageEntry>>>;
     protected queueTable = asyncInstance<CoreDatabaseTable<CoreFilepoolQueueDBRecord, CoreFilepoolQueueDBPrimaryKeys>>();
+
+    // To avoid fixing the same file ID twice at the same time. @deprecated since 4.5
+    protected fixFileIdPromises: Record<string, Record<string, Promise<void>>> = {};
 
     constructor() {
         this.logger = CoreLogger.getInstance('CoreFilepoolProvider');
@@ -553,6 +557,35 @@ export class CoreFilepoolProvider {
     }
 
     /**
+     * Check if a file is outdated, updating its timemodified if the entry doesn't have it but it's not outdated.
+     *
+     * @param siteId Site ID.
+     * @param entry Entry to check.
+     * @param revision File revision number.
+     * @param timemodified The time this file was modified.
+     * @returns Whether the file is outdated.
+     */
+    protected async checkFileOutdated(
+        siteId: string,
+        entry: CoreFilepoolFileEntry,
+        revision = 0,
+        timemodified = 0,
+    ): Promise<boolean> {
+        if (this.isFileOutdated(entry, revision, timemodified)) {
+            return true;
+        }
+
+        if (timemodified > 0 && !entry.timemodified) {
+            // Entry is not outdated but it doesn't have timemodified. Update it.
+            await CoreUtils.ignoreErrors(this.filesTables[siteId].update({ timemodified }, { fileId: entry.fileId }));
+
+            entry.timemodified = timemodified;
+        }
+
+        return false;
+    }
+
+    /**
      * Check the queue processing.
      *
      * @description
@@ -741,7 +774,7 @@ export class CoreFilepoolProvider {
 
         const extension = CoreMimetypeUtils.guessExtensionFromUrl(fileUrl);
         const addExtension = filePath === undefined;
-        const path = filePath || (await this.getFilePath(siteId, fileId, extension));
+        const path = filePath || (await this.getFilePath(siteId, fileId, extension, fileUrl));
 
         if (poolFileObject && poolFileObject.fileId !== fileId) {
             this.logger.error('Invalid object to update passed');
@@ -781,7 +814,7 @@ export class CoreFilepoolProvider {
 
             CoreAnalytics.logEvent({
                 type: CoreAnalyticsEventType.DOWNLOAD_FILE,
-                fileUrl: CoreUrlUtils.unfixPluginfileURL(fileUrl, site.getURL()),
+                fileUrl: CoreUrl.unfixPluginfileURL(fileUrl, site.getURL()),
             });
 
             // Add the anchor again to the local URL.
@@ -1070,14 +1103,11 @@ export class CoreFilepoolProvider {
         };
 
         try {
-            const fileObject = await this.hasFileInPool(siteId, fileId);
+            const fileObject = await this.hasFileInPool(siteId, fileId, fileUrl);
+            const isOutdated = await this.checkFileOutdated(siteId, fileObject, options.revision, options.timemodified);
             let url: string;
 
-            if (!fileObject ||
-                this.isFileOutdated(fileObject, options.revision, options.timemodified) &&
-                CoreNetwork.isOnline() &&
-                !ignoreStale
-            ) {
+            if (isOutdated && CoreNetwork.isOnline() && !ignoreStale) {
                 throw new CoreError('Needs to be downloaded');
             }
 
@@ -1118,21 +1148,21 @@ export class CoreFilepoolProvider {
     extractDownloadableFilesFromHtml(html: string): string[] {
         let urls: string[] = [];
 
-        const element = CoreDomUtils.convertToElement(html);
+        const element = convertTextToHTMLElement(html);
         const elements: AnchorOrMediaElement[] = Array.from(element.querySelectorAll('a, img, audio, video, source, track'));
 
         for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
             const url = 'href' in element ? element.href : element.src;
 
-            if (url && CoreUrlUtils.isDownloadableUrl(url) && urls.indexOf(url) == -1) {
+            if (url && CoreUrl.isDownloadableUrl(url) && urls.indexOf(url) == -1) {
                 urls.push(url);
             }
 
             // Treat video poster.
             if (element.tagName == 'VIDEO' && element.getAttribute('poster')) {
                 const poster = element.getAttribute('poster');
-                if (poster && CoreUrlUtils.isDownloadableUrl(poster) && urls.indexOf(poster) == -1) {
+                if (poster && CoreUrl.isDownloadableUrl(poster) && urls.indexOf(poster) == -1) {
                     urls.push(poster);
                 }
             }
@@ -1157,48 +1187,6 @@ export class CoreFilepoolProvider {
         return urls.map((url) => ({
             fileurl: url,
         }));
-    }
-
-    /**
-     * Fill Missing Extension In the File Object if needed.
-     * This is to migrate from old versions.
-     *
-     * @param entry File object to be migrated.
-     * @param siteId SiteID to get migrated.
-     * @returns Promise resolved when done.
-     */
-    protected async fillExtensionInFile(entry: CoreFilepoolFileEntry, siteId: string): Promise<void> {
-        if (entry.extension !== undefined) {
-            // Already filled.
-            return;
-        }
-
-        const extension = CoreMimetypeUtils.getFileExtension(entry.path);
-        if (!extension) {
-            // Files does not have extension. Invalidate file (stale = true).
-            // Minor problem: file will remain in the filesystem once downloaded again.
-            this.logger.debug('Staled file with no extension ' + entry.fileId);
-
-            await this.filesTables[siteId].update({ stale: 1 }, { fileId: entry.fileId });
-
-            return;
-        }
-
-        // File has extension. Save extension, and add extension to path.
-        const fileId = entry.fileId;
-        entry.fileId = CoreMimetypeUtils.removeExtension(fileId);
-        entry.extension = extension;
-
-        await this.filesTables[siteId].update(entry, { fileId });
-        if (entry.fileId == fileId) {
-            // File ID hasn't changed, we're done.
-            this.logger.debug('Removed extesion ' + extension + ' from file ' + entry.fileId);
-
-            return;
-        }
-
-        // Now update the links.
-        await this.linksTables[siteId].update({ fileId: entry.fileId }, { fileId });
     }
 
     /**
@@ -1352,7 +1340,7 @@ export class CoreFilepoolProvider {
         url = this.removeRevisionFromUrl(url);
 
         // Decode URL.
-        url = CoreTextUtils.decodeHTML(CoreTextUtils.decodeURIComponent(url));
+        url = CoreText.decodeHTML(CoreUrl.decodeURIComponent(url));
 
         if (url.indexOf('/webservice/pluginfile') !== -1) {
             // Remove attributes that do not matter.
@@ -1362,7 +1350,44 @@ export class CoreFilepoolProvider {
         }
 
         // Remove the anchor.
-        url = CoreUrl.removeUrlAnchor(url);
+        url = CoreUrl.removeUrlParts(url, CoreUrlPartNames.Fragment);
+
+        // Try to guess the filename the target file should have.
+        // We want to keep the original file name so people can easily identify the files after the download.
+        const filename = this.guessFilenameFromUrl(url);
+
+        return this.addHashToFilename(url, filename);
+    }
+
+    /**
+     * For a while, the getFileIdByUrl method had a bug that caused revision not to be removed from the URL.
+     * This function simulates that behaviour and returns the file ID without removing revision.
+     * This function is temporary and should be removed in the future, it's used to avoid files not being found
+     * after fixing getFileIdByUrl.
+     *
+     * @param fileUrl The absolute URL to the file.
+     * @returns The file ID.
+     * @deprecated since 4.5
+     */
+    protected getFiledIdByUrlBugged(fileUrl: string): string {
+        let url = fileUrl;
+
+        // If site supports it, since 3.8 we use tokenpluginfile instead of pluginfile.
+        // For compatibility with files already downloaded, we need to use pluginfile to calculate the file ID.
+        url = url.replace(/\/tokenpluginfile\.php\/[^/]+\//, '/webservice/pluginfile.php/');
+
+        // Decode URL.
+        url = CoreText.decodeHTML(CoreUrl.decodeURIComponent(url));
+
+        if (url.indexOf('/webservice/pluginfile') !== -1) {
+            // Remove attributes that do not matter.
+            this.urlAttributes.forEach((regex) => {
+                url = url.replace(regex, '');
+            });
+        }
+
+        // Remove the anchor.
+        url = CoreUrl.removeUrlParts(url, CoreUrlPartNames.Fragment);
 
         // Try to guess the filename the target file should have.
         // We want to keep the original file name so people can easily identify the files after the download.
@@ -1394,15 +1419,16 @@ export class CoreFilepoolProvider {
      * @param siteId The site ID.
      * @param fileId The file ID.
      * @param extension Previously calculated extension. Empty to not add any. Undefined to calculate it.
+     * @param fileUrl Tmp param to use the bugged file ID if the file isn't found. To be removed with getFiledIdByUrlBugged.
      * @returns The path to the file relative to storage root.
      */
-    protected async getFilePath(siteId: string, fileId: string, extension?: string): Promise<string> {
+    protected async getFilePath(siteId: string, fileId: string, extension?: string, fileUrl?: string): Promise<string> {
         let path = this.getFilepoolFolderPath(siteId) + '/' + fileId;
 
         if (extension === undefined) {
             // We need the extension to be able to open files properly.
             try {
-                const entry = await this.hasFileInPool(siteId, fileId);
+                const entry = await this.hasFileInPool(siteId, fileId, fileUrl);
 
                 if (entry.extension) {
                     path += '.' + entry.extension;
@@ -1428,7 +1454,7 @@ export class CoreFilepoolProvider {
         const file = await this.fixPluginfileURL(siteId, fileUrl);
         const fileId = this.getFileIdByUrl(CoreFileHelper.getFileUrl(file));
 
-        return this.getFilePath(siteId, fileId);
+        return this.getFilePath(siteId, fileId, undefined, CoreFileHelper.getFileUrl(file));
     }
 
     /**
@@ -1534,7 +1560,7 @@ export class CoreFilepoolProvider {
             return DownloadStatus.NOT_DOWNLOADABLE;
         }
 
-        fileUrl = CoreUrl.removeUrlAnchor(CoreFileHelper.getFileUrl(file));
+        fileUrl = CoreUrl.removeUrlParts(CoreFileHelper.getFileUrl(file), CoreUrlPartNames.Fragment);
         timemodified = file.timemodified ?? timemodified;
         revision = revision ?? this.getRevisionFromUrl(fileUrl);
         const fileId = this.getFileIdByUrl(fileUrl);
@@ -1547,7 +1573,7 @@ export class CoreFilepoolProvider {
         } catch (e) {
             // Check if the file is being downloaded right now.
             const extension = CoreMimetypeUtils.guessExtensionFromUrl(fileUrl);
-            filePath = filePath || (await this.getFilePath(siteId, fileId, extension));
+            filePath = filePath || (await this.getFilePath(siteId, fileId, extension, fileUrl));
 
             const downloadId = this.getFileDownloadId(fileUrl, filePath);
 
@@ -1557,9 +1583,10 @@ export class CoreFilepoolProvider {
 
             try {
                 // File is not being downloaded. Check if it's downloaded and if it's outdated.
-                const entry = await this.hasFileInPool(siteId, fileId);
+                const entry = await this.hasFileInPool(siteId, fileId, fileUrl);
+                const isOutdated = await this.checkFileOutdated(siteId, entry, revision, timemodified);
 
-                if (this.isFileOutdated(entry, revision, timemodified)) {
+                if (isOutdated) {
                     return DownloadStatus.OUTDATED;
                 }
 
@@ -1626,13 +1653,10 @@ export class CoreFilepoolProvider {
         const fileId = this.getFileIdByUrl(fileUrl);
 
         try {
-            const entry = await this.hasFileInPool(siteId, fileId);
+            const entry = await this.hasFileInPool(siteId, fileId, fileUrl);
+            const isOutdated = await this.checkFileOutdated(siteId, entry, revision, timemodified);
 
-            if (entry === undefined) {
-                throw new CoreError('File not downloaded.');
-            }
-
-            if (this.isFileOutdated(entry, revision, timemodified) && CoreNetwork.isOnline()) {
+            if (isOutdated && CoreNetwork.isOnline()) {
                 throw new CoreError('File is outdated');
             }
         } catch (error) {
@@ -1645,8 +1669,8 @@ export class CoreFilepoolProvider {
         try {
             // We found the file entry, now look for the file on disk.
             const path = mode === 'src' ?
-                await this.getInternalSrcById(siteId, fileId) :
-                await this.getInternalUrlById(siteId, fileId);
+                await this.getInternalSrcById(siteId, fileId, fileUrl) :
+                await this.getInternalUrlById(siteId, fileId, fileUrl);
 
             // Add the anchor to the local URL if any.
             const anchor = CoreUrl.getUrlAnchor(fileUrl);
@@ -1670,14 +1694,15 @@ export class CoreFilepoolProvider {
      *
      * @param siteId The site ID.
      * @param fileId The file ID.
+     * @param fileUrl Tmp param to use the bugged file ID if the file isn't found. To be removed with getFiledIdByUrlBugged.
      * @returns Resolved with the internal URL. Rejected otherwise.
      */
-    protected async getInternalSrcById(siteId: string, fileId: string): Promise<string> {
+    protected async getInternalSrcById(siteId: string, fileId: string, fileUrl?: string): Promise<string> {
         if (!CoreFile.isAvailable()) {
             throw new CoreError('File system cannot be used.');
         }
 
-        const path = await this.getFilePath(siteId, fileId);
+        const path = await this.getFilePath(siteId, fileId, undefined, fileUrl);
         const fileEntry = await CoreFile.getFile(path);
 
         return CoreFile.convertFileSrc(CoreFile.getFileEntryURL(fileEntry));
@@ -1688,14 +1713,15 @@ export class CoreFilepoolProvider {
      *
      * @param siteId The site ID.
      * @param fileId The file ID.
+     * @param fileUrl Tmp param to use the bugged file ID if the file isn't found. To be removed with getFiledIdByUrlBugged.
      * @returns Resolved with the URL. Rejected otherwise.
      */
-    protected async getInternalUrlById(siteId: string, fileId: string): Promise<string> {
+    protected async getInternalUrlById(siteId: string, fileId: string, fileUrl?: string): Promise<string> {
         if (!CoreFile.isAvailable()) {
             throw new CoreError('File system cannot be used.');
         }
 
-        const path = await this.getFilePath(siteId, fileId);
+        const path = await this.getFilePath(siteId, fileId, undefined, fileUrl);
         const fileEntry = await CoreFile.getFile(path);
 
         // This URL is usually used to launch files or put them in HTML.
@@ -1733,7 +1759,7 @@ export class CoreFilepoolProvider {
         const file = await this.fixPluginfileURL(siteId, fileUrl);
         const fileId = this.getFileIdByUrl(CoreFileHelper.getFileUrl(file));
 
-        return this.getInternalSrcById(siteId, fileId);
+        return this.getInternalSrcById(siteId, fileId, CoreFileHelper.getFileUrl(file));
     }
 
     /**
@@ -1751,7 +1777,7 @@ export class CoreFilepoolProvider {
         const file = await this.fixPluginfileURL(siteId, fileUrl);
         const fileId = this.getFileIdByUrl(CoreFileHelper.getFileUrl(file));
 
-        return this.getInternalUrlById(siteId, fileId);
+        return this.getInternalUrlById(siteId, fileId, CoreFileHelper.getFileUrl(file));
     }
 
     /**
@@ -1907,29 +1933,6 @@ export class CoreFilepoolProvider {
     }
 
     /**
-     * Return the array of arguments of the pluginfile url.
-     *
-     * @param url URL to get the args.
-     * @returns The args found, undefined if not a pluginfile.
-     */
-    protected getPluginFileArgs(url: string): string[] | undefined {
-        if (!CoreUrlUtils.isPluginFileUrl(url)) {
-            // Not pluginfile, return.
-            return;
-        }
-
-        const relativePath = url.substring(url.indexOf('/pluginfile.php') + 16);
-        const args = relativePath.split('/');
-
-        if (args.length < 3) {
-            // To be a plugin file it should have at least contextId, Component and Filearea.
-            return;
-        }
-
-        return args;
-    }
-
-    /**
      * Get the deferred object for a file in the queue.
      *
      * @param siteId The site ID.
@@ -2025,7 +2028,7 @@ export class CoreFilepoolProvider {
      * @returns Revision number.
      */
     protected getRevisionFromUrl(url: string): number {
-        const args = this.getPluginFileArgs(url);
+        const args = CoreUrl.getPluginFileArgs(url);
         if (!args) {
             // Not a pluginfile, no revision will be found.
             return 0;
@@ -2159,27 +2162,27 @@ export class CoreFilepoolProvider {
 
         if (fileUrl.indexOf('/webservice/pluginfile') !== -1) {
             // It's a pluginfile URL. Search for the 'file' param to extract the name.
-            const params = CoreUrlUtils.extractUrlParams(fileUrl);
+            const params = CoreUrl.extractUrlParams(fileUrl);
             if (params.file) {
                 filename = params.file.substring(params.file.lastIndexOf('/') + 1);
             } else {
                 // 'file' param not found. Extract what's after the last '/' without params.
-                filename = CoreUrlUtils.getLastFileWithoutParams(fileUrl);
+                filename = CoreUrl.getLastFileWithoutParams(fileUrl);
             }
-        } else if (CoreUrlUtils.isGravatarUrl(fileUrl)) {
+        } else if (CoreUrl.isGravatarUrl(fileUrl)) {
             // Extract gravatar ID.
-            filename = 'gravatar_' + CoreUrlUtils.getLastFileWithoutParams(fileUrl);
-        } else if (CoreUrlUtils.isThemeImageUrl(fileUrl)) {
+            filename = 'gravatar_' + CoreUrl.getLastFileWithoutParams(fileUrl);
+        } else if (CoreUrl.isThemeImageUrl(fileUrl)) {
             // Extract user ID.
             const matches = fileUrl.match(/\/core\/([^/]*)\//);
             if (matches && matches[1]) {
                 filename = matches[1];
             }
             // Attach a constant and the image type.
-            filename = 'default_' + filename + '_' + CoreUrlUtils.getLastFileWithoutParams(fileUrl);
+            filename = 'default_' + filename + '_' + CoreUrl.getLastFileWithoutParams(fileUrl);
         } else {
             // Another URL. Just get what's after the last /.
-            filename = CoreUrlUtils.getLastFileWithoutParams(fileUrl);
+            filename = CoreUrl.getLastFileWithoutParams(fileUrl);
         }
 
         // If there are hashes in the URL, extract them.
@@ -2203,7 +2206,7 @@ export class CoreFilepoolProvider {
             filename += '_' + hashes.join('_');
         }
 
-        return CoreTextUtils.removeSpecialCharactersForFiles(filename);
+        return CoreText.removeSpecialCharactersForFiles(filename);
     }
 
     /**
@@ -2211,10 +2214,74 @@ export class CoreFilepoolProvider {
      *
      * @param siteId The site ID.
      * @param fileId The file Id.
+     * @param fileUrl Tmp param to use the bugged file ID if the file isn't found. To be removed with getFiledIdByUrlBugged.
      * @returns Resolved with file object from DB on success, rejected otherwise.
      */
-    protected async hasFileInPool(siteId: string, fileId: string): Promise<CoreFilepoolFileEntry> {
-        return this.filesTables[siteId].getOneByPrimaryKey({ fileId });
+    protected async hasFileInPool(siteId: string, fileId: string, fileUrl?: string): Promise<CoreFilepoolFileEntry> {
+        try {
+            return await this.filesTables[siteId].getOneByPrimaryKey({ fileId });
+        } catch (error) {
+            if (!fileUrl) {
+                throw error;
+            }
+
+            // Entry not found. Check if it's stored with the "bugged" file ID.
+            const buggedFileId = this.getFiledIdByUrlBugged(fileUrl); // eslint-disable-line deprecation/deprecation
+            if (buggedFileId === fileId) {
+                throw error;
+            }
+
+            const fileEntry = await this.filesTables[siteId].getOneByPrimaryKey({ fileId: buggedFileId });
+
+            try {
+                await this.fixBuggedFileId(siteId, fileEntry, fileId); // eslint-disable-line deprecation/deprecation
+            } catch (error) {
+                // Ignore errors when fixing the ID, it shouldn't happen.
+            }
+
+            return fileEntry;
+        }
+    }
+
+    /**
+     * Fix a file entry's wrong file ID.
+     *
+     * @param siteId Site ID.
+     * @param fileEntry File entry to fix.
+     * @param newFileId New file ID.
+     * @returns Promise resolved when done.
+     * @deprecated since 4.5
+     */
+    protected async fixBuggedFileId(siteId: string, fileEntry: CoreFilepoolFileEntry, newFileId: string): Promise<void> {
+        if (this.fixFileIdPromises[siteId] && this.fixFileIdPromises[siteId][newFileId] !== undefined) {
+            return this.fixFileIdPromises[siteId][newFileId];
+        }
+
+        const fixFileId = async (): Promise<void> => {
+            const buggedFileId = fileEntry.fileId;
+
+            const [currentFilePath, newFilePath] = await Promise.all([
+                this.getFilePath(siteId, buggedFileId, fileEntry.extension),
+                this.getFilePath(siteId, newFileId, fileEntry.extension),
+            ]);
+
+            // Move the file first, it's the step that's easier to fail.
+            await CoreFile.moveFile(currentFilePath, newFilePath);
+
+            await Promise.all([
+                this.filesTables[siteId].update({ fileId: newFileId }, { fileId: buggedFileId }),
+                CoreUtils.ignoreErrors(this.linksTables[siteId].update({ fileId: newFileId }, { fileId: buggedFileId })),
+            ]);
+
+            fileEntry.fileId = newFileId;
+
+            delete this.fixFileIdPromises[siteId][newFileId];
+        };
+
+        this.fixFileIdPromises[siteId] = this.fixFileIdPromises[siteId] ?? {};
+        this.fixFileIdPromises[siteId][newFileId] = fixFileId();
+
+        return this.fixFileIdPromises[siteId][newFileId];
     }
 
     /**
@@ -2233,7 +2300,7 @@ export class CoreFilepoolProvider {
 
         return {
             ...entry,
-            linksUnserialized: CoreTextUtils.parseJSON(entry.links, []),
+            linksUnserialized: CoreText.parseJSON(entry.links, []),
         };
     }
 
@@ -2379,8 +2446,9 @@ export class CoreFilepoolProvider {
      * @returns Whether the file is outdated.
      */
     protected isFileOutdated(entry: CoreFilepoolFileEntry, revision = 0, timemodified = 0): boolean {
-        // Don't allow undefined values, convert them to 0.
-        const entryTimemodified = entry.timemodified ?? 0;
+        // If the entry doesn't have a timemodified, use the download time instead. This is to prevent re-downloading
+        // files that haven't been updated in the server.
+        const entryTimemodified = entry.timemodified || Math.floor(entry.downloadTime / 1000);
         const entryRevision = entry.revision ?? 0;
 
         return !!entry.stale || revision > entryRevision || timemodified > entryTimemodified;
@@ -2586,7 +2654,7 @@ export class CoreFilepoolProvider {
 
             return this.processQueueItem({
                 ...item,
-                linksUnserialized: CoreTextUtils.parseJSON(item.links, []),
+                linksUnserialized: CoreText.parseJSON(item.links, []),
             });
         } catch (err) {
             throw CoreFilepoolProvider.ERR_QUEUE_IS_EMPTY;
@@ -2619,12 +2687,16 @@ export class CoreFilepoolProvider {
 
         // Check if the file is already in pool.
         try {
-            entry = await this.hasFileInPool(siteId, fileId);
+            entry = await this.hasFileInPool(siteId, fileId, fileUrl);
         } catch (error) {
             // File not in pool.
         }
 
-        if (entry && !options.isexternalfile && !this.isFileOutdated(entry, options.revision, options.timemodified)) {
+        if (
+            entry &&
+            !options.isexternalfile &&
+            !(await this.checkFileOutdated(siteId, entry, options.revision, options.timemodified))
+        ) {
             // We have the file, it is not stale, we can update links and remove from queue.
             this.logger.debug('Queued file already in store, ignoring...');
             this.addFileLinks(siteId, fileId, links).catch(() => {
@@ -2813,7 +2885,7 @@ export class CoreFilepoolProvider {
      * The revision is used to know if a file has changed. We remove it from the URL to prevent storing a file per revision.
      */
     protected removeRevisionFromUrl(url: string): string {
-        const args = this.getPluginFileArgs(url);
+        const args = CoreUrl.getPluginFileArgs(url);
         if (!args) {
             // Not a pluginfile, no revision will be found.
             return url;
@@ -3004,7 +3076,7 @@ export class CoreFilepoolProvider {
             try {
                 let fileUrl = absoluteUrl;
 
-                if (!CoreUrlUtils.isLocalFileUrl(absoluteUrl)) {
+                if (!CoreUrl.isLocalFileUrl(absoluteUrl)) {
                     // Not a local file, download it.
                     fileUrl = await this.downloadUrl(
                         siteId,
@@ -3024,7 +3096,7 @@ export class CoreFilepoolProvider {
                 fileUrl = CoreFile.convertFileSrc(fileUrl);
 
                 if (fileUrl !== url) {
-                    cssCode = cssCode.replace(new RegExp(CoreTextUtils.escapeForRegex(url), 'g'), fileUrl);
+                    cssCode = cssCode.replace(new RegExp(CoreText.escapeForRegex(url), 'g'), fileUrl);
                     updated = true;
                 }
             } catch (error) {
@@ -3032,7 +3104,7 @@ export class CoreFilepoolProvider {
 
                 // If the URL is relative, store the absolute URL.
                 if (absoluteUrl !== url) {
-                    cssCode = cssCode.replace(new RegExp(CoreTextUtils.escapeForRegex(url), 'g'), absoluteUrl);
+                    cssCode = cssCode.replace(new RegExp(CoreText.escapeForRegex(url), 'g'), absoluteUrl);
                     updated = true;
                 }
             }

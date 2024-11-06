@@ -17,7 +17,6 @@ import { Injectable } from '@angular/core';
 import { FileEntry, DirectoryEntry, Entry, Metadata, IFile } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
-import { CoreTextUtils } from '@services/utils/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreConstants } from '@/core/constants';
 import { CoreError } from '@classes/errors/error';
@@ -29,6 +28,7 @@ import { CoreText } from '@singletons/text';
 import { CorePlatform } from '@services/platform';
 import { CorePath } from '@singletons/path';
 import { Zip } from '@features/native/plugins';
+import { CoreUrl } from '@singletons/url';
 
 /**
  * Progress event used when writing a file data into a file.
@@ -148,12 +148,11 @@ export class CoreFileProvider {
      * @param path Relative path to the file.
      * @returns Promise resolved when the file is retrieved.
      */
-    getFile(path: string): Promise<FileEntry> {
-        return this.init().then(() => {
-            this.logger.debug('Get file: ' + path);
+    async getFile(path: string): Promise<FileEntry> {
+        await this.init();
+        this.logger.debug('Get file: ' + path);
 
-            return File.resolveLocalFilesystemUrl(this.addBasePathIfNeeded(path));
-        }).then((entry) => <FileEntry> entry);
+        return <FileEntry> await File.resolveLocalFilesystemUrl(this.addBasePathIfNeeded(path));
     }
 
     /**
@@ -162,12 +161,12 @@ export class CoreFileProvider {
      * @param path Relative path to the directory.
      * @returns Promise resolved when the directory is retrieved.
      */
-    getDir(path: string): Promise<DirectoryEntry> {
-        return this.init().then(() => {
-            this.logger.debug('Get directory: ' + path);
+    async getDir(path: string): Promise<DirectoryEntry> {
+        await this.init();
 
-            return File.resolveDirectoryUrl(this.addBasePathIfNeeded(path));
-        });
+        this.logger.debug('Get directory: ' + path);
+
+        return await File.resolveDirectoryUrl(this.addBasePathIfNeeded(path));
     }
 
     /**
@@ -377,12 +376,14 @@ export class CoreFileProvider {
      * @param path Relative path to the directory.
      * @returns Promise to be resolved when the size is calculated.
      */
-    getDirectorySize(path: string): Promise<number> {
+    async getDirectorySize(path: string): Promise<number> {
         path = this.removeBasePath(path);
 
         this.logger.debug('Get size of dir: ' + path);
 
-        return this.getDir(path).then((dirEntry) => this.getSize(dirEntry));
+        const dirEntry = await this.getDir(path);
+
+        return this.getSize(dirEntry);
     }
 
     /**
@@ -391,12 +392,14 @@ export class CoreFileProvider {
      * @param path Relative path to the file.
      * @returns Promise to be resolved when the size is calculated.
      */
-    getFileSize(path: string): Promise<number> {
+    async getFileSize(path: string): Promise<number> {
         path = this.removeBasePath(path);
 
         this.logger.debug('Get size of file: ' + path);
 
-        return this.getFile(path).then((fileEntry) => this.getSize(fileEntry));
+        const fileEntry = await this.getFile(path);
+
+        return this.getSize(fileEntry);
     }
 
     /**
@@ -418,16 +421,15 @@ export class CoreFileProvider {
      *
      * @returns Promise resolved with the estimated free space in bytes.
      */
-    calculateFreeSpace(): Promise<number> {
-        return File.getFreeDiskSpace().then((size) => {
-            if (CorePlatform.isIOS()) {
-                // In iOS the size is in bytes.
-                return Number(size);
-            }
+    async calculateFreeSpace(): Promise<number> {
+        const size = await File.getFreeDiskSpace();
 
-            // The size is in KB, convert it to bytes.
-            return Number(size) * 1024;
-        });
+        if (CorePlatform.isIOS()) {
+            // In iOS the size is in bytes.
+            return Number(size);
+        }
+
+        return Number(size) * 1024;
     }
 
     /**
@@ -437,7 +439,7 @@ export class CoreFileProvider {
      * @returns The file name normalized.
      */
     normalizeFileName(filename: string): string {
-        filename = CoreTextUtils.decodeURIComponent(filename);
+        filename = CoreUrl.decodeURIComponent(filename);
 
         return filename;
     }
@@ -479,7 +481,7 @@ export class CoreFileProvider {
                 return File.readAsArrayBuffer(folder, path);
             case CoreFileFormat.FORMATJSON:
                 return File.readAsText(folder, path).then((text) => {
-                    const parsed = CoreTextUtils.parseJSON(text, null);
+                    const parsed = CoreText.parseJSON(text, null);
 
                     if (parsed == null && text != null) {
                         throw new CoreError('Error parsing JSON file: ' + path);
@@ -510,7 +512,7 @@ export class CoreFileProvider {
                 if (event.target?.result !== undefined && event.target.result !== null) {
                     if (format == CoreFileFormat.FORMATJSON) {
                         // Convert to object.
-                        const parsed = CoreTextUtils.parseJSON(<string> event.target.result, null);
+                        const parsed = CoreText.parseJSON(<string> event.target.result, null);
 
                         if (parsed == null) {
                             reject('Error parsing JSON file.');
@@ -642,8 +644,10 @@ export class CoreFileProvider {
      * @param fullPath Absolute path to the file.
      * @returns Promise to be resolved when the file is retrieved.
      */
-    getExternalFile(fullPath: string): Promise<FileEntry> {
-        return File.resolveLocalFilesystemUrl(fullPath).then((entry) => <FileEntry> entry);
+    async getExternalFile(fullPath: string): Promise<FileEntry> {
+        const entry = await File.resolveLocalFilesystemUrl(fullPath);
+
+        return <FileEntry>entry;
     }
 
     /**
@@ -676,14 +680,14 @@ export class CoreFileProvider {
      *
      * @returns Promise to be resolved when the base path is retrieved.
      */
-    getBasePath(): Promise<string> {
-        return this.init().then(() => {
-            if (this.basePath.slice(-1) == '/') {
-                return this.basePath;
-            } else {
-                return this.basePath + '/';
-            }
-        });
+    async getBasePath(): Promise<string> {
+        await this.init();
+
+        if (this.basePath.slice(-1) === '/') {
+            return this.basePath;
+        } else {
+            return this.basePath + '/';
+        }
     }
 
     /**
@@ -1004,26 +1008,10 @@ export class CoreFileProvider {
      * @param isDir True if directory, false if file.
      * @returns Promise resolved with metadata.
      */
-    getMetadataFromPath(path: string, isDir?: boolean): Promise<Metadata> {
-        let promise;
-        if (isDir) {
-            promise = this.getDir(path);
-        } else {
-            promise = this.getFile(path);
-        }
+    async getMetadataFromPath(path: string, isDir?: boolean): Promise<Metadata> {
+        const entry = isDir ? await this.getDir(path) : await this.getFile(path);
 
-        return promise.then((entry) => this.getMetadata(entry));
-    }
-
-    /**
-     * Remove the starting slash of a path if it's there. E.g. '/sites/filepool' -> 'sites/filepool'.
-     *
-     * @param path Path.
-     * @returns Path without a slash in the first position.
-     * @deprecated since 4.1. Use CoreText.removeStartingSlash instead.
-     */
-    removeStartingSlash(path: string): string {
-        return CoreText.removeStartingSlash(path);
+        return this.getMetadata(entry);
     }
 
     /**
@@ -1093,8 +1081,8 @@ export class CoreFileProvider {
             let extension = CoreMimetypeUtils.getFileExtension(fileName) || defaultExt;
 
             // Clean the file name.
-            fileNameWithoutExtension = CoreTextUtils.removeSpecialCharactersForFiles(
-                CoreTextUtils.decodeURIComponent(fileNameWithoutExtension),
+            fileNameWithoutExtension = CoreText.removeSpecialCharactersForFiles(
+                CoreUrl.decodeURIComponent(fileNameWithoutExtension),
             );
 
             // Index the files by name.
@@ -1112,7 +1100,7 @@ export class CoreFileProvider {
             return this.calculateUniqueName(files, fileNameWithoutExtension + extension);
         } catch (error) {
             // Folder doesn't exist, name is unique. Clean it and return it.
-            return CoreTextUtils.removeSpecialCharactersForFiles(CoreTextUtils.decodeURIComponent(fileName));
+            return CoreText.removeSpecialCharactersForFiles(CoreUrl.decodeURIComponent(fileName));
         }
     }
 

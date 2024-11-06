@@ -18,13 +18,12 @@ import { ActivatedRoute, ActivatedRouteSnapshot, Data, NavigationEnd, Params, Ur
 import { NavigationOptions } from '@ionic/angular/common/providers/nav-controller';
 
 import { CoreConstants } from '@/core/constants';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMainMenu } from '@features/mainmenu/services/mainmenu';
 import { CoreObject } from '@singletons/object';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreUrlUtils } from '@services/utils/url';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreUrl, CoreUrlPartNames } from '@singletons/url';
+import { CoreText } from '@singletons/text';
 import { makeSingleton, NavController, Router } from '@singletons';
 import { CoreScreen } from './screen';
 import { CoreError } from '@classes/errors/error';
@@ -33,6 +32,7 @@ import { CorePlatform } from '@services/platform';
 import { filter } from 'rxjs/operators';
 import { CorePromisedValue } from '@classes/promised-value';
 import { BehaviorSubject } from 'rxjs';
+import { CoreLoadings } from './loadings';
 
 /**
  * Redirect payload.
@@ -85,7 +85,7 @@ export class CoreNavigatorService {
      * @returns Whether the active route is using the given path.
      */
     isCurrent(path: string): boolean {
-        return CoreTextUtils.matchesGlob(this.getCurrentPath(), path);
+        return CoreText.matchesGlob(this.getCurrentPath(), path);
     }
 
     /**
@@ -232,7 +232,7 @@ export class CoreNavigatorService {
 
         // If we are not logged into the site, load the site.
         if (!CoreSites.isLoggedIn()) {
-            const modal = await CoreDomUtils.showModalLoading();
+            const modal = await CoreLoadings.show();
 
             try {
                 const loggedIn = await CoreSites.loadSite(siteId, {
@@ -244,7 +244,7 @@ export class CoreNavigatorService {
                     // User has been redirected to the login page and will be redirected to the site path after login.
                     return true;
                 }
-            } catch (error) {
+            } catch {
                 // Site doesn't exist.
                 return this.navigate('/login/sites', { reset: true });
             } finally {
@@ -262,7 +262,7 @@ export class CoreNavigatorService {
      * @returns Current path.
      */
     getCurrentPath(): string {
-        return CoreUrlUtils.removeUrlParams(Router.url);
+        return CoreUrl.removeUrlParts(Router.url, [CoreUrlPartNames.Query, CoreUrlPartNames.Fragment]);
     }
 
     /**
@@ -325,7 +325,7 @@ export class CoreNavigatorService {
             // Try to retrieve the param from local storage in browser.
             const storageParam = localStorage.getItem(value);
             if (storageParam) {
-                storedParam = CoreTextUtils.parseJSON(storageParam);
+                storedParam = CoreText.parseJSON(storageParam);
             }
         }
 
@@ -763,7 +763,7 @@ export class CoreNavigatorService {
      */
     getRelativePathToParent(parentPath: string): string {
         // Add an ending slash to avoid collisions with other routes (e.g. /foo and /foobar).
-        parentPath = CoreTextUtils.addEndingSlash(parentPath);
+        parentPath = CoreText.addEndingSlash(parentPath);
 
         const path = this.getCurrentPath();
         const parentRouteIndex = path.indexOf(parentPath);

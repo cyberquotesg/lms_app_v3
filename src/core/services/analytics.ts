@@ -20,8 +20,8 @@ import { CoreEvents } from '@singletons/events';
 import { CoreSites } from './sites';
 import { CoreConfig, CoreConfigProvider } from './config';
 import { CoreConstants } from '../constants';
-import { CoreUrlUtils } from './utils/url';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
+import { CoreUrl } from '@singletons/url';
 
 /**
  * Helper service to support analytics.
@@ -103,11 +103,11 @@ export class CoreAnalyticsService extends CoreDelegate<CoreAnalyticsHandler> {
         };
 
         if (treatedEvent.type === CoreAnalyticsEventType.VIEW_ITEM || treatedEvent.type === CoreAnalyticsEventType.VIEW_ITEM_LIST) {
-            treatedEvent.name = CoreTextUtils.cleanTags(treatedEvent.name);
+            treatedEvent.name = CoreText.cleanTags(treatedEvent.name);
         }
 
         if ('url' in treatedEvent && treatedEvent.url) {
-            if (!CoreUrlUtils.isAbsoluteURL(treatedEvent.url)) {
+            if (!CoreUrl.isAbsoluteURL(treatedEvent.url)) {
                 treatedEvent.url = site.createSiteUrl(treatedEvent.url);
             } else if (!site.containsUrl(treatedEvent.url)) {
                 // URL belongs to a different site, ignore the event.

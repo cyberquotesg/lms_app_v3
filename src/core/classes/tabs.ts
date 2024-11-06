@@ -31,7 +31,7 @@ import { CoreSettingsHelper } from '@features/settings/services/settings-helper'
 import { CoreAriaRoleTab, CoreAriaRoleTabFindable } from './aria-role-tab';
 import { CoreEventObserver } from '@singletons/events';
 import { CoreDom } from '@singletons/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreWait } from '@singletons/wait';
 import { CoreError } from './errors/error';
 import { CorePromisedValue } from './promised-value';
 import { AsyncDirective } from './async-directive';
@@ -39,6 +39,7 @@ import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { CoreSwiper } from '@singletons/swiper';
+import { toBoolean } from '../transforms/boolean';
 
 /**
  * Class to abstract some common code for tabs.
@@ -52,7 +53,7 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements AfterViewIn
     protected static readonly MIN_TAB_WIDTH = 107;
 
     @Input() selectedIndex = 0; // Index of the tab to select.
-    @Input() hideUntil = false; // Determine when should the contents be shown.
+    @Input({ transform: toBoolean }) hideUntil = false; // Determine when should the contents be shown.
     @Output() protected ionChange = new EventEmitter<T>(); // Emitted when the tab changes.
 
     protected swiper?: Swiper;
@@ -218,9 +219,9 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements AfterViewIn
         this.slideChanged();
 
         this.swiper.update();
-        await CoreUtils.nextTick();
+        await CoreWait.nextTick();
 
-        if (!this.hasSliddenToInitial && this.selectedIndex && this.selectedIndex >= this.swiper.slidesPerViewDynamic()) {
+        if (!this.hasSliddenToInitial && this.selectedIndex >= this.swiper.slidesPerViewDynamic()) {
             this.hasSliddenToInitial = true;
             this.shouldSlideToInitial = true;
 
@@ -232,7 +233,7 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements AfterViewIn
             }, 400);
 
             return;
-        } else if (this.selectedIndex) {
+        } else {
             this.hasSliddenToInitial = true;
         }
 
@@ -300,21 +301,21 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements AfterViewIn
      * @returns Initial tab, undefined if no valid tab found.
      */
     protected calculateInitialTab(): T | undefined {
-        const selectedTab: T | undefined = this.tabs[this.selectedIndex || 0] || undefined;
+        const selectedTab: T | undefined = this.tabs[this.selectedIndex] || undefined;
 
-        if (selectedTab && selectedTab.enabled) {
+        if (selectedTab?.enabled) {
             return selectedTab;
         }
 
         // The tab is not enabled or not shown. Get the first tab that is enabled.
-        return this.tabs.find((tab) => tab.enabled) || undefined;
+        return this.tabs.find((tab) => tab.enabled);
     }
 
     /**
      * Method executed when the slides are changed.
      */
     slideChanged(): void {
-        if (!this.swiper) {
+        if (!this.swiper || this.swiper.destroyed) {
             return;
         }
 
@@ -339,12 +340,12 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements AfterViewIn
      * Calculate the number of slides that can fit on the screen.
      */
     protected async calculateMaxSlides(): Promise<void> {
-        if (!this.swiper) {
+        if (!this.swiper || this.swiper.destroyed) {
             return;
         }
 
         this.maxSlides = 3;
-        await CoreUtils.nextTick();
+        await CoreWait.nextTick();
 
         if (!this.swiper.width) {
             return;
@@ -455,7 +456,7 @@ export class CoreTabsBaseComponent<T extends CoreTabBase> implements AfterViewIn
             return;
         }
 
-        if (this.selected && this.swiper) {
+        if (this.selected && this.swiper && !this.swiper.destroyed) {
             // Check if we need to slide to the tab because it's not visible.
             const firstVisibleTab = this.swiper.activeIndex;
             const lastVisibleTab = firstVisibleTab + this.swiper.slidesPerViewDynamic() - 1;

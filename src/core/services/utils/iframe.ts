@@ -21,12 +21,11 @@ import { CoreFile } from '@services/file';
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 
 import { makeSingleton, NgZone, Translate } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
-import { CoreUrl } from '@singletons/url';
 import { CoreWindow } from '@singletons/window';
 import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 import { CorePath } from '@singletons/path';
@@ -37,6 +36,7 @@ import { CoreMimetypeUtils } from './mimetype';
 import { CoreFilepool } from '@services/filepool';
 import { CoreSite } from '@classes/sites/site';
 import { CoreNative } from '@features/native/services/native';
+import { CoreLoadings } from '@services/loadings';
 
 type CoreFrameElement = FrameElement & {
     window?: Window;
@@ -68,7 +68,7 @@ export class CoreIframeUtilsProvider {
     checkOnlineFrameInOffline(element: CoreFrameElement, isSubframe?: boolean): boolean {
         const src = 'src' in element ? element.src : element.data;
 
-        if (src && src != 'about:blank' && !CoreUrlUtils.isLocalFileUrl(src) && !CoreNetwork.isOnline()) {
+        if (src && src != 'about:blank' && !CoreUrl.isLocalFileUrl(src) && !CoreNetwork.isOnline()) {
             if (element.classList.contains('core-iframe-offline-disabled')) {
                 // Iframe already hidden, stop.
                 return true;
@@ -234,7 +234,7 @@ export class CoreIframeUtilsProvider {
      */
     getContentWindowAndDocument(element: CoreFrameElement): { window: Window | null; document: Document | null } {
         const src = 'src' in element ? element.src : element.data;
-        if (src !== 'about:blank' && !CoreUrlUtils.isLocalFileUrl(src)) {
+        if (src !== 'about:blank' && !CoreUrl.isLocalFileUrl(src)) {
             // No permissions to access the iframe.
             return { window: null, document: null };
         }
@@ -423,7 +423,7 @@ export class CoreIframeUtilsProvider {
      * @returns Promise resolved when done.
      */
     protected async windowOpen(url: string, name: string, element?: CoreFrameElement): Promise<void> {
-        const scheme = CoreUrlUtils.getUrlScheme(url);
+        const scheme = CoreUrl.getUrlProtocol(url);
         if (!scheme) {
             // It's a relative URL, use the frame src to create the full URL.
             const src = element
@@ -488,12 +488,12 @@ export class CoreIframeUtilsProvider {
 
         const urlParts = CoreUrl.parse(link.href);
         const originalHref = 'getAttribute' in link ? link.getAttribute('href') : link.originalHref;
-        if (!link.href || !originalHref || originalHref == '#' || !urlParts || urlParts.protocol == 'javascript') {
+        if (!link.href || !originalHref || originalHref == '#' || !urlParts || urlParts.protocol === 'javascript') {
             // Links with no URL and Javascript links are ignored.
             return;
         }
 
-        if (urlParts.protocol && !CoreUrlUtils.isLocalFileUrlScheme(urlParts.protocol, urlParts.domain || '')) {
+        if (urlParts.protocol && !CoreUrl.isLocalFileUrlScheme(urlParts.protocol, urlParts.domain || '')) {
             // Scheme suggests it's an external resource.
             event && event.preventDefault();
 
@@ -503,7 +503,7 @@ export class CoreIframeUtilsProvider {
             if (
                 element &&
                 frameSrc &&
-                !CoreUrlUtils.isLocalFileUrl(frameSrc) &&
+                !CoreUrl.isLocalFileUrl(frameSrc) &&
                 (!link.target || link.target == '_self')
             ) {
                 // Load the link inside the frame itself.
@@ -559,7 +559,7 @@ export class CoreIframeUtilsProvider {
      */
     injectiOSScripts(userScriptWindow: WKUserScriptWindow): void {
         const wwwPath = CoreFile.getWWWAbsolutePath();
-        const linksPath = CorePath.concatenatePaths(wwwPath, 'assets/js/iframe-treat-links.js');
+        const linksPath = CorePath.concatenatePaths(wwwPath, 'assets/js/iframe-treat-links.js').replace(/%20/g, ' ');
 
         userScriptWindow.WKUserScript?.addScript({ id: 'CoreIframeUtilsLinksScript', file: linksPath });
 
@@ -574,7 +574,7 @@ export class CoreIframeUtilsProvider {
      * @returns Promise resolved when done.
      */
     async fixIframeCookies(url: string): Promise<void> {
-        if (!CorePlatform.isIOS() || !url || CoreUrlUtils.isLocalFileUrl(url)) {
+        if (!CorePlatform.isIOS() || !url || CoreUrl.isLocalFileUrl(url)) {
             // No need to fix cookies.
             return;
         }
@@ -613,7 +613,7 @@ export class CoreIframeUtilsProvider {
      * @returns Boolean.
      */
     shouldDisplayHelpForUrl(url: string): boolean {
-        return this.shouldDisplayHelp() && !CoreUrlUtils.isLocalFileUrl(url);
+        return this.shouldDisplayHelp() && !CoreUrl.isLocalFileUrl(url);
     }
 
     /**
@@ -675,7 +675,7 @@ export class CoreIframeUtilsProvider {
      * @param options Options
      */
     async frameLaunchExternal(url: string, options: LaunchExternalOptions = {}): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             if (!CoreNetwork.isOnline()) {

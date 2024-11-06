@@ -13,9 +13,11 @@
 // limitations under the License.
 
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventObserver } from '@singletons/events';
+import { CorePlatform } from '@services/platform';
+import { CoreWait } from './wait';
+import { convertTextToHTMLElement } from '../utils/create-html-element';
 
 /**
  * Singleton with helper functions for dom.
@@ -74,6 +76,19 @@ export class CoreDom {
     }
 
     /**
+     * Given some HTML code, return the HTML code inside <body> tags. If there are no body tags, return the whole HTML.
+     *
+     * @param html HTML text.
+     * @returns Body HTML.
+     */
+    static getHTMLBodyContent(html: string): string {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const bodyContent = doc.body.innerHTML;
+
+        return bodyContent ?? html;
+    }
+
+    /**
      * Retrieve the position of a element relative to another element.
      *
      * @param element Element to get the position.
@@ -90,6 +105,22 @@ export class CoreDom {
             x: elementRectangle.x - parentRectangle.x,
             y: elementRectangle.y - parentRectangle.y,
         };
+    }
+
+    /**
+     * Check if HTML content is blank.
+     *
+     * @param content HTML content.
+     * @returns True if the string does not contain actual content: text, images, etc.
+     */
+    static htmlIsBlank(content: string): boolean {
+        if (!content) {
+            return true;
+        }
+
+        const element = convertTextToHTMLElement(content);
+
+        return !CoreDom.elementHasContent(element);
     }
 
     /**
@@ -213,7 +244,7 @@ export class CoreDom {
      */
     static onWindowResize(resizeFunction: (ev?: Event) => void, debounceDelay = 20): CoreEventObserver {
         const resizeListener = CoreUtils.debounce(async (ev?: Event) => {
-            await CoreDomUtils.waitForResizeDone();
+            await CoreWait.waitForResizeDone();
 
             resizeFunction(ev);
         }, debounceDelay);
@@ -535,20 +566,6 @@ export class CoreDom {
     }
 
     /**
-     * Listen to click and Enter/Space keys in an element.
-     *
-     * @param element Element to listen to events.
-     * @param callback Callback to call when clicked or the key is pressed.
-     * @deprecated since 4.1.1: Use initializeClickableElementA11y instead.
-     */
-    static onActivate(
-        element: HTMLElement & {disabled?: boolean},
-        callback: (event: MouseEvent | KeyboardEvent) => void,
-    ): void {
-        this.initializeClickableElementA11y(element, callback);
-    }
-
-    /**
      * Initializes a clickable element a11y calling the click action when pressed enter or space
      * and adding tabindex and role if needed.
      *
@@ -682,6 +699,44 @@ export class CoreDom {
         });
 
         return element;
+    }
+
+    /**
+     * Prefix CSS rules.
+     *
+     * @param css CSS code.
+     * @param prefix Prefix to add to CSS rules.
+     * @param prefixIfNested Prefix to add to CSS rules if nested. It may happend we need different prefixes.
+     *          Ie: If nested is supported ::ng-deep is not needed.
+     * @returns Prefixed CSS.
+     */
+    static prefixCSS(css: string, prefix: string, prefixIfNested?: string): string {
+        if (!css) {
+            return '';
+        }
+
+        if (!prefix) {
+            return css;
+        }
+
+        // Check if browser supports CSS nesting.
+        const supportsNesting = CorePlatform.supportsCSSNesting();
+        if (supportsNesting) {
+            prefixIfNested = prefixIfNested ?? prefix;
+
+            // Wrap the CSS with the prefix.
+            return `${prefixIfNested} { ${css} }`;
+        }
+
+        // Fallback.
+        // Remove comments first.
+        let regExp = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
+        css = css.replace(regExp, '');
+
+        // Add prefix.
+        regExp = /([^]*?)({[^]*?}|,)/g;
+
+        return css.replace(regExp, prefix + ' $1 $2');
     }
 
 }

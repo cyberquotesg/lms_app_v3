@@ -20,8 +20,7 @@ import { CoreApp, CoreStoreConfig } from '@services/app';
 import { CoreEvents } from '@singletons/events';
 import { CoreWS } from '@services/ws';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl, CoreUrlPartNames } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreConstants } from '@/core/constants';
 import {
@@ -67,6 +66,8 @@ import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { firstValueFrom } from 'rxjs';
 import { CoreHTMLClasses } from '@singletons/html-classes';
 import { CoreSiteErrorDebug } from '@classes/errors/siteerror';
+import { CoreErrorHelper } from './error-helper';
+import { CoreQueueRunner } from '@classes/queue-runner';
 
 export const CORE_SITE_SCHEMAS = new InjectionToken<CoreSiteSchema[]>('CORE_SITE_SCHEMAS');
 export const CORE_SITE_CURRENT_SITE_ID_CONFIG = 'current_site_id';
@@ -96,6 +97,11 @@ export class CoreSitesProvider {
     protected schemasTables: Record<string, AsyncInstance<CoreDatabaseTable<SchemaVersionsDBEntry, 'name', never>>> = {};
     protected sitesTable = asyncInstance<CoreDatabaseTable<SiteDBEntry>>();
 
+    // Variables to run code after login navigation.
+    protected isLoginNavigationFinished = false;
+    protected afterLoginNavigationQueue: CoreSitesAfterLoginNavigationProcess[] = [];
+    protected afterLoginNavigationQueueRunner = new CoreQueueRunner(1, true);
+
     constructor(@Optional() @Inject(CORE_SITE_SCHEMAS) siteSchemas: CoreSiteSchema[][] | null) {
         this.logger = CoreLogger.getInstance('CoreSitesProvider');
         this.siteSchemas = (siteSchemas ?? []).flat().reduce(
@@ -109,7 +115,7 @@ export class CoreSitesProvider {
     }
 
     /**
-     * Initialize.
+     * @inheritdoc
      */
     initialize(): void {
         // Initialize general site events.
@@ -158,6 +164,16 @@ export class CoreSitesProvider {
         // Site config is checked in login.
         CoreEvents.on(CoreEvents.LOGIN_SITE_CHECKED, (data) => {
             CoreHTMLClasses.addSiteUrlClass(data.config.httpswwwroot);
+        });
+
+        // Unload temporary styles when site config is "unchecked" in login.
+        CoreEvents.on(CoreEvents.LOGIN_SITE_UNCHECKED, ({ loginSuccessful }) => {
+            if (loginSuccessful) {
+                // The classes are already added in LOGIN_SITE_CHECKED.
+                return;
+            }
+
+            CoreHTMLClasses.removeSiteClasses();
         });
 
         CoreEvents.on(CoreEvents.SITE_UPDATED, async (data) => {
@@ -276,9 +292,9 @@ export class CoreSitesProvider {
      */
     async checkSite(siteUrl: string, protocol: string = 'https://'): Promise<CoreSiteCheckResponse> {
         // The formatURL function adds the protocol if is missing.
-        siteUrl = CoreUrlUtils.formatURL(siteUrl);
+        siteUrl = CoreUrl.formatURL(siteUrl);
 
-        if (!CoreUrlUtils.isHttpURL(siteUrl)) {
+        if (!CoreUrl.isHttpURL(siteUrl)) {
             throw new CoreError(Translate.instant('core.login.invalidsite'));
         }
 
@@ -305,9 +321,9 @@ export class CoreSitesProvider {
                 }
 
                 // Site doesn't exist. Return the error message.
-                if (CoreTextUtils.getErrorMessageFromError(error)) {
+                if (CoreErrorHelper.getErrorMessageFromError(error)) {
                     throw error;
-                } else if (CoreTextUtils.getErrorMessageFromError(secondError)) {
+                } else if (CoreErrorHelper.getErrorMessageFromError(secondError)) {
                     throw secondError;
                 } else {
                     throw new CoreError(Translate.instant('core.sitenotfoundhelp'));
@@ -340,7 +356,7 @@ export class CoreSitesProvider {
             }
 
             // Try to add or remove 'www'.
-            temporarySite.setURL(CoreUrlUtils.addOrRemoveWWW(temporarySite.getURL()));
+            temporarySite.setURL(CoreUrl.addOrRemoveWWW(temporarySite.getURL()));
 
             try {
                 config = await temporarySite.getPublicConfig();
@@ -351,7 +367,7 @@ export class CoreSitesProvider {
                 }
 
                 // App didn't receive a WS response, probably cannot connect. Prioritize first error if it's valid.
-                if (CoreTextUtils.getErrorMessageFromError(error)) {
+                if (CoreErrorHelper.getErrorMessageFromError(error)) {
                     throw error;
                 } else {
                     throw secondError;
@@ -543,7 +559,7 @@ export class CoreSitesProvider {
 
         // We only allow one retry (to avoid loops).
         if (!retry && data.errorcode == 'requirecorrectaccess') {
-            siteUrl = CoreUrlUtils.addOrRemoveWWW(siteUrl);
+            siteUrl = CoreUrl.addOrRemoveWWW(siteUrl);
 
             // by rachmad
             // return this.getUserToken(siteUrl, username, password, service, true);
@@ -656,7 +672,7 @@ export class CoreSitesProvider {
                 this.currentSite = site;
                 // Store session.
                 await this.login(siteId);
-            } else if (this.currentSite && this.currentSite.getId() == siteId) {
+            } else if (this.currentSite && this.currentSite.getId() === siteId) {
                 // Current site has just been updated, trigger the event.
                 CoreEvents.trigger(CoreEvents.SITE_UPDATED, info, siteId);
             }
@@ -1255,8 +1271,8 @@ export class CoreSitesProvider {
      * @returns Site.
      */
     makeSiteFromSiteListEntry(entry: SiteDBEntry): CoreSite {
-        const info = entry.info ? CoreTextUtils.parseJSON<CoreSiteInfo>(entry.info) : undefined;
-        const config = entry.config ? CoreTextUtils.parseJSON<CoreSiteConfig>(entry.config) : undefined;
+        const info = entry.info ? CoreText.parseJSON<CoreSiteInfo>(entry.info) : undefined;
+        const config = entry.config ? CoreText.parseJSON<CoreSiteConfig>(entry.config) : undefined;
 
         const site = CoreSitesFactory.makeSite(
             entry.id,
@@ -1338,7 +1354,7 @@ export class CoreSitesProvider {
 
         await Promise.all(sites.map(async (site) => {
             if (!ids || ids.indexOf(site.id) > -1) {
-                const siteInfo = site.info ? <CoreSiteInfo> CoreTextUtils.parseJSON(site.info) : undefined;
+                const siteInfo = site.info ? <CoreSiteInfo> CoreText.parseJSON(site.info) : undefined;
                 const siteInstance = CoreSitesFactory.makeSite(site.id, site.siteUrl, site.token, { info: siteInfo });
 
                 const siteName = await siteInstance.getSiteName();
@@ -1376,8 +1392,8 @@ export class CoreSitesProvider {
         // Sort sites by site name, url and then fullname.
         sites.sort((a, b) => {
             // First compare by site name.
-            let textA = CoreTextUtils.cleanTags(a.siteName).toLowerCase().trim();
-            let textB = CoreTextUtils.cleanTags(b.siteName).toLowerCase().trim();
+            let textA = CoreText.cleanTags(a.siteName).toLowerCase().trim();
+            let textB = CoreText.cleanTags(b.siteName).toLowerCase().trim();
 
             let compare = textA.localeCompare(textB);
             if (compare !== 0) {
@@ -1442,7 +1458,7 @@ export class CoreSitesProvider {
     async login(siteId: string): Promise<void> {
         await CoreConfig.set(CORE_SITE_CURRENT_SITE_ID_CONFIG, siteId);
 
-        CoreEvents.trigger(CoreEvents.LOGIN, {}, siteId);
+        CoreEvents.trigger(CoreEvents.LOGIN, { siteId }, siteId);
     }
 
     /**
@@ -1461,6 +1477,8 @@ export class CoreSitesProvider {
         const siteId = this.currentSite.getId();
 
         this.currentSite = undefined;
+        this.isLoginNavigationFinished = false;
+        this.afterLoginNavigationQueue = [];
 
         if (options.forceLogout || (siteConfig && siteConfig.tool_mobile_forcelogout == '1')) {
             promises.push(this.setSiteLoggedOut(siteId));
@@ -1702,7 +1720,7 @@ export class CoreSitesProvider {
         // Check if URL has http(s) protocol.
         if (!url.match(/^https?:\/\//i)) {
             // URL doesn't have http(s) protocol. Check if it has any protocol.
-            if (CoreUrlUtils.isAbsoluteURL(url)) {
+            if (CoreUrl.isAbsoluteURL(url)) {
                 // It has some protocol. Return empty array.
                 return [];
             }
@@ -1948,11 +1966,13 @@ export class CoreSitesProvider {
         const site = await this.getSite(siteIds[0]);
 
         const siteUrl = CoreText.removeEndingSlash(
-            CoreUrlUtils.removeProtocolAndWWW(site.getURL()),
+            CoreUrl.removeUrlParts(site.getURL(), [CoreUrlPartNames.Protocol, CoreUrlPartNames.WWWInDomain]),
         );
-        const treatedUrl = CoreText.removeEndingSlash(CoreUrlUtils.removeProtocolAndWWW(url));
+        const treatedUrl = CoreText.removeEndingSlash(
+            CoreUrl.removeUrlParts(url, [CoreUrlPartNames.Protocol, CoreUrlPartNames.WWWInDomain]),
+        );
 
-        if (siteUrl == treatedUrl) {
+        if (siteUrl === treatedUrl) {
             result.site = site;
         }
 
@@ -2169,6 +2189,47 @@ export class CoreSitesProvider {
                 .map(site => CoreSitesFactory.makeSite(site.id, site.siteUrl, ''))
                 .map(site => site.invalidateCaches()),
         );
+    }
+
+    /**
+     * Run some code when the login navigation is finished. Login navigation finishes when the proper main menu page
+     * has loaded.
+     * If not logged in or the login navigation is already finished, the callback will run immediately (waiting for currently
+     * running processes to finish).
+     * Otherwise, the process will be added to a queue and will run once the login navigation is finished.
+     *
+     * @param data Process data.
+     */
+    runAfterLoginNavigation(data: CoreSitesAfterLoginNavigationProcess): void {
+        if (!this.isLoggedIn() || this.isLoginNavigationFinished) {
+            this.afterLoginNavigationQueueRunner.run(data.callback, { priority: data.priority });
+
+            return;
+        }
+
+        this.afterLoginNavigationQueue.push(data);
+
+        // Sort the list by priority. The queue runner also uses priority, but the first run is always executed immediately
+        // so it's important to always pass the highest priority process first.
+        this.afterLoginNavigationQueue.sort((a, b) => b.priority - a.priority);
+    }
+
+    /**
+     * Notify that the login navigation is finished. This function should only be used by main menu pages.
+     */
+    loginNavigationFinished(): void {
+        if (this.isLoginNavigationFinished) {
+            // Already finished, nothing else to do.
+            return;
+        }
+
+        this.isLoginNavigationFinished = true;
+
+        // Run the processes in the queue.
+        this.afterLoginNavigationQueue.forEach(data => {
+            this.afterLoginNavigationQueueRunner.run(data.callback, { priority: data.priority });
+        });
+        this.afterLoginNavigationQueue = [];
     }
 
 }
@@ -2394,4 +2455,12 @@ export type CoreSitesLoginTokenResponse = {
 export type CoreSitesLogoutOptions = {
     forceLogout?: boolean; // If true, site will be marked as logged out, no matter the value tool_mobile_forcelogout.
     removeAccount?: boolean; // If true, site will be removed too after logout.
+};
+
+/**
+ * Process to run after login navigation finishes.
+ */
+export type CoreSitesAfterLoginNavigationProcess = {
+    priority: number;
+    callback: () => Promise<void>;
 };

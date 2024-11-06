@@ -14,15 +14,14 @@
 
 import { Injectable, SimpleChange, KeyValueChanges } from '@angular/core';
 import { IonContent } from '@ionic/angular';
-import { ModalOptions, PopoverOptions, AlertOptions, AlertButton, TextFieldTypes, ToastOptions } from '@ionic/core';
+import { PopoverOptions, AlertOptions, AlertButton, TextFieldTypes } from '@ionic/core';
 import { Md5 } from 'ts-md5';
 
-import { CoreApp } from '@services/app';
 import { CoreConfig } from '@services/config';
 import { CoreFile } from '@services/file';
 import { CoreWSExternalWarning } from '@services/ws';
-import { CoreTextUtils, CoreTextErrorObject } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreText } from '@singletons/text';
+import { CoreUrl, CoreUrlPartNames } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreConstants } from '@/core/constants';
 import { CoreIonLoadingElement } from '@classes/ion-loading';
@@ -33,23 +32,11 @@ import {
     makeSingleton,
     Translate,
     AlertController,
-    ToastController,
-    PopoverController,
-    ModalController,
-    Router,
-    ActionSheetController,
-    LoadingController,
 } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreFileSizeSum } from '@services/plugin-file-delegate';
 import { CoreNetworkError } from '@classes/errors/network-error';
-import { CoreBSTooltipComponent } from '@components/bs-tooltip/bs-tooltip';
-import { CoreViewerImageComponent } from '@features/viewer/components/image/image';
-import { CoreModalLateralTransitionEnter, CoreModalLateralTransitionLeave } from '@classes/modal-lateral-transition';
 import { CoreSites } from '@services/sites';
-import { NavigationStart } from '@angular/router';
-import { filter } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
 import { CoreNetwork } from '@services/network';
 import { CoreSiteError } from '@classes/errors/siteerror';
 import { CoreUserSupport } from '@features/user/services/support';
@@ -58,8 +45,18 @@ import { CorePlatform } from '@services/platform';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { CoreLang } from '@services/lang';
 import { CorePasswordModalParams, CorePasswordModalResponse } from '@components/password-modal/password-modal';
-import { CoreWSError } from '@classes/errors/wserror';
 import { CoreErrorLogs } from '@singletons/error-logs';
+import { CoreKeyboard } from '@singletons/keyboard';
+import { CoreWait } from '@singletons/wait';
+import { CoreToasts, ToastDuration, ShowToastOptions } from '../toasts';
+import { fixOverlayAriaHidden } from '@/core/utils/fix-aria-hidden';
+import { CoreModals, OpenModalOptions } from '@services/modals';
+import { CorePopovers, OpenPopoverOptions } from '@services/popovers';
+import { CoreViewer } from '@features/viewer/services/viewer';
+import { CoreLoadings } from '@services/loadings';
+import { CoreErrorHelper, CoreErrorObject } from '@services/error-helper';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
+import { CoreHTMLClasses } from '@singletons/html-classes';
 
 /*
  * "Utils" service with helper functions for UI, DOM elements and HTML code.
@@ -73,13 +70,9 @@ export class CoreDomUtilsProvider {
     protected readonly INPUT_SUPPORT_KEYBOARD: string[] = ['date', 'datetime', 'datetime-local', 'email', 'month', 'number',
         'password', 'search', 'tel', 'text', 'time', 'url', 'week'];
 
-    protected template: HTMLTemplateElement = document.createElement('template'); // A template element to convert HTML to element.
-
     protected matchesFunctionName?: string; // Name of the "matches" function to use when simulating a closest call.
     protected debugDisplay = false; // Whether to display debug messages. Store it in a variable to make it synchronous.
     protected displayedAlerts: Record<string, HTMLIonAlertElement> = {}; // To prevent duplicated alerts.
-    protected displayedModals: Record<string, HTMLIonModalElement> = {}; // To prevent duplicated modals.
-    protected activeLoadingModals: CoreIonLoadingElement[] = [];
     protected logger: CoreLogger;
 
     constructor() {
@@ -117,7 +110,7 @@ export class CoreDomUtilsProvider {
         limitedThreshold?: number,
         alwaysConfirm?: boolean,
     ): Promise<void> {
-        const readableSize = CoreTextUtils.bytesToSize(size.size, 2);
+        const readableSize = CoreText.bytesToSize(size.size, 2);
 
         const getAvailableBytes = async (): Promise<number | null> => {
             const availableBytes = await CoreFile.calculateFreeSpace();
@@ -139,7 +132,7 @@ export class CoreDomUtilsProvider {
             if (availableBytes === null) {
                 return '';
             } else {
-                const availableSize = CoreTextUtils.bytesToSize(availableBytes, 2);
+                const availableSize = CoreText.bytesToSize(availableBytes, 2);
 
                 if (CorePlatform.isAndroid() && size.size > availableBytes - CoreConstants.MINIMUM_FREE_SPACE) {
                     throw new CoreError(
@@ -203,12 +196,11 @@ export class CoreDomUtilsProvider {
      *
      * @param html Text to convert.
      * @returns Element.
+     *
+     * @deprecated since 4.5. Use convertTextToHTMLElement directly instead.
      */
     convertToElement(html: string): HTMLElement {
-        // Add a div to hold the content, that's the element that will be returned.
-        this.template.innerHTML = '<div>' + html + '</div>';
-
-        return <HTMLElement> this.template.content.children[0];
+        return convertTextToHTMLElement(html);
     }
 
     /**
@@ -270,7 +262,10 @@ export class CoreDomUtilsProvider {
      * @returns Fixed HTML text.
      */
     fixHtml(html: string): string {
-        this.template.innerHTML = html;
+        // We can't use CoreText.processHTML because it removes elements that
+        // are not allowed as a child of <div>, like <li> or <tr>.
+        const template = document.createElement('template');
+        template.innerHTML = html;
 
         // eslint-disable-next-line no-control-regex
         const attrNameRegExp = /[^\x00-\x20\x7F-\x9F"'>/=]+/;
@@ -285,9 +280,9 @@ export class CoreDomUtilsProvider {
             Array.from(element.children).forEach(fixElement);
         };
 
-        Array.from(this.template.content.children).forEach(fixElement);
+         Array.from(template.content.children).forEach(fixElement);
 
-        return this.template.innerHTML;
+         return template.innerHTML;
     }
 
     /**
@@ -334,16 +329,16 @@ export class CoreDomUtilsProvider {
             elementToFocus.focus();
 
             if (elementToFocus === document.activeElement || (isIonButton && element === document.activeElement)) {
-                await CoreUtils.nextTick();
+                await CoreWait.nextTick();
                 if (CorePlatform.isAndroid() && this.supportsInputKeyboard(elementToFocus)) {
                     // On some Android versions the keyboard doesn't open automatically.
-                    CoreApp.openKeyboard();
+                    CoreKeyboard.open();
                 }
                 break;
             }
 
             // @TODO Probably a Mutation Observer would get this working.
-            await CoreUtils.wait(50);
+            await CoreWait.wait(50);
             retries--;
         }
     }
@@ -396,7 +391,7 @@ export class CoreDomUtilsProvider {
      * @returns Attribute value.
      */
     getHTMLElementAttribute(html: string, attribute: string): string | null {
-        return this.convertToElement(html).children[0].getAttribute(attribute);
+        return convertTextToHTMLElement(html).children[0].getAttribute(attribute);
     }
 
     /**
@@ -417,7 +412,7 @@ export class CoreDomUtilsProvider {
      * @param error Error object.
      * @returns True if the message error is a network error, false otherwise.
      */
-    protected isNetworkError(message: string, error?: CoreError | CoreTextErrorObject | string): boolean {
+    protected isNetworkError(message: string, error?: CoreError | CoreErrorObject | string): boolean {
         return message == Translate.instant('core.networkerrormsg') ||
             message == Translate.instant('core.fileuploader.errormustbeonlinetoupload') ||
             error instanceof CoreNetworkError;
@@ -431,7 +426,7 @@ export class CoreDomUtilsProvider {
      */
     protected isSiteUnavailableError(message: string): boolean {
         let siteUnavailableMessage = Translate.instant('core.siteunavailablehelp', { site: 'SITEURLPLACEHOLDER' });
-        siteUnavailableMessage = CoreTextUtils.escapeForRegex(siteUnavailableMessage);
+        siteUnavailableMessage = CoreText.escapeForRegex(siteUnavailableMessage);
         siteUnavailableMessage = siteUnavailableMessage.replace('SITEURLPLACEHOLDER', '.*');
 
         return new RegExp(siteUnavailableMessage).test(message);
@@ -444,7 +439,7 @@ export class CoreDomUtilsProvider {
      * @param needsTranslate Whether the error needs to be translated.
      * @returns Error message, null if no error should be displayed.
      */
-    getErrorMessage(error: CoreError | CoreTextErrorObject | string, needsTranslate?: boolean): string | null {
+    getErrorMessage(error: CoreError | CoreErrorObject | string, needsTranslate?: boolean): string | null {
         if (typeof error != 'string' && !error) {
             return null;
         }
@@ -456,11 +451,11 @@ export class CoreDomUtilsProvider {
             if (this.debugDisplay) {
                 // Get the debug info. Escape the HTML so it is displayed as it is in the view.
                 if ('debuginfo' in error && error.debuginfo) {
-                    extraInfo = '<br><br>' + CoreTextUtils.escapeHTML(error.debuginfo, false);
+                    extraInfo = '<br><br>' + CoreText.escapeHTML(error.debuginfo, false);
                 }
                 if ('backtrace' in error && error.backtrace) {
-                    extraInfo += '<br><br>' + CoreTextUtils.replaceNewLines(
-                        CoreTextUtils.escapeHTML(error.backtrace, false),
+                    extraInfo += '<br><br>' + CoreText.replaceNewLines(
+                        CoreText.escapeHTML(error.backtrace, false),
                         '<br>',
                     );
                 }
@@ -475,7 +470,7 @@ export class CoreDomUtilsProvider {
             }
 
             // We received an object instead of a string. Search for common properties.
-            errorMessage = CoreTextUtils.getErrorMessageFromError(error);
+            errorMessage = CoreErrorHelper.getErrorMessageFromError(error);
             CoreErrorLogs.addErrorLog({ message: JSON.stringify(error), type: errorMessage || '', time: new Date().getTime() });
             if (!errorMessage) {
                 // No common properties found, just stringify it.
@@ -492,7 +487,7 @@ export class CoreDomUtilsProvider {
             errorMessage = error;
         }
 
-        let message = CoreTextUtils.decodeHTML(needsTranslate ? Translate.instant(errorMessage) : errorMessage);
+        let message = CoreText.decodeHTML(needsTranslate ? Translate.instant(errorMessage) : errorMessage);
 
         if (extraInfo) {
             message += extraInfo;
@@ -548,7 +543,9 @@ export class CoreDomUtilsProvider {
             el.addEventListener('click', async (ev: Event) => {
                 const html = el.getAttribute('data-html');
 
-                await CoreDomUtils.openPopoverWithoutResult({
+                const { CoreBSTooltipComponent } = await import('@components/bs-tooltip/bs-tooltip');
+
+                await CorePopovers.openWithoutResult({
                     component: CoreBSTooltipComponent,
                     componentProps: {
                         content,
@@ -655,7 +652,7 @@ export class CoreDomUtilsProvider {
      * @returns HTML without the element.
      */
     removeElementFromHtml(html: string, selector: string, removeAll?: boolean): string {
-        const element = this.convertToElement(html);
+        const element = convertTextToHTMLElement(html);
 
         if (removeAll) {
             const selected = element.querySelectorAll(selector);
@@ -703,14 +700,17 @@ export class CoreDomUtilsProvider {
         paths: {[url: string]: string},
         anchorFn?: (anchor: HTMLElement, href: string) => void,
     ): string {
-        const element = this.convertToElement(html);
+        const element = convertTextToHTMLElement(html);
 
         // Treat elements with src (img, audio, video, ...).
         const media = Array.from(element.querySelectorAll<HTMLElement>('img, video, audio, source, track, iframe, embed'));
         media.forEach((media: HTMLElement) => {
             const currentSrc = media.getAttribute('src');
             const newSrc = currentSrc ?
-                paths[CoreUrlUtils.removeUrlParams(CoreTextUtils.decodeURIComponent(currentSrc))] :
+                paths[CoreUrl.removeUrlParts(
+                    CoreUrl.decodeURIComponent(currentSrc),
+                    [CoreUrlPartNames.Query, CoreUrlPartNames.Fragment],
+                )] :
                 undefined;
 
             if (newSrc !== undefined) {
@@ -720,7 +720,7 @@ export class CoreDomUtilsProvider {
             // Treat video posters.
             const currentPoster = media.getAttribute('poster');
             if (media.tagName == 'VIDEO' && currentPoster) {
-                const newPoster = paths[CoreTextUtils.decodeURIComponent(currentPoster)];
+                const newPoster = paths[CoreUrl.decodeURIComponent(currentPoster)];
                 if (newPoster !== undefined) {
                     media.setAttribute('poster', newPoster);
                 }
@@ -732,7 +732,10 @@ export class CoreDomUtilsProvider {
         anchors.forEach((anchor: HTMLElement) => {
             const currentHref = anchor.getAttribute('href');
             const newHref = currentHref ?
-                paths[CoreUrlUtils.removeUrlParams(CoreTextUtils.decodeURIComponent(currentHref))] :
+                paths[CoreUrl.removeUrlParts(
+                    CoreUrl.decodeURIComponent(currentHref),
+                    [CoreUrlPartNames.Query, CoreUrlPartNames.Fragment],
+                )] :
                 undefined;
 
             if (newHref !== undefined) {
@@ -838,7 +841,7 @@ export class CoreDomUtilsProvider {
             ? options.message
             : options.message?.value || '';
 
-        const hasHTMLTags = CoreTextUtils.hasHTMLTags(message);
+        const hasHTMLTags = CoreText.hasHTMLTags(message);
 
         if (hasHTMLTags && !CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('3.7')) {
             // Treat multilang.
@@ -857,7 +860,7 @@ export class CoreDomUtilsProvider {
         const alert = await AlertController.create(options);
 
         if (Object.keys(this.displayedAlerts).length === 0) {
-            await Promise.all(this.activeLoadingModals.slice(0).reverse().map(modal => modal.pause()));
+            await CoreLoadings.pauseActiveModals();
         }
 
         // eslint-disable-next-line promise/catch-or-return
@@ -868,7 +871,7 @@ export class CoreDomUtilsProvider {
                 alertMessageEl && this.treatAnchors(alertMessageEl);
             }
 
-            this.fixAriaHidden(alert);
+            fixOverlayAriaHidden(alert);
 
             return;
         });
@@ -883,7 +886,7 @@ export class CoreDomUtilsProvider {
 
             // eslint-disable-next-line promise/always-return
             if (Object.keys(this.displayedAlerts).length === 0) {
-                await Promise.all(this.activeLoadingModals.map(modal => modal.resume()));
+                await CoreLoadings.resumeActiveModals();
             }
         });
 
@@ -934,14 +937,15 @@ export class CoreDomUtilsProvider {
      * @param options More options. See https://ionicframework.com/docs/v3/api/components/alert/AlertController/
      * @returns Promise resolved if the user confirms and rejected with a canceled error if he cancels.
      */
-    showDeleteConfirm(
+    async showDeleteConfirm(
         translateMessage: string = 'core.areyousure',
         translateArgs: Record<string, unknown> = {},
         options: AlertOptions = {},
     ): Promise<void> {
-        return new Promise((resolve, reject): void => {
-            options.message = Translate.instant(translateMessage, translateArgs);
+        options.message = Translate.instant(translateMessage, translateArgs);
+        options.message = await CoreLang.filterMultilang(options.message);
 
+        return new Promise((resolve, reject): void => {
             options.buttons = [
                 {
                     text: Translate.instant('core.cancel'),
@@ -1021,7 +1025,7 @@ export class CoreDomUtilsProvider {
      * @returns Promise resolved with the alert modal.
      */
     async showErrorModal(
-        error: CoreError | CoreTextErrorObject | string,
+        error: CoreError | CoreErrorObject | string,
         needsTranslate?: boolean,
         autocloseTime?: number,
     ): Promise<HTMLIonAlertElement | null> {
@@ -1116,7 +1120,7 @@ export class CoreDomUtilsProvider {
         let errorMessage = error || undefined;
 
         if (error && typeof error != 'string') {
-            errorMessage = CoreTextUtils.getErrorMessageFromError(error);
+            errorMessage = CoreErrorHelper.getErrorMessageFromError(error);
         }
 
         return this.showErrorModal(
@@ -1150,34 +1154,10 @@ export class CoreDomUtilsProvider {
      * @param text The text of the modal window. Default: core.loading.
      * @param needsTranslate Whether the 'text' needs to be translated.
      * @returns Loading element instance.
-     * @description
-     * Usage:
-     *     let modal = await domUtils.showModalLoading(myText);
-     *     ...
-     *     modal.dismiss();
+     * @deprecated since 4.5. Use CoreLoading.show instead.
      */
     async showModalLoading(text?: string, needsTranslate?: boolean): Promise<CoreIonLoadingElement> {
-        if (!text) {
-            text = Translate.instant('core.loading');
-        } else if (needsTranslate) {
-            text = Translate.instant(text);
-        }
-
-        const loading = new CoreIonLoadingElement(text);
-
-        loading.onDismiss(() => {
-            const index = this.activeLoadingModals.indexOf(loading);
-
-            if (index !== -1) {
-                this.activeLoadingModals.splice(index, 1);
-            }
-        });
-
-        this.activeLoadingModals.push(loading);
-
-        await loading.present();
-
-        return loading;
+        return CoreLoadings.show(text, needsTranslate);
     }
 
     /**
@@ -1189,7 +1169,7 @@ export class CoreDomUtilsProvider {
      * @returns Operation result.
      */
     async showOperationModals<T>(text: string, needsTranslate: boolean, operation: () => Promise<T>): Promise<T | null> {
-        const modal = await this.showModalLoading(text, needsTranslate);
+        const modal = await CoreLoadings.show(text, needsTranslate);
 
         try {
             return await operation();
@@ -1368,27 +1348,26 @@ export class CoreDomUtilsProvider {
     /**
      * Displays an autodimissable toast modal window.
      *
-     * @param text The text of the toast.
-     * @param needsTranslate Whether the 'text' needs to be translated.
+     * @param message The text of the toast.
+     * @param translateMessage Whether the 'text' needs to be translated.
      * @param duration Duration in ms of the dimissable toast.
      * @param cssClass Class to add to the toast.
      * @returns Toast instance.
+     *
+     * @deprecated since 4.5. Use CoreToasts.show instead.
      */
     async showToast(
-        text: string,
-        needsTranslate?: boolean,
+        message: string,
+        translateMessage?: boolean,
         duration: ToastDuration | number = ToastDuration.SHORT,
         cssClass: string = '',
     ): Promise<HTMLIonToastElement> {
-        if (needsTranslate) {
-            text = Translate.instant(text);
-        }
-
-        return this.showToastWithOptions({
-            message: text,
-            duration: duration,
+        return CoreToasts.show({
+            message,
+            translateMessage,
+            duration,
+            cssClass,
             position: 'bottom',
-            cssClass: cssClass,
         });
     }
 
@@ -1397,22 +1376,11 @@ export class CoreDomUtilsProvider {
      *
      * @param options Options.
      * @returns Promise resolved with Toast instance.
+     *
+     * @deprecated since 4.5. Use CoreToasts.show instead.
      */
     async showToastWithOptions(options: ShowToastOptions): Promise<HTMLIonToastElement> {
-        // Convert some values and set default values.
-        const toastOptions: ToastOptions = {
-            ...options,
-            duration: CoreConstants.CONFIG.toastDurations[options.duration] ?? options.duration ?? 2000,
-            position: options.position ?? 'bottom',
-        };
-
-        const loader = await ToastController.create(toastOptions);
-
-        await loader.present();
-
-        this.fixAriaHidden(loader);
-
-        return loader;
+        return CoreToasts.show(options);
     }
 
     /**
@@ -1435,7 +1403,7 @@ export class CoreDomUtilsProvider {
      * @returns Same text converted to HTMLCollection.
      */
     toDom(text: string): HTMLCollection {
-        const element = this.convertToElement(text);
+        const element = convertTextToHTMLElement(text);
 
         return element.children;
     }
@@ -1471,80 +1439,13 @@ export class CoreDomUtilsProvider {
      *
      * @param options Modal Options.
      * @returns The modal data when the modal closes.
+     *
+     * @deprecated since 4.5. Use CoreModals.openModal instead.
      */
     async openModal<T = unknown>(
         options: OpenModalOptions,
     ): Promise<T | undefined> {
-        const { waitForDismissCompleted, closeOnNavigate, ...modalOptions } = options;
-        const listenCloseEvents = closeOnNavigate ?? true; // Default to true.
-
-        // TODO: Improve this if we need two modals with same component open at the same time.
-        const modalId = Md5.hashAsciiStr(options.component?.toString() || '');
-        const alreadyDisplayed = !!this.displayedModals[modalId];
-
-        const modal = alreadyDisplayed
-            ? this.displayedModals[modalId]
-            : await ModalController.create(modalOptions);
-
-        let navSubscription: Subscription | undefined;
-
-        // Get the promise before presenting to get result if modal is suddenly hidden.
-        const resultPromise = waitForDismissCompleted ? modal.onDidDismiss<T>() : modal.onWillDismiss<T>();
-
-        if (!this.displayedModals[modalId]) {
-            // Store the modal and remove it when dismissed.
-            this.displayedModals[modalId] = modal;
-
-            if (listenCloseEvents) {
-                // Listen navigation events to close modals.
-                navSubscription = Router.events
-                    .pipe(filter(event => event instanceof NavigationStart))
-                    .subscribe(async () => {
-                        modal.dismiss();
-                    });
-            }
-
-            await modal.present();
-        }
-
-        if (!alreadyDisplayed) {
-            this.fixAriaHidden(modal);
-        }
-
-        const result = await resultPromise;
-
-        navSubscription?.unsubscribe();
-        delete this.displayedModals[modalId];
-
-        if (result?.data) {
-            return result?.data;
-        }
-    }
-
-    /**
-     * Temporary fix to remove aria-hidden from ion-router-outlet if needed. It can be removed once the Ionic bug is fixed.
-     * https://github.com/ionic-team/ionic-framework/issues/29396
-     *
-     * @param overlay Overlay dismissed.
-     */
-    protected async fixAriaHidden(
-        overlay: HTMLIonModalElement | HTMLIonPopoverElement | HTMLIonAlertElement | HTMLIonToastElement,
-    ): Promise<void> {
-
-        await overlay.onDidDismiss();
-
-        const overlays = await Promise.all([
-            ModalController.getTop(),
-            PopoverController.getTop(),
-            ActionSheetController.getTop(),
-            AlertController.getTop(),
-            LoadingController.getTop(),
-            ToastController.getTop(),
-        ]);
-
-        if (!overlays.find(overlay => overlay !== undefined)) {
-            document.querySelector('ion-router-outlet')?.removeAttribute('aria-hidden');
-        }
+        return CoreModals.openModal(options);
     }
 
     /**
@@ -1552,20 +1453,13 @@ export class CoreDomUtilsProvider {
      *
      * @param options Modal Options.
      * @returns The modal data when the modal closes.
+     *
+     * @deprecated since 4.5. Use CoreModals.openSideModal instead.
      */
     async openSideModal<T = unknown>(
         options: OpenModalOptions,
     ): Promise<T | undefined> {
-
-        options = Object.assign({
-            cssClass: 'core-modal-lateral',
-            showBackdrop: true,
-            backdropDismiss: true,
-            enterAnimation: CoreModalLateralTransitionEnter,
-            leaveAnimation: CoreModalLateralTransitionLeave,
-        }, options);
-
-        return this.openModal<T>(options);
+        return CoreModals.openSideModal(options);
     }
 
     /**
@@ -1573,16 +1467,11 @@ export class CoreDomUtilsProvider {
      *
      * @param options Options.
      * @returns Promise resolved when the popover is dismissed or will be dismissed.
+     *
+     * @deprecated since 4.5. Use CorePopovers.open instead.
      */
     async openPopover<T = void>(options: OpenPopoverOptions): Promise<T | undefined> {
-
-        const { waitForDismissCompleted, ...popoverOptions } = options;
-        const popover = await this.openPopoverWithoutResult(popoverOptions);
-
-        const result = waitForDismissCompleted ? await popover.onDidDismiss<T>() : await popover.onWillDismiss<T>();
-        if (result?.data) {
-            return result?.data;
-        }
+        return CorePopovers.open(options);
     }
 
     /**
@@ -1590,15 +1479,11 @@ export class CoreDomUtilsProvider {
      *
      * @param options Options.
      * @returns Promise resolved when the popover is displayed.
+     *
+     * @deprecated since 4.5. Use CorePopovers.openWithoutResult instead.
      */
     async openPopoverWithoutResult(options: Omit<PopoverOptions, 'showBackdrop'>): Promise<HTMLIonPopoverElement> {
-        const popover = await PopoverController.create(options);
-
-        await popover.present();
-
-        this.fixAriaHidden(popover);
-
-        return popover;
+        return CorePopovers.openWithoutResult(options);
     }
 
     /**
@@ -1606,28 +1491,11 @@ export class CoreDomUtilsProvider {
      *
      * @param passwordParams Params to show the modal.
      * @returns Entered password, error and validation.
+     *
+     * @deprecated since 4.5. Use CoreModals.promptPassword instead.
      */
     async promptPassword<T extends CorePasswordModalResponse>(passwordParams?: CorePasswordModalParams): Promise<T> {
-        const { CorePasswordModalComponent } =
-            await import('@/core/components/password-modal/password-modal.module');
-
-        const modalData = await CoreDomUtils.openModal<T>(
-            {
-                cssClass: 'core-password-modal',
-                showBackdrop: true,
-                backdropDismiss: true,
-                component: CorePasswordModalComponent,
-                componentProps: passwordParams,
-            },
-        );
-
-        if (modalData === undefined) {
-            throw new CoreCanceledError();
-        } else if (modalData instanceof CoreWSError) {
-            throw modalData;
-        }
-
-        return modalData;
+        return CoreModals.promptPassword(passwordParams);
     }
 
     /**
@@ -1637,6 +1505,8 @@ export class CoreDomUtilsProvider {
      * @param title Title of the page or modal.
      * @param component Component to link the image to if needed.
      * @param componentId An ID to use in conjunction with the component.
+     *
+     * @deprecated since 4.5. Use CoreViewer.viewImage instead.
      */
     async viewImage(
         image: string,
@@ -1644,21 +1514,7 @@ export class CoreDomUtilsProvider {
         component?: string,
         componentId?: string | number,
     ): Promise<void> {
-        if (!image) {
-            return;
-        }
-
-        await CoreDomUtils.openModal({
-            component: CoreViewerImageComponent,
-            componentProps: {
-                title,
-                image,
-                component,
-                componentId,
-            },
-            cssClass: 'core-modal-transparent',
-        });
-
+        await CoreViewer.viewImage(image, title, component, componentId);
     }
 
     /**
@@ -1746,24 +1602,11 @@ export class CoreDomUtilsProvider {
      * @param windowHeight Initial window height.
      * @param retries Number of retries done.
      * @returns Promise resolved when done.
+     *
+     * @deprecated since 4.5. Use CoreWait.waitForResizeDone instead.
      */
     async waitForResizeDone(windowWidth?: number, windowHeight?: number, retries = 0): Promise<void> {
-        if (!CorePlatform.isIOS()) {
-            return; // Only wait in iOS.
-        }
-
-        windowWidth = windowWidth || window.innerWidth;
-        windowHeight = windowHeight || window.innerHeight;
-
-        if (windowWidth != window.innerWidth || windowHeight != window.innerHeight || retries >= 10) {
-            // Window size changed or max number of retries reached, stop.
-            return;
-        }
-
-        // Wait a bit and try again.
-        await CoreUtils.wait(50);
-
-        return this.waitForResizeDone(windowWidth, windowHeight, retries+1);
+        return CoreWait.waitForResizeDone(windowWidth, windowHeight, retries);
     }
 
     /**
@@ -1771,18 +1614,22 @@ export class CoreDomUtilsProvider {
      *
      * @param className Class name.
      * @returns Whether the CSS class is set.
+     *
+     * @deprecated since 4.5. Use CoreHTMLClasses.hasModeClass instead.
      */
     hasModeClass(className: string): boolean {
-        return document.documentElement.classList.contains(className);
+        return CoreHTMLClasses.hasModeClass(className);
     }
 
     /**
      * Get active mode CSS classes.
      *
      * @returns Mode classes.
+     *
+     * @deprecated since 4.5. Use CoreHTMLClasses.getModeClasses instead.
      */
     getModeClasses(): string[] {
-        return Array.from(document.documentElement.classList);
+        return CoreHTMLClasses.getModeClasses();
     }
 
     /**
@@ -1790,37 +1637,19 @@ export class CoreDomUtilsProvider {
      *
      * @param className Class name.
      * @param enable Whether to add or remove the class.
-     * @param options Legacy options, deprecated since 4.1.
+     *
+     * @deprecated since 4.5. Use CoreHTMLClasses.toggleModeClass instead.
      */
     toggleModeClass(
         className: string,
         enable = false,
-        options: { includeLegacy: boolean } = { includeLegacy: false },
     ): void {
-        document.documentElement.classList.toggle(className, enable);
-
-        // @deprecated since 4.1.
-        document.body.classList.toggle(className, enable && options.includeLegacy);
+        CoreHTMLClasses.toggleModeClass(className, enable);
     }
 
 }
 
 export const CoreDomUtils = makeSingleton(CoreDomUtilsProvider);
-
-/**
- * Options for the openPopover function.
- */
-export type OpenPopoverOptions = Omit<PopoverOptions, 'showBackdrop'> & {
-    waitForDismissCompleted?: boolean;
-};
-
-/**
- * Options for the openModal function.
- */
-export type OpenModalOptions = ModalOptions & {
-    waitForDismissCompleted?: boolean;
-    closeOnNavigate?: boolean; // Default true.
-};
 
 /**
  * Buttons for prompt alert.
@@ -1838,19 +1667,3 @@ export enum VerticalPoint {
     MID = 'mid',
     BOTTOM = 'bottom',
 }
-
-/**
- * Toast duration.
- */
-export enum ToastDuration {
-    LONG = 'long',
-    SHORT = 'short',
-    STICKY = 'sticky',
-}
-
-/**
- * Options for showToastWithOptions.
- */
-export type ShowToastOptions = Omit<ToastOptions, 'duration'> & {
-    duration: ToastDuration | number;
-};

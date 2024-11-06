@@ -16,8 +16,8 @@ import { CoreConstants } from '@/core/constants';
 import { CoreError } from '@classes/errors/error';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { CoreSitesReadingStrategy } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreText } from '@singletons/text';
+import { CoreUrl, CoreUrlPartNames } from '@singletons/url';
 import { CoreWS, CoreWSAjaxPreSets, CoreWSExternalWarning } from '@services/ws';
 import { CorePath } from '@singletons/path';
 
@@ -30,6 +30,55 @@ export class CoreUnauthenticatedSite {
 
     protected publicConfig?: CoreSitePublicConfigResponse;
 
+    // List of regular expressions to convert the old nomenclature to new nomenclature for disabled features.
+    protected static readonly DISABLED_FEATURES_COMPAT_REGEXPS: { old: RegExp; new: string }[] = [
+        { old: /\$mmLoginEmailSignup/g, new: 'CoreLoginEmailSignup' },
+        { old: /\$mmSideMenuDelegate/g, new: 'CoreMainMenuDelegate' },
+        { old: /\$mmCoursesDelegate/g, new: 'CoreCourseOptionsDelegate' },
+        { old: /\$mmUserDelegate/g, new: 'CoreUserDelegate' },
+        { old: /\$mmCourseDelegate/g, new: 'CoreCourseModuleDelegate' },
+        { old: /_mmCourses/g, new: '_CoreCourses' },
+        { old: /_mmaFrontpage/g, new: '_CoreSiteHome' },
+        { old: /_mmaGrades/g, new: '_CoreGrades' },
+        { old: /_mmaCompetency/g, new: '_AddonCompetency' },
+        { old: /_mmaNotifications/g, new: '_AddonNotifications' },
+        { old: /_mmaMessages/g, new: '_AddonMessages' },
+        { old: /_mmaCalendar/g, new: '_AddonCalendar' },
+        { old: /_mmaFiles/g, new: '_AddonPrivateFiles' },
+        { old: /_mmaParticipants/g, new: '_CoreUserParticipants' },
+        { old: /_mmaCourseCompletion/g, new: '_AddonCourseCompletion' },
+        { old: /_mmaNotes/g, new: '_AddonNotes' },
+        { old: /_mmaBadges/g, new: '_AddonBadges' },
+        { old: /files_privatefiles/g, new: 'AddonPrivateFilesPrivateFiles' },
+        { old: /files_sitefiles/g, new: 'AddonPrivateFilesSiteFiles' },
+        { old: /files_upload/g, new: 'AddonPrivateFilesUpload' },
+        { old: /_mmaModAssign/g, new: '_AddonModAssign' },
+        { old: /_mmaModBigbluebuttonbn/g, new: '_AddonModBBB' },
+        { old: /_mmaModBook/g, new: '_AddonModBook' },
+        { old: /_mmaModChat/g, new: '_AddonModChat' },
+        { old: /_mmaModChoice/g, new: '_AddonModChoice' },
+        { old: /_mmaModData/g, new: '_AddonModData' },
+        { old: /_mmaModFeedback/g, new: '_AddonModFeedback' },
+        { old: /_mmaModFolder/g, new: '_AddonModFolder' },
+        { old: /_mmaModForum/g, new: '_AddonModForum' },
+        { old: /_mmaModGlossary/g, new: '_AddonModGlossary' },
+        { old: /_mmaModH5pactivity/g, new: '_AddonModH5PActivity' },
+        { old: /_mmaModImscp/g, new: '_AddonModImscp' },
+        { old: /_mmaModLabel/g, new: '_AddonModLabel' },
+        { old: /_mmaModLesson/g, new: '_AddonModLesson' },
+        { old: /_mmaModLti/g, new: '_AddonModLti' },
+        { old: /_mmaModPage/g, new: '_AddonModPage' },
+        { old: /_mmaModQuiz/g, new: '_AddonModQuiz' },
+        { old: /_mmaModResource/g, new: '_AddonModResource' },
+        { old: /_mmaModScorm/g, new: '_AddonModScorm' },
+        { old: /_mmaModSurvey/g, new: '_AddonModSurvey' },
+        { old: /_mmaModUrl/g, new: '_AddonModUrl' },
+        { old: /_mmaModWiki/g, new: '_AddonModWiki' },
+        { old: /_mmaModWorkshop/g, new: '_AddonModWorkshop' },
+        { old: /remoteAddOn_/g, new: 'sitePlugin_' },
+        { old: /AddonNotes:addNote/g, new: 'AddonNotes:notes' },
+    ];
+
     /**
      * Create a site.
      *
@@ -37,7 +86,10 @@ export class CoreUnauthenticatedSite {
      * @param publicConfig Site public config.
      */
     constructor(siteUrl: string, publicConfig?: CoreSitePublicConfigResponse) {
-        this.siteUrl = CoreUrlUtils.removeUrlParams(siteUrl); // Make sure the URL doesn't have params.
+        this.siteUrl = CoreUrl.removeUrlParts(
+            siteUrl,
+            [CoreUrlPartNames.Query, CoreUrlPartNames.Fragment],
+        ); // Make sure the URL doesn't have params.
         if (publicConfig) {
             this.setPublicConfig(publicConfig);
         }
@@ -143,7 +195,7 @@ export class CoreUnauthenticatedSite {
      * @returns URL with params.
      */
     createSiteUrl(path: string, params?: Record<string, unknown>, anchor?: string): string {
-        return CoreUrlUtils.addParamsToUrl(CorePath.concatenatePaths(this.siteUrl, path), params, anchor);
+        return CoreUrl.addParamsToUrl(CorePath.concatenatePaths(this.siteUrl, path), params, anchor);
     }
 
     /**
@@ -157,8 +209,10 @@ export class CoreUnauthenticatedSite {
             return false;
         }
 
-        const siteUrl = CoreTextUtils.addEndingSlash(CoreUrlUtils.removeProtocolAndWWW(this.siteUrl));
-        url = CoreTextUtils.addEndingSlash(CoreUrlUtils.removeProtocolAndWWW(url));
+        const siteUrl = CoreText.addEndingSlash(
+            CoreUrl.removeUrlParts(this.siteUrl, [CoreUrlPartNames.Protocol, CoreUrlPartNames.WWWInDomain]),
+        );
+        url = CoreText.addEndingSlash(CoreUrl.removeUrlParts(url, [CoreUrlPartNames.Protocol, CoreUrlPartNames.WWWInDomain]));
 
         return url.indexOf(siteUrl) == 0;
     }
@@ -202,7 +256,7 @@ export class CoreUnauthenticatedSite {
      */
     setPublicConfig(publicConfig: CoreSitePublicConfigResponse): void {
         publicConfig.tool_mobile_disabledfeatures =
-            CoreTextUtils.treatDisabledFeatures(publicConfig.tool_mobile_disabledfeatures ?? '');
+            this.treatDisabledFeatures(publicConfig.tool_mobile_disabledfeatures ?? '');
         this.publicConfig = publicConfig;
     }
 
@@ -244,7 +298,10 @@ export class CoreUnauthenticatedSite {
 
         // Use the wwwroot returned by the server.
         if (config.httpswwwroot) {
-            this.siteUrl = CoreUrlUtils.removeUrlParams(config.httpswwwroot); // Make sure the URL doesn't have params.
+            this.siteUrl = CoreUrl.removeUrlParts(
+                config.httpswwwroot,
+                [CoreUrlPartNames.Query, CoreUrlPartNames.Fragment],
+            ); // Make sure the URL doesn't have params.
         }
 
         return config;
@@ -268,7 +325,7 @@ export class CoreUnauthenticatedSite {
      * @returns Whether it's a site file URL.
      */
     isSitePluginFileUrl(url: string): boolean {
-        const isPluginFileUrl = CoreUrlUtils.isPluginFileUrl(url) || CoreUrlUtils.isTokenPluginFileUrl(url);
+        const isPluginFileUrl = CoreUrl.isPluginFileUrl(url) || CoreUrl.isTokenPluginFileUrl(url);
         if (!isPluginFileUrl) {
             return false;
         }
@@ -283,7 +340,7 @@ export class CoreUnauthenticatedSite {
      * @returns Whether it's a site theme image URL.
      */
     isSiteThemeImageUrl(url: string): boolean {
-        if (!CoreUrlUtils.isThemeImageUrl(url)) {
+        if (!CoreUrl.isThemeImageUrl(url)) {
             return false;
         }
 
@@ -322,7 +379,7 @@ export class CoreUnauthenticatedSite {
             return false;
         }
 
-        const regEx = new RegExp('(,|^)' + CoreTextUtils.escapeForRegex(name) + '(,|$)', 'g');
+        const regEx = new RegExp('(,|^)' + CoreText.escapeForRegex(name) + '(,|$)', 'g');
 
         return !!disabledFeatures.match(regEx);
     }
@@ -334,6 +391,26 @@ export class CoreUnauthenticatedSite {
      */
     protected getDisabledFeatures(): string | undefined {
         return this.publicConfig?.tool_mobile_disabledfeatures;
+    }
+
+    /**
+     * Treat the list of disabled features, replacing old nomenclature with the new one.
+     *
+     * @param features List of disabled features.
+     * @returns Treated list.
+     */
+    protected treatDisabledFeatures(features: string): string {
+        if (!features) {
+            return '';
+        }
+
+        for (let i = 0; i < CoreUnauthenticatedSite.DISABLED_FEATURES_COMPAT_REGEXPS.length; i++) {
+            const entry = CoreUnauthenticatedSite.DISABLED_FEATURES_COMPAT_REGEXPS[i];
+
+            features = features.replace(entry.old, entry.new);
+        }
+
+        return features;
     }
 
 }
@@ -368,6 +445,7 @@ export type CoreSiteInfoResponse = {
     userquota?: number; // User quota (bytes). 0 means user can ignore the quota.
     usermaxuploadfilesize?: number; // User max upload file size (bytes). -1 means the user can ignore the upload file size.
     userhomepage?: CoreSiteInfoUserHomepage; // The default home page for the user.
+    userhomepageurl?: string; // @since 4.5. The URL of the custom user home page when using HOMEPAGE_URL.
     userprivateaccesskey?: string; // Private user access key for fetching files.
     siteid?: number; // Site course ID.
     sitecalendartype?: string; // Calendar type set in the site.
@@ -398,6 +476,7 @@ export enum CoreSiteInfoUserHomepage {
     HOMEPAGE_SITE = 0, // Site home.
     HOMEPAGE_MY = 1, // Dashboard.
     HOMEPAGE_MYCOURSES = 3, // My courses.
+    HOMEPAGE_URL = 4, // A custom URL.
 }
 
 /**
@@ -456,6 +535,7 @@ export type CoreSitePublicConfigResponse = {
     tool_mobile_setuplink?: string; // App download page.
     tool_mobile_qrcodetype?: CoreSiteQRCodeType; // eslint-disable-line @typescript-eslint/naming-convention
     warnings?: CoreWSExternalWarning[];
+    showloginform?: number; // @since 4.5. Display default login form.
 };
 
 /**

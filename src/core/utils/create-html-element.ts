@@ -12,35 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<< HEAD:src/core/features/cq_pages/cq_notifications/notifications-settings-lazy.module.ts
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-
-import { CoreSharedModule } from '@/core/shared.module';
-import { AddonNotificationsSettingsPage } from '@features/cq_pages/cq_notifications/pages/settings/settings';
-
-import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
-
-const routes: Routes = [
-    {
-        path: '',
-        component: AddonNotificationsSettingsPage,
-    },
-];
-
-@NgModule({
-    imports: [
-        RouterModule.forChild(routes),
-        CoreSharedModule,
-        CqComponentsModule,
-    ],
-    declarations: [
-        AddonNotificationsSettingsPage,
-    ],
-    exports: [RouterModule],
-})
-export class AddonNotificationsSettingsLazyModule {}
-=======
 /**
  * Convert some HTML as text into an HTMLElement. This HTML is put inside a div.
  * Warning: Top-level elements that are not allowed as a child of <div> (like <tr> or <li>) will be removed.
@@ -56,4 +27,3 @@ export function convertTextToHTMLElement(html: string): HTMLElement {
 
     return <HTMLElement> element.content.children[0];
 }
->>>>>>> latest:src/core/utils/create-html-element.ts

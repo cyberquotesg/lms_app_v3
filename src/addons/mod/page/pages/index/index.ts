@@ -14,7 +14,12 @@
 
 import { Component, ViewChild } from '@angular/core';
 import { CoreCourseModuleMainActivityPage } from '@features/course/classes/main-activity-page';
+
+// by rachmad
+import { AddonModPageIndexComponent } from '../../components/index/index.new';
+/* *a/
 import { AddonModPageIndexComponent } from '../../components/index/index';
+/* */
 
 /**
  * Page that displays a page.

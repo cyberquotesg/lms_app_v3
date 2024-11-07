@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 
 import { CoreApp } from '@services/app';
 import { CoreNetwork } from '@services/network';
@@ -22,10 +22,9 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { CoreNavigator } from '@services/navigator';
 import { CoreForms } from '@singletons/form';
-import { CoreUserSupport } from '@features/user/services/support';
 import { CoreSiteError } from '@classes/errors/siteerror';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
-import { CoreLoginCredentialsPage } from './credentials';
+import { CoreLoginCredentialsPage as Old } from './credentials';
 
 /**
  * Page to enter the user credentials.
@@ -35,7 +34,8 @@ import { CoreLoginCredentialsPage } from './credentials';
     templateUrl: 'credentials.new.html',
     styleUrls: ['../../login.scss'],
 })
-export class CoreLoginCredentialsPageNew extends CoreLoginCredentialsPage implements OnInit, OnDestroy {
+export class CoreLoginCredentialsPage extends Old
+{
     constructor(protected fb: FormBuilder, protected CH: CqHelper) {
         super(fb);
     }

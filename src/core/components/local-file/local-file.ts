@@ -21,12 +21,14 @@ import { CoreFileHelper } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils, CoreUtilsOpenFileOptions, OpenFileAction } from '@services/utils/utils';
 import { CoreForms } from '@singletons/form';
 import { CorePath } from '@singletons/path';
 import { CorePlatform } from '@services/platform';
+import { toBoolean } from '@/core/transforms/boolean';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Component to handle a local file. Only files inside the app folder can be managed.
@@ -41,8 +43,8 @@ import { CorePlatform } from '@services/platform';
 export class CoreLocalFileComponent implements OnInit {
 
     @Input() file?: FileEntry; // A fileEntry retrieved using CoreFileProvider.getFile or similar.
-    @Input() manage?: boolean | string; // Whether the user can manage the file (edit and delete).
-    @Input() overrideClick?: boolean | string; // Whether the default item click should be overridden.
+    @Input({ transform: toBoolean }) manage = false; // Whether the user can manage the file (edit and delete).
+    @Input({ transform: toBoolean }) overrideClick = false; // Whether the default item click should be overridden.
     @Output() onDelete = new EventEmitter<void>(); // Will notify when the file is deleted.
     @Output() onRename = new EventEmitter<{ file: FileEntry }>(); // Will notify when the file is renamed.
     @Output() onClick = new EventEmitter<void>(); // Will notify when the file is clicked. Only if overrideClick is true.
@@ -67,8 +69,6 @@ export class CoreLocalFileComponent implements OnInit {
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
-        this.manage = CoreUtils.isTrueOrOne(this.manage);
-
         if (!this.file) {
             return;
         }
@@ -78,7 +78,7 @@ export class CoreLocalFileComponent implements OnInit {
         // Get the size and timemodified.
         const metadata = await CoreFile.getMetadata(this.file);
         if (metadata.size >= 0) {
-            this.size = CoreTextUtils.bytesToSize(metadata.size, 2);
+            this.size = CoreText.bytesToSize(metadata.size, 2);
         }
 
         this.timemodified = CoreTimeUtils.userDate(metadata.modificationTime.getTime(), 'core.strftimedatetimeshort');
@@ -119,7 +119,7 @@ export class CoreLocalFileComponent implements OnInit {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!isOpenButton && CoreUtils.isTrueOrOne(this.overrideClick) && this.onClick.observed) {
+        if (!isOpenButton && this.overrideClick && this.onClick.observed) {
             this.onClick.emit();
 
             return;
@@ -181,7 +181,7 @@ export class CoreLocalFileComponent implements OnInit {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
         const fileAndDir = CoreFile.getFileAndDirectoryFromPath(this.relativePath);
         const newPath = CorePath.concatenatePaths(fileAndDir.directory, newName);
 
@@ -225,7 +225,7 @@ export class CoreLocalFileComponent implements OnInit {
             // Ask confirmation.
             await CoreDomUtils.showDeleteConfirm('core.confirmdeletefile');
 
-            modal = await CoreDomUtils.showModalLoading('core.deleting', true);
+            modal = await CoreLoadings.show('core.deleting', true);
 
             await CoreFile.removeFile(this.relativePath);
 

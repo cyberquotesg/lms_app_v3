@@ -17,7 +17,11 @@ import { NgModule } from '@angular/core';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreCourseComponentsModule } from '@features/course/components/components.module';
 
+// by rachmad
+import { AddonModPageIndexComponent } from './index/index.new';
+/* *a/
 import { AddonModPageIndexComponent } from './index/index';
+/* */
 
 @NgModule({
     declarations: [

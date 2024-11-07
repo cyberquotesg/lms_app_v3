@@ -12,19 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreSharedModule } from '@/core/shared.module';
-import { NgModule } from '@angular/core';
-import { CoreContentLinksChooseSiteModalComponent } from './choose-site-modal/choose-site-modal';
-
-@NgModule({
-    declarations: [
-        CoreContentLinksChooseSiteModalComponent,
-    ],
-    imports: [
-        CoreSharedModule,
-    ],
-    exports: [
-        CoreContentLinksChooseSiteModalComponent,
-    ],
-})
-export class CoreContentLinksComponentsModule {}
+export const ADDON_MOD_PAGE_COMPONENT = 'mmaModPage';
+export const ADDON_MOD_PAGE_PAGE_NAME = 'mod_page';

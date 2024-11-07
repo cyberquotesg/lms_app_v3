@@ -31,10 +31,11 @@ import { CoreSites } from '@services/sites';
  */
 @Component({
     selector: 'core-course-module-info',
-    styleUrls: ['course-module-info.scss'],
 
     // by rachmad
     templateUrl: 'core-course-module-info.new.html',
+
+    styleUrls: ['course-module-info.scss'],
 })
 export class CoreCourseModuleInfoComponent implements OnInit {
 

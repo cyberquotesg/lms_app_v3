@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { CoreConstants, ModPurpose } from '@/core/constants';
+import { toBoolean } from '@/core/transforms/boolean';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -27,8 +28,8 @@ import {
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreText } from '@singletons/text';
+import { CoreUrl } from '@singletons/url';
 
 const assetsPath = 'assets/img/';
 const fallbackModName = 'external-tool';
@@ -54,10 +55,10 @@ export class CoreModIconComponent implements OnInit, OnChanges {
     @Input() fallbackTranslation = ''; // Fallback translation string if cannot auto translate.
     @Input() componentId?: number; // Component Id for external icons.
     @Input() modicon?: string; // Module icon url or local url.
-    @Input() showAlt = true; // Show alt otherwise it's only presentation icon.
+    @Input({ transform: toBoolean }) showAlt = true; // Show alt otherwise it's only presentation icon.
     @Input() purpose: ModPurpose = ModPurpose.MOD_PURPOSE_OTHER; // Purpose of the module.
-    @Input() @HostBinding('class.colorize') colorize = true; // Colorize the icon. Only applies on 4.0 onwards.
-    @Input() isBranded?: boolean; // If icon is branded and no colorize will be applied.
+    @Input({ transform: toBoolean }) @HostBinding('class.colorize') colorize = true; // Colorize the icon. Only applies on 4.0+.
+    @Input({ transform: toBoolean }) isBranded = false; // If icon is branded and no colorize will be applied.
 
     @HostBinding('class.branded') brandedClass?: boolean;
 
@@ -149,14 +150,14 @@ export class CoreModIconComponent implements OnInit, OnChanges {
             return;
         }
 
-        this.iconUrl.update(value => CoreTextUtils.decodeHTMLEntities(value));
+        this.iconUrl.update(value => CoreText.decodeHTMLEntities(value));
         if (this.brandedClass !== undefined) {
             return;
         }
 
         // If it's an Moodle Theme icon, check if filtericon is set and use it.
-        if (CoreUrlUtils.isThemeImageUrl(this.iconUrl())) {
-            const filter = CoreUrlUtils.getThemeImageUrlParam(this.iconUrl(), 'filtericon');
+        if (CoreUrl.isThemeImageUrl(this.iconUrl())) {
+            const filter = CoreUrl.getThemeImageUrlParam(this.iconUrl(), 'filtericon');
             if (filter === '1') {
                 this.brandedClass = false;
 
@@ -233,7 +234,7 @@ export class CoreModIconComponent implements OnInit, OnChanges {
      * @returns Guessed modname.
      */
     protected getComponentNameFromIconUrl(iconUrl: string): string {
-        const component = CoreUrlUtils.getThemeImageUrlParam(iconUrl, 'component');
+        const component = CoreUrl.getThemeImageUrlParam(iconUrl, 'component');
 
         // Some invalid components (others may be added later on).
         if (component === 'core' || component === 'theme') {

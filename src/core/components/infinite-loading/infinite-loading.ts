@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { toBoolean } from '@/core/transforms/boolean';
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChange, ViewChild, ElementRef } from '@angular/core';
 import { IonInfiniteScroll } from '@ionic/angular';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreWait } from '@singletons/wait';
 
 const THRESHOLD = .15; // % of the scroll element height that must be close to the edge to consider loading more items necessary.
 
@@ -30,8 +31,8 @@ const THRESHOLD = .15; // % of the scroll element height that must be close to t
 })
 export class CoreInfiniteLoadingComponent implements OnChanges {
 
-    @Input() enabled!: boolean;
-    @Input() error = false;
+    @Input({ required: true, transform: toBoolean }) enabled = false;
+    @Input({ transform: toBoolean }) error = false;
     @Input() position: 'top' | 'bottom' = 'bottom';
     @Output() action: EventEmitter<() => void>; // Will emit an event when triggered.
 
@@ -77,8 +78,8 @@ export class CoreInfiniteLoadingComponent implements OnChanges {
         }
 
         // Wait to allow items to render and scroll content to grow.
-        await CoreUtils.nextTick();
-        await CoreUtils.waitFor(() => scrollElement.scrollHeight > scrollElement.clientHeight, { timeout: 1000 });
+        await CoreWait.nextTick();
+        await CoreWait.waitFor(() => scrollElement.scrollHeight > scrollElement.clientHeight, { timeout: 1000 });
 
         // Calculate distance from edge.
         const infiniteHeight = this.hostElement.getBoundingClientRect().height;
@@ -112,11 +113,18 @@ export class CoreInfiniteLoadingComponent implements OnChanges {
     }
 
     /**
+     * Fire the infinite scroll load more action if needed.
+     */
+    async fireInfiniteScrollIfNeeded(): Promise<void> {
+        this.checkScrollDistance();
+    }
+
+    /**
      * Complete loading.
      */
     async complete(): Promise<void> {
         // Wait a bit before allowing loading more, otherwise it could be re-triggered automatically when it shouldn't.
-        await CoreUtils.wait(400);
+        await CoreWait.wait(400);
 
         await this.completeLoadMore();
     }

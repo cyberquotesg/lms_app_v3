@@ -21,18 +21,12 @@ import { AddonModPagePage, AddonModPage } from '../../services/page';
 import { AddonModPageHelper } from '../../services/page-helper';
 import { ADDON_MOD_PAGE_COMPONENT } from '../../constants';
 
-// by rachmad
-import { StatusBar } from '@singletons';
-
 /**
  * Component that displays a page.
  */
 @Component({
     selector: 'addon-mod-page-index',
-    templateUrl: 'addon-mod-page-index.new.html',
-
-    // by rachmad
-    styleUrls: ['index.scss'],
+    templateUrl: 'addon-mod-page-index.html',
 })
 export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit {
 
@@ -43,9 +37,6 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
     displayTimemodified = true;
     timemodified?: number;
     page?: AddonModPagePage;
-
-    // by rachmad
-    isFullscreen = false;
 
     protected fetchContentDefaultError = 'addon.mod_page.errorwhileloadingthepage';
 
@@ -121,13 +112,4 @@ export class AddonModPageIndexComponent extends CoreCourseModuleMainResourceComp
         this.analyticsLogEvent('mod_page_view_page');
     }
 
-    // by rachmad
-    manageFullscreen(): void
-    {
-        this.isFullscreen = !this.isFullscreen;
-
-        this.isFullscreen ? StatusBar.hide() : StatusBar.show();
-        document.body.classList.toggle('core-iframe-fullscreen', this.isFullscreen);
-        document.getElementById("main-wrapper")!.classList.toggle('is-fullscreen', this.isFullscreen);
-    }
 }

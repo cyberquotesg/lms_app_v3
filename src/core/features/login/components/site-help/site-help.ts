@@ -14,12 +14,14 @@
 
 import { AfterViewInit, Component, ElementRef, HostBinding, OnDestroy } from '@angular/core';
 
-import { CoreUtils } from '@services/utils/utils';
+import { CoreQRScan } from '@services/qrscan';
 import { ModalController, Translate } from '@singletons';
 import { FAQ_QRCODE_IMAGE_HTML, FAQ_URL_IMAGE_HTML, GET_STARTED_URL } from '@features/login/constants';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { SubPartial } from '@/core/utils/types';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreWait } from '@singletons/wait';
 
 /**
  * Component that displays help to connect to a site.
@@ -27,7 +29,11 @@ import { SubPartial } from '@/core/utils/types';
 @Component({
     selector: 'core-login-site-help',
     templateUrl: 'site-help.html',
-    styleUrls: ['site-help.scss'],
+    styleUrl: 'site-help.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreLoginSiteHelpComponent implements AfterViewInit, OnDestroy {
 
@@ -39,7 +45,7 @@ export class CoreLoginSiteHelpComponent implements AfterViewInit, OnDestroy {
 
     constructor(protected el: ElementRef<HTMLElement>) {
         const getStartedTitle = Translate.instant('core.login.faqsetupsitelinktitle');
-        const canScanQR = CoreUtils.canScanQR();
+        const canScanQR = CoreQRScan.canScanQR();
         const urlImageHtml = FAQ_URL_IMAGE_HTML;
         const qrCodeImageHtml = FAQ_QRCODE_IMAGE_HTML;
         const setupLinkHtml = `<a href="${GET_STARTED_URL}" title="${getStartedTitle}">${GET_STARTED_URL}</a>`;
@@ -113,7 +119,7 @@ export class CoreLoginSiteHelpComponent implements AfterViewInit, OnDestroy {
         const answers = Array.from(this.el.nativeElement.querySelectorAll<HTMLElement>('.core-login-site-help--answer'));
 
         await Promise.all(answers.map(async answer => {
-            await this.track(CoreUtils.waitFor(() => answer.clientHeight !== 0));
+            await this.track(CoreWait.waitFor(() => answer.clientHeight !== 0));
             await this.track(CoreDomUtils.waitForImages(answer));
 
             answer.style.setProperty('--height', `${answer.clientHeight}px`);

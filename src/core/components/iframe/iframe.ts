@@ -19,9 +19,8 @@ import { SafeResourceUrl } from '@angular/platform-browser';
 
 import { CoreFile } from '@services/file';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreIframeUtils } from '@services/utils/iframe';
-import { CoreUtils } from '@services/utils/utils';
 import { DomSanitizer, Router, StatusBar } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreScreen, CoreScreenOrientation } from '@services/screen';
@@ -29,7 +28,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { NavigationStart } from '@angular/router';
 import { CoreSites } from '@services/sites';
-import { CoreUrl } from '@singletons/url';
+import { toBoolean } from '@/core/transforms/boolean';
 
 @Component({
     selector: 'core-iframe',
@@ -50,10 +49,10 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
     @Input() id: string | null = null;
     @Input() iframeWidth = '100%';
     @Input() iframeHeight = '100%';
-    @Input() allowFullscreen?: boolean | string;
-    @Input() showFullscreenOnToolbar?: boolean | string;
-    @Input() autoFullscreenOnRotate?: boolean | string;
-    @Input() allowAutoLogin = true;
+    @Input({ transform: toBoolean }) allowFullscreen = false;
+    @Input({ transform: toBoolean }) showFullscreenOnToolbar = false;
+    @Input({ transform: toBoolean }) autoFullscreenOnRotate = false;
+    @Input({ transform: toBoolean }) allowAutoLogin = true;
     @Output() loaded: EventEmitter<HTMLIFrameElement> = new EventEmitter<HTMLIFrameElement>();
 
     loading?: boolean;
@@ -118,7 +117,7 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
         }
 
         // Show loading only with external URLs.
-        this.loading = !this.src || !CoreUrlUtils.isLocalFileUrl(this.src);
+        this.loading = !this.src || !CoreUrl.isLocalFileUrl(this.src);
 
         if (this.loading) {
             setTimeout(() => {
@@ -168,15 +167,6 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
         if (changes.iframeHeight) {
             this.iframeHeight = (this.iframeHeight && CoreDomUtils.formatPixelsSize(this.iframeHeight)) || '100%';
         }
-        if (changes.allowFullscreen) {
-            this.allowFullscreen = CoreUtils.isTrueOrOne(this.allowFullscreen);
-        }
-        if (changes.showFullscreenOnToolbar) {
-            this.showFullscreenOnToolbar = CoreUtils.isTrueOrOne(this.showFullscreenOnToolbar);
-        }
-        if (changes.autoFullscreenOnRotate) {
-            this.autoFullscreenOnRotate = CoreUtils.isTrueOrOne(this.autoFullscreenOnRotate);
-        }
 
         if (!changes.src) {
             return;
@@ -197,8 +187,8 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
 
         this.launchExternalLabel = undefined;
 
-        if (url && !CoreUrlUtils.isLocalFileUrl(url)) {
-            url = CoreUrlUtils.getYoutubeEmbedUrl(url) || url;
+        if (url && !CoreUrl.isLocalFileUrl(url)) {
+            url = CoreUrl.getYoutubeEmbedUrl(url) || url;
             this.displayHelp = CoreIframeUtils.shouldDisplayHelpForUrl(url);
 
             const currentSite = CoreSites.getCurrentSite();

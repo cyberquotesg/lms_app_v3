@@ -15,8 +15,9 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Translate } from '@singletons';
 import { ModalOptions } from '@ionic/core';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreModals } from '@services/modals';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Component that show a combo select button (combobox).
@@ -52,7 +53,7 @@ export class CoreComboboxComponent implements ControlValueAccessor {
 
     @Input() interface: 'popover' | 'modal' = 'popover';
     @Input() label = Translate.instant('core.show'); // Aria label.
-    @Input() disabled = false;
+    @Input({ transform: toBoolean }) disabled = false;
     @Input() selection = '';
     @Output() onChange = new EventEmitter<unknown>(); // Will emit an event the value changed.
 
@@ -123,7 +124,7 @@ export class CoreComboboxComponent implements ControlValueAccessor {
             this.modalOptions.id = this.listboxId;
         }
 
-        const data = await CoreDomUtils.openModal(this.modalOptions);
+        const data = await CoreModals.openModal(this.modalOptions);
         this.expanded = false;
 
         if (data) {

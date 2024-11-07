@@ -18,11 +18,15 @@ import { RouterModule, Routes } from '@angular/router';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreLoginComponentsModule } from '@features/login/components/components.module';
 import { CoreLoginCredentialsPage } from '@features/login/pages/credentials/credentials';
+
+// by rachmad
 import { CoreLoginCredentialsPageNew } from '@features/login/pages/credentials/credentials.new';
 
 const routes: Routes = [
     {
         path: '',
+        
+        // by rachmad
         component: CoreLoginCredentialsPageNew,
     },
 ];
@@ -35,6 +39,8 @@ const routes: Routes = [
     ],
     declarations: [
         CoreLoginCredentialsPage,
+        
+        // by rachmad
         CoreLoginCredentialsPageNew,
     ],
 })

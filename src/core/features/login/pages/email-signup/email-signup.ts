@@ -16,7 +16,7 @@ import { Component, ViewChild, ElementRef, OnInit, ChangeDetectorRef } from '@an
 import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreCountry, CoreUtils } from '@services/utils/utils';
 import { CoreWS, CoreWSExternalWarning } from '@services/ws';
 import { Translate } from '@singletons';
@@ -36,6 +36,8 @@ import { CoreDom } from '@singletons/dom';
 import { CoreSitesFactory } from '@services/sites-factory';
 import { EMAIL_SIGNUP_FEATURE_NAME } from '@features/login/constants';
 import { CoreInputErrorsMessages } from '@components/input-errors/input-errors';
+import { CoreViewer } from '@features/viewer/services/viewer';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page to signup using email.
@@ -305,15 +307,15 @@ export class CoreLoginEmailSignupPage implements OnInit {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         const params: SignupUserWSParams = {
             username: this.signupForm.value.username.trim().toLowerCase(),
             password: this.signupForm.value.password,
-            firstname: CoreTextUtils.cleanTags(this.signupForm.value.firstname),
-            lastname: CoreTextUtils.cleanTags(this.signupForm.value.lastname),
+            firstname: CoreText.cleanTags(this.signupForm.value.firstname),
+            lastname: CoreText.cleanTags(this.signupForm.value.lastname),
             email: this.signupForm.value.email.trim(),
-            city: CoreTextUtils.cleanTags(this.signupForm.value.city),
+            city: CoreText.cleanTags(this.signupForm.value.city),
             country: this.signupForm.value.country,
         };
 
@@ -378,14 +380,14 @@ export class CoreLoginEmailSignupPage implements OnInit {
      * @returns Escaped mail.
      */
     escapeMail(text: string): string {
-        return CoreTextUtils.escapeForRegex(text);
+        return CoreText.escapeForRegex(text);
     }
 
     /**
      * Show authentication instructions.
      */
     showAuthInstructions(): void {
-        CoreTextUtils.viewText(Translate.instant('core.login.instructions'), this.authInstructions);
+        CoreViewer.viewText(Translate.instant('core.login.instructions'), this.authInstructions);
     }
 
     /**
@@ -414,7 +416,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         const params = this.ageVerificationForm.value;
 

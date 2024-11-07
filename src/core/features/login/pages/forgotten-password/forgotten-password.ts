@@ -25,15 +25,16 @@ import { CoreSitePublicConfigResponse, CoreUnauthenticatedSite } from '@classes/
 import { CoreUserSupportConfig } from '@features/user/classes/support/support-config';
 import { CoreUserGuestSupportConfig } from '@features/user/classes/support/guest-support-config';
 import { CoreSitesFactory } from '@services/sites-factory';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page to recover a forgotten password.
  */
 @Component({
     selector: 'page-core-login-forgotten-password',
-    templateUrl: 'forgotten-password.new.html',
 
     // by rachmad
+    templateUrl: 'forgotten-password.new.html',
     styleUrls: ['../../login.scss'],
 })
 export class CoreLoginForgottenPasswordPage implements OnInit {

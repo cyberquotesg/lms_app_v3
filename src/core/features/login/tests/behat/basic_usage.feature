@@ -97,6 +97,7 @@ Feature: Test basic usage of login in app
     When I enter the app
     Then I should find "App update required" in the app
 
+  @lms_from4.3
   Scenario: Force password change
     Given I force a password change for user "student1"
     When I enter the app
@@ -135,7 +136,7 @@ Feature: Test basic usage of login in app
     When I set the field "Current password" to "student1"
     And I set the field "New password" to "NewPassword1*"
     And I set the field "New password (again)" to "NewPassword1*"
-    And I click on "Sign out everywhere" "checkbox"
+    And I click on "Log out of all web apps" "checkbox"
     And I click on "Save changes" "button"
     Then I should see "Password has been changed"
 

@@ -32,7 +32,8 @@ import { CoreSite } from '@classes/sites/site';
 import { CoreFileUploaderHelper } from '@features/fileuploader/services/fileuploader-helper';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { Translate } from '@singletons';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays info about a user.
@@ -231,7 +232,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
         try {
             const result = await CoreFileUploaderHelper.selectAndUploadFile(maxSize, title, mimetypes);
 
-            modal = await CoreDomUtils.showModalLoading('core.sending', true);
+            modal = await CoreLoadings.show('core.sending', true);
 
             const profileImageURL = await CoreUser.changeProfilePicture(result.itemid, this.userId, this.site.getId());
 
@@ -302,7 +303,7 @@ export class CoreUserAboutPage implements OnInit, OnDestroy {
             return 'undefined';
         }
 
-        if (CoreUrlUtils.isThemeImageUrl(avatarUrl, this.site?.siteUrl)) {
+        if (CoreUrl.isThemeImageUrl(avatarUrl, this.site?.siteUrl)) {
             return 'default';
         }
 

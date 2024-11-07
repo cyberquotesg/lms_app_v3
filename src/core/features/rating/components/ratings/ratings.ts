@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { ContextLevel } from '@/core/constants';
+import { CoreSharedModule } from '@/core/shared.module';
 import { Component, Input, OnInit } from '@angular/core';
 import { CoreRating, CoreRatingItemRating } from '@features/rating/services/rating';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -23,17 +24,21 @@ import { ModalController } from '@singletons';
  */
 @Component({
     templateUrl: 'ratings-modal.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreRatingRatingsComponent implements OnInit {
 
-    @Input() contextLevel!: ContextLevel;
-    @Input() instanceId!: number;
-    @Input() ratingComponent!: string;
-    @Input() ratingArea!: string;
-    @Input() aggregateMethod!: number;
-    @Input() itemId!: number;
-    @Input() scaleId!: number;
-    @Input() courseId!: number;
+    @Input({ required: true }) contextLevel!: ContextLevel;
+    @Input({ required: true }) instanceId!: number;
+    @Input({ required: true }) ratingComponent!: string;
+    @Input({ required: true }) ratingArea!: string;
+    @Input({ required: true }) aggregateMethod!: number;
+    @Input({ required: true }) itemId!: number;
+    @Input({ required: true }) scaleId!: number;
+    @Input({ required: true }) courseId!: number;
 
     loaded = false;
     ratings: CoreRatingItemRating[] = [];

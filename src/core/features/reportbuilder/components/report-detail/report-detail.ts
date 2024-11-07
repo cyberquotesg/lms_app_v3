@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { toBoolean } from '@/core/transforms/boolean';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import {
     CoreReportBuilder,
@@ -25,7 +26,7 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextErrorObject } from '@services/utils/text';
+import { CoreErrorObject } from '@services/error-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
 import { CoreTime } from '@singletons/time';
@@ -36,12 +37,11 @@ import { map } from 'rxjs/operators';
     selector: 'core-report-builder-report-detail',
     templateUrl: './report-detail.html',
     styleUrls: ['./report-detail.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CoreReportBuilderReportDetailComponent implements OnInit {
 
-    @Input() reportId!: string;
-    @Input() isBlock = true;
+    @Input({ required: true }) reportId!: string;
+    @Input({ transform: toBoolean }) isBlock = true;
     @Input() perPage?: number;
     @Input() layout: 'card' | 'table' | 'adaptative' = 'adaptative';
     @Output() onReportLoaded = new EventEmitter<CoreReportBuilderReportDetail>();
@@ -54,7 +54,7 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
         new BehaviorSubject<CoreReportBuilderReportDetailState>({
             report: null,
             loaded: false,
-            canLoadMoreRows: true,
+            canLoadMoreRows: false,
             errorLoadingRows: false,
             cardviewShowFirstTitle: false,
             cardVisibleColumns: 1,
@@ -125,12 +125,13 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
                 report,
                 cardVisibleColumns: report.details.settingsdata.cardviewVisibleColumns,
                 cardviewShowFirstTitle: report.details.settingsdata.cardviewShowFirstTitle,
+                canLoadMoreRows: report.data.totalrowcount > report.data.rows.length,
             });
 
             this.logView(report);
             this.onReportLoaded.emit(report.details);
         } catch {
-            const errorConfig: CoreTextErrorObject = {
+            const errorConfig: CoreErrorObject = {
                 title: Translate.instant('core.error'),
                 body: `
                     <p>${Translate.instant('addon.mod_page.errorwhileloadingthepage')}</p>
@@ -174,7 +175,6 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
         this.updateState({ page: 0, canLoadMoreRows: false });
         await CoreUtils.ignoreErrors(this.getReport());
         await ionRefresher?.complete();
-        this.updateState({ canLoadMoreRows: true });
     }
 
     /**
@@ -224,12 +224,12 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
                         ],
                     },
                 },
+                canLoadMoreRows: newReport.data.totalrowcount > report.data.rows.length + newReport.data.rows.length,
             });
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading more reports');
 
-            this.updateState({ canLoadMoreRows: false });
-            this.updateState({ errorLoadingRows: true });
+            this.updateState({ canLoadMoreRows: false, errorLoadingRows: true });
         }
 
         complete();

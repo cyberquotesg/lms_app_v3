@@ -33,8 +33,8 @@ import {
     CoreGradesTableLeaderColumn,
     CoreGradesTableRow,
 } from '@features/grades/services/grades';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreText } from '@singletons/text';
+import { CoreUrl } from '@singletons/url';
 import { CoreMenuItem, CoreUtils } from '@services/utils/utils';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreNavigator } from '@services/navigator';
@@ -43,6 +43,8 @@ import { CoreError } from '@classes/errors/error';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { CoreCourseAccess } from '@features/course/services/course-options-delegate';
+import { CoreLoadings } from '@services/loadings';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
 
 export const GRADES_PAGE_NAME = 'grades';
 export const GRADES_PARTICIPANTS_PAGE_NAME = 'participant-grades';
@@ -110,7 +112,7 @@ export class CoreGradesHelperProvider {
                 }
 
                 content = content.replace(/<\/span>/gi, '\n');
-                content = CoreTextUtils.cleanTags(content, { trim: true });
+                content = CoreText.cleanTags(content, { trim: true });
                 name = 'gradeitem';
             } else if (name === 'grade') {
                 // Add the pass/fail class if present.
@@ -118,7 +120,7 @@ export class CoreGradesHelperProvider {
                     (column.class.includes('gradefail') ? 'text-danger' : '');
 
                 if (content.includes('action-menu')) {
-                    content = CoreTextUtils.processHTML(content, (element) => {
+                    content = CoreText.processHTML(content, (element) => {
                         element.querySelector('.action-menu')?.parentElement?.remove();
                     });
                 }
@@ -126,14 +128,14 @@ export class CoreGradesHelperProvider {
                 if (content.includes('fa-check')) {
                     row.gradeIcon = 'fas-check';
                     row.gradeIconAlt = Translate.instant('core.grades.pass');
-                    content = CoreTextUtils.cleanTags(content);
+                    content = CoreText.cleanTags(content);
                 } else if (content.includes('fa-times') || content.includes('fa-xmark')) {
                     row.gradeIcon = 'fas-xmark';
                     row.gradeIconAlt = Translate.instant('core.grades.fail');
-                    content = CoreTextUtils.cleanTags(content);
+                    content = CoreText.cleanTags(content);
                 }
             } else {
-                content = CoreTextUtils.replaceNewLines(content, '<br>');
+                content = CoreText.replaceNewLines(content, '<br>');
             }
 
             if (row.itemtype !== 'category') {
@@ -416,7 +418,7 @@ export class CoreGradesHelperProvider {
                 const matches = row.itemname.content.match(regex);
 
                 if (matches && matches.length) {
-                    const hrefParams = CoreUrlUtils.extractUrlParams(matches[1]);
+                    const hrefParams = CoreUrl.extractUrlParams(matches[1]);
 
                     return hrefParams && parseInt(hrefParams.id) === moduleId;
                 }
@@ -441,7 +443,7 @@ export class CoreGradesHelperProvider {
         moduleId?: number,
         siteId?: string,
     ): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         const site = await CoreSites.getSite(siteId);
 
@@ -551,7 +553,11 @@ export class CoreGradesHelperProvider {
             row.itemtype = 'agg_sum';
             row.icon = 'moodle-agg-sum';
             row.iconAlt = Translate.instant('core.grades.aggregatesum');
-        } else if (text.indexOf('/outcomes') > -1 || text.indexOf('fa-tasks') > -1 || text.indexOf('fa-list-check') > -1) {
+        } else if (
+            text.indexOf('/outcomes') > -1 ||
+            text.indexOf('fa-tasks') > -1 ||
+            text.indexOf('fa-list-check') > -1
+        ) {
             row.itemtype = 'outcome';
             row.icon = 'fas-list-check';
             row.iconAlt = Translate.instant('core.grades.outcome');
@@ -559,9 +565,14 @@ export class CoreGradesHelperProvider {
             row.itemtype = 'category';
             row.icon = 'fas-folder';
             row.iconAlt = Translate.instant('core.grades.category');
-        } else if (text.indexOf('/manual_item') > -1 || text.indexOf('fa-square-o') > -1) {
+        } else if (
+            text.indexOf('/manual_item') > -1 ||
+            text.indexOf('fa-square-o') > -1 ||
+            text.indexOf('fa-pencil-square-o') > -1 ||
+            text.indexOf('fa-pen-to-square') > -1
+        ) {
             row.itemtype = 'manual';
-            row.icon = 'far-square';
+            row.icon = 'fas-pen-to-square';
             row.iconAlt = Translate.instant('core.grades.manualitem');
         } else if (text.indexOf('/calc') > -1 || text.indexOf('fa-calculator') > -1) {
             row.itemtype = 'calc';
@@ -572,7 +583,7 @@ export class CoreGradesHelperProvider {
             const modname = module?.[1];
 
             if (modname !== undefined) {
-                const modicon = CoreDomUtils.convertToElement(text).querySelector('img')?.getAttribute('src') ?? undefined;
+                const modicon = convertTextToHTMLElement(text).querySelector('img')?.getAttribute('src') ?? undefined;
 
                 row.itemtype = 'mod';
                 row.itemmodule = modname;

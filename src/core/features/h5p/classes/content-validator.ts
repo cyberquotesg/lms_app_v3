@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreH5P } from '@features/h5p/services/h5p';
 import { Translate } from '@singletons';
 import { CoreH5PCore, CoreH5PLibraryData, CoreH5PLibraryAddonData, CoreH5PContentDepsTreeDependency } from './core';
 import { CoreArray } from '@singletons/array';
 
-const ALLOWED_STYLEABLE_TAGS = ['span', 'p', 'div', 'h1', 'h2', 'h3', 'td'];
+const ALLOWED_STYLEABLE_TAGS = ['span', 'p', 'div', 'h1', 'h2', 'h3', 'table', 'col', 'figure', 'td', 'th', 'li'];
 
 /**
  * Equivalent to H5P's H5PContentValidator, but without some of the validations.
@@ -117,7 +117,7 @@ export class CoreH5PContentValidator {
 
             // Add related tags for table etc.
             if (tags.indexOf('table') != -1) {
-                tags = tags.concat(['tr', 'td', 'th', 'colgroup', 'thead', 'tbody', 'tfoot']);
+                tags = tags.concat(['tr', 'td', 'th', 'colgroup', 'col', 'thead', 'tbody', 'tfoot', 'figure', 'figcaption']);
             }
             if (tags.indexOf('b') != -1) {
                 tags.push('strong');
@@ -142,13 +142,15 @@ export class CoreH5PContentValidator {
                     stylePatterns.push(/^font-size: *[0-9.]+(em|px|%) *;?$/i);
                 }
                 if (semantics.font.family) {
-                    stylePatterns.push(/^font-family: *[-a-z0-9," ]+;?$/i);
+                    stylePatterns.push(/^font-family: *[-a-z0-9,'&; ]+;?$/i);
                 }
                 if (semantics.font.color) {
-                    stylePatterns.push(/^color: *(#[a-f0-9]{3}[a-f0-9]{3}?|rgba?\([0-9, ]+\)) *;?$/i);
+                    stylePatterns.push(/^color: *(#[a-f0-9]{3}[a-f0-9]{3}?|rgba?\([0-9, ]+\)|hsla?\([0-9,.% ]+\)) *;?$/i);
                 }
                 if (semantics.font.background) {
-                    stylePatterns.push(/^background-color: *(#[a-f0-9]{3}[a-f0-9]{3}?|rgba?\([0-9, ]+\)) *;?$/i);
+                    stylePatterns.push(
+                        /^background-color: *(#[a-f0-9]{3}[a-f0-9]{3}?|rgba?\([0-9, ]+\)|hsla?\([0-9,.% ]+\)) *;?$/i,
+                    );
                 }
                 if (semantics.font.spacing) {
                     stylePatterns.push(/^letter-spacing: *[0-9.]+(em|px|%) *;?$/i);
@@ -158,6 +160,26 @@ export class CoreH5PContentValidator {
                 }
             }
 
+            // Allow styling of tables if they are allowed
+            if (semantics.tags?.indexOf('table') != -1) {
+                // CKEditor outputs border as width style color
+                // eslint-disable-next-line max-len
+                stylePatterns.push(/^border: *[0-9.]+(em|px|%|) *(none|solid|dotted|dashed|double|groove|ridge|inset|outset) *(#[a-f0-9]{3}[a-f0-9]{3}?|rgba?\([0-9, ]+\)|hsla?\([0-9,.% ]+\)) *;?$/i);
+                stylePatterns.push(/^border-style: *(none|solid|dotted|dashed|double|groove|ridge|inset|outset) *;?$/i);
+                stylePatterns.push(/^border-width: *[0-9.]+(em|px|%|) *;?$/i);
+                stylePatterns.push(/^border-color: *(#[a-f0-9]{3}[a-f0-9]{3}?|rgba?\([0-9, ]+\)|hsla?\([0-9,.% ]+\)) *;?$/i);
+                stylePatterns.push(/^vertical-align: *(middle|top|bottom);?$/i);
+                stylePatterns.push(/^padding: *[0-9.]+(em|px|%|) *;?$/i);
+                stylePatterns.push(/^width: *[0-9.]+(em|px|%|) *;?$/i);
+                stylePatterns.push(/^height: *[0-9.]+(em|px|%|) *;?$/i);
+                stylePatterns.push(/^float: *(right|left|none) *;?$/i);
+                // Needed for backwards compatibility
+                stylePatterns.push(/^border-collapse: *collapse *;?$/i);
+                // Table can have background color when font bgcolor is disabled
+                // Double entry of bgcolor in stylePatterns shouldn't matter
+                stylePatterns.push(/^background-color: *(#[a-f0-9]{3}[a-f0-9]{3}?|rgba?\([0-9, ]+\)|hsla?\([0-9,.% ]+\)) *;?$/i);
+              }
+
             // Alignment is allowed for all wysiwyg texts
             stylePatterns.push(/^text-align: *(center|left|right);?$/i);
 
@@ -165,7 +187,7 @@ export class CoreH5PContentValidator {
             text = this.filterXss(text, tags, stylePatterns);
         } else {
             // Filter text to plain text.
-            text = CoreTextUtils.escapeHTML(text, false);
+            text = CoreText.escapeHTML(text, false);
         }
 
         // Check if string is within allowed length.
@@ -271,7 +293,7 @@ export class CoreH5PContentValidator {
                 if (strict && !optional && !options[value]) {
                     delete select[key];
                 } else {
-                    select[key] = CoreTextUtils.escapeHTML(value, false);
+                    select[key] = CoreText.escapeHTML(value, false);
                 }
             }
         } else {
@@ -283,7 +305,7 @@ export class CoreH5PContentValidator {
             if (strict && !optional && !options[select]) {
                 select = (<OptionSemantics> semantics.options![0]).value || '';
             }
-            select = CoreTextUtils.escapeHTML(select, false);
+            select = CoreText.escapeHTML(select, false);
         }
 
         return select;
@@ -363,9 +385,9 @@ export class CoreH5PContentValidator {
         }
 
         // Make sure path and mime does not have any special chars
-        file.path = CoreTextUtils.escapeHTML(file.path, false);
+        file.path = CoreText.escapeHTML(file.path, false);
         if (file.mime) {
-            file.mime = CoreTextUtils.escapeHTML(file.mime, false);
+            file.mime = CoreText.escapeHTML(file.mime, false);
         }
 
         // Remove attributes that should not exist, they may contain JSON escape code.
@@ -386,7 +408,7 @@ export class CoreH5PContentValidator {
         }
 
         if (file.codecs) {
-            file.codecs = CoreTextUtils.escapeHTML(file.codecs, false);
+            file.codecs = CoreText.escapeHTML(file.codecs, false);
         }
 
         if (typeof file.bitrate == 'string') {
@@ -399,7 +421,7 @@ export class CoreH5PContentValidator {
             } else {
                 this.filterParams(file.quality, ['level', 'label']);
                 file.quality.level = Number(file.quality.level);
-                file.quality.label = CoreTextUtils.escapeHTML(file.quality.label, false);
+                file.quality.label = CoreText.escapeHTML(file.quality.label, false);
             }
         }
 
@@ -770,13 +792,26 @@ export class CoreH5PContentValidator {
                     if (matches && matches.length > 1) {
                         if (allowedStyles && attrName === 'style') {
                             // Allow certain styles.
+
+                            // Prevent font family from getting split wrong because of the ; in &quot;
+                            if (matches[1].includes('font-family')) {
+                                matches[1] = matches[1].replace(/&quot;/g, '\'');
+                            }
+
+                            const validatedStyles: string[] = [];
+                            const styles = matches[1].split(';');
+
                             for (const pattern of allowedStyles) {
-                                if (matches[1].match(pattern)) {
-                                    // All patterns are start to end patterns, and CKEditor adds one span per style.
-                                    attrArray.push('style="' + matches[1] + '"');
-                                    break;
+                                for (let style of styles) {
+                                    style = style.trim();
+                                    if (style.match(pattern)) {
+                                        validatedStyles.push(style);
+                                        break;
+                                    }
                                 }
                             }
+
+                            attrArray.push('style="' + validatedStyles.join(';') + ';"');
                             break;
                         }
 
@@ -845,10 +880,10 @@ export class CoreH5PContentValidator {
     filterXssBadProtocol(str: string, decode: boolean = true): string {
         // Get the plain text representation of the attribute value (i.e. its meaning).
         if (decode) {
-            str = CoreTextUtils.decodeHTMLEntities(str);
+            str = CoreText.decodeHTMLEntities(str);
         }
 
-        return CoreTextUtils.escapeHTML(this.stripDangerousProtocols(str), false);
+        return CoreText.escapeHTML(this.stripDangerousProtocols(str), false);
     }
 
     /**

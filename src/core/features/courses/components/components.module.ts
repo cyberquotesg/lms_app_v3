@@ -16,24 +16,16 @@ import { NgModule } from '@angular/core';
 
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreCoursesCourseListItemComponent } from './course-list-item/course-list-item';
-import { CoreCoursesCourseProgressComponent } from './course-progress/course-progress';
-import { CoreCoursesCourseOptionsMenuComponent } from './course-options-menu/course-options-menu';
 
 @NgModule({
     declarations: [
         CoreCoursesCourseListItemComponent,
-        // eslint-disable-next-line deprecation/deprecation
-        CoreCoursesCourseProgressComponent,
-        CoreCoursesCourseOptionsMenuComponent,
     ],
     imports: [
         CoreSharedModule,
     ],
     exports: [
         CoreCoursesCourseListItemComponent,
-        // eslint-disable-next-line deprecation/deprecation
-        CoreCoursesCourseProgressComponent,
-        CoreCoursesCourseOptionsMenuComponent,
     ],
 })
 export class CoreCoursesComponentsModule {}

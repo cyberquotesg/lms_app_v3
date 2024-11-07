@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CoreSharedModule } from '@/core/shared.module';
 import { Component, Input, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import {
@@ -19,9 +20,11 @@ import {
     CoreDataPrivacyDataRequestType,
     CoreDataPrivacyGetAccessInformationWSResponse,
 } from '@features/dataprivacy/services/dataprivacy';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
+import { CoreDomUtils } from '@services/utils/dom';
+import { CoreToasts, ToastDuration } from '@services/toasts';
 
 import { ModalController } from '@singletons';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Component that displays the new request page.
@@ -29,6 +32,10 @@ import { ModalController } from '@singletons';
 @Component({
     selector: 'core-data-privacy-new-request',
     templateUrl: 'newrequest.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreDataPrivacyNewRequestComponent implements OnInit {
 
@@ -94,13 +101,17 @@ export class CoreDataPrivacyNewRequestComponent implements OnInit {
         event.preventDefault();
         event.stopPropagation();
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             // Send the message.
             const requestId = await CoreDataPrivacy.createDataRequest(this.typeControl.value, this.message);
             if (requestId) {
-                CoreDomUtils.showToast('core.dataprivacy.requestsubmitted', true, ToastDuration.LONG);
+                CoreToasts.show({
+                    message: 'core.dataprivacy.requestsubmitted',
+                    translateMessage: true,
+                    duration: ToastDuration.LONG,
+                });
                 ModalController.dismiss(true);
             }
         } catch (error) {

@@ -14,17 +14,17 @@
 
 import { Component, OnInit } from '@angular/core';
 
-import { CoreApp } from '@services/app';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreUrl } from '@singletons/url';
 import { CoreTagCloud, CoreTagCollection, CoreTagCloudTag, CoreTag } from '@features/tag/services/tag';
 import { Translate } from '@singletons';
 import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 import { CoreNavigator } from '@services/navigator';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreKeyboard } from '@singletons/keyboard';
+import { CoreSites } from '@services/sites';
 
 /**
  * Page that displays most used tags and allows searching.
@@ -65,8 +65,7 @@ export class CoreTagSearchPage implements OnInit {
         this.collectionId = CoreNavigator.getRouteNumberParam('collectionId') || 0;
         this.query = CoreNavigator.getRouteParam('query') || '';
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-        deepLinkManager.treatLink();
+        CoreSites.loginNavigationFinished();
 
         this.fetchData().finally(() => {
             this.loaded = true;
@@ -120,7 +119,7 @@ export class CoreTagSearchPage implements OnInit {
      * Go to tag index page.
      */
     openTag(tag: CoreTagCloudTag): void {
-        const url = CoreTextUtils.decodeURI(tag.viewurl);
+        const url = CoreUrl.decodeURI(tag.viewurl);
         CoreContentLinksHelper.handleLink(url);
     }
 
@@ -153,7 +152,7 @@ export class CoreTagSearchPage implements OnInit {
         }
 
         this.logSearch = CoreTime.once(() => this.performLogSearch());
-        CoreApp.closeKeyboard();
+        CoreKeyboard.close();
 
         return this.fetchTags().catch((error) => {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading tags.');

@@ -31,18 +31,20 @@ import { ContextLevel, CoreConstants } from '@/core/constants';
 import { CoreNavigator } from '@services/navigator';
 import { NgZone, Translate } from '@singletons';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
+import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUser } from '@features/user/services/user';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreError } from '@classes/errors/error';
 import { CoreCommentsOffline } from '@features/comments/services/comments-offline';
 import { CoreCommentsDBRecord } from '@features/comments/services/database/comments';
 import { CoreTimeUtils } from '@services/utils/time';
-import { CoreApp } from '@services/app';
 import { CoreNetwork } from '@services/network';
 import moment from 'moment-timezone';
 import { Subscription } from 'rxjs';
 import { CoreAnimations } from '@components/animations';
+import { CoreKeyboard } from '@singletons/keyboard';
+import { CoreToasts, ToastDuration } from '@services/toasts';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays comments.
@@ -272,7 +274,7 @@ export class CoreCommentsViewerPage implements OnInit, OnDestroy {
      * @param warnings the warnings
      */
     private showSyncWarnings(warnings: string[]): void {
-        const message = CoreTextUtils.buildMessage(warnings);
+        const message = CoreText.buildMessage(warnings);
         if (message) {
             CoreDomUtils.showAlert(undefined, message);
         }
@@ -309,8 +311,8 @@ export class CoreCommentsViewerPage implements OnInit, OnDestroy {
      * @param text Comment text to add.
      */
     async addComment(text: string): Promise<void> {
-        CoreApp.closeKeyboard();
-        const loadingModal = await CoreDomUtils.showModalLoading('core.sending', true);
+        CoreKeyboard.close();
+        const loadingModal = await CoreLoadings.show('core.sending', true);
         // Freeze the add comment button.
         this.sending = true;
         try {
@@ -323,11 +325,13 @@ export class CoreCommentsViewerPage implements OnInit, OnDestroy {
                 this.area,
             );
 
-            CoreDomUtils.showToast(
-                commentsResponse ? 'core.comments.eventcommentcreated' : 'core.datastoredoffline',
-                true,
-                ToastDuration.LONG,
-            );
+            CoreToasts.show({
+                message: commentsResponse ? 'core.comments.eventcommentcreated' : 'core.datastoredoffline',
+                translateMessage: true,
+                duration: ToastDuration.LONG,
+                position: 'bottom',
+                positionAnchor: 'viewer-footer',
+            });
 
             if (commentsResponse) {
                 this.invalidateComments();
@@ -426,7 +430,11 @@ export class CoreCommentsViewerPage implements OnInit, OnDestroy {
 
             this.invalidateComments();
 
-            CoreDomUtils.showToast('core.comments.eventcommentdeleted', true, ToastDuration.LONG);
+            CoreToasts.show({
+                message: 'core.comments.eventcommentdeleted',
+                translateMessage: true,
+                duration: ToastDuration.LONG,
+            });
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Delete comment failed.');
         }

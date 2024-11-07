@@ -14,18 +14,25 @@
 
 import { CoreConstants } from '@/core/constants';
 import { Component, OnInit } from '@angular/core';
-import { FAQ_QRCODE_INFO_DONE, ONBOARDING_DONE } from '@features/login/constants';
+import {
+    ALWAYS_SHOW_LOGIN_FORM,
+    ALWAYS_SHOW_LOGIN_FORM_CHANGED,
+    FAQ_QRCODE_INFO_DONE,
+    ONBOARDING_DONE,
+} from '@features/login/constants';
 import { CoreSettingsHelper } from '@features/settings/services/settings-helper';
 import { CoreSitePlugins } from '@features/siteplugins/services/siteplugins';
 import { CoreUserTours } from '@features/usertours/services/user-tours';
 import { CoreCacheManager } from '@services/cache-manager';
 import { CoreConfig } from '@services/config';
+import { CoreEvents } from '@singletons/events';
 import { CoreFile } from '@services/file';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreDomUtils } from '@services/utils/dom';
+import { CoreToasts, ToastDuration } from '@services/toasts';
+import { CoreText } from '@singletons/text';
 
 /**
  * Page that displays the developer options.
@@ -39,6 +46,7 @@ export class CoreSettingsDevPage implements OnInit {
     rtl = false;
     forceSafeAreaMargins = false;
     direction = 'ltr';
+    alwaysShowLoginForm = false;
 
     remoteStyles = true;
     remoteStylesCount = 0;
@@ -69,6 +77,7 @@ export class CoreSettingsDevPage implements OnInit {
             this.enableStagingSites = await CoreSettingsHelper.hasEnabledStagingSites();
             this.previousEnableStagingSites = this.enableStagingSites;
         }
+        this.alwaysShowLoginForm = Boolean(await CoreConfig.get(ALWAYS_SHOW_LOGIN_FORM, 0));
 
         if (!this.siteId) {
             return;
@@ -125,6 +134,15 @@ export class CoreSettingsDevPage implements OnInit {
     }
 
     /**
+     * Called when always show login form is enabled or disabled.
+     */
+    async alwaysShowLoginFormChanged(): Promise<void> {
+        const value = Number(this.alwaysShowLoginForm);
+        await CoreConfig.set(ALWAYS_SHOW_LOGIN_FORM, value);
+        CoreEvents.trigger(ALWAYS_SHOW_LOGIN_FORM_CHANGED, { value });
+    }
+
+    /**
      * Called when remote styles is enabled or disabled.
      */
     remoteStylesChanged(): void {
@@ -165,7 +183,7 @@ export class CoreSettingsDevPage implements OnInit {
      * Copies site info.
      */
     copyInfo(): void {
-        CoreUtils.copyToClipboard(JSON.stringify({ disabledFeatures: this.disabledFeatures, sitePlugins: this.sitePlugins }));
+        CoreText.copyToClipboard(JSON.stringify({ disabledFeatures: this.disabledFeatures, sitePlugins: this.sitePlugins }));
     }
 
     /**
@@ -177,14 +195,14 @@ export class CoreSettingsDevPage implements OnInit {
         await CoreConfig.delete(ONBOARDING_DONE);
         await CoreConfig.delete(FAQ_QRCODE_INFO_DONE);
 
-        CoreDomUtils.showToast('User tours have been reseted');
+        CoreToasts.show({ message: 'User tours have been reseted' });
     }
 
     /**
      * Invalidate app caches.
      */
     async invalidateCaches(): Promise<void> {
-        const success = await CoreDomUtils.showOperationModals('Invalidating caches', true, async () => {
+        const success = await CoreDomUtils.showOperationModals('Invalidating caches', false, async () => {
             await CoreCacheManager.invalidate();
 
             return true;
@@ -194,7 +212,10 @@ export class CoreSettingsDevPage implements OnInit {
             return;
         }
 
-        await CoreDomUtils.showToast('Caches invalidated', true, ToastDuration.LONG);
+        await CoreToasts.show({
+                message: 'Caches invalidated',
+                duration: ToastDuration.LONG,
+            });
     }
 
     /**
@@ -205,7 +226,7 @@ export class CoreSettingsDevPage implements OnInit {
         await CoreFile.clearDeletedSitesFolder(sites);
         await CoreFile.clearTmpFolder();
 
-        CoreDomUtils.showToast('File storage cleared');
+        CoreToasts.show({ message: 'File storage cleared' });
     }
 
     async setEnabledStagingSites(enabled: boolean): Promise<void> {

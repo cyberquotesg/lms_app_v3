@@ -24,6 +24,8 @@ import { CoreError } from '@classes/errors/error';
 import { CoreCaptureError } from '@classes/errors/captureerror';
 import { CoreCanceledError } from '@classes/errors/cancelederror';
 import { CorePath } from '@singletons/path';
+import { toBoolean } from '@/core/transforms/boolean';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page to capture media in browser.
@@ -41,7 +43,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
     @Input() mimetype?: string;
     @Input() extension?: string;
     @Input() quality?: number; // Only for images.
-    @Input() returnDataUrl?: boolean; // Whether it should return a data img. Only for images.
+    @Input({ transform: toBoolean }) returnDataUrl = false; // Whether it should return a data img. Only for images.
 
     @ViewChild('streamVideo') streamVideo?: ElementRef;
     @ViewChild('previewVideo') previewVideo?: ElementRef;
@@ -210,7 +212,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
             // Get the image from the video and set it to the canvas, using video width/height.
             const width = this.streamVideo?.nativeElement.videoWidth;
             const height = this.streamVideo?.nativeElement.videoHeight;
-            const loadingModal = await CoreDomUtils.showModalLoading();
+            const loadingModal = await CoreLoadings.show();
 
             this.imgCanvas.nativeElement.width = width;
             this.imgCanvas.nativeElement.height = height;
@@ -312,7 +314,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const loadingModal = await CoreDomUtils.showModalLoading();
+        const loadingModal = await CoreLoadings.show();
 
         try {
             // Capturing in browser. Write the blob in a file.

@@ -12,20 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { NgModule } from '@angular/core';
-
-import { CoreSharedModule } from '@/core/shared.module';
-import { CorePolicyViewPolicyModalComponent } from './policy-modal/policy-modal';
-
-@NgModule({
-    declarations: [
-        CorePolicyViewPolicyModalComponent,
-    ],
-    imports: [
-        CoreSharedModule,
-    ],
-    exports: [
-        CorePolicyViewPolicyModalComponent,
-    ],
-})
-export class CorePolicyComponentsModule {}
+export const PARTICIPANTS_PAGE_NAME = 'participants';

@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CoreSharedModule } from '@/core/shared.module';
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { CoreDataPrivacy } from '@features/dataprivacy/services/dataprivacy';
 import { CoreUser } from '@features/user/services/user';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
+import { CoreDomUtils } from '@services/utils/dom';
+import { CoreToasts, ToastDuration } from '@services/toasts';
 import { CoreUtils } from '@services/utils/utils';
 
 import { ModalController } from '@singletons';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Component that displays the contact DPO page.
@@ -28,6 +31,11 @@ import { ModalController } from '@singletons';
 @Component({
     selector: 'core-data-privacy-contact-dpo',
     templateUrl: 'contactdpo.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
+
 })
 export class CoreDataPrivacyContactDPOComponent implements OnInit {
 
@@ -50,7 +58,7 @@ export class CoreDataPrivacyContactDPOComponent implements OnInit {
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         // Get current user email.
         const userId = CoreSites.getCurrentSiteUserId();
@@ -68,13 +76,17 @@ export class CoreDataPrivacyContactDPOComponent implements OnInit {
         event.preventDefault();
         event.stopPropagation();
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             // Send the message.
             const succeed = await CoreDataPrivacy.contactDPO(this.message);
             if (succeed) {
-                CoreDomUtils.showToast('core.dataprivacy.requestsubmitted', true, ToastDuration.LONG);
+                CoreToasts.show({
+                    message: 'core.dataprivacy.requestsubmitted',
+                    translateMessage: true,
+                    duration: ToastDuration.LONG,
+                });
                 ModalController.dismiss(true);
             }
         } catch (error) {

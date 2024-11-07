@@ -27,6 +27,8 @@ function isIOS() {
     || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 }
 
+let useFakeFullScreen = false;
+
 // Detect if we support fullscreen, and what prefix to use.
 if (document.documentElement.requestFullscreen) {
   /**
@@ -57,6 +59,7 @@ else if (document.documentElement.msRequestFullscreen) {
   // This code has been added to allow a "fake" full screen in Moodle app.
   H5P.fullScreenBrowserPrefix = 'webkit';
   H5P.safariBrowser = 0;
+  useFakeFullScreen = true;
 }
 
 /**
@@ -174,7 +177,7 @@ H5P.init = function (target) {
         })
       ;
 
-      if (isIOS()) {
+      if (useFakeFullScreen) {
         // Register message listener to enter fullscreen.
         window.addEventListener('message', function receiveMessage(event) {
           if (event.data == 'enterFullScreen') {
@@ -209,7 +212,7 @@ H5P.init = function (target) {
         instance.triggerXAPI('accessed-reuse');
       });
       actionBar.on('copyrights', function () {
-        var dialog = new H5P.Dialog('copyrights', H5P.t('copyrightInformation'), copyrights, $container, $actions.find('.h5p-copyrights')[0]);
+        var dialog = new H5P.Dialog('copyrights', H5P.t('copyrightInformation'), copyrights, $container);
         dialog.open(true);
         instance.triggerXAPI('accessed-copyright');
       });
@@ -699,7 +702,7 @@ H5P.fullScreen = function ($element, instance, exitCallback, body, forceSemiFull
       var method = (H5P.fullScreenBrowserPrefix === 'ms' ? 'msRequestFullscreen' : H5P.fullScreenBrowserPrefix + 'RequestFullScreen');
       var params = (H5P.fullScreenBrowserPrefix === 'webkit' && H5P.safariBrowser === 0 ? Element.ALLOW_KEYBOARD_INPUT : undefined);
 
-      if (isIOS()) {
+      if (useFakeFullScreen) {
         before('h5p-fullscreen-ios');
         window.parent.postMessage('enterFullScreen', '*');
       } else {
@@ -718,7 +721,7 @@ H5P.fullScreen = function ($element, instance, exitCallback, body, forceSemiFull
       else {
         done('h5p-fullscreen');
         document[H5P.fullScreenBrowserPrefix + 'ExitFullscreen'] && document[H5P.fullScreenBrowserPrefix + 'ExitFullscreen']();
-        if (isIOS()) {
+        if (useFakeFullScreen) {
           done('h5p-fullscreen-ios');
           window.parent.postMessage('exitFullScreen', '*');
         }
@@ -727,7 +730,7 @@ H5P.fullScreen = function ($element, instance, exitCallback, body, forceSemiFull
   }
 };
 
-if (isIOS()) {
+if (useFakeFullScreen) {
   // Pass fullscreen messages to child iframes.
   window.addEventListener('message', function receiveMessage(event) {
     if (event.data === 'enterFullScreen' || event.data === 'exitFullScreen') {
@@ -1090,6 +1093,7 @@ H5P.t = function (key, vars, ns) {
 H5P.Dialog = function (name, title, content, $element, $returnElement) {
   /** @alias H5P.Dialog# */
   var self = this;
+  this.activeElement = document.activeElement;
   var $dialog = H5P.jQuery('<div class="h5p-popup-dialog h5p-' + name + '-dialog" aria-labelledby="' + name + '-dialog-header" aria-modal="true" role="dialog" tabindex="-1">\
                               <div class="h5p-inner">\
                                 <h2 id="' + name + '-dialog-header">' + title + '</h2>\
@@ -1153,6 +1157,9 @@ H5P.Dialog = function (name, title, content, $element, $returnElement) {
       $element.attr('tabindex', '-1');
       if ($returnElement) {
         $returnElement.focus();
+      }
+      else if(self.activeElement) {
+        self.activeElement.focus();
       }
       else {
         $element.focus();

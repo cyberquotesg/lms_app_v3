@@ -12,19 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreSharedModule } from '@/core/shared.module';
-import { NgModule } from '@angular/core';
-
-import { CoreSearchGlobalSearchFiltersComponent } from './global-search-filters.component';
-
-export { CoreSearchGlobalSearchFiltersComponent };
-
-@NgModule({
-    imports: [
-        CoreSharedModule,
-    ],
-    declarations: [
-        CoreSearchGlobalSearchFiltersComponent,
-    ],
-})
-export class CoreSearchGlobalSearchFiltersComponentModule {}
+export const enum CoreGradeType {
+    NONE = 0, // Moodle's GRADE_TYPE_NONE.
+    VALUE = 1, // Moodle's GRADE_TYPE_VALUE.
+    SCALE = 2, // Moodle's GRADE_TYPE_SCALE.
+    TEXT = 3, // Moodle's GRADE_TYPE_TEXT.
+}

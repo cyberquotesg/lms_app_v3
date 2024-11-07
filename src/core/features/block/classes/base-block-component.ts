@@ -16,7 +16,7 @@ import { OnInit, Input, Component, Optional, Inject, OnChanges, SimpleChanges } 
 import { CoreLogger } from '@singletons/logger';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreCourseBlock } from '../../course/services/course';
 import { Params } from '@angular/router';
 import { ContextLevel } from '@/core/constants';
@@ -32,10 +32,10 @@ import { CorePromisedValue } from '@classes/promised-value';
 })
 export abstract class CoreBlockBaseComponent implements OnInit, OnChanges, ICoreBlockComponent, AsyncDirective {
 
-    @Input() title!: string; // The block title.
-    @Input() block!: CoreCourseBlock; // The block to render.
-    @Input() contextLevel!: ContextLevel; // The context where the block will be used.
-    @Input() instanceId!: number; // The instance ID associated with the context level.
+    @Input({ required: true }) title!: string; // The block title.
+    @Input({ required: true }) block!: CoreCourseBlock; // The block to render.
+    @Input({ required: true }) contextLevel!: ContextLevel; // The context where the block will be used.
+    @Input({ required: true }) instanceId!: number; // The instance ID associated with the context level.
     @Input() link?: string; // Link to go when clicked.
     @Input() linkParams?: Params; // Link params to go when clicked.
     @Input() navOptions?: CoreNavigationOptions; // Navigation options.
@@ -75,7 +75,7 @@ export abstract class CoreBlockBaseComponent implements OnInit, OnChanges, ICore
         }
 
         this.block.configs.forEach((config) => {
-            config.value = CoreTextUtils.parseJSON(config.value);
+            config.value = CoreText.parseJSON(config.value);
         });
 
         this.block.configsRecord = CoreUtils.arrayToObject(this.block.configs, 'name');

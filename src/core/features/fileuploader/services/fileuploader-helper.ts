@@ -23,7 +23,7 @@ import { CoreNetwork } from '@services/network';
 import { CoreFile, CoreFileProvider, CoreFileProgressEvent } from '@services/file';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate, Camera, ActionSheetController } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
@@ -44,6 +44,8 @@ import { CorePath } from '@singletons/path';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
 import { Chooser } from '@features/native/plugins';
+import { CoreToasts } from '@services/toasts';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Helper service to upload files.
@@ -74,7 +76,7 @@ export class CoreFileUploaderHelperProvider {
         mimetypes?: string[],
     ): Promise<CoreWSUploadFileResult | FileEntry> {
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         const result = await Chooser.getFileMetadata(mimetypes ? mimetypes.join(',') : undefined);
 
@@ -138,7 +140,7 @@ export class CoreFileUploaderHelperProvider {
         if (size < 0) {
             return CoreDomUtils.showConfirm(Translate.instant('core.fileuploader.confirmuploadunknownsize'));
         } else if (size >= wifiThreshold || (CoreNetwork.isNetworkAccessLimited() && size >= limitedThreshold)) {
-            const readableSize = CoreTextUtils.bytesToSize(size, 2);
+            const readableSize = CoreText.bytesToSize(size, 2);
 
             return CoreDomUtils.showConfirm(
                 Translate.instant('core.fileuploader.confirmuploadfile', { size: readableSize }),
@@ -159,7 +161,7 @@ export class CoreFileUploaderHelperProvider {
     async copyAndUploadFile(file: IFile | File, upload?: boolean, name?: string): Promise<CoreWSUploadFileResult | FileEntry> {
         name = name || file.name;
 
-        const modal = await CoreDomUtils.showModalLoading('core.fileuploader.readingfile', true);
+        const modal = await CoreLoadings.show('core.fileuploader.readingfile', true);
         let fileEntry: FileEntry | undefined;
 
         try {
@@ -245,7 +247,7 @@ export class CoreFileUploaderHelperProvider {
         return new CoreError(Translate.instant('core.fileuploader.maxbytesfile', {
             $a: {
                 file: fileName,
-                size: CoreTextUtils.bytesToSize(maxSize, 2),
+                size: CoreText.bytesToSize(maxSize, 2),
             },
         }));
     }
@@ -457,7 +459,11 @@ export class CoreFileUploaderHelperProvider {
 
             await this.uploadGenericFile(CoreFile.getFileEntryURL(fileEntry), file.name, file.type, deleteAfterUpload, siteId);
 
-            CoreDomUtils.showToast('core.fileuploader.fileuploaded', true, undefined, 'core-toast-success');
+            CoreToasts.show({
+                message: 'core.fileuploader.fileuploaded',
+                translateMessage: true,
+                cssClass: 'core-toast-success',
+            });
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'core.fileuploader.errorreadingfile', true);
 
@@ -816,7 +822,7 @@ export class CoreFileUploaderHelperProvider {
         }
 
         // File isn't too large and user confirmed, let's upload.
-        const modal = await CoreDomUtils.showModalLoading(uploadingStr);
+        const modal = await CoreLoadings.show(uploadingStr);
 
         try {
             return await CoreFileUploader.uploadFile(

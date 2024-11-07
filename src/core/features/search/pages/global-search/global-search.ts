@@ -19,7 +19,7 @@ import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { Translate } from '@singletons';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreEvents, CoreEventObserver } from '@singletons/events';
 import {
     CoreSearchGlobalSearchResult,
@@ -29,6 +29,7 @@ import {
 } from '@features/search/services/global-search';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSearchBoxComponent } from '@features/search/components/search-box/search-box';
+import { CoreModals } from '@services/modals';
 
 @Component({
     selector: 'page-core-search-global-search',
@@ -115,7 +116,7 @@ export class CoreSearchGlobalSearchPage implements OnInit, OnDestroy, AfterViewI
                     query,
                     filters: JSON.stringify(this.resultsSource.getFilters()),
                 },
-                url: CoreUrlUtils.addParamsToUrl('/search/index.php', {
+                url: CoreUrl.addParamsToUrl('/search/index.php', {
                     q: query,
                 }),
             });
@@ -137,9 +138,9 @@ export class CoreSearchGlobalSearchPage implements OnInit, OnDestroy, AfterViewI
      */
     async openFilters(): Promise<void> {
         const { CoreSearchGlobalSearchFiltersComponent } =
-            await import('@features/search/components/global-search-filters/global-search-filters.module');
+            await import('@features/search/components/global-search-filters/global-search-filters.component');
 
-        await CoreDomUtils.openSideModal<CoreSearchGlobalSearchFilters>({
+        await CoreModals.openSideModal<CoreSearchGlobalSearchFilters>({
             component: CoreSearchGlobalSearchFiltersComponent,
             componentProps: {
                 hideCourses: !!this.courseId,

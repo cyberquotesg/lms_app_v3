@@ -21,7 +21,6 @@ import { CoreBlockComponent } from '@features/block/components/block/block';
 import { CoreBlockDelegate } from '@features/block/services/block-delegate';
 import { CoreCourseBlock } from '@features/course/services/course';
 import { CoreCoursesDashboard, CoreCoursesDashboardProvider } from '@features/courses/services/dashboard';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
@@ -31,6 +30,7 @@ import { CoreCourses } from '../../services/courses';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { Translate } from '@singletons';
+import { CoreWait } from '@singletons/wait';
 
 /**
  * Page that shows a my courses.
@@ -96,8 +96,7 @@ export class CoreCoursesMyPage implements OnInit, OnDestroy, AsyncDirective {
     async ngOnInit(): Promise<void> {
         this.downloadCoursesEnabled = !CoreCourses.isDownloadCoursesDisabledInSite();
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-        deepLinkManager.treatLink();
+        CoreSites.loginNavigationFinished();
 
         await this.loadSiteName();
 
@@ -129,7 +128,7 @@ export class CoreCoursesMyPage implements OnInit, OnDestroy, AsyncDirective {
                 this.loadedBlock = blocks.mainBlocks.concat(blocks.sideBlocks).find((block) => block.name == 'myoverview');
                 this.hasSideBlocks = supportsMyParam && CoreBlockDelegate.hasSupportedBlock(blocks.sideBlocks);
 
-                await CoreUtils.nextTicks(2);
+                await CoreWait.nextTicks(2);
 
                 this.myOverviewBlock = this.block?.dynamicComponent?.instance as AddonBlockMyOverviewComponent;
 

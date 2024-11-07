@@ -22,7 +22,7 @@ import { CoreApp } from '@services/app';
 import { CoreFilepool } from '@services/filepool';
 import { CoreLang, CoreLangFormat } from '@services/lang';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton } from '@singletons';
@@ -34,9 +34,7 @@ import { CorePlatform } from '@services/platform';
 import { CoreEnrolAction, CoreEnrolInfoIcon } from '@features/enrol/services/enrol-delegate';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreUserProfileHandlerType } from '@features/user/services/user-delegate';
-import { CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT } from '../constants';
-
-const ROOT_CACHE_KEY = 'CoreSitePlugins:';
+import { CORE_SITE_PLUGINS_COMPONENT, CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT } from '../constants';
 
 /**
  * Service to provide functionalities regarding site plugins.
@@ -44,7 +42,14 @@ const ROOT_CACHE_KEY = 'CoreSitePlugins:';
 @Injectable({ providedIn: 'root' })
 export class CoreSitePluginsProvider {
 
-    static readonly COMPONENT = 'CoreSitePlugins';
+    protected static readonly ROOT_CACHE_KEY = 'CoreSitePlugins:';
+    /**
+     * @deprecated since 4.5.0. Use CORE_SITE_PLUGINS_COMPONENT instead.
+     */
+    static readonly COMPONENT = CORE_SITE_PLUGINS_COMPONENT;
+    /**
+     * @deprecated since 4.5.0. Use CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT instead.
+     */
     static readonly UPDATE_COURSE_CONTENT = CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT;
 
     protected logger: CoreLogger;
@@ -183,7 +188,7 @@ export class CoreSitePluginsProvider {
      * @returns Cache key.
      */
     protected getCallWSCommonCacheKey(method: string): string {
-        return ROOT_CACHE_KEY + 'ws:' + method;
+        return CoreSitePluginsProvider.ROOT_CACHE_KEY + 'ws:' + method;
     }
 
     /**
@@ -233,7 +238,7 @@ export class CoreSitePluginsProvider {
                 const value = otherData[name];
 
                 if (typeof value == 'string' && (value[0] == '{' || value[0] == '[')) {
-                    otherData[name] = CoreTextUtils.parseJSON(value);
+                    otherData[name] = CoreText.parseJSON(value);
                 }
             }
         }
@@ -250,7 +255,8 @@ export class CoreSitePluginsProvider {
      * @returns Cache key.
      */
     protected getContentCacheKey(component: string, method: string, args: Record<string, unknown>): string {
-        return ROOT_CACHE_KEY + 'content:' + component + ':' + method + ':' + CoreUtils.sortAndStringify(args);
+        return CoreSitePluginsProvider.ROOT_CACHE_KEY + 'content:' + component + ':' + method +
+            ':' + CoreUtils.sortAndStringify(args);
     }
 
     /**
@@ -322,7 +328,7 @@ export class CoreSitePluginsProvider {
      * @returns Cache key.
      */
     protected getPluginsCacheKey(): string {
-        return ROOT_CACHE_KEY + 'plugins';
+        return CoreSitePluginsProvider.ROOT_CACHE_KEY + 'plugins';
     }
 
     /**
@@ -460,7 +466,7 @@ export class CoreSitePluginsProvider {
 
         // Site plugin not disabled. Check if it has handlers.
         if (!plugin.parsedHandlers) {
-            plugin.parsedHandlers = CoreTextUtils.parseJSON(
+            plugin.parsedHandlers = CoreText.parseJSON(
                 plugin.handlers,
                 null,
                 error => this.logger.error('Error parsing site plugin handlers', error),

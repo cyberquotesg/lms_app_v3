@@ -22,7 +22,7 @@ import { CoreFilepool } from '@services/filepool';
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreH5P } from '@features/h5p/services/h5p';
 import { DownloadStatus } from '@/core/constants';
 import { CoreSite } from '@classes/sites/site';
@@ -30,6 +30,7 @@ import { CoreLogger } from '@singletons/logger';
 import { CoreH5PCore, CoreH5PDisplayOptions } from '../../classes/core';
 import { CoreH5PHelper } from '../../classes/helper';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Component to render an iframe with an H5P package.
@@ -45,7 +46,7 @@ export class CoreH5PIframeComponent implements OnChanges, OnDestroy {
     @Input() onlinePlayerUrl?: string; // The URL of the online player to display the H5P package.
     @Input() trackComponent?: string; // Component to send xAPI events to.
     @Input() contextId?: number; // Context ID. Required for tracking.
-    @Input() enableInAppFullscreen?: boolean; // Whether to enable our custom in-app fullscreen feature.
+    @Input({ transform: toBoolean }) enableInAppFullscreen = false; // Whether to enable our custom in-app fullscreen feature.
     @Input() saveFreq?: number; // Save frequency (in seconds) if enabled.
     @Input() state?: string; // Initial content state.
     @Output() onIframeUrlSet = new EventEmitter<{src: string; online: boolean}>();
@@ -140,7 +141,7 @@ export class CoreH5PIframeComponent implements OnChanges, OnDestroy {
                 );
 
                 // Add the preventredirect param so the user can authenticate.
-                this.iframeSrc = CoreUrlUtils.addParamsToUrl(src, { preventredirect: false });
+                this.iframeSrc = CoreUrl.addParamsToUrl(src, { preventredirect: false });
             }
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading H5P package.', true);

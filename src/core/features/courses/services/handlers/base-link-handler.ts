@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreLoadings } from '@services/loadings';
 import { CoreContentLinksHandlerBase } from '@features/contentlinks/classes/base-handler';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CoreCourses } from '../courses';
@@ -30,6 +30,11 @@ export class CoreCoursesLinksHandlerBase extends CoreContentLinksHandlerBase {
 
     /**
      * Get actions to open course content.
+     *
+     * @param url URL to treat.
+     * @param courseId Course ID.
+     * @param pageParams Params to send to the new page.
+     * @returns Promise resolved with the actions.
      */
     protected getCourseActions(url: string, courseId: number, pageParams: Params = {}): CoreContentLinksAction[] {
         return [{
@@ -71,7 +76,7 @@ export class CoreCoursesLinksHandlerBase extends CoreContentLinksHandlerBase {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         // Check if user is enrolled in the course.
         const hasAccess = await CoreCourseHelper.userHasAccessToCourse(courseId);

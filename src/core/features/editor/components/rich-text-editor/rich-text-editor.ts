@@ -31,7 +31,7 @@ import { Subscription } from 'rxjs';
 import { CoreSites } from '@services/sites';
 import { CoreFilepool } from '@services/filepool';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventFormActionData, CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreEditorOffline } from '../../services/editor-offline';
@@ -45,7 +45,9 @@ import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { ContextLevel } from '@/core/constants';
 import { CoreSwiper } from '@singletons/swiper';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreWait } from '@singletons/wait';
+import { toBoolean } from '@/core/transforms/boolean';
+import { CoreQRScan } from '@services/qrscan';
 
 /**
  * Component to display a rich text editor if enabled.
@@ -72,7 +74,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
     @Input() name = 'core-rich-text-editor'; // Name to set to the textarea.
     @Input() component?: string; // The component to link the files to.
     @Input() componentId?: number; // An ID to use in conjunction with the component.
-    @Input() autoSave?: boolean | string; // Whether to auto-save the contents in a draft. Defaults to true.
+    @Input({ transform: toBoolean }) autoSave = true; // Whether to auto-save the contents in a draft.
     @Input() contextLevel?: ContextLevel; // The context level of the text.
     @Input() contextInstanceId?: number; // The instance ID related to the context.
     @Input() elementId?: string; // An ID to set to the element.
@@ -180,7 +182,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
      * @inheritdoc
      */
     ngOnInit(): void {
-        this.canScanQR = CoreUtils.canScanQR();
+        this.canScanQR = CoreQRScan.canScanQR();
         this.isPhone = CoreScreen.isMobile;
         this.toolbarHidden = this.isPhone;
     }
@@ -369,7 +371,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
      * @returns Blank height in px. Will be negative if no blank space.
      */
     protected async getBlankHeightInContent(): Promise<number> {
-        await CoreUtils.nextTicks(5); // Ensure content is completely loaded in the DOM.
+        await CoreWait.nextTicks(5); // Ensure content is completely loaded in the DOM.
 
         let content: Element | null = this.element.closest('ion-content');
         const contentHeight = await CoreDomUtils.getContentHeight(this.content);
@@ -485,7 +487,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
             this.textareaElement?.removeAttribute('hidden');
         }
 
-        await CoreUtils.nextTick();
+        await CoreWait.nextTick();
 
         this.focusRTE(event);
     }
@@ -513,7 +515,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
 
             const url = el.src;
 
-            if (!url || !CoreUrlUtils.isDownloadableUrl(url) || (!canDownloadFiles && site?.isSitePluginFileUrl(url))) {
+            if (!url || !CoreUrl.isDownloadableUrl(url) || (!canDownloadFiles && site?.isSitePluginFileUrl(url))) {
                 // Nothing to treat.
                 return;
             }
@@ -550,7 +552,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
     /**
      * Check if text is empty.
      *
-     * @param value Text or element containing the text.
+     * @param valueOrEl Text or element containing the text.
      * @returns If value is null only a white space.
      */
     protected isNullOrWhiteSpace(valueOrEl: string | HTMLElement | null | undefined): boolean {
@@ -560,7 +562,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
             return true;
         }
 
-        this.isEmpty = typeof valueOrEl === 'string' ? CoreTextUtils.htmlIsBlank(valueOrEl) : !CoreDom.elementHasContent(valueOrEl);
+        this.isEmpty = typeof valueOrEl === 'string' ? CoreDom.htmlIsBlank(valueOrEl) : !CoreDom.elementHasContent(valueOrEl);
 
         return this.isEmpty;
     }
@@ -826,7 +828,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
             this.toolbarArrows = true;
         }
 
-        await CoreUtils.nextTick();
+        await CoreWait.nextTick();
 
         this.toolbarSlides.update();
 
@@ -886,7 +888,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
      */
     protected shouldAutoSaveDrafts(): boolean {
         return !!CoreSites.getCurrentSite() &&
-                (this.autoSave === undefined || CoreUtils.isTrueOrOne(this.autoSave)) &&
+                this.autoSave &&
                 this.contextLevel !== undefined &&
                 this.contextInstanceId !== undefined &&
                 this.elementId !== undefined;
@@ -1031,7 +1033,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
         this.stopBubble(event);
 
         // Scan for a QR code.
-        const text = await CoreUtils.scanQR();
+        const text = await CoreQRScan.scanQR();
 
         if (text) {
             this.focusRTE(event); // Make sure the editor is focused.
@@ -1044,7 +1046,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
      * Window resized.
      */
     protected async windowResized(): Promise<void> {
-        await CoreDomUtils.waitForResizeDone();
+        await CoreWait.waitForResizeDone();
         this.isPhone = CoreScreen.isMobile;
 
         this.maximizeEditorSize();

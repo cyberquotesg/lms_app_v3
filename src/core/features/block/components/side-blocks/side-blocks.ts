@@ -20,9 +20,11 @@ import { CoreBlockHelper } from '../../services/block-helper';
 import { CoreBlockComponent } from '../block/block';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreCoursesDashboard } from '@features/courses/services/dashboard';
-import { CoreTextUtils } from '@services/utils/text';
 import { CoreDom } from '@singletons/dom';
 import { ContextLevel } from '@/core/constants';
+import { CoreWait } from '@singletons/wait';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreBlockComponentsModule } from '../components.module';
 
 /**
  * Component that displays the list of side blocks.
@@ -30,12 +32,17 @@ import { ContextLevel } from '@/core/constants';
 @Component({
     selector: 'core-block-side-blocks',
     templateUrl: 'side-blocks.html',
-    styleUrls: ['side-blocks.scss'],
+    styleUrl: 'side-blocks.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreBlockComponentsModule,
+    ],
 })
 export class CoreBlockSideBlocksComponent implements OnInit {
 
-    @Input() contextLevel!: ContextLevel;
-    @Input() instanceId!: number;
+    @Input({ required: true }) contextLevel!: ContextLevel;
+    @Input({ required: true }) instanceId!: number;
     @Input() initialBlockInstanceId?: number;
     @Input() myDashboardPage?: string;
 
@@ -102,7 +109,7 @@ export class CoreBlockSideBlocksComponent implements OnInit {
         }
 
         this.blocks = this.blocks.filter(block =>
-            block.name !== 'html' || (block.contents && !CoreTextUtils.htmlIsBlank(block.contents.content)));
+            block.name !== 'html' || (block.contents && !CoreDom.htmlIsBlank(block.contents.content)));
     }
 
     /**
@@ -135,8 +142,8 @@ export class CoreBlockSideBlocksComponent implements OnInit {
 
         const selector = '#block-' + this.initialBlockInstanceId;
 
-        await CoreUtils.waitFor(() => !!this.elementRef.nativeElement.querySelector(selector));
-        await CoreUtils.wait(200);
+        await CoreWait.waitFor(() => !!this.elementRef.nativeElement.querySelector(selector));
+        await CoreWait.wait(200);
 
         CoreDom.scrollToElement(this.elementRef.nativeElement, selector, { addYAxis: -10 });
     }

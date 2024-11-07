@@ -20,13 +20,14 @@ import { CoreUtils } from '@services/utils/utils';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { Translate } from '@singletons';
 import { CorePolicy, CorePolicySitePolicy, CorePolicyStatus } from '@features/policy/services/policy';
-import { CorePolicyViewPolicyModalComponent } from '@features/policy/components/policy-modal/policy-modal';
 import { CoreTime } from '@singletons/time';
 import { CoreScreen } from '@services/screen';
 import { Subscription } from 'rxjs';
 import { CORE_DATAPRIVACY_FEATURE_NAME, CORE_DATAPRIVACY_PAGE_NAME } from '@features/dataprivacy/constants';
 import { CoreNavigator } from '@services/navigator';
 import { CoreDataPrivacy } from '@features/dataprivacy/services/dataprivacy';
+import { CoreModals } from '@services/modals';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page to view user acceptances.
@@ -188,11 +189,14 @@ export class CorePolicyAcceptancesPage implements OnInit, OnDestroy {
      * @param event Event.
      * @param policy Policy.
      */
-    viewFullPolicy(event: Event, policy: CorePolicySitePolicy): void {
+    async viewFullPolicy(event: Event, policy: CorePolicySitePolicy): Promise<void> {
         event.preventDefault();
         event.stopPropagation();
 
-        CoreDomUtils.openModal({
+        const { CorePolicyViewPolicyModalComponent } =
+            await import('@features/policy/components/policy-modal/policy-modal');
+
+        CoreModals.openModal({
             component: CorePolicyViewPolicyModalComponent,
             componentProps: { policy },
         });
@@ -209,7 +213,7 @@ export class CorePolicyAcceptancesPage implements OnInit, OnDestroy {
         event.preventDefault();
         event.stopPropagation();
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             await CorePolicy.setUserAcceptances({ [policy.versionid]: accept ? 1 : 0 });

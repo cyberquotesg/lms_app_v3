@@ -21,7 +21,7 @@ import { CoreSites } from '@services/sites';
 import { CorePushNotificationsDelegate } from './push-delegate';
 import { CoreLocalNotifications } from '@services/local-notifications';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreConfig } from '@services/config';
 import { CoreConstants } from '@/core/constants';
 import { CoreSite } from '@classes/sites/site';
@@ -54,6 +54,8 @@ import { CorePlatform } from '@services/platform';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreSiteInfo } from '@classes/sites/unauthenticated-site';
 import { Push } from '@features/native/plugins';
+import { CoreNavigator } from '@services/navigator';
+import { CoreWait } from '@singletons/wait';
 
 /**
  * Service to handle push notifications.
@@ -442,7 +444,27 @@ export class CorePushNotificationsProvider {
     async notificationClicked(data: CorePushNotificationsNotificationBasicData): Promise<void> {
         await ApplicationInit.donePromise;
 
-        CorePushNotificationsDelegate.clicked(data);
+        // This code is also done when clicking local notifications. If it's modified, it should be modified in there too.
+        if (CoreSites.isLoggedIn()) {
+            CoreSites.runAfterLoginNavigation({
+                priority: 600,
+                callback: async () => {
+                    await CorePushNotificationsDelegate.clicked(data);
+                },
+            });
+
+            return;
+        }
+
+        // User not logged in, wait for the path to be a "valid" path (not a parent path used when starting the app).
+        await CoreWait.waitFor(() => {
+            const currentPath = CoreNavigator.getCurrentPath();
+
+            return currentPath !== '/' && currentPath !== '/login';
+        }, { timeout: 400 });
+
+        await CorePushNotificationsDelegate.clicked(data);
+
     }
 
     /**
@@ -461,7 +483,7 @@ export class CorePushNotificationsProvider {
             title: notification.title,
             message: notification.message,
             customdata: typeof rawData.customdata == 'string' ?
-                CoreTextUtils.parseJSON<Record<string, string|number>>(rawData.customdata, {}) : rawData.customdata,
+                CoreText.parseJSON<Record<string, string|number>>(rawData.customdata, {}) : rawData.customdata,
         });
 
         let site: CoreSite | undefined;
@@ -862,7 +884,7 @@ export class CorePushNotificationsProvider {
                 result.siteid,
                 result.siteurl,
                 result.token,
-                { info: CoreTextUtils.parseJSON<CoreSiteInfo | null>(result.info, null) || undefined },
+                { info: CoreText.parseJSON<CoreSiteInfo | null>(result.info, null) || undefined },
             );
 
             await this.unregisterDeviceOnMoodle(tmpSite);

@@ -12,22 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { NgModule } from '@angular/core';
-import { CoreSharedModule } from '@/core/shared.module';
-import { CoreDataPrivacyContactDPOComponent } from './contactdpo/contactdpo';
-import { CoreDataPrivacyNewRequestComponent } from './newrequest/newrequest';
-
-@NgModule({
-    declarations: [
-        CoreDataPrivacyContactDPOComponent,
-        CoreDataPrivacyNewRequestComponent,
-    ],
-    imports: [
-        CoreSharedModule,
-    ],
-    exports: [
-        CoreDataPrivacyContactDPOComponent,
-        CoreDataPrivacyNewRequestComponent,
-    ],
-})
-export class CoreDataPrivacyComponentsModule {}
+export const SHAREDFILES_PAGE_NAME = 'sharedfiles';

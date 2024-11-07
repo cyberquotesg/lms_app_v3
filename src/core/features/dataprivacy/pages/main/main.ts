@@ -13,14 +13,14 @@
 // limitations under the License.
 
 import { Component, OnInit } from '@angular/core';
-import { CoreDataPrivacyContactDPOComponent } from '@features/dataprivacy/components/contactdpo/contactdpo';
-import { CoreDataPrivacyNewRequestComponent } from '@features/dataprivacy/components/newrequest/newrequest';
 import {
     CoreDataPrivacy,
     CoreDataPrivacyDataRequestType,
     CoreDataPrivacyGetAccessInformationWSResponse,
     CoreDataPrivacyRequest,
 } from '@features/dataprivacy/services/dataprivacy';
+import { CoreLoadings } from '@services/loadings';
+import { CoreModals } from '@services/modals';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -115,13 +115,16 @@ export class CoreDataPrivacyMainPage implements OnInit {
      * Open the contact DPO modal.
      */
     async contactDPO(): Promise<void> {
+        const { CoreDataPrivacyContactDPOComponent } =
+            await import('@features/dataprivacy/components/contactdpo/contactdpo');
+
         // Create and show the modal.
-        const succeed = await CoreDomUtils.openModal<boolean>({
+        const succeed = await CoreModals.openModal<boolean>({
             component: CoreDataPrivacyContactDPOComponent,
         });
 
         if (succeed) {
-            const modal = await CoreDomUtils.showModalLoading();
+            const modal = await CoreLoadings.show();
             try {
                 await this.refreshContent();
             } finally {
@@ -134,8 +137,11 @@ export class CoreDataPrivacyMainPage implements OnInit {
      * Open the new request modal.
      */
     async newRequest(createType?: CoreDataPrivacyDataRequestType): Promise<void> {
+        const { CoreDataPrivacyNewRequestComponent } =
+            await import('@features/dataprivacy/components/newrequest/newrequest');
+
         // Create and show the modal.
-        const succeed = await CoreDomUtils.openModal<boolean>({
+        const succeed = await CoreModals.openModal<boolean>({
             component: CoreDataPrivacyNewRequestComponent,
             componentProps: {
                 accessInfo: this.accessInfo,
@@ -144,7 +150,7 @@ export class CoreDataPrivacyMainPage implements OnInit {
         });
 
         if (succeed) {
-            const modal = await CoreDomUtils.showModalLoading();
+            const modal = await CoreLoadings.show();
             try {
                 await this.refreshContent();
             } finally {
@@ -170,7 +176,7 @@ export class CoreDataPrivacyMainPage implements OnInit {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             await CoreDataPrivacy.cancelDataRequest(requestId);

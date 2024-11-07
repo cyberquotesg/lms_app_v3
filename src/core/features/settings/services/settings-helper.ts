@@ -29,8 +29,9 @@ import { CoreCourse } from '@features/course/services/course';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreError } from '@classes/errors/error';
 import { Observable, Subject } from 'rxjs';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreErrorHelper } from '@services/error-helper';
 import { CoreNavigator } from '@services/navigator';
+import { CoreHTMLClasses } from '@singletons/html-classes';
 
 /**
  * Object with space usage and cache entries that can be erased.
@@ -136,11 +137,10 @@ export class CoreSettingsHelperProvider {
         // Clear cache tables.
         const cleanSchemas = CoreSites.getSiteTableSchemasToClear(site);
         const promises: Promise<number | void>[] = cleanSchemas.map((name) => site.getDb().deleteRecords(name));
-        const filepoolService = CoreFilepool.instance;
 
         promises.push(site.deleteFolder().then(() => {
-            filepoolService.clearAllPackagesStatus(siteId);
-            filepoolService.clearFilepool(siteId);
+            CoreFilepool.clearAllPackagesStatus(siteId);
+            CoreFilepool.clearFilepool(siteId);
             CoreCourse.clearAllCoursesStatus(siteId);
 
             siteInfo.spaceUsage = 0;
@@ -149,7 +149,7 @@ export class CoreSettingsHelperProvider {
         }).catch(async (error) => {
             if (error && error.code === FileError.NOT_FOUND_ERR) {
                 // Not found, set size 0.
-                filepoolService.clearAllPackagesStatus(siteId);
+                CoreFilepool.clearAllPackagesStatus(siteId);
                 siteInfo.spaceUsage = 0;
             } else {
                 // Error, recalculate the site usage.
@@ -264,7 +264,7 @@ export class CoreSettingsHelperProvider {
         try {
             await syncPromise;
         } catch (error) {
-            throw CoreTextUtils.addTitleToError(error, Translate.instant('core.settings.sitesyncfailed'));
+            throw CoreErrorHelper.addTitleToError(error, Translate.instant('core.settings.sitesyncfailed'));
         } finally {
             delete this.syncPromises[siteId];
         }
@@ -434,10 +434,10 @@ export class CoreSettingsHelperProvider {
      * @param enable True to enable dark mode, false to disable.
      */
     protected toggleDarkMode(enable: boolean = false): void {
-        const isDark = CoreDomUtils.hasModeClass('dark');
+        const isDark = CoreHTMLClasses.hasModeClass('dark');
 
         if (isDark !== enable) {
-            CoreDomUtils.toggleModeClass('dark', enable, { includeLegacy: true });
+            CoreHTMLClasses.toggleModeClass('dark', enable);
             this.darkModeObservable.next(enable);
 
             CoreApp.setSystemUIColors();

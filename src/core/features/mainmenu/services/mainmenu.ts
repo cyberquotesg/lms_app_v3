@@ -19,7 +19,7 @@ import { CoreSites } from '@services/sites';
 import { CoreConstants } from '@/core/constants';
 import { CoreMainMenuDelegate, CoreMainMenuHandlerToDisplay } from './mainmenu-delegate';
 import { Device, makeSingleton } from '@singletons';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreScreen } from '@services/screen';
 import { CorePlatform } from '@services/platform';
 
@@ -113,7 +113,7 @@ export class CoreMainMenuProvider {
             const id = url + '#' + type;
             if (!icon) {
                 // Icon not defined, use default one.
-                icon = type == 'embedded' ? 'fa-expand' : 'fa-link'; // @todo Find a better icon for embedded.
+                icon = type == 'embedded' ? 'fas-expand' : 'fas-link'; // @todo Find a better icon for embedded.
             }
 
             if (!map[id]) {
@@ -211,7 +211,7 @@ export class CoreMainMenuProvider {
             .filter(item => typeof item.label === 'string' || currentLang in item.label || fallbackLang in item.label)
             .map(item => ({
                 ...item,
-                url: CoreTextUtils.replaceArguments(item.url, replacements, 'uri'),
+                url: CoreText.replaceArguments(item.url, replacements, 'uri'),
                 label: typeof item.label === 'string'
                     ? item.label
                     : item.label[currentLang] ?? item.label[fallbackLang],
@@ -238,10 +238,7 @@ export class CoreMainMenuProvider {
             }
 
             // Set a mínimum elements to show and skip more button.
-            // return numElements > 1 ? numElements - 1 : 1;
-
-            // warning! cq change, no need to substract by 1, more button has been removed
-            return numElements > 1 ? numElements : 1;
+            return numElements > 1 ? numElements - 1 : 1;
         }
 
         return CoreMainMenuProvider.NUM_MAIN_HANDLERS;

@@ -16,7 +16,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { CoreSite, CoreSiteConfig } from '@classes/sites/site';
-import { CoreCourse, CoreCourseWSSection } from '@features/course/services/course';
+import { CoreCourse, CoreCourseWSSection, sectionContentIsModule } from '@features/course/services/course';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreSites } from '@services/sites';
 import { CoreSiteHome } from '@features/sitehome/services/sitehome';
@@ -30,8 +30,8 @@ import { CoreBlockHelper } from '@features/block/services/block-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { CoreBlockSideBlocksComponent } from '@features/block/components/side-blocks/side-blocks';
 import { ContextLevel } from '@/core/constants';
+import { CoreModals } from '@services/modals';
 
 /**
  * Page that displays site home index.
@@ -55,6 +55,7 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
     currentSite!: CoreSite;
     searchEnabled = false;
     newsForumModule?: CoreCourseModuleData;
+    isModule = sectionContentIsModule;
 
     protected updateSiteObserver: CoreEventObserver;
     protected logView: () => void;
@@ -177,9 +178,12 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
 
         promises.push(CoreCourse.invalidateCourseBlocks(this.siteHomeId));
 
-        if (this.section && this.section.modules) {
+        if (this.section?.contents.length) {
             // Invalidate modules prefetch data.
-            promises.push(CoreCourseModulePrefetchDelegate.invalidateModules(this.section.modules, this.siteHomeId));
+            promises.push(CoreCourseModulePrefetchDelegate.invalidateModules(
+                CoreCourse.getSectionsModules([this.section]),
+                this.siteHomeId,
+            ));
         }
 
         Promise.all(promises).finally(async () => {
@@ -227,19 +231,22 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
     /**
      * Check whether there is a focused instance in the page parameters and open it.
      */
-    private openFocusedInstance() {
+    private async openFocusedInstance() {
         const blockInstanceId = CoreNavigator.getRouteNumberParam('blockInstanceId');
-
-        if (blockInstanceId) {
-            CoreDomUtils.openSideModal({
-                component: CoreBlockSideBlocksComponent,
-                componentProps: {
-                    contextLevel: ContextLevel.COURSE,
-                    instanceId: this.siteHomeId,
-                    initialBlockInstanceId: blockInstanceId,
-                },
-            });
+        if (!blockInstanceId) {
+            return;
         }
+
+        const { CoreBlockSideBlocksComponent } = await import('@features/block/components/side-blocks/side-blocks');
+
+        CoreModals.openSideModal({
+            component: CoreBlockSideBlocksComponent,
+            componentProps: {
+                contextLevel: ContextLevel.COURSE,
+                instanceId: this.siteHomeId,
+                initialBlockInstanceId: blockInstanceId,
+            },
+        });
     }
 
 }

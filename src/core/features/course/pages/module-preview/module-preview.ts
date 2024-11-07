@@ -13,13 +13,11 @@
 // limitations under the License.
 
 import { Component, OnInit } from '@angular/core';
-import {
-    CoreCourseModuleSummaryResult,
-    CoreCourseModuleSummaryComponent,
-} from '@features/course/components/module-summary/module-summary';
+import { CoreCourseModuleSummaryResult } from '@features/course/components/module-summary/module-summary';
 import { CoreCourse } from '@features/course/services/course';
-import { CoreCourseHelper, CoreCourseModuleData, CoreCourseSection } from '@features/course/services/course-helper';
+import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
+import { CoreModals } from '@services/modals';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -37,7 +35,6 @@ export class CoreCourseModulePreviewPage implements OnInit {
 
     title!: string;
     module!: CoreCourseModuleData;
-    section?: CoreCourseSection; // The section the module belongs to.
     courseId!: number;
     loaded = false;
     unsupported = false;
@@ -54,7 +51,6 @@ export class CoreCourseModulePreviewPage implements OnInit {
         try {
             this.module = CoreNavigator.getRequiredRouteParam<CoreCourseModuleData>('module');
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
-            this.section = CoreNavigator.getRouteParam<CoreCourseSection>('section');
         } catch (error) {
             CoreDomUtils.showErrorModal(error);
 
@@ -106,7 +102,9 @@ export class CoreCourseModulePreviewPage implements OnInit {
             return;
         }
 
-        const data = await CoreDomUtils.openSideModal<CoreCourseModuleSummaryResult>({
+        const { CoreCourseModuleSummaryComponent } = await import('@features/course/components/module-summary/module-summary');
+
+        const data = await CoreModals.openSideModal<CoreCourseModuleSummaryResult>({
             component: CoreCourseModuleSummaryComponent,
             componentProps: {
                 moduleId: this.module.id,

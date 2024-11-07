@@ -24,12 +24,13 @@ import { CoreCourse, CoreCourseProvider, CoreCourseWSSection } from '@features/c
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
-import { CONTENTS_PAGE_NAME } from '@features/course/course.module';
+import { CONTENTS_PAGE_NAME } from '@features/course/constants';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCoursesHelper, CoreCourseWithImageAndColor } from '@features/courses/services/courses-helper';
 import { CoreColors } from '@singletons/colors';
 import { CorePath } from '@singletons/path';
 import { CoreSites } from '@services/sites';
+import { CoreWait } from '@singletons/wait';
 
 // by rachmad
 import { IonRefresher } from '@ionic/angular';
@@ -62,7 +63,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {courseImage, fullname, basicInformation, hasEnded, hasEnrolled, isSelfEnrol, selfEnrolId, hasAccredited};
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
@@ -248,7 +249,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         // Select the tab if needed.
         this.firstTabName = undefined;
         if (tabToLoad) {
-            await CoreUtils.nextTick();
+            await CoreWait.nextTick();
 
             this.tabsComponent?.selectByIndex(tabToLoad);
         }

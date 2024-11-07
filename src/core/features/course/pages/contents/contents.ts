@@ -42,13 +42,17 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreRefreshContext, CORE_REFRESH_CONTEXT } from '@/core/utils/refresh-context';
 import { CoreCoursesHelper } from '@features/courses/services/courses-helper';
 import { CoreSites } from '@services/sites';
+import { CoreWait } from '@singletons/wait';
 
 /**
  * Page that displays the contents of a course.
  */
 @Component({
     selector: 'page-core-course-contents',
+
+    // by rachmad
     templateUrl: 'contents.new.html',
+
     providers: [{
         provide: CORE_REFRESH_CONTEXT,
         useExisting: forwardRef(() => CoreCourseContentsPage),
@@ -215,10 +219,11 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
     protected async loadSections(refresh?: boolean): Promise<void> {
         // Get all the sections.
         const sections = await CoreCourse.getSections(this.course.id, false, true);
+        let modules: CoreCourseModuleData[] | undefined;
 
         if (refresh) {
             // Invalidate the recently downloaded module list. To ensure info can be prefetched.
-            const modules = CoreCourse.getSectionsModules(sections);
+            modules = CoreCourse.getSectionsModules(sections);
 
             await CoreCourseModulePrefetchDelegate.invalidateModules(modules, this.course.id);
         }
@@ -227,9 +232,11 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
 
         // Get the completion status.
         if (CoreCoursesHelper.isCompletionEnabledInCourse(this.course)) {
-            const sectionWithModules = sections.find((section) => section.modules.length > 0);
+            if (!modules) {
+                modules = CoreCourse.getSectionsModules(sections);
+            }
 
-            if (sectionWithModules && sectionWithModules.modules[0].completion !== undefined) {
+            if (modules[0]?.completion !== undefined) {
                 // The module already has completion (3.6 onwards). Load the offline completion.
                 this.modulesHaveCompletion = true;
 
@@ -334,8 +341,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
 
             if (this.sections) {
                 // If the completion value is not used, the page won't be reloaded, so update the progress bar.
-                const completionModules = (<CoreCourseModuleData[]> [])
-                    .concat(...this.sections.map((section) => section.modules))
+                const completionModules = CoreCourse.getSectionsModules(this.sections)
                     .map((module) => module.completion && module.completion > 0 ? 1 : module.completion)
                     .reduce((accumulator, currentValue) => (accumulator || 0) + (currentValue || 0), 0);
 
@@ -411,7 +417,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
             this.changeDetectorRef.detectChanges();
 
             if (scrollTop > 0) {
-                await CoreUtils.nextTick();
+                await CoreWait.nextTick();
                 this.content?.scrollToPoint(0, scrollTop, 0);
             }
         }

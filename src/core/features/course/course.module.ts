@@ -29,9 +29,9 @@ import { CoreTagAreaDelegate } from '@features/tag/services/tag-area-delegate';
 import { CoreCourseTagAreaHandler } from './services/handlers/course-tag-area';
 import { CoreCourseModulesTagAreaHandler } from './services/handlers/modules-tag-area';
 import { CoreCourse } from './services/course';
-import { COURSE_INDEX_PATH } from '@features/course/course-lazy.module';
 import { buildRegExpUrlMatcher } from '@/app/app-routing.module';
 import { CoreCourseIndexRoutingModule } from '@features/course/course-routing.module';
+import { COURSE_PAGE_NAME, CONTENTS_PAGE_NAME } from './constants';
 
 /**
  * Get course services.
@@ -87,9 +87,27 @@ export async function getCourseExportedObjects(): Promise<Record<string, unknown
     /* eslint-enable @typescript-eslint/naming-convention */
 }
 
-export const COURSE_PAGE_NAME = 'course';
-export const CONTENTS_PAGE_NAME = 'contents';
-export const COURSE_CONTENTS_PATH = `${COURSE_PAGE_NAME}/${COURSE_INDEX_PATH}/${CONTENTS_PAGE_NAME}`;
+/**
+ * Get standalone components for site plugins.
+ *
+ * @returns Returns standalone components.
+ */
+export async function getCourseStandaloneComponents(): Promise<Type<unknown>[]> {
+    // eslint-disable-next-line deprecation/deprecation
+    const { CoreCourseModuleDescriptionComponent } =
+        await import('@features/course/components/module-description/module-description');
+    // eslint-disable-next-line deprecation/deprecation
+    const { CoreCourseModuleManualCompletionComponent } =
+        await import('@features/course/components/module-manual-completion/module-manual-completion');
+    const { CoreCourseFormatComponent } =
+        await import('@features/course/components/course-format/course-format');
+
+    return [
+        CoreCourseModuleDescriptionComponent,
+        CoreCourseModuleManualCompletionComponent,
+        CoreCourseFormatComponent,
+    ];
+}
 
 const routes: Routes = [
     {

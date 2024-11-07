@@ -16,40 +16,26 @@ import { NgModule } from '@angular/core';
 
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreBlockComponentsModule } from '@features/block/components/components.module';
-import { CoreCourseFormatComponent } from './course-format/course-format';
 import { CoreCourseModuleComponent } from './module/module';
 import { CoreCourseModuleCompletionComponent } from './module-completion/module-completion';
-import { CoreCourseModuleDescriptionComponent } from './module-description/module-description';
-import { CoreCourseCourseIndexComponent } from './course-index/course-index';
 import { CoreCourseTagAreaComponent } from './tag-area/tag-area';
 import { CoreCourseUnsupportedModuleComponent } from './unsupported-module/unsupported-module';
 import { CoreCourseModuleCompletionLegacyComponent } from './module-completion-legacy/module-completion-legacy';
 import { CoreCourseModuleInfoComponent } from './module-info/module-info';
-import { CoreCourseModuleManualCompletionComponent } from './module-manual-completion/module-manual-completion';
 import { CoreCourseModuleNavigationComponent } from './module-navigation/module-navigation';
-import { CoreCourseModuleSummaryComponent } from './module-summary/module-summary';
 import { CoreCourseCourseIndexTourComponent } from './course-index-tour/course-index-tour';
 import { CoreRemindersComponentsModule } from '@features/reminders/components/components.module';
-import { CoreCourseModuleCompletionDetailsComponent } from './module-completion-details/module-completion-details';
 
 @NgModule({
     declarations: [
-        CoreCourseFormatComponent,
         CoreCourseModuleComponent,
         CoreCourseModuleCompletionComponent,
         CoreCourseModuleCompletionLegacyComponent,
-        // eslint-disable-next-line deprecation/deprecation
-        CoreCourseModuleDescriptionComponent,
         CoreCourseModuleInfoComponent,
-        // eslint-disable-next-line deprecation/deprecation
-        CoreCourseModuleManualCompletionComponent,
-        CoreCourseCourseIndexComponent,
         CoreCourseCourseIndexTourComponent,
         CoreCourseTagAreaComponent,
         CoreCourseUnsupportedModuleComponent,
         CoreCourseModuleNavigationComponent,
-        CoreCourseModuleSummaryComponent,
-        CoreCourseModuleCompletionDetailsComponent,
     ],
     imports: [
         CoreBlockComponentsModule,
@@ -57,22 +43,14 @@ import { CoreCourseModuleCompletionDetailsComponent } from './module-completion-
         CoreSharedModule,
     ],
     exports: [
-        CoreCourseFormatComponent,
         CoreCourseModuleComponent,
         CoreCourseModuleCompletionComponent,
         CoreCourseModuleCompletionLegacyComponent,
-        // eslint-disable-next-line deprecation/deprecation
-        CoreCourseModuleDescriptionComponent,
         CoreCourseModuleInfoComponent,
-        // eslint-disable-next-line deprecation/deprecation
-        CoreCourseModuleManualCompletionComponent,
-        CoreCourseCourseIndexComponent,
         CoreCourseCourseIndexTourComponent,
         CoreCourseTagAreaComponent,
         CoreCourseUnsupportedModuleComponent,
         CoreCourseModuleNavigationComponent,
-        CoreCourseModuleSummaryComponent,
-        CoreCourseModuleCompletionDetailsComponent,
     ],
 })
 export class CoreCourseComponentsModule {}

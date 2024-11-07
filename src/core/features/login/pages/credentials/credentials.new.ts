@@ -30,7 +30,7 @@ import { CoreLoginCredentialsPage as Old } from './credentials';
  * Page to enter the user credentials.
  */
 @Component({
-    selector: 'page-core-login-credentials-new',
+    selector: 'page-core-login-credentials',
     templateUrl: 'credentials.new.html',
     styleUrls: ['../../login.scss'],
 })

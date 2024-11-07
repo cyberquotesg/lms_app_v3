@@ -1,8 +1,9 @@
-import { AddonModPageIndexComponent as Old } from './index';
+import { Component } from '@angular/core';
 import { StatusBar } from '@singletons';
+import { AddonModPageIndexComponent as Old } from './index';
 
 @Component({
-    selector: 'addon-mod-page-index-new',
+    selector: 'addon-mod-page-index',
     templateUrl: 'addon-mod-page-index.new.html',
     styleUrls: ['index.scss'],
 })

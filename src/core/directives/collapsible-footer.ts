@@ -23,6 +23,8 @@ import { CoreEventObserver } from '@singletons/events';
 import { CoreLoadingComponent } from '@components/loading/loading';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { CoreDom } from '@singletons/dom';
+import { CoreWait } from '@singletons/wait';
+import { toBoolean } from '../transforms/boolean';
 
 /**
  * Directive to make an element fixed at the bottom collapsible when scrolling.
@@ -36,7 +38,7 @@ import { CoreDom } from '@singletons/dom';
 })
 export class CoreCollapsibleFooterDirective implements OnInit, OnDestroy {
 
-    @Input() appearOnBottom = false;
+    @Input({ transform: toBoolean }) appearOnBottom = false; // Whether footer should re-appear when reaching the bottom.
 
     protected id = '0';
     protected element: HTMLElement;
@@ -66,9 +68,6 @@ export class CoreCollapsibleFooterDirective implements OnInit, OnDestroy {
      */
     async ngOnInit(): Promise<void> {
         this.id = String(CoreUtils.getUniqueId('CoreCollapsibleFooterDirective'));
-
-        // Only if not present or explicitly falsy it will be false.
-        this.appearOnBottom = !CoreUtils.isFalseOrZero(this.appearOnBottom);
         this.slotPromise = CoreDom.slotOnContent(this.element);
 
         await this.slotPromise;
@@ -101,7 +100,7 @@ export class CoreCollapsibleFooterDirective implements OnInit, OnDestroy {
         await this.viewportPromise;
 
         this.element.classList.remove('is-active');
-        await CoreUtils.nextTick();
+        await CoreWait.nextTick();
 
         // Set a minimum height value.
         this.initialHeight = this.element.getBoundingClientRect().height || this.initialHeight;

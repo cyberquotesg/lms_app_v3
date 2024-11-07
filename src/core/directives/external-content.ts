@@ -26,7 +26,7 @@ import {
 import { CoreFile, CoreFileProvider } from '@services/file';
 import { CoreFilepool, CoreFilepoolFileActions, CoreFilepoolFileEventData } from '@services/filepool';
 import { CoreSites } from '@services/sites';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreLogger } from '@singletons/logger';
 import { CoreError } from '@classes/errors/error';
@@ -39,7 +39,7 @@ import { AsyncDirective } from '@classes/async-directive';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreArray } from '@singletons/array';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
@@ -206,8 +206,8 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
         const site = await CoreUtils.ignoreErrors(CoreSites.getSite(this.siteId));
         const isSiteFile = site?.isSitePluginFileUrl(url);
 
-        if (!url || !url.match(/^https?:\/\//i) || CoreUrlUtils.isLocalFileUrl(url) ||
-                (tagName === 'A' && !(isSiteFile || site?.isSiteThemeImageUrl(url) || CoreUrlUtils.isGravatarUrl(url)))) {
+        if (!url || !url.match(/^https?:\/\//i) || CoreUrl.isLocalFileUrl(url) ||
+                (tagName === 'A' && !(isSiteFile || site?.isSiteThemeImageUrl(url) || CoreUrl.isGravatarUrl(url)))) {
 
             this.logger.debug('Ignoring non-downloadable URL: ' + url);
 
@@ -301,7 +301,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
             const finalUrl = await CoreFilepool.getSrcByUrl(siteId, url, this.component, this.componentId, 0, true, true);
 
             this.logger.debug('Using URL ' + finalUrl + ' for ' + url + ' in inline styles');
-            inlineStyles = inlineStyles.replace(new RegExp(CoreTextUtils.escapeForRegex(url), 'gi'), finalUrl);
+            inlineStyles = inlineStyles.replace(new RegExp(CoreText.escapeForRegex(url), 'gi'), finalUrl);
         });
 
         try {
@@ -393,7 +393,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
             finalUrl = CoreFile.convertFileSrc(finalUrl);
         }
 
-        if (!CoreUrlUtils.isLocalFileUrl(finalUrl) && !finalUrl.includes('#') && tagName !== 'A') {
+        if (!CoreUrl.isLocalFileUrl(finalUrl) && !finalUrl.includes('#') && tagName !== 'A') {
             /* In iOS, if we use the same URL in embedded file and background download then the download only
                downloads a few bytes (cached ones). Add an anchor to the URL so both URLs are different.
                Don't add this anchor if the URL already has an anchor, otherwise other anchors might not work.

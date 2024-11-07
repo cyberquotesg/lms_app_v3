@@ -44,10 +44,11 @@ import { Params } from '@angular/router';
  */
 @Component({
     selector: 'page-core-login-reconnect',
-    styleUrls: ['../../login.scss'],
     
     // by rachmad
     templateUrl: 'reconnect.new.html',
+
+    styleUrls: ['../../login.scss'],
 })
 export class CoreLoginReconnectPage implements OnInit, OnDestroy {
 

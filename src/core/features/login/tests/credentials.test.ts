@@ -16,7 +16,7 @@ import { CoreSharedModule } from '@/core/shared.module';
 import { findElement, mock, mockSingleton, renderPageComponent, requireElement } from '@/testing/utils';
 import { CoreLoginError } from '@classes/errors/loginerror';
 import { CoreLoginComponentsModule } from '@features/login/components/components.module';
-import { CoreLoginCredentialsPage } from '@features/login/pages/credentials/credentials.new';
+import { CoreLoginCredentialsPage } from '@features/login/pages/credentials/credentials';
 import { CoreLang } from '@services/lang';
 import { CoreSites } from '@services/sites';
 import { Http } from '@singletons';

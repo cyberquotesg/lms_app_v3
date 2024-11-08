@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, Optional } from '@angular/core';
+import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { StatusBar } from '@singletons';
 import { AddonModPageIndexComponent as Old } from './index';
 
@@ -7,12 +8,19 @@ import { AddonModPageIndexComponent as Old } from './index';
     templateUrl: 'addon-mod-page-index.new.html',
     styleUrls: ['index.scss'],
 })
-export class AddonModPageIndexComponent extends Old
+export class AddonModPageIndexComponent extends Old implements OnInit
 {
     isFullscreen = false;
 
     constructor(@Optional() courseContentsPage?: CoreCourseContentsPage) {
         super(courseContentsPage);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    async ngOnInit(): Promise<void> {
+        super.ngOnInit();
     }
 
     manageFullscreen(): void

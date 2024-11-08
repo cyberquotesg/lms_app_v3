@@ -55,10 +55,10 @@ export class AddonModPageModuleHandlerService extends CoreModuleHandlerBase impl
      */
     async getMainComponent(): Promise<Type<unknown>> {
         // by rachmad
-        const { AddonModPageIndexComponent } = await import('../../components/index.new');
         /* *a/
         const { AddonModPageIndexComponent } = await import('../../components/index');
         /* */
+        const { AddonModPageIndexComponent } = await import('../../components/index/index.new');
 
         return AddonModPageIndexComponent;
     }

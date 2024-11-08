@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 
 import { CoreApp } from '@services/app';
@@ -34,10 +34,17 @@ import { CoreLoginCredentialsPage as Old } from './credentials';
     templateUrl: 'credentials.new.html',
     styleUrls: ['../../login.scss'],
 })
-export class CoreLoginCredentialsPage extends Old
+export class CoreLoginCredentialsPage extends Old implements OnInit, OnDestroy
 {
     constructor(protected fb: FormBuilder, protected CH: CqHelper) {
         super(fb);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    async ngOnInit(): Promise<void> {
+        super.ngOnInit();
     }
 
     async login(e?: Event): Promise<void>

@@ -63,7 +63,13 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
+
+    // by rachmad
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {courseImage, fullname, basicInformation, hasEnded, hasEnrolled, isSelfEnrol, selfEnrolId, hasAccredited};
+    /* *a/
     course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
+    /* */
+
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;

@@ -187,6 +187,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
 
             // cqConfig
             var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+            cqConfig.mobileListLength = cqConfig.mobileListLength || cqConfig.mobile_list_length;
+            cqConfig.mobileCourseMedia = cqConfig.mobileCourseMedia || cqConfig.mobile_course_media;
 
             this.pageData.online.length = this.pageData.offline.length = cqConfig.mobileListLength;
             this.pageData.medias = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];

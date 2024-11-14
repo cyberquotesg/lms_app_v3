@@ -57,7 +57,7 @@ export class CqDashboard extends CqPage implements OnInit
             this.pageData.year = new Date().getFullYear();
 
             // setup slide options
-            this.pageDefaults.sliderOptions = this.sliderOptions;
+            this.pageData.sliderOptions = this.sliderOptions;
             let slidesPerView, widthIterator = 160, spaceBetween = 24;
             for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
             {
@@ -97,6 +97,7 @@ export class CqDashboard extends CqPage implements OnInit
 
             // cqConfig
             var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+            cqConfig.mobileCourseMedia = cqConfig.mobileCourseMedia || cqConfig.mobile_course_media;
 
             this.pageData.mobileCourseMedia = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
             this.pageData.offlineCourse = this.pageData.mobileCourseMedia.includes("offline");

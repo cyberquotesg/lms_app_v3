@@ -79,7 +79,7 @@ export class CqMyReports extends CqPage implements OnInit
             this.pageData.userFullName = userFullName;
         });
 
-        this.pageDefaults.yearsSliderOptions = this.yearsSliderOptions;
+        this.pageData.yearsSliderOptions = this.yearsSliderOptions;
         let slidesPerView, widthIterator = 80, spaceBetween = 10;
         for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
         {
@@ -154,6 +154,10 @@ export class CqMyReports extends CqPage implements OnInit
 
             // cqConfig
             var cqConfig : any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+            cqConfig.mobileChartType = cqConfig.mobileChartType || cqConfig.mobile_chart_type;
+            cqConfig.mobileChartStacked = cqConfig.mobileChartStacked || cqConfig.mobile_chart_stacked;
+            cqConfig.mobileChartLineTension = cqConfig.mobileChartLineTension || cqConfig.mobile_chart_line_tension;
+
             if (!this.CH.isSame(this.pageData.CqConfig, cqConfig))
             {
                 this.pageData.CqConfig = cqConfig;

@@ -86,6 +86,13 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
         // by rachmad
         protected CH: CqHelper,
     ) {
+        // by rachmad
+        const params: Params = {
+            siteUrl: CH.getSiteUrl(),
+            siteId: CH.getSiteId(),
+        };
+        CoreNavigator.navigateToLoginCredentials(params);
+
         const currentSite = CoreSites.getCurrentSite();
 
         this.isLoggedOut = !currentSite || currentSite.isLoggedOut();
@@ -103,15 +110,6 @@ export class CoreLoginReconnectPage implements OnInit, OnDestroy {
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
-    	// by rachmad
-        this.CH.logout().then(() => {
-            const params: Params = {
-                siteUrl: this.CH.getSiteUrl(),
-                siteId: this.CH.getSiteId(),
-            };
-            CoreNavigator.navigateToLoginCredentials(params);
-        });
-
         try {
             this.siteId = CoreNavigator.getRequiredRouteParam<string>('siteId');
 

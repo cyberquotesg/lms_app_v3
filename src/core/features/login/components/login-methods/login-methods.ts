@@ -23,7 +23,7 @@ import { CoreDomUtils } from '@services/utils/dom';
 
 @Component({
     selector: 'core-login-methods',
-    templateUrl: 'login-methods.html',
+    templateUrl: 'login-methods.new.html',
     styleUrls: ['../../login.scss'],
 })
 export class CoreLoginMethodsComponent implements OnInit {

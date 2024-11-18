@@ -75,6 +75,9 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
             }
 
             this.pageSlider = swiper;
+            this.pageSlider.on('slideChange', () => {
+                this.pageSliderChange();
+            });
         });
     }
 

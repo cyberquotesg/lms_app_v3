@@ -1,10 +1,6 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
-import { CoreDirectivesRegistry } from '@singletons/directives-registry';
-import { CoreCancellablePromise } from '@classes/cancellable-promise';
-import { CoreLoadingComponent } from '@components/loading/loading';
-import { CoreDom } from '@singletons/dom';
 import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
@@ -22,10 +18,8 @@ register();
 })
 export class CqMyReports extends CqPage implements OnInit, OnDestroy
 {
-    protected element: HTMLElement;
-    protected domPromise?: CoreCancellablePromise<void>;
     protected pageSlider?: Swiper;
-    @ViewChild('swiperRef', { static: true }) set swiperRef(swiperRef: ElementRef) {
+    @ViewChild('swiperRef') set swiperRef(swiperRef: ElementRef) {
         /**
          * This setTimeout waits for Ionic's async initialization to complete.
          * Otherwise, an outdated swiper reference will be used.
@@ -39,6 +33,9 @@ export class CqMyReports extends CqPage implements OnInit, OnDestroy
             }
 
             this.pageSlider = swiper;
+            this.pageSlider.on('slideChange', () => {
+                this.pageSliderChange();
+            });
         });
     }
 
@@ -353,23 +350,5 @@ export class CqMyReports extends CqPage implements OnInit, OnDestroy
         }
 
         this.adjustScreenHeight(".page-slider-cqmr");
-    }
-
-    /**
-     * Wait until all <core-loading> children inside the page.
-     *
-     * @returns Promise resolved when loadings are done.
-     */
-    protected async waitLoadingsDone(): Promise<void> {
-        this.domPromise = CoreDom.waitToBeInDOM(this.element);
-
-        await this.domPromise;
-
-        const page = this.element.closest('.ion-page');
-        if (!page) {
-            return;
-        }
-
-        await CoreDirectivesRegistry.waitDirectivesReady(page, 'core-loading', CoreLoadingComponent);
     }
 }

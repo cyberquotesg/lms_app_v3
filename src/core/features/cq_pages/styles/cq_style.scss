@@ -1373,6 +1373,12 @@ body
 		{
 			width: 100%;
 		}
+
+		+ button,
+		+ .button
+		{
+			margin-left: $component_spacing;
+		}
 	}
 	ion-back-button
 	{

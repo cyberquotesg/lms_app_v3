@@ -2,9 +2,14 @@
 
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CoreNavigator } from '@services/navigator';
+import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
+import { register } from 'swiper/element/bundle';
+import { CoreSwiper } from '@singletons/swiper';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
+
+register();
 
 @Component({
     selector: 'cq_dashboard',
@@ -13,6 +18,24 @@ import { CqPage } from '../classes/cq_page';
 })
 export class CqDashboard extends CqPage implements OnInit, OnDestroy
 {
+    protected pageSlider?: Swiper;
+    @ViewChild('swiperRef') set swiperRef(swiperRef: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(async () => {
+            await this.waitLoadingsDone();
+
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef, this.sliderOptions);
+            if (!swiper) {
+                return;
+            }
+
+            this.pageSlider = swiper;
+        });
+    }
+
     pageParams: any = {
     };
     pageDefaults: any = {

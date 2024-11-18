@@ -10,17 +10,13 @@
     <core-loading [hideUntil]="pageStatus">
         <div class="base-background pb-5">
 
-        <div class="text-center">
-            <swiper-container [options]="pageData.yearsSliderOptions">
-                <swiper-slide *ngFor="let availableYear of pageData.availableYears" class="mt-36 mb-36">
-                    <button class="{{ availableYear == pageData.selectedYear ? 'active' : '' }}" (click)="selectYear(availableYear)">
-                        {{ availableYear }}
-                    </button>
-                </swiper-slide>
-            </swiper-container>
+        <div class="text-center mt-36 mb-36">
+            <button *ngFor="let availableYear of pageData.availableYears" class="{{ availableYear == pageData.selectedYear ? 'active' : '' }}" class="mt-cs" (click)="selectYear(availableYear)">
+                {{ availableYear }}
+            </button>
         </div>
 
-        <swiper-container #pageSlider class="page-slider page-slider-cqmr" [options]="pageData.pageSliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
+        <swiper-container #swiperRef class="page-slider page-slider-cqmr" [options]="pageData.pageSliderOptions" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
             <swiper-slide *ngFor="let availableYear of pageData.availableYears" style="display: block;">
                 <div *ngIf="pageData[availableYear]" class="pb-8">
                     <div class="text-center">

@@ -8,7 +8,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
-        <div class="base-background pb-5">
+        <div *ngIf="pageStatus" class="base-background pb-5">
 
         <div class="dashboard-box">
             <div class="db-sizer"></div>
@@ -78,7 +78,7 @@
                     <span *ngIf="media == 'offline'">Classroom Training You May Like</span>
                     <ion-icon class="this-is-swiping" name="chevron-forward" style="position: absolute; top: 24px; right: 24px; font-size: 22px;"></ion-icon>
                 </div>
-                <swiper-container class="pl-12 pr-12" [options]="pageData.sliderOptions">
+                <swiper-container #swiperRef class="pl-12 pr-12" [options]="pageData.sliderOptions">
                     <swiper-slide *ngFor="let course of pageData[media]" class="base-background pl-12 pr-12 pt-12 pb-24">
                        <cq_items [items]="course" (onSelectItem)="openCourse($event)"></cq_items>
                     </swiper-slide>

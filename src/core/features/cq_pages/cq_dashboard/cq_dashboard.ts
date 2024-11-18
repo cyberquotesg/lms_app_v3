@@ -1,6 +1,6 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CoreNavigator } from '@services/navigator';
 import { SwiperOptions } from 'swiper/types';
 import { CqHelper } from '../services/cq_helper';
@@ -11,7 +11,7 @@ import { CqPage } from '../classes/cq_page';
     templateUrl: './cq_dashboard.html',
     styleUrls: ['cq_dashboard.scss'],
 })
-export class CqDashboard extends CqPage implements OnInit
+export class CqDashboard extends CqPage implements OnInit, OnDestroy
 {
     pageParams: any = {
     };
@@ -42,9 +42,9 @@ export class CqDashboard extends CqPage implements OnInit
         watchSlidesProgress: true,
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
     }
 
     ngOnInit(): void {
@@ -71,6 +71,7 @@ export class CqDashboard extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {

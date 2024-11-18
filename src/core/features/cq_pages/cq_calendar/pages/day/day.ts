@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, Renderer2, ElementRef } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -90,8 +90,8 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
         category: true,
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper) {
-        super(renderer, CH);
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef) {
+        super(renderer, CH, elementRef);
 
         this.currentSiteId = CoreSites.getCurrentSiteId();
 

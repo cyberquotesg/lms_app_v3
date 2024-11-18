@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnDestroy, OnInit, Renderer2 } from '@angular/core';
+import { Component, OnDestroy, OnInit, Renderer2, ElementRef } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { AlertOptions } from '@ionic/core';
 import {
@@ -94,9 +94,9 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
 
     constructor(
         protected route: ActivatedRoute,
-        renderer: Renderer2, CH: CqHelper
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.remindersEnabled = CoreReminders.isEnabled();
         this.siteHomeId = CoreSites.getCurrentSiteHomeId();

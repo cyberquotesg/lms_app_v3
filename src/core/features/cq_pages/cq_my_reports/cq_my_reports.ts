@@ -1,6 +1,6 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit, ElementRef } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { CoreLoadingComponent } from '@components/loading/loading';
@@ -20,7 +20,7 @@ register();
     templateUrl: './cq_my_reports.html',
     styleUrls: ['./cq_my_reports.scss'],
 })
-export class CqMyReports extends CqPage implements OnInit
+export class CqMyReports extends CqPage implements OnInit, OnDestroy
 {
     protected element: HTMLElement;
     protected domPromise?: CoreCancellablePromise<void>;
@@ -71,7 +71,7 @@ export class CqMyReports extends CqPage implements OnInit
 
     constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.element = elementRef.nativeElement;
 
@@ -101,13 +101,7 @@ export class CqMyReports extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
-
-    /**
-     * @inheritdoc
-     */
-    ngOnDestroy(): void {
-        this.domPromise?.cancel();
-    }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {

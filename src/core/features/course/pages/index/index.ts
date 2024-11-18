@@ -101,8 +101,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     // by rachmad
     // constructor(private route: ActivatedRoute) {
-    constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper) {
-        super(renderer, CH);
+    constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper, elementRef: ElementRef) {
+        super(renderer, CH, elementRef);
 
         this.selectTabObserver = CoreEvents.on(CoreEvents.SELECT_COURSE_TAB, (data) => {
             if (!data.name) {

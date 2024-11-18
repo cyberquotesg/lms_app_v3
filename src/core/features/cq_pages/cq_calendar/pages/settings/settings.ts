@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import { Component, OnInit, Renderer2, ElementRef } from '@angular/core';
 import { CoreDomUtils } from '@services/utils/dom';
 
 import { CqHelper } from '../../../services/cq_helper';
@@ -36,9 +36,9 @@ export class AddonCalendarSettingsPage extends CqPage implements OnInit {
 
 
     constructor(
-        renderer: Renderer2, CH: CqHelper
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
     }
     protected defaultTime?: number;
 

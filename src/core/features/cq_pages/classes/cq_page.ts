@@ -1,7 +1,11 @@
-import { Renderer2 } from '@angular/core';
+import { Renderer2, ElementRef } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { Params } from '@angular/router';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
+import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreCancellablePromise } from '@classes/cancellable-promise';
+import { CoreLoadingComponent } from '@components/loading/loading';
+import { CoreDom } from '@singletons/dom';
 import { CqGeneral } from './cq_general';
 import { CqHelper } from '../services/cq_helper';
 
@@ -19,6 +23,9 @@ export class CqPage extends CqGeneral
      * as pageJob has beed defined, system will look for corresponding function to run and mark it as done
      * within that function, must call 'pageJobExecuter'
     */
+
+    protected domPromise?: CoreCancellablePromise<void>;
+    protected element: HTMLElement;
 
     pageStatus = false;
     pageIsForcedFirstload = false;
@@ -41,9 +48,11 @@ export class CqPage extends CqGeneral
     cqCountry: any;
     cqOrganization: any;
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
         super(CH);
+
+        this.element = elementRef.nativeElement;
     }
 
     usuallyOnInit(beforePageLoad?: any): void
@@ -82,6 +91,10 @@ export class CqPage extends CqGeneral
     }
     usuallyOnViewDidLeave(): void
     {
+    }
+    usuallyOnDestroy(): void
+    {
+        this.domPromise?.cancel();
     }
 
     consumePageParams(): void
@@ -366,5 +379,23 @@ export class CqPage extends CqGeneral
                 }
             }, time);
         }
+    }
+
+    /**
+     * Wait until all <core-loading> children inside the page.
+     *
+     * @returns Promise resolved when loadings are done.
+     */
+    protected async waitLoadingsDone(): Promise<void> {
+        this.domPromise = CoreDom.waitToBeInDOM(this.element);
+
+        await this.domPromise;
+
+        const page = this.element.closest('.ion-page');
+        if (!page) {
+            return;
+        }
+
+        await CoreDirectivesRegistry.waitDirectivesReady(page, 'core-loading', CoreLoadingComponent);
     }
 }

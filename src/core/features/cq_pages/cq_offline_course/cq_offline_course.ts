@@ -1,6 +1,6 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
@@ -13,7 +13,7 @@ import { CoreUtils } from '@services/utils/utils';
     selector: 'cq_offline_course',
     templateUrl: './cq_offline_course.html',
 })
-export class CqOfflineCourse extends CqPage implements OnInit
+export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
 {
     pageParams: any = {
         courseId: 0,
@@ -34,9 +34,9 @@ export class CqOfflineCourse extends CqPage implements OnInit
     private zoomAgentInitted: boolean = false;
     loading: any = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef, platform: Platform)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
         this.platform = platform;
     }
 
@@ -49,6 +49,7 @@ export class CqOfflineCourse extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     course(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {

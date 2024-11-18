@@ -102,9 +102,9 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
 
     constructor(
         protected fb: FormBuilder,
-        renderer: Renderer2, CH: CqHelper
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.currentSite = CoreSites.getRequiredCurrentSite();
         this.remindersEnabled = CoreReminders.isEnabled();

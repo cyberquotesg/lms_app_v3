@@ -1,10 +1,6 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit, ElementRef } from '@angular/core';
-import { CoreDirectivesRegistry } from '@singletons/directives-registry';
-import { CoreCancellablePromise } from '@classes/cancellable-promise';
-import { CoreLoadingComponent } from '@components/loading/loading';
-import { CoreDom } from '@singletons/dom';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Swiper } from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
@@ -21,10 +17,8 @@ register();
     templateUrl: './cq_available_courses.html',
     styleUrls: ['cq_available_courses.scss'],
 })
-export class CqAvailableCourses extends CqPage implements OnInit
+export class CqAvailableCourses extends CqPage implements OnInit, OnDestroy
 {
-    protected element: HTMLElement;
-    protected domPromise?: CoreCancellablePromise<void>;
     protected pageSlider?: Swiper;
     @ViewChild('swiperRef') set swiperRef(swiperRef: ElementRef) {
         /**
@@ -98,9 +92,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
 
     constructor(renderer: Renderer2, CH: CqHelper, private router: Router, elementRef: ElementRef)
     {
-        super(renderer, CH);
-
-        this.element = elementRef.nativeElement;
+        super(renderer, CH, elementRef);
 
         this.router.events.subscribe((event: Event) => {
             // if (event instanceof NavigationStart || event instanceof NavigationEnd)
@@ -143,13 +135,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
-
-    /**
-     * @inheritdoc
-     */
-    ngOnDestroy(): void {
-        this.domPromise?.cancel();
-    }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -406,23 +392,5 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageData[media].page = 1;
             this.pageForceReferesh();
         }, 1000);
-    }
-
-    /**
-     * Wait until all <core-loading> children inside the page.
-     *
-     * @returns Promise resolved when loadings are done.
-     */
-    protected async waitLoadingsDone(): Promise<void> {
-        this.domPromise = CoreDom.waitToBeInDOM(this.element);
-
-        await this.domPromise;
-
-        const page = this.element.closest('.ion-page');
-        if (!page) {
-            return;
-        }
-
-        await CoreDirectivesRegistry.waitDirectivesReady(page, 'core-loading', CoreLoadingComponent);
     }
 }

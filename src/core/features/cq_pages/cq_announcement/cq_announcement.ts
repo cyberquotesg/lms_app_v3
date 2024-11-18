@@ -1,6 +1,6 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
@@ -16,7 +16,7 @@ import { AddonNotifications } from '@features/cq_pages/cq_notifications/services
     selector: 'cq_announcement',
     templateUrl: './cq_announcement.html',
 })
-export class CqAnnouncement extends CqPage implements OnInit
+export class CqAnnouncement extends CqPage implements OnInit, OnDestroy
 {
     pageParams: any = {
         discussion_id: 0,
@@ -32,12 +32,12 @@ export class CqAnnouncement extends CqPage implements OnInit
     private agent: any;
     loading: any = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper, platform: Platform,
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef, platform: Platform,
         private transfer: FileTransfer,
         private file: File,
         private fileOpener: FileOpener)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.CH.updateCount("announcement");
     }
@@ -55,6 +55,7 @@ export class CqAnnouncement extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     announcement(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {

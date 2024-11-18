@@ -2,7 +2,6 @@
 
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Swiper } from 'swiper';
-import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
 import { CoreSwiper } from '@singletons/swiper';
 import { CqHelper } from '../services/cq_helper';
@@ -27,7 +26,7 @@ export class CqMyReports extends CqPage implements OnInit, OnDestroy
         setTimeout(async () => {
             await this.waitLoadingsDone();
 
-            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef, this.yearsSliderOptions);
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef);
             if (!swiper) {
                 return;
             }
@@ -56,16 +55,6 @@ export class CqMyReports extends CqPage implements OnInit, OnDestroy
         },
     };
 
-    yearsSliderOptions: SwiperOptions = {
-        initialSlide: 0,
-        speed: 400,
-        centerInsufficientSlides: true,
-        centeredSlides: false,
-        centeredSlidesBounds: true,
-        breakpoints: {},
-        watchSlidesProgress: true,
-    };
-
     constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
         super(renderer, CH, elementRef);
@@ -76,7 +65,13 @@ export class CqMyReports extends CqPage implements OnInit, OnDestroy
             this.pageData.userFullName = userFullName;
         });
 
-        this.pageData.yearsSliderOptions = this.yearsSliderOptions;
+        this.pageData.yearsSliderOptions = {
+            initialSlide: 0,
+            speed: 400,
+            centerInsufficientSlides: true,
+            centeredSlidesBounds: true,
+            breakpoints: {},
+        };
         let slidesPerView, widthIterator = 80, spaceBetween = 10;
         for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
         {
@@ -86,9 +81,6 @@ export class CqMyReports extends CqPage implements OnInit, OnDestroy
         this.pageData.pageSliderOptions = {
             initialSlide: 0,
             speed: 400,
-            centerInsufficientSlides: true,
-            centeredSlides: true,
-            centeredSlidesBounds: true,
             slidesPerView: 1,
         };
     }

@@ -39,7 +39,6 @@ import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { CoreLoadingComponent } from '@components/loading/loading';
 import { CoreDom } from '@singletons/dom';
 import { Swiper } from 'swiper';
-import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
 import { CoreSwiper } from '@singletons/swiper';
 import { CqHelper } from '../../../services/cq_helper';
@@ -69,7 +68,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
         setTimeout(async () => {
             await this.waitLoadingsDone();
 
-            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef, this.pageSliderOptions);
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef);
             if (!swiper) {
                 return;
             }
@@ -94,14 +93,10 @@ export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDest
 
     subject: string = "Notification";
     selectedOne: string = "notification";
-    pageSliderOptions: SwiperOptions = {
+    pageSliderOptions: any = {
         initialSlide: 0,
         speed: 400,
-        centerInsufficientSlides: true,
-        centeredSlides: true,
-        centeredSlidesBounds: true,
         slidesPerView: 1,
-        watchSlidesProgress: true,
     };
 
     notificationList: any[] = [];

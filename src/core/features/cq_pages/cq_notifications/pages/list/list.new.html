@@ -20,7 +20,11 @@
                 </button>
             </div>
 
-            <swiper-container #swiperRef class="page-slider page-slider-notification-list" [options]="pageSliderOptions" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);">
+            <swiper-container #swiperRef class="page-slider page-slider-notification-list" style="transition: height ease 0.2s; min-height: calc(100vh - 50px - 116px - 48px);"
+                [initialSlide]="pageSliderOptions.initialSlide"
+                [speed]="pageSliderOptions.speed"
+                [slidesPerView]="pageSliderOptions.slidesPerView"
+            >
                 <swiper-slide style="display: block;">
                     <div class="pl-cs pr-cs pb-cst">
                         <cq_items type="list" [items]="notificationList" (onSelectItem)="openNotification($event)"></cq_items>

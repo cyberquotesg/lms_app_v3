@@ -17,7 +17,11 @@
             </button>
         </div>
 
-        <swiper-container #swiperRef class="page-slider page-slider-cqac" [options]="pageData.sliderOptions" style="transition: height ease 0.2s;" [ngStyle]="{'min-height': ('calc(100vh - 50px - 48px - ' + (pageData.medias.length > 1 ? '80px' : '0px') + ')')}">
+        <swiper-container #swiperRef class="page-slider page-slider-cqac" style="transition: height ease 0.2s;" [ngStyle]="{'min-height': ('calc(100vh - 50px - 48px - ' + (pageData.medias.length > 1 ? '80px' : '0px') + ')')}"
+            [initialSlide]="pageData.sliderOptions.initialSlide"
+            [speed]="pageData.sliderOptions.speed"
+            [slidesPerView]="pageData.sliderOptions.slidesPerView"
+        >
             <swiper-slide *ngFor="let media of pageData.medias">
                 <div class="text-left pl-cs pr-cs pt-36 pb-30" style="width: 100%">
                     <cq_filter [filterMultipleTitle]="media == 'online' ? 'E-Learning Filter' : 'Classroom Training Filter'" [filterMultiple]="pageData[media].filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>

@@ -99,7 +99,7 @@ export class CqPage extends CqGeneral
 
     consumePageParams(): void
     {
-        this.CH.log("pageParams", JSON.stringify(this.pageParams));
+        // this.CH.log("pageParams", JSON.stringify(this.pageParams));
 
         for (let paramName in this.pageParams)
         {
@@ -109,7 +109,7 @@ export class CqPage extends CqGeneral
     }
     consumePageDefault(): void
     {
-        this.CH.log("pageDefaults", JSON.stringify(this.pageDefaults));
+        // this.CH.log("pageDefaults", JSON.stringify(this.pageDefaults));
 
         for (let key in this.pageDefaults)
         {
@@ -117,7 +117,7 @@ export class CqPage extends CqGeneral
             else this.pageData[key] = JSON.parse(JSON.stringify(this.pageDefaults[key]));
         }
 
-        this.CH.log("pageData after implements pageDefaults", JSON.stringify(this.pageData));
+        // this.CH.log("pageData after implements pageDefaults", JSON.stringify(this.pageData));
     }
 
     /* handles page load
@@ -125,7 +125,7 @@ export class CqPage extends CqGeneral
     */
     pageLoad(moreloader?: any, refresher?: any, pageJob?: any, isDependantCall?: boolean, finalCallback?: any): void
     {
-        this.CH.log("running pageLoad with pageData", JSON.stringify(this.pageData));
+        // this.CH.log("running pageLoad with pageData", JSON.stringify(this.pageData));
 
         let firstload = !this.pageStatus;
         let loadingmore = typeof moreloader != 'undefined' && moreloader != null;

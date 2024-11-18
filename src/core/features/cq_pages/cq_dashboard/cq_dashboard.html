@@ -78,7 +78,13 @@
                     <span *ngIf="media == 'offline'">Classroom Training You May Like</span>
                     <ion-icon class="this-is-swiping" name="chevron-forward" style="position: absolute; top: 24px; right: 24px; font-size: 22px;"></ion-icon>
                 </div>
-                <swiper-container #swiperRef class="pl-12 pr-12" [options]="pageData.sliderOptions">
+                <swiper-container #swiperRef class="pl-12 pr-12"
+                    [initialSlide]="pageData.sliderOptions.initialSlide"
+                    [speed]="pageData.sliderOptions.speed"
+                    [centerInsufficientSlides]="pageData.sliderOptions.centerInsufficientSlides"
+                    [centeredSlidesBounds]="pageData.sliderOptions.centeredSlidesBounds"
+                    [breakpoints]="pageData.sliderOptions.breakpoints"
+                >
                     <swiper-slide *ngFor="let course of pageData[media]" class="base-background pl-12 pr-12 pt-12 pb-24">
                        <cq_items [items]="course" (onSelectItem)="openCourse($event)"></cq_items>
                     </swiper-slide>

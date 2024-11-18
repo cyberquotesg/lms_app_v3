@@ -2,7 +2,6 @@
 
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Swiper } from 'swiper';
-import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
 import { CoreSwiper } from '@singletons/swiper';
 import { Router, Event, NavigationStart, NavigationEnd, NavigationError} from '@angular/router';
@@ -28,7 +27,7 @@ export class CqAvailableCourses extends CqPage implements OnInit, OnDestroy
         setTimeout(async () => {
             await this.waitLoadingsDone();
 
-            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef, this.sliderOptions);
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef);
             if (!swiper) {
                 return;
             }
@@ -79,16 +78,6 @@ export class CqAvailableCourses extends CqPage implements OnInit, OnDestroy
     pageJobRefresh: any = {
         courses: 0,
     };
-
-    sliderOptions: SwiperOptions = {
-        initialSlide: 0,
-        speed: 400,
-        centerInsufficientSlides: true,
-        centeredSlides: true,
-        centeredSlidesBounds: true,
-        slidesPerView: 1,
-        watchSlidesProgress: true,
-    }
 
     constructor(renderer: Renderer2, CH: CqHelper, private router: Router, elementRef: ElementRef)
     {
@@ -182,8 +171,11 @@ export class CqAvailableCourses extends CqPage implements OnInit, OnDestroy
             this.pageData.online.length = this.pageData.offline.length = cqConfig.mobileListLength;
             this.pageData.medias = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
             this.pageData.media = this.pageParams.media != "" ? this.pageParams.media : this.pageData.medias[0];
-            this.pageData.sliderOptions = this.sliderOptions;
-            this.pageData.sliderOptions.initialSlide = this.pageData.medias.indexOf(this.pageData.media);
+            this.pageData.sliderOptions = {
+                initialSlide: this.pageData.medias.indexOf(this.pageData.media),
+                speed: 400,
+                slidesPerView: 1,
+            };
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);

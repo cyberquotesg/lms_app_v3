@@ -26,7 +26,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
     protected element: HTMLElement;
     protected domPromise?: CoreCancellablePromise<void>;
     protected pageSlider?: Swiper;
-    @ViewChild('swiperRef', { static: true }) set swiperRef(swiperRef: ElementRef) {
+    @ViewChild('swiperRef') set swiperRef(swiperRef: ElementRef) {
         /**
          * This setTimeout waits for Ionic's async initialization to complete.
          * Otherwise, an outdated swiper reference will be used.
@@ -40,6 +40,9 @@ export class CqAvailableCourses extends CqPage implements OnInit
             }
 
             this.pageSlider = swiper;
+            this.pageSlider.on('slideChange', () => {
+                this.pageSliderChange();
+            });
         });
     }
 

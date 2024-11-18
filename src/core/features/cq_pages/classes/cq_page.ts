@@ -103,6 +103,8 @@ export class CqPage extends CqGeneral
             if (typeof this.pageDefaults[key] != 'object') this.pageData[key] = this.pageDefaults[key];
             else this.pageData[key] = JSON.parse(JSON.stringify(this.pageDefaults[key]));
         }
+
+        console.log("pageData after implements pageDefaults", JSON.stringify(this.pageData));
     }
 
     /* handles page load
@@ -110,6 +112,8 @@ export class CqPage extends CqGeneral
     */
     pageLoad(moreloader?: any, refresher?: any, pageJob?: any, isDependantCall?: boolean, finalCallback?: any): void
     {
+        console.log("running pageLoad with pageData", JSON.stringify(this.pageData));
+
         let firstload = !this.pageStatus;
         let loadingmore = typeof moreloader != 'undefined' && moreloader != null;
         let refreshing = typeof refresher != 'undefined' && refresher != null;
@@ -355,7 +359,7 @@ export class CqPage extends CqGeneral
             // a moment after slide, make sure the slider has proper height
             setTimeout(() => {
                 let parent = document.querySelector(pageClass) as HTMLElement | null;
-                let activeChild = document.querySelector(pageClass + " .swiper-wrapper .swiper-slide-active > div:first-child") as HTMLDivElement | null;
+                let activeChild = document.querySelector(pageClass + " .swiper-slide-active > div:first-child") as HTMLDivElement | null;
                 if (parent && activeChild)
                 {
                     parent.style.height = activeChild.offsetHeight + 0 + "px";

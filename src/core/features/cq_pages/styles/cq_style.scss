@@ -840,14 +840,14 @@ body
 	}
 	swiper-container
 	{
+		max-height: none !important;
+
 		&.page-slider
 		{
-			.swiper-wrapper
+			swiper-slide
 			{
-				.swiper-slide
-				{
-					align-items: flex-start;
-				}
+				justify-content: flex-start;
+				align-items: flex-start;
 			}
 		}
 	}

@@ -50,10 +50,7 @@ register();
  */
 @Component({
     selector: 'page-addon-notifications-list',
-    
-    // by rachmad
-    templateUrl: 'list.new.html',
-
+    templateUrl: 'list.html',
     styleUrls: ['list.scss', '../../notifications.scss'],
 })
 export class AddonNotificationsListPage implements AfterViewInit, OnInit, OnDestroy {

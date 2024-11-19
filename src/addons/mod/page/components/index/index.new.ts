@@ -5,7 +5,10 @@ import { AddonModPageIndexComponent as Old } from './index';
 
 @Component({
     selector: 'addon-mod-page-index',
+    
+    // by rachmad
     templateUrl: 'addon-mod-page-index.new.html',
+
     styleUrls: ['index.scss'],
 })
 export class AddonModPageIndexComponent extends Old implements OnInit

@@ -24,6 +24,9 @@ import { CoreCourseModulePreviewPage } from '@features/course/pages/module-previ
 import { CoreCourseHelper } from './services/course-helper';
 import { COURSE_INDEX_PATH } from './constants';
 
+// by rachmad
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 /**
  * Build module routes.
  *
@@ -73,6 +76,9 @@ function buildRoutes(injector: Injector): Routes {
         CoreSharedModule,
         CoreCourseComponentsModule,
         CoreCourseSummaryPageModule,
+
+        // by rachmad
+        CqComponentsModule,
     ],
     providers: [
         {

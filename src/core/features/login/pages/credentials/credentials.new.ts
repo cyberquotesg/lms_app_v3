@@ -31,7 +31,10 @@ import { CoreLoginCredentialsPage as Old } from './credentials';
  */
 @Component({
     selector: 'page-core-login-credentials',
+    
+    // by rachmad
     templateUrl: 'credentials.new.html',
+
     styleUrls: ['../../login.scss'],
 })
 export class CoreLoginCredentialsPage extends Old implements OnInit, OnDestroy

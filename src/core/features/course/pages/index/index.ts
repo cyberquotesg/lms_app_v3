@@ -50,7 +50,10 @@ import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grade
  */
 @Component({
     selector: 'page-core-course-index',
-    templateUrl: 'index.html',
+    
+    // by rachmad
+    templateUrl: 'index.new.html',
+
     styleUrls: ['index.scss'],
 })
 

@@ -53,16 +53,17 @@ import moment from 'moment-timezone';
 import { CqHelper } from '../../../services/cq_helper';
 import { CqComponent } from '../../../classes/cq_component';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreTime } from '@singletons/time';
 import { Translate } from '@singletons';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Component that displays a calendar.
  */
 @Component({
     selector: 'addon-calendar-calendar',
-    templateUrl: 'addon-calendar-calendar.new.html',
+    templateUrl: 'addon-calendar-calendar.html',
     styleUrls: ['calendar.scss'],
 })
 export class AddonCalendarCalendarComponent extends CqComponent implements OnInit, DoCheck, OnDestroy {
@@ -72,9 +73,9 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
     @Input() initialYear?: number; // Initial year to load.
     @Input() initialMonth?: number; // Initial month to load.
     @Input() filter?: AddonCalendarFilter; // Filter to apply.
-    @Input() hidden?: boolean; // Whether the component is hidden.
-    @Input() canNavigate?: string | boolean; // Whether to include arrows to change the month. Defaults to true.
-    @Input() displayNavButtons?: string | boolean; // Whether to display nav buttons created by this component. Defaults to true.
+    @Input({ transform: toBoolean }) hidden = false; // Whether the component is hidden.
+    @Input({ transform: toBoolean }) canNavigate = true; // Whether to include arrows to change the month
+    @Input({ transform: toBoolean }) displayNavButtons = true; // Whether to display nav buttons created by this component.
     @Output() onEventClicked = new EventEmitter<number>();
     @Output() onDayClicked = new EventEmitter<{day: number; month: number; year: number}>();
 
@@ -137,7 +138,7 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
                     ...params,
                     category: 'calendar',
                 },
-                url: CoreUrlUtils.addParamsToUrl('/calendar/view.php?view=month', params),
+                url: CoreUrl.addParamsToUrl('/CqCalendar/view.php?view=month', params),
             });
         });
     }
@@ -150,10 +151,6 @@ export class AddonCalendarCalendarComponent extends CqComponent implements OnIni
      * @inheritdoc
      */
     ngOnInit(): void {
-        this.canNavigate = typeof this.canNavigate == 'undefined' ? true : CoreUtils.isTrueOrOne(this.canNavigate);
-        this.displayNavButtons = typeof this.displayNavButtons == 'undefined' ? true :
-            CoreUtils.isTrueOrOne(this.displayNavButtons);
-
         const source = new AddonCalendarMonthSlidesItemsManagerSource(this, moment({
             year: this.initialYear,
             month: this.initialMonth ? this.initialMonth - 1 : undefined,

@@ -16,9 +16,9 @@ import { Injectable } from '@angular/core';
 import { CoreSites } from '@services/sites';
 import { CoreSite } from '@classes/sites/site';
 import { CoreNetwork } from '@services/network';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreTimeUtils } from '@services/utils/time';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreGroups } from '@services/groups';
 import { CoreLocalNotifications } from '@services/local-notifications';
@@ -45,10 +45,7 @@ import {
     CoreReminders,
     CoreRemindersPushNotificationData,
     CoreRemindersService,
-    CoreRemindersUnits,
-    CoreReminderValueAndUnit,
 } from '@features/reminders/services/reminders';
-import { CoreReminderDBRecord } from '@features/reminders/services/database/reminders';
 import { CoreEvents } from '@singletons/events';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { ADDON_CALENDAR_COMPONENT } from '../constants';
@@ -64,18 +61,6 @@ export enum AddonCalendarEventType {
     COURSE = 'course',
     GROUP = 'group',
     USER = 'user',
-}
-
-/**
- * Units to set a reminder.
- *
- * @deprecated since 4.1 Use CoreReminderUnits instead.
- */
-export enum AddonCalendarReminderUnits {
-    MINUTE = CoreConstants.SECONDS_MINUTE,
-    HOUR = CoreConstants.SECONDS_HOUR,
-    DAY = CoreConstants.SECONDS_DAY,
-    WEEK = CoreConstants.SECONDS_WEEK,
 }
 
 declare module '@singletons/events' {
@@ -176,17 +161,6 @@ export class AddonCalendarProvider {
 
         // The WS to create/edit events requires a fix that was integrated in 3.7.1.
         return !!site?.isVersionGreaterEqualThan('3.7.1');
-    }
-
-    /**
-     * Given a number of seconds, convert it to a unit&value format compatible with reminders.
-     *
-     * @param seconds Number of seconds.
-     * @returns Value and unit.
-     * @deprecated since 4.1 Use CoreRemindersService.convertSecondsToValueAndUnit instead.
-     */
-    static convertSecondsToValueAndUnit(seconds: number): CoreReminderValueAndUnit {
-        return CoreRemindersService.convertSecondsToValueAndUnit(seconds);
     }
 
     /**
@@ -356,7 +330,7 @@ export class AddonCalendarProvider {
     ): Promise<string> {
 
         const getTimeHtml = (time: string, a11yLangKey: string): string =>
-            `<span aria-label="${Translate.instant(a11yLangKey, { $a: CoreTextUtils.cleanTags(time) })}">${time}</span>`;
+            `<span aria-label="${Translate.instant(a11yLangKey, { $a: CoreText.cleanTags(time) })}">${time}</span>`;
         const getStartTimeHtml = (time: string): string => getTimeHtml(time, 'core.startingtime');
         const getEndTimeHtml = (time: string): string => getTimeHtml(time, 'core.endingtime');
 
@@ -388,14 +362,14 @@ export class AddonCalendarProvider {
                 // Add links to the days if needed.
                 if (dayStart && (!seenDay || !moment(seenDay).isSame(start, 'day'))) {
                     promises.push(this.getViewUrl('day', event.timestart, undefined, siteId).then((url) => {
-                        dayStart = CoreUrlUtils.buildLink(url, dayStart);
+                        dayStart = CoreUrl.buildLink(url, dayStart);
 
                         return;
                     }));
                 }
                 if (dayEnd && (!seenDay || !moment(seenDay).isSame(end, 'day'))) {
                     promises.push(this.getViewUrl('day', end / 1000, undefined, siteId).then((url) => {
-                        dayEnd = CoreUrlUtils.buildLink(url, dayEnd);
+                        dayEnd = CoreUrl.buildLink(url, dayEnd);
 
                         return;
                     }));
@@ -424,7 +398,7 @@ export class AddonCalendarProvider {
         // Add link to view the day.
         const url = await this.getViewUrl('day', event.timestart, undefined, siteId);
 
-        return CoreUrlUtils.buildLink(url, this.getDayRepresentation(start, useCommonWords)) + ', ' + time;
+        return CoreUrl.buildLink(url, this.getDayRepresentation(start, useCommonWords)) + ', ' + time;
     }
 
     /**
@@ -593,17 +567,6 @@ export class AddonCalendarProvider {
     }
 
     /**
-     * Get the configured default notification time.
-     *
-     * @param siteId ID of the site. If not defined, use current site.
-     * @returns Promise resolved with the default time (in seconds).
-     * @deprecated since 4.1 Use CoreReminders.getDefaultNotificationTime instead.
-     */
-    async getDefaultNotificationTime(siteId?: string): Promise<number> {
-        return CoreReminders.getDefaultNotificationTime(siteId);
-    }
-
-    /**
      * Get a calendar event. If the server request fails and data is not cached, try to get it from local DB.
      *
      * @param id Event ID.
@@ -703,18 +666,18 @@ export class AddonCalendarProvider {
         eventConverted.iscategoryevent = originalEvent.eventtype == AddonCalendarEventType.CATEGORY;
         eventConverted.normalisedeventtype = this.getEventType(recordAsRecord);
         try {
-            eventConverted.category = CoreTextUtils.parseJSON(recordAsRecord.category || '');
+            eventConverted.category = CoreText.parseJSON(recordAsRecord.category || '');
         } catch {
             // Ignore errors.
         }
 
         try {
-            eventConverted.course = CoreTextUtils.parseJSON(recordAsRecord.course || '');
+            eventConverted.course = CoreText.parseJSON(recordAsRecord.course || '');
         } catch {
             // Ignore errors.
         }
         try {
-            eventConverted.subscription = CoreTextUtils.parseJSON(recordAsRecord.subscription || '');
+            eventConverted.subscription = CoreText.parseJSON(recordAsRecord.subscription || '');
         } catch {
             // Ignore errors.
         }
@@ -778,18 +741,6 @@ export class AddonCalendarProvider {
         }
 
         return event.eventtype;
-    }
-
-    /**
-     * Remove an event reminder and cancel the notification.
-     *
-     * @param id Reminder ID.
-     * @param siteId ID of the site the event belongs to. If not defined, use current site.
-     * @returns Promise resolved when the notification is updated.
-     * @deprecated since 4.1. Use CoreReminders.removeReminder instead.
-     */
-    async deleteEventReminder(id: number, siteId?: string): Promise<void> {
-        await CoreReminders.removeReminder(id, siteId);
     }
 
     /**
@@ -874,21 +825,6 @@ export class AddonCalendarProvider {
     protected getDayEventsCacheKey(year: number, month: number, day: number, courseId?: number, categoryId?: number): string {
         return this.getDayEventsDayPrefixCacheKey(year, month, day) + (courseId ? courseId : '') + ':' +
                 (categoryId ? categoryId : '');
-    }
-
-    /**
-     * Get a calendar reminders from local Db.
-     *
-     * @param eventId Event ID.
-     * @param siteId ID of the site the event belongs to. If not defined, use current site.
-     * @returns Promise resolved when the event data is retrieved.
-     * @deprecated since 4.1. Use CoreReminders.getReminders instead.
-     */
-    async getEventReminders(eventId: number, siteId?: string): Promise<CoreReminderDBRecord[]> {
-        return CoreReminders.getReminders({
-            instanceId: eventId,
-            component: ADDON_CALENDAR_COMPONENT,
-        }, siteId);
     }
 
     /**
@@ -1087,19 +1023,6 @@ export class AddonCalendarProvider {
     protected getMonthlyEventsCacheKey(year: number, month: number, courseId?: number, categoryId?: number): string {
         return this.getMonthlyEventsMonthPrefixCacheKey(year, month) + (courseId ? courseId : '') + ':' +
                 (categoryId ? categoryId : '');
-    }
-
-    /**
-     * Given a value and a unit, return the translated label.
-     *
-     * @param value Value.
-     * @param unit Unit.
-     * @param addDefaultLabel Whether to add the "Default" text.
-     * @returns Translated label.
-     * @deprecated since 4.1 Use CoreReminders.getUnitValueLabel instead.
-     */
-    getUnitValueLabel(value: number, unit: CoreRemindersUnits, addDefaultLabel = false): string {
-        return CoreReminders.getUnitValueLabel(value, unit, addDefaultLabel);
     }
 
     /**
@@ -1379,16 +1302,6 @@ export class AddonCalendarProvider {
     }
 
     /**
-     * Get the next events for all the sites and schedules their notifications.
-     *
-     * @returns Promise resolved when done.
-     * @deprecated since 4.1 Use AddonCalendar.updateAllSitesEventReminders.
-     */
-    async scheduleAllSitesEventsNotifications(): Promise<void> {
-        await AddonCalendar.updateAllSitesEventReminders();
-    }
-
-    /**
      * Get the next events for all the sites and updates their reminders.
      */
     async updateAllSitesEventReminders(): Promise<void> {
@@ -1413,21 +1326,6 @@ export class AddonCalendarProvider {
 
         // Get first events to store/update them in local database and update their reminders.
         await this.getEventsList(undefined, undefined, undefined, siteId);
-    }
-
-    /**
-     * Get the next events for all the sites and schedules their notifications.
-     *
-     * @returns Promise resolved when done.
-     * @deprecated since 4.1. No replacement for that function.
-     */
-    async scheduleEventsNotifications(
-        events: ({ id: number; timestart: number; timeduration: number; name: string})[],
-        siteId?: string,
-    ): Promise<void> {
-        siteId = siteId || CoreSites.getCurrentSiteId();
-
-        await AddonCalendar.updateEventsReminders(events, siteId);
     }
 
     /**
@@ -1468,18 +1366,6 @@ export class AddonCalendarProvider {
                 }
             }));
         }));
-    }
-
-    /**
-     * Set the default notification time.
-     *
-     * @param time New default time.
-     * @param siteId ID of the site. If not defined, use current site.
-     * @returns Promise resolved when stored.
-     * @deprecated since 4.1 Use CoreReminders.setDefaultNotificationTime.
-     */
-    async setDefaultNotificationTime(time: number, siteId?: string): Promise<void> {
-        await CoreReminders.setDefaultNotificationTime(time, siteId);
     }
 
     /**
@@ -2202,13 +2088,6 @@ export type AddonCalendarUpdatedEventEvent = {
     oldEventId?: number; // Old event ID. Used when an offline event is sent.
     sent?: boolean;
 };
-
-/**
- * Value and unit for reminders.
- *
- * @deprecated since 4.1, use CoreReminderValueAndUnit instead.
- */
-export type AddonCalendarValueAndUnit = CoreReminderValueAndUnit;
 
 /**
  * Options to pass to submit event.

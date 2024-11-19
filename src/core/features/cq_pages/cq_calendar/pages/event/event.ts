@@ -56,7 +56,7 @@ import { CoreUrl } from '@singletons/url';
  */
 @Component({
     selector: 'page-addon-calendar-event',
-    templateUrl: 'event.new.html',
+    templateUrl: 'event.html',
     styleUrls: ['../../calendar-common.scss', 'event.scss'],
 })
 export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy {
@@ -487,7 +487,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      * Open the page to edit the event.
      */
     openEdit(): void {
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${this.eventId}`);
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${this.eventId}`);
     }
 
     /**

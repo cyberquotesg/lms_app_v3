@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, OnInit, Renderer2, ElementRef } from '@angular/core';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CorePopovers } from '@services/popovers';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
@@ -21,14 +21,13 @@ import {
     CoreReminders,
     CoreRemindersService,
 } from '@features/reminders/services/reminders';
-import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
 
 /**
  * Page that displays the calendar settings.
  */
 @Component({
     selector: 'page-addon-calendar-settings',
-    templateUrl: 'settings.new.html',
+    templateUrl: 'settings.html',
 })
 export class AddonCalendarSettingsPage extends CqPage implements OnInit {
 
@@ -60,7 +59,10 @@ export class AddonCalendarSettingsPage extends CqPage implements OnInit {
         e.stopImmediatePropagation();
         e.preventDefault();
 
-        const reminderTime = await CoreDomUtils.openPopover<{timeBefore: number}>({
+        const { CoreRemindersSetReminderMenuComponent } =
+            await import('@features/reminders/components/set-reminder-menu/set-reminder-menu');
+
+        const reminderTime = await CorePopovers.open<{timeBefore: number}>({
             component: CoreRemindersSetReminderMenuComponent,
             componentProps: {
                 initialValue: this.defaultTime,

@@ -26,7 +26,7 @@ import { AddonCalendarOffline } from '../../services/calendar-offline';
 import { CoreCategoryData, CoreCourses } from '@features/courses/services/courses';
 import { CoreConstants } from '@/core/constants';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreTime } from '@singletons/time';
 import { Translate } from '@singletons';
 
@@ -35,7 +35,7 @@ import { Translate } from '@singletons';
  */
 @Component({
     selector: 'addon-calendar-upcoming-events',
-    templateUrl: 'addon-calendar-upcoming-events.new.html',
+    templateUrl: 'addon-calendar-upcoming-events.html',
     styleUrls: ['../../calendar-common.scss'],
 })
 export class AddonCalendarUpcomingEventsComponent implements OnInit, DoCheck, OnDestroy {
@@ -103,7 +103,7 @@ export class AddonCalendarUpcomingEventsComponent implements OnInit, DoCheck, On
                     ...params,
                     category: 'calendar',
                 },
-                url: CoreUrlUtils.addParamsToUrl('/calendar/view.php?view=upcoming', params),
+                url: CoreUrl.addParamsToUrl('/CqCalendar/view.php?view=upcoming', params),
             });
         });
     }

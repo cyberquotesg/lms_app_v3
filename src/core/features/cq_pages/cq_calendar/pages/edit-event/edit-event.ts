@@ -44,20 +44,21 @@ import { CoreNavigator } from '@services/navigator';
 import { CanLeave } from '@guards/can-leave';
 import { CoreForms } from '@singletons/form';
 import { CoreReminders, CoreRemindersService, CoreRemindersUnits } from '@features/reminders/services/reminders';
-import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
 import moment from 'moment-timezone';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
 import { ADDON_CALENDAR_COMPONENT } from '@features/cq_pages/cq_calendar/constants';
 import { ContextLevel } from '@/core/constants';
+import { CorePopovers } from '@services/popovers';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays a form to create/edit an event.
  */
 @Component({
     selector: 'page-addon-calendar-edit-event',
-    templateUrl: 'edit-event.new.html',
+    templateUrl: 'edit-event.html',
     styleUrls: ['edit-event.scss'],
 })
 export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDestroy, CanLeave {
@@ -414,7 +415,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             await this.loadGroups(courseId);
@@ -520,7 +521,7 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
         }
 
         // Send the data.
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
         let event: AddonCalendarEvent | AddonCalendarOfflineEventDBRecord;
 
         try {
@@ -644,7 +645,10 @@ export class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDest
         const formData = this.form.value;
         const eventTime = moment(formData.timestart).unix();
 
-        const reminderTime = await CoreDomUtils.openPopover<{timeBefore: number}>({
+        const { CoreRemindersSetReminderMenuComponent } =
+            await import('@features/reminders/components/set-reminder-menu/set-reminder-menu');
+
+        const reminderTime = await CorePopovers.open<{timeBefore: number}>({
             component: CoreRemindersSetReminderMenuComponent,
             componentProps: {
                 eventTime,

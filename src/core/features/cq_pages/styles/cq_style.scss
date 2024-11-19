@@ -474,6 +474,10 @@ body
 
 	    	    ion-buttons
 	    	    {
+	    	    	ion-back-button
+	    	    	{
+	    	    		color: white;
+	    	    	}
 	    	    	ion-button
 	    	    	{
 	    	    		background: transparent !important;
@@ -1372,12 +1376,6 @@ body
 		&.full
 		{
 			width: 100%;
-		}
-
-		+ button,
-		+ .button
-		{
-			margin-left: $component_spacing;
 		}
 	}
 	ion-back-button

@@ -8,7 +8,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="(selectedOne == 'notification' && notifications.loaded) || (selectedOne == 'announcement' && announcementLoaded)">
-        <div class="base-background pb-5">
+        <div class="base-background">
 
             <div class="mt-36 mb-36 pl-cs pr-cs" style="display: flex; justify-content: center;">
                 <button class="{{ 'notification' == selectedOne ? 'active' : '' }}" (click)="selectOne('notification')" style="flex-grow: 1;">

@@ -76,7 +76,7 @@ export class CqDashboard extends CqPage implements OnInit, OnDestroy
                 centeredSlidesBounds: true,
                 breakpoints: {},
             };
-            let slidesPerView, widthIterator = 160, spaceBetween = 24;
+            let slidesPerView, widthIterator = 160, spaceBetween = 0;
             for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
             {
                 this.pageData.sliderOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };

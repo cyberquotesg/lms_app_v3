@@ -7,10 +7,10 @@ import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
-import { FileTransfer, FileTransferObject } from '@awesome-cordova-plugins/file-transfer/ngx';
-import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
 import { File } from '@awesome-cordova-plugins/file/ngx';
-import { AddonNotifications } from '@features/cq_pages/cq_notifications/services/notifications';
+import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
+import { FileTransfer, FileTransferObject } from '@awesome-cordova-plugins/file-transfer/ngx';
+import { AddonNotifications } from '@addons/notifications/services/notifications';
 
 @Component({
     selector: 'cq_announcement',
@@ -184,8 +184,8 @@ export class CqAnnouncement extends CqPage implements OnInit, OnDestroy
         this.CH.loading('Downloading', (loading) => {
             const fileTransfer: FileTransferObject = this.transfer.create();
             fileTransfer.download(this.CH.config().siteurl + url, this.file.dataDirectory + name)
-            .then((entry) => {
-                this.fileOpener.open(entry.toURL(), this.CH.getMimeTypeByName(name))
+            .then((result) => {
+                this.fileOpener.open(result.entry.toURL(), this.CH.getMimeTypeByName(name))
                 .then(() => {
                     loading.dismiss();
                 })

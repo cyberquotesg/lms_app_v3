@@ -44,7 +44,7 @@ export class CqAnnouncement extends CqPage implements OnInit, OnDestroy
 
     ngOnInit(): void {
         this.usuallyOnInit(() => {
-            if (this.pageParams.notification_id)
+            if (this.pageParams.notification_id != 0 && this.pageParams.notification_id != "0")
             {
                 this.CH.log("marking notification as read", this.pageParams.notification_id);
                 AddonNotifications.markNotificationRead(this.pageParams.notification_id);

@@ -137,7 +137,7 @@
         }
     },
     "clearIABSessionWhenAutoLogin": "android",
-    "siteurl": "https://qaslms.cyberquote.com",
+    "siteurl": "https://lms.cyberquote.com",
     "sites": [
         {
             "name": "CyberQuote",
@@ -147,8 +147,8 @@
             "title": "CQLMS"
         }
     ],
-    "isProduction": false,
-    "sendErrorLog": false,
+    "isProduction": true,
+    "sendErrorLog": true,
     "notificationInterval": 10000,
     "appToken": "cq_academy_official_app",
     "recaptchaSiteKey" : "6LcTWaIaAAAAAM95sNdgh8wOdLmjd5241OqIZuRA",

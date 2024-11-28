@@ -17,6 +17,7 @@ import { Component } from '@angular/core';
 import { NavParams } from '@ionic/angular';
 import { PopoverController } from '@singletons';
 import { CoreContextMenuItemComponent } from './context-menu-item';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to display a list of items received by param in a popover.
@@ -24,18 +25,20 @@ import { CoreContextMenuItemComponent } from './context-menu-item';
 @Component({
     selector: 'core-context-menu-popover',
     templateUrl: 'core-context-menu-popover.html',
-    styleUrls: ['context-menu-popover.scss'],
+    styleUrl: 'context-menu-popover.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreContextMenuPopoverComponent {
 
-    title: string;
     uniqueId: string;
     items: CoreContextMenuItemComponent[];
 
     constructor(
         navParams: NavParams,
     ) {
-        this.title = navParams.get('title');
         this.items = navParams.get('items') || [];
         this.uniqueId = navParams.get('id');
     }
@@ -61,7 +64,7 @@ export class CoreContextMenuPopoverComponent {
             item.toggle = !item.toggle;
         }
 
-        if (!!item.action && item.action.observers.length > 0) {
+        if (!!item.action && item.action.observed) {
             event.preventDefault();
             event.stopPropagation();
 
@@ -74,7 +77,7 @@ export class CoreContextMenuPopoverComponent {
             }
 
             item.action.emit(() => this.closeMenu(item));
-        } else if (item.closeOnClick && (item.href || (!!item.onClosed && item.onClosed.observers.length > 0))) {
+        } else if (item.closeOnClick && (item.href || (!!item.onClosed && item.onClosed.observed))) {
             this.closeMenu(item);
         }
 

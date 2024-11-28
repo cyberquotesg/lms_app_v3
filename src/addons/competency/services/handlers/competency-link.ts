@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ADDON_COMPETENCY_COMPETENCIES_PAGE, ADDON_COMPETENCY_LEARNING_PLANS_PAGE } from '@addons/competency/competency.module';
+import { ADDON_COMPETENCY_COMPETENCIES_PAGE, ADDON_COMPETENCY_LEARNING_PLANS_PAGE } from '@addons/competency/constants';
 import { Injectable } from '@angular/core';
 import { CoreContentLinksHandlerBase } from '@features/contentlinks/classes/base-handler';
 import { CoreContentLinksAction } from '@features/contentlinks/services/contentlinks-delegate';
-import { COURSE_PAGE_NAME } from '@features/course/course.module';
+import { COURSE_PAGE_NAME } from '@features/course/constants';
 import { CoreNavigator } from '@services/navigator';
 import { makeSingleton } from '@singletons';
 import { AddonCompetency } from '../competency';
@@ -38,9 +38,9 @@ export class AddonCompetencyCompetencyLinkHandlerService extends CoreContentLink
         courseId = courseId || parseInt(params.courseid || params.cid, 10);
 
         return [{
-            action: (siteId: string): void => {
+            action: async (siteId: string): Promise<void> => {
                 if (courseId) {
-                    CoreNavigator.navigateToSitePath(
+                    await CoreNavigator.navigateToSitePath(
                         `${COURSE_PAGE_NAME}/${courseId}/${ADDON_COMPETENCY_COMPETENCIES_PAGE}`,
                         {
                             params: { userId: params.userid },
@@ -52,7 +52,7 @@ export class AddonCompetencyCompetencyLinkHandlerService extends CoreContentLink
                 }
 
                 if (params.planid) {
-                    CoreNavigator.navigateToSitePath(
+                    await CoreNavigator.navigateToSitePath(
                         `${ADDON_COMPETENCY_LEARNING_PLANS_PAGE}/competencies/${params.planid}`,
                         {
                             params: { userId: params.userid },
@@ -70,10 +70,7 @@ export class AddonCompetencyCompetencyLinkHandlerService extends CoreContentLink
      * @inheritdoc
      */
     async isEnabled(siteId: string): Promise<boolean> {
-        // Handler is disabled if all competency features are disabled.
-        const disabled = await AddonCompetency.allCompetenciesDisabled(siteId);
-
-        return !disabled;
+        return AddonCompetency.areCompetenciesEnabled({ siteId });
     }
 
 }

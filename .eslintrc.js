@@ -5,6 +5,7 @@ const appConfig = {
         node: true,
     },
     plugins: [
+        '@angular-eslint',
         '@typescript-eslint',
         'header',
         'jsdoc',
@@ -13,11 +14,13 @@ const appConfig = {
     ],
     extends: [
         'eslint:recommended',
+        'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
-        'prettier',
         'plugin:@angular-eslint/recommended',
+        'plugin:@angular-eslint/template/process-inline-templates',
         'plugin:promise/recommended',
         'plugin:jsdoc/recommended',
+        'plugin:deprecation/recommended',
     ],
     parser: '@typescript-eslint/parser',
     parserOptions: {
@@ -45,6 +48,7 @@ const appConfig = {
                     Object: {
                         message: 'Use {} instead.',
                     },
+                    Function: false,
                 },
             },
         ],
@@ -58,16 +62,6 @@ const appConfig = {
             'error',
             {
                 allowArgumentsExplicitlyTypedAsAny: true,
-            },
-        ],
-        '@typescript-eslint/indent': [
-            'error',
-            4,
-            {
-                SwitchCase: 1,
-                ignoredNodes: [
-                    'ClassProperty *',
-                ],
             },
         ],
         '@typescript-eslint/lines-between-class-members': [
@@ -90,18 +84,23 @@ const appConfig = {
                 },
             },
         ],
-        '@typescript-eslint/member-ordering': [
-            'error',
-            {
-                default:
-                {
-                    order: 'as-written',
-                },
-
-            }
-        ],
+        '@typescript-eslint/member-ordering': 'off',
         '@typescript-eslint/naming-convention': [
             'error',
+            {
+                selector: [
+                    'classProperty',
+                    'objectLiteralProperty',
+                    'typeProperty',
+                    'classMethod',
+                    'objectLiteralMethod',
+                    'typeMethod',
+                    'accessor',
+                    'enumMember'
+                ],
+                modifiers: ['requiresQuotes'],
+                format: null,
+            },
             {
                 selector: 'property',
                 format: ['camelCase'],
@@ -199,11 +198,30 @@ const appConfig = {
         ],
         'id-match': 'error',
         'jsdoc/check-alignment': 'error',
-        'jsdoc/newline-after-description': 'error',
-        'jsdoc/require-param-type': 'off',
-        'jsdoc/require-returns-type': 'off',
-        'jsdoc/require-param': 'off',
+        'jsdoc/check-param-names': [
+            'warn',
+            {
+                checkDestructured: false,
+                enableFixer: true
+            },
+        ],
+        'jsdoc/check-tag-names': [
+            'warn',
+            {
+                'definedTags': ['deprecatedonmoodle']
+            },
+        ],
         'jsdoc/check-values': 'off',
+        'jsdoc/require-param-type': 'off',
+        'jsdoc/require-param': 'off',
+        'jsdoc/require-returns-type': 'off',
+        'jsdoc/tag-lines': [
+            'error',
+            'any',
+            {
+                startLines: 1,
+            },
+        ],
         'linebreak-style': [
             'error',
             'unix',
@@ -226,7 +244,7 @@ const appConfig = {
         'no-fallthrough': 'off',
         'no-invalid-this': 'error',
         'no-irregular-whitespace': 'error',
-        'no-multiple-empty-lines': ['error', { "max": 1 }],
+        'no-multiple-empty-lines': ['error', { max: 1 }],
         'no-new-wrappers': 'error',
         'no-sequences': 'error',
         'no-trailing-spaces': 'error',
@@ -304,15 +322,15 @@ module.exports = {
             files: ['*.html'],
             extends: ['plugin:@angular-eslint/template/recommended'],
             rules: {
-                'max-len': ['warn', { code: 140 }],
-                '@angular-eslint/template/accessibility-valid-aria': 'warn',
-                '@angular-eslint/template/accessibility-alt-text': 'error',
-                '@angular-eslint/template/accessibility-elements-content': 'error',
-                '@angular-eslint/template/accessibility-label-for': 'error',
-                '@angular-eslint/template/no-positive-tabindex': 'error',
-                '@angular-eslint/template/accessibility-table-scope': 'error',
-                '@angular-eslint/template/accessibility-valid-aria': 'error',
+                '@angular-eslint/template/alt-text': 'error',
+                '@angular-eslint/template/elements-content': 'error',
+                '@angular-eslint/template/label-has-associated-control': 'error',
                 '@angular-eslint/template/no-duplicate-attributes': 'error',
+                '@angular-eslint/template/no-positive-tabindex': 'error',
+                '@angular-eslint/template/prefer-self-closing-tags': 'error',
+                '@angular-eslint/template/table-scope': 'error',
+                '@angular-eslint/template/valid-aria': 'error',
+                'max-len': ['warn', { code: 140 }],
             },
         },
         {

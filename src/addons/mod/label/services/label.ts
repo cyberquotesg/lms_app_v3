@@ -14,14 +14,14 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreFilepool } from '@services/filepool';
 import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
-
-const ROOT_CACHE_KEY = 'mmaModLabel:';
+import { ADDON_MOD_LABEL_COMPONENT } from '../constants';
 
 /**
  * Service that provides some features for labels.
@@ -29,7 +29,7 @@ const ROOT_CACHE_KEY = 'mmaModLabel:';
 @Injectable({ providedIn: 'root' })
 export class AddonModLabelProvider {
 
-    static readonly COMPONENT = 'mmaModLabel';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModLabel:';
 
     /**
      * Get cache key for label data WS calls.
@@ -38,7 +38,7 @@ export class AddonModLabelProvider {
      * @returns Cache key.
      */
     protected getLabelDataCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'label:' + courseId;
+        return AddonModLabelProvider.ROOT_CACHE_KEY + 'label:' + courseId;
     }
 
     /**
@@ -65,7 +65,7 @@ export class AddonModLabelProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getLabelDataCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModLabelProvider.COMPONENT,
+            component: ADDON_MOD_LABEL_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
 
@@ -131,7 +131,7 @@ export class AddonModLabelProvider {
         const promises: Promise<void>[] = [];
 
         promises.push(this.invalidateLabelData(courseId, siteId));
-        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, AddonModLabelProvider.COMPONENT, moduleId, true));
+        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, ADDON_MOD_LABEL_COMPONENT, moduleId, true));
 
         await CoreUtils.allPromises(promises);
     }

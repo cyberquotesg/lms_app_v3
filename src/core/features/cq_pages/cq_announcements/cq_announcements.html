@@ -8,7 +8,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
-        <div class="base-background pb-5">
+        <div class="base-background">
 
         <ng-container *ngIf="showItems">
             <ion-item *ngFor="let announcement of pageData.announcements" class="ion-text-wrap" (click)="openAnnouncement(announcement)" button [detail]="false" lines="full">

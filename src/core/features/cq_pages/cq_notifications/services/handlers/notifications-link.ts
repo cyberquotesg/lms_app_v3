@@ -35,8 +35,8 @@ export class AddonNotificationsLinkHandlerService extends CoreContentLinksHandle
      */
     getActions(): CoreContentLinksAction[] {
         return [{
-            action: (siteId: string): void => {
-                CoreNavigator.navigateToSitePath(AddonNotificationsMainMenuHandlerService.PAGE_NAME, {
+            action: async (siteId, navCtrl?): Promise<void> => {
+                await CoreNavigator.navigateToSitePath(AddonNotificationsMainMenuHandlerService.PAGE_NAME, {
                     preferCurrentTab: false,
                     siteId,
                 });

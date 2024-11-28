@@ -18,10 +18,10 @@ import { CoreContentLinksHandlerBase } from '@features/contentlinks/classes/base
 import { CoreContentLinksAction } from '@features/contentlinks/services/contentlinks-delegate';
 import { CoreNavigator } from '@services/navigator';
 import { makeSingleton } from '@singletons';
-import { AddonBadges } from '../badges';
+import { AddonBadgesHelper } from '../badges-helper';
 
 /**
- * Handler to treat links to user participants page.
+ * Handler to treat links to issued badges.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonBadgesBadgeLinkHandlerService extends CoreContentLinksHandlerBase {
@@ -35,8 +35,8 @@ export class AddonBadgesBadgeLinkHandlerService extends CoreContentLinksHandlerB
     getActions(siteIds: string[], url: string, params: Record<string, string>): CoreContentLinksAction[] {
 
         return [{
-            action: (siteId: string): void => {
-                CoreNavigator.navigateToSitePath(`/badges/${params.hash}`, { siteId });
+            action: async (siteId: string): Promise<void> => {
+                await CoreNavigator.navigateToSitePath(`/badge/${params.hash}`, { siteId });
             },
         }];
     }
@@ -44,8 +44,8 @@ export class AddonBadgesBadgeLinkHandlerService extends CoreContentLinksHandlerB
     /**
      * @inheritdoc
      */
-    isEnabled(siteId: string): Promise<boolean> {
-        return AddonBadges.isPluginEnabled(siteId);
+    async isEnabled(siteId: string, url: string, params: Record<string, string>): Promise<boolean> {
+        return AddonBadgesHelper.canOpenBadge(params.hash, siteId);
     }
 
 }

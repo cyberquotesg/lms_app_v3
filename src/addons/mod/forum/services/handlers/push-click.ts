@@ -19,11 +19,12 @@ import { AddonModForum } from '@addons/mod/forum/services/forum';
 import { CoreNavigator } from '@services/navigator';
 import { CorePushNotificationsClickHandler } from '@features/pushnotifications/services/push-delegate';
 import { CorePushNotificationsNotificationBasicData } from '@features/pushnotifications/services/pushnotifications';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
 
-import { AddonModForumModuleHandlerService } from './module';
+import { isSafeNumber } from '@/core/utils/types';
+import { ADDON_MOD_FORUM_PAGE_NAME } from '../../constants';
 
 /**
  * Handler for forum push notifications clicks.
@@ -44,7 +45,8 @@ export class AddonModForumPushClickHandlerService implements CorePushNotificatio
     async handles(notification: NotificationData): Promise<boolean> {
         return CoreUtils.isTrueOrOne(notification.notif)
             && notification.moodlecomponent == 'mod_forum'
-            && notification.name == 'posts';
+            && notification.name == 'posts'
+            && !!(notification.contexturl || notification.customdata?.discussionid);
     }
 
     /**
@@ -54,25 +56,31 @@ export class AddonModForumPushClickHandlerService implements CorePushNotificatio
      * @returns Promise resolved when done.
      */
     async handleClick(notification: NotificationData): Promise<void> {
-        const contextUrlParams = CoreUrlUtils.extractUrlParams(notification.contexturl);
+        const contextUrlParams = CoreUrl.extractUrlParams(notification.contexturl);
         const data = notification.customdata || {};
         const courseId = Number(notification.courseid);
         const discussionId = Number(contextUrlParams.d || data.discussionid);
-        const cmId = Number(data.cmid);
+        const cmId = data.cmid && Number(data.cmid);
         const pageParams: Params = {
             forumId: Number(data.instance),
+            cmId,
+            courseId,
         };
+
+        if (!isSafeNumber(discussionId)) {
+            return;
+        }
 
         if (data.postid || contextUrlParams.urlHash) {
             pageParams.postId = Number(data.postid || contextUrlParams.urlHash.replace('p', ''));
         }
 
         await CoreUtils.ignoreErrors(
-            AddonModForum.invalidateDiscussionPosts(pageParams.discussionId, undefined, notification.site),
+            AddonModForum.invalidateDiscussionPosts(discussionId, undefined, notification.site),
         );
 
         await CoreNavigator.navigateToSitePath(
-            `${AddonModForumModuleHandlerService.PAGE_NAME}/${courseId}/${cmId}/${discussionId}`,
+            `${ADDON_MOD_FORUM_PAGE_NAME}/discussion/${discussionId}`,
             { siteId: notification.site, params: pageParams },
         );
     }

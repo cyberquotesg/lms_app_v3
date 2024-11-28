@@ -13,14 +13,14 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CoreCourseProvider } from '@features/course/services/course';
+import { CoreCourseAccessDataType } from '@features/course/services/course';
 import {
     CoreCourseAccess,
     CoreCourseOptionsHandler,
     CoreCourseOptionsHandlerData,
 } from '@features/course/services/course-options-delegate';
 import { CoreCourseAnyCourseData, CoreCourseUserAdminOrNavOptionIndexed } from '@features/courses/services/courses';
-import { PARTICIPANTS_PAGE_NAME } from '@features/user/user.module';
+import { PARTICIPANTS_PAGE_NAME } from '@features/user/constants';
 import { makeSingleton } from '@singletons';
 import { CoreUser } from '../user';
 
@@ -37,7 +37,7 @@ export class CoreUserCourseOptionHandlerService implements CoreCourseOptionsHand
      * @inheritdoc
      */
     invalidateEnabledForCourse(courseId: number, navOptions?: CoreCourseUserAdminOrNavOptionIndexed): Promise<void> {
-        if (navOptions && navOptions.participants !== undefined) {
+        if (navOptions?.participants !== undefined) {
             // No need to invalidate anything.
             return Promise.resolve();
         }
@@ -60,11 +60,11 @@ export class CoreUserCourseOptionHandlerService implements CoreCourseOptionsHand
         accessData: CoreCourseAccess,
         navOptions?: CoreCourseUserAdminOrNavOptionIndexed,
     ): boolean | Promise<boolean> {
-        if (accessData && accessData.type == CoreCourseProvider.ACCESS_GUEST) {
+        if (accessData && accessData.type === CoreCourseAccessDataType.ACCESS_GUEST) {
             return false; // Not enabled for guests.
         }
 
-        if (navOptions && navOptions.participants !== undefined) {
+        if (navOptions?.participants !== undefined) {
             return navOptions.participants;
         }
 

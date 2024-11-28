@@ -13,14 +13,13 @@
 // limitations under the License.
 
 import { Injector, NgModule } from '@angular/core';
-import { RouterModule, ROUTES, Routes } from '@angular/router';
+import { ROUTES, Routes } from '@angular/router';
 
 import { CoreCourseComponentsModule } from '@features/course/components/components.module';
 import { CoreSharedModule } from '@/core/shared.module';
 import { resolveContentsRoutes } from '@features/course/course-contents-routing.module';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
-
-import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+import { CoreCourseFormatComponent } from './components/course-format/course-format';
 
 /**
  * Build module routes.
@@ -48,11 +47,10 @@ function buildRoutes(injector: Injector): Routes {
     imports: [
         CoreSharedModule,
         CoreCourseComponentsModule,
-        CqComponentsModule,
+        CoreCourseFormatComponent,
     ],
     declarations: [
         CoreCourseContentsPage,
     ],
-    exports: [RouterModule],
 })
 export class CoreCourseContentsLazyModule {}

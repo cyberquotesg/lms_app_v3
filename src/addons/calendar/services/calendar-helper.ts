@@ -38,6 +38,7 @@ import { CoreCategoryData } from '@features/courses/services/courses';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreReminders, CoreRemindersService } from '@features/reminders/services/reminders';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
+import { ADDON_CALENDAR_COMPONENT } from '../constants';
 
 /**
  * Context levels enumeration.
@@ -296,27 +297,6 @@ export class AddonCalendarHelperProvider {
     /**
      * Format reminders, adding calculated data.
      *
-     * @param reminders Reminders.
-     * @param timestart Event timestart.
-     * @param siteId Site ID.
-     * @returns Formatted reminders.
-     * @deprecated since 4.1 Use AddonCalendarHelper.getEventReminders.
-     */
-    async formatReminders(
-        reminders: { eventid: number }[],
-        timestart: number,
-        siteId?: string,
-    ): Promise<AddonCalendarEventReminder[]> {
-        if (!reminders.length) {
-            return [];
-        }
-
-        return AddonCalendarHelper.getEventReminders(reminders[0].eventid, timestart, siteId);
-    }
-
-    /**
-     * Format reminders, adding calculated data.
-     *
      * @param eventId Event Id.
      * @param eventTimestart Event timestart.
      * @param siteId Site ID.
@@ -330,7 +310,7 @@ export class AddonCalendarHelperProvider {
         const reminders = await CoreReminders.getReminders(
             {
                 instanceId: eventId,
-                component: AddonCalendarProvider.COMPONENT,
+                component: ADDON_CALENDAR_COMPONENT,
             },
             siteId,
         );

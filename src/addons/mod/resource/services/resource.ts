@@ -14,7 +14,8 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreFilepool } from '@services/filepool';
@@ -22,8 +23,7 @@ import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
-
-const ROOT_CACHE_KEY = 'mmaModResource:';
+import { ADDON_MOD_RESOURCE_COMPONENT } from '../constants';
 
 /**
  * Service that provides some features for resources.
@@ -31,7 +31,7 @@ const ROOT_CACHE_KEY = 'mmaModResource:';
 @Injectable({ providedIn: 'root' })
 export class AddonModResourceProvider {
 
-    static readonly COMPONENT = 'mmaModResource';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModResource:';
 
     /**
      * Get cache key for resource data WS calls.
@@ -40,7 +40,7 @@ export class AddonModResourceProvider {
      * @returns Cache key.
      */
     protected getResourceCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'resource:' + courseId;
+        return AddonModResourceProvider.ROOT_CACHE_KEY + 'resource:' + courseId;
     }
 
     /**
@@ -67,7 +67,7 @@ export class AddonModResourceProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getResourceCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModResourceProvider.COMPONENT,
+            component: ADDON_MOD_RESOURCE_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
 
@@ -111,7 +111,7 @@ export class AddonModResourceProvider {
         const promises: Promise<void>[] = [];
 
         promises.push(this.invalidateResourceData(courseId, siteId));
-        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, AddonModResourceProvider.COMPONENT, moduleId));
+        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, ADDON_MOD_RESOURCE_COMPONENT, moduleId));
         promises.push(CoreCourse.invalidateModule(moduleId, siteId, 'resource'));
 
         await CoreUtils.allPromises(promises);
@@ -146,23 +146,19 @@ export class AddonModResourceProvider {
      * Report the resource as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the resource.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModResourceViewResourceWSParams = {
             resourceid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_resource_view_resource',
             params,
-            AddonModResourceProvider.COMPONENT,
+            ADDON_MOD_RESOURCE_COMPONENT,
             id,
-            name,
-            'resource',
-            {},
             siteId,
         );
     }
@@ -204,12 +200,20 @@ export type AddonModResourceResource = {
 };
 
 export type AddonModResourceCustomData = {
-    showsize?: boolean;
     filedetails?: {
-        size: number;
-        modifieddate: number;
-        uploadeddate: number;
+        isref?: boolean; // If file is a reference the 'size' or 'date' attribute can not be cached.
+        // If showsize is true.
+        size?: number; // Size in bytes.
+        // If showtype is true.
+        type?: string; // Mimetype description (already translated).
+        mimetype?: string; // @since LMS 3.7
+        extension?: string; // @since LMS 4.3
+        // If showdate is true.
+        modifieddate?: number; // Only if file has been modified.
+        uploadeddate?: number; // Only if file has NOT been modified.
+
     };
+    showsize?: boolean;
     showtype?: boolean;
     showdate?: boolean;
     printintro?: boolean;

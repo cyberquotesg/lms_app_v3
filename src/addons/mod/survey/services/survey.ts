@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreNetwork } from '@services/network';
@@ -24,8 +24,8 @@ import { CoreUtils } from '@services/utils/utils';
 import { CoreStatusWithWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { AddonModSurveyOffline } from './survey-offline';
-
-const ROOT_CACHE_KEY = 'mmaModSurvey:';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { ADDON_MOD_SURVEY_COMPONENT } from '../constants';
 
 /**
  * Service that provides some features for surveys.
@@ -33,7 +33,7 @@ const ROOT_CACHE_KEY = 'mmaModSurvey:';
 @Injectable( { providedIn: 'root' })
 export class AddonModSurveyProvider {
 
-    static readonly COMPONENT = 'mmaModSurvey';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModSurvey:';
 
     /**
      * Get a survey's questions.
@@ -52,7 +52,7 @@ export class AddonModSurveyProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getQuestionsCacheKey(surveyId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModSurveyProvider.COMPONENT,
+            component: ADDON_MOD_SURVEY_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -72,7 +72,7 @@ export class AddonModSurveyProvider {
      * @returns Cache key.
      */
     protected getQuestionsCacheKey(surveyId: number): string {
-        return ROOT_CACHE_KEY + 'questions:' + surveyId;
+        return AddonModSurveyProvider.ROOT_CACHE_KEY + 'questions:' + surveyId;
     }
 
     /**
@@ -82,7 +82,7 @@ export class AddonModSurveyProvider {
      * @returns Cache key.
      */
     protected getSurveyCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'survey:' + courseId;
+        return AddonModSurveyProvider.ROOT_CACHE_KEY + 'survey:' + courseId;
     }
 
     /**
@@ -109,7 +109,7 @@ export class AddonModSurveyProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSurveyCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModSurveyProvider.COMPONENT,
+            component: ADDON_MOD_SURVEY_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
 
@@ -173,7 +173,7 @@ export class AddonModSurveyProvider {
             return;
         }));
 
-        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, AddonModSurveyProvider.COMPONENT, moduleId));
+        promises.push(CoreFilepool.invalidateFilesByComponent(siteId, ADDON_MOD_SURVEY_COMPONENT, moduleId));
 
         await CoreUtils.allPromises(promises);
     }
@@ -208,23 +208,19 @@ export class AddonModSurveyProvider {
      * Report the survey as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the assign.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModSurveyViewSurveyWSParams = {
             surveyid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_survey_view_survey',
             params,
-            AddonModSurveyProvider.COMPONENT,
+            ADDON_MOD_SURVEY_COMPONENT,
             id,
-            name,
-            'survey',
-            {},
             siteId,
         );
     }

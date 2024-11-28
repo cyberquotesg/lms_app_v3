@@ -15,11 +15,13 @@
 import { Subject } from 'rxjs';
 
 import { CoreLogger } from '@singletons/logger';
-import { CoreSite, CoreSiteInfoResponse, CoreSitePublicConfigResponse } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreFilepoolComponentFileEventData } from '@services/filepool';
 import { CoreRedirectPayload } from '@services/navigator';
 import { CoreCourseModuleCompletionData } from '@features/course/services/course-helper';
 import { CoreScreenOrientation } from '@services/screen';
+import { CoreSiteInfoResponse, CoreSitePublicConfigResponse } from '@classes/sites/unauthenticated-site';
+import { DownloadStatus } from '../constants';
 
 /**
  * Observer instance to stop listening to an event.
@@ -39,7 +41,6 @@ export interface CoreEventsData {
     [CoreEvents.SITE_ADDED]: CoreEventSiteAddedData;
     [CoreEvents.SITE_DELETED]: CoreSite;
     [CoreEvents.SESSION_EXPIRED]: CoreEventSessionExpiredData;
-    [CoreEvents.CORE_LOADING_CHANGED]: CoreEventLoadingChangedData;
     [CoreEvents.COURSE_STATUS_CHANGED]: CoreEventCourseStatusChanged;
     [CoreEvents.PACKAGE_STATUS_CHANGED]: CoreEventPackageStatusChanged;
     [CoreEvents.USER_DELETED]: CoreEventUserDeletedData;
@@ -55,6 +56,7 @@ export interface CoreEventsData {
     [CoreEvents.IAB_LOAD_START]: InAppBrowserEvent;
     [CoreEvents.IAB_LOAD_STOP]: InAppBrowserEvent;
     [CoreEvents.IAB_MESSAGE]: Record<string, unknown>;
+    [CoreEvents.LOGIN]: { siteId: string };
     [CoreEvents.LOGIN_SITE_CHECKED]: CoreEventLoginSiteCheckedData;
     [CoreEvents.LOGIN_SITE_UNCHECKED]: CoreEventLoginSiteUncheckedData;
     [CoreEvents.SEND_ON_ENTER_CHANGED]: CoreEventSendOnEnterChangedData;
@@ -84,11 +86,7 @@ export class CoreEvents {
     static readonly SITE_UPDATED = 'site_updated';
     static readonly SITE_DELETED = 'site_deleted';
     static readonly COMPLETION_MODULE_VIEWED = 'completion_module_viewed';
-    /**
-     * Deprecated on 4.0 use COMPLETION_CHANGED instead.
-     */
     static readonly MANUAL_COMPLETION_CHANGED = 'manual_completion_changed';
-    static readonly COMPLETION_CHANGED = 'completion_changed';
     static readonly USER_DELETED = 'user_deleted';
     static readonly USER_SUSPENDED = 'user_suspended';
     static readonly USER_NO_LOGIN = 'user_no_login';
@@ -107,10 +105,6 @@ export class CoreEvents {
     static readonly APP_LAUNCHED_URL = 'app_launched_url'; // App opened with a certain URL (custom URL scheme).
     static readonly FILE_SHARED = 'file_shared';
     static readonly KEYBOARD_CHANGE = 'keyboard_change';
-    /**
-     * @deprecated since app 4.0. Use CoreDirectivesRegistry promises instead.
-     */
-    static readonly CORE_LOADING_CHANGED = 'core_loading_changed';
     static readonly ORIENTATION_CHANGE = 'orientation_change';
     static readonly SEND_ON_ENTER_CHANGED = 'send_on_enter_changed';
     static readonly SELECT_COURSE_TAB = 'select_course_tab';
@@ -334,7 +328,7 @@ export type CoreEventLoadingChangedData = {
  */
 export type CoreEventCourseStatusChanged = {
     courseId: number; // Course Id.
-    status: string;
+    status: DownloadStatus;
 };
 
 /**
@@ -343,7 +337,7 @@ export type CoreEventCourseStatusChanged = {
 export type CoreEventPackageStatusChanged = {
     component: string;
     componentId: string | number;
-    status: string;
+    status: DownloadStatus;
 };
 
 /**
@@ -435,6 +429,7 @@ export type CoreEventActivityDataSentData = {
  */
 export type CoreEventLoginSiteCheckedData = {
     config: CoreSitePublicConfigResponse;
+    siteId?: string;
 };
 
 /**
@@ -443,6 +438,7 @@ export type CoreEventLoginSiteCheckedData = {
 export type CoreEventLoginSiteUncheckedData = {
     config?: CoreSitePublicConfigResponse;
     loginSuccessful: boolean;
+    siteId?: string;
 };
 
 /**

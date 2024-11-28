@@ -14,7 +14,7 @@
 
 import { ContextLevel } from '@/core/constants';
 import { Injectable } from '@angular/core';
-import { CoreSiteWSPreSets, CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreUser } from '@features/user/services/user';
 import { CoreNetwork } from '@services/network';
 import { CoreSites } from '@services/sites';
@@ -23,6 +23,7 @@ import { CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { CoreRatingOffline } from './rating-offline';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 const ROOT_CACHE_KEY = 'CoreRating:';
 
@@ -43,16 +44,6 @@ export class CoreRatingProvider {
 
     static readonly AGGREGATE_CHANGED_EVENT = 'core_rating_aggregate_changed';
     static readonly RATING_SAVED_EVENT = 'core_rating_rating_saved';
-
-    /**
-     * Returns whether the web serivce to add ratings is available.
-     *
-     * @returns If WS is available.
-     * @deprecated since app 4.0
-     */
-    isAddRatingWSAvailable(): boolean {
-        return true;
-    }
 
     /**
      * Add a rating to an item.
@@ -256,7 +247,7 @@ export class CoreRatingProvider {
 
         const response = await site.read<CoreRatingGetItemRatingsWSResponse>('core_rating_get_item_ratings', params, preSets);
 
-        if (!site.isVersionGreaterEqualThan([' 3.6.5', '3.7.1', '3.8'])) {
+        if (!site.isVersionGreaterEqualThan(['3.6.5', '3.7.1', '3.8'])) {
             // MDL-65042 We need to fetch profiles because the returned profile pictures are incorrect.
             const promises = response.ratings.map((rating: CoreRatingItemRating) =>
                 CoreUser.getProfile(rating.userid, courseId, true, site.id).then((user) => {
@@ -407,7 +398,7 @@ export class CoreRatingProvider {
 
         const ratingsResults = await Promise.all(promises);
 
-        if (!site.isVersionGreaterEqualThan([' 3.6.5', '3.7.1', '3.8'])) {
+        if (!site.isVersionGreaterEqualThan(['3.6.5', '3.7.1', '3.8'])) {
             const ratings: CoreRatingItemRating[] = [].concat.apply([], ratingsResults);
 
             const userIds = ratings.map((rating) => rating.userid);

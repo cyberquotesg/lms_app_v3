@@ -20,7 +20,6 @@ import {
     ElementRef,
     ViewContainerRef,
     ViewChild,
-    ComponentFactoryResolver,
 } from '@angular/core';
 import { CoreLogger } from '@singletons/logger';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -41,19 +40,19 @@ const BUTTON_HIDDEN_CLASS = 'core-navbar-button-hidden';
  *
  * You can use the [hidden] input to hide all the inner buttons if a certain condition is met.
  *
- * IMPORTANT: Do not use *ngIf in the buttons inside this component, it can cause problems. Please use [hidden] instead.
+ * IMPORTANT: Do not use *ngIf in the buttons inside this component, it can cause problems. Please use [class.hidden] instead.
  *
  * Example usage:
  *
  * <core-navbar-buttons slot="end">
- *     <ion-button [hidden]="!buttonShown" [attr.aria-label]="Do something" (click)="action()">
+ *     <ion-button [class.hidden]="!buttonShown" [ariaLabel]="Do something" (click)="action()">
  *         <ion-icon name="funnel" slot="icon-only" aria-hidden="true"></ion-icon>
  *     </ion-button>
  * </core-navbar-buttons>
  */
 @Component({
     selector: 'core-navbar-buttons',
-    template: '<ng-content></ng-content><template #contextMenuContainer></template>',
+    template: '<ng-content/><template #contextMenuContainer>-</template>',
     styleUrls: ['navbar-buttons.scss'],
 })
 export class CoreNavBarButtonsComponent implements OnInit, OnDestroy {
@@ -63,7 +62,7 @@ export class CoreNavBarButtonsComponent implements OnInit, OnDestroy {
     // If the hidden input is true, hide all buttons.
     // eslint-disable-next-line @angular-eslint/no-input-rename
     @Input('hidden') set hidden(value: boolean) {
-        if (typeof value == 'string' && value == '') {
+        if (typeof value === 'string' && value === '') {
             value = true;
         }
         this.allButtonsHidden = value;
@@ -78,7 +77,7 @@ export class CoreNavBarButtonsComponent implements OnInit, OnDestroy {
     protected mergedContextMenu?: CoreContextMenuComponent;
     protected createdMainContextMenuElement?: HTMLElement;
 
-    constructor(element: ElementRef, protected factoryResolver: ComponentFactoryResolver) {
+    constructor(element: ElementRef) {
         this.element = element.nativeElement;
         this.logger = CoreLogger.getInstance('CoreNavBarButtonsComponent');
 
@@ -186,8 +185,7 @@ export class CoreNavBarButtonsComponent implements OnInit, OnDestroy {
      * @returns Created component.
      */
     protected createMainContextMenu(): CoreContextMenuComponent {
-        const factory = this.factoryResolver.resolveComponentFactory(CoreContextMenuComponent);
-        const componentRef = this.container.createComponent<CoreContextMenuComponent>(factory);
+        const componentRef = this.container.createComponent(CoreContextMenuComponent);
 
         this.createdMainContextMenuElement = componentRef.location.nativeElement;
 

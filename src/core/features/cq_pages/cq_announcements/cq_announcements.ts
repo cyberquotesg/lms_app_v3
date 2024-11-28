@@ -1,7 +1,7 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { IonSlides, Platform } from '@ionic/angular';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { Platform } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
@@ -12,7 +12,7 @@ import { CoreUtils } from '@services/utils/utils';
     selector: 'cq_announcements',
     templateUrl: './cq_announcements.html',
 })
-export class CqAnnouncements extends CqPage implements OnInit
+export class CqAnnouncements extends CqPage implements OnInit, OnDestroy
 {
     pageParams: any = {
     };
@@ -32,9 +32,9 @@ export class CqAnnouncements extends CqPage implements OnInit
     loading: any = false;
     showItems: boolean = true;
 
-    constructor(renderer: Renderer2, CH: CqHelper, platform: Platform)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef, platform: Platform)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }
@@ -46,6 +46,7 @@ export class CqAnnouncements extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     announcements(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {

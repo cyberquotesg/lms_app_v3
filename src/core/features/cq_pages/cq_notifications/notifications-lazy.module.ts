@@ -25,6 +25,7 @@ import { CoreScreen } from '@services/screen';
 import { AddonNotificationsMainMenuHandlerService } from './services/handlers/mainmenu';
 
 import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 /**
  * Build module routes.
@@ -81,5 +82,6 @@ function buildRoutes(injector: Injector): Routes {
             useFactory: buildRoutes,
         },
     ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AddonNotificationsLazyModule {}

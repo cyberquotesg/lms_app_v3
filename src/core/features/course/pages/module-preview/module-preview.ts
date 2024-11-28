@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import { Component, OnInit } from '@angular/core';
+import { CoreCourseModuleSummaryResult } from '@features/course/components/module-summary/module-summary';
 import { CoreCourse } from '@features/course/services/course';
-import { CoreCourseHelper, CoreCourseModuleData, CoreCourseSection } from '@features/course/services/course-helper';
+import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
-import { IonRefresher } from '@ionic/angular';
+import { CoreModals } from '@services/modals';
 import { CoreNavigator } from '@services/navigator';
+import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 
@@ -33,12 +35,12 @@ export class CoreCourseModulePreviewPage implements OnInit {
 
     title!: string;
     module!: CoreCourseModuleData;
-    section?: CoreCourseSection; // The section the module belongs to.
     courseId!: number;
     loaded = false;
     unsupported = false;
     isDisabledInSite = false;
     showManualCompletion = false;
+    displayOpenInBrowser = false;
 
     protected debouncedUpdateModule?: () => void; // Update the module after a certain time.
 
@@ -49,7 +51,6 @@ export class CoreCourseModulePreviewPage implements OnInit {
         try {
             this.module = CoreNavigator.getRequiredRouteParam<CoreCourseModuleData>('module');
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
-            this.section = CoreNavigator.getRouteParam<CoreCourseSection>('section');
         } catch (error) {
             CoreDomUtils.showErrorModal(error);
 
@@ -58,6 +59,7 @@ export class CoreCourseModulePreviewPage implements OnInit {
             return;
         }
 
+        this.displayOpenInBrowser = !!CoreSites.getCurrentSite()?.shouldDisplayInformativeLinks();
         this.debouncedUpdateModule = CoreUtils.debounce(() => {
             this.doRefresh();
         }, 10000);
@@ -93,12 +95,49 @@ export class CoreCourseModulePreviewPage implements OnInit {
     }
 
     /**
+     * Opens a module summary page.
+     */
+    async openModuleSummary(): Promise<void> {
+        if (!this.module) {
+            return;
+        }
+
+        const { CoreCourseModuleSummaryComponent } = await import('@features/course/components/module-summary/module-summary');
+
+        const data = await CoreModals.openSideModal<CoreCourseModuleSummaryResult>({
+            component: CoreCourseModuleSummaryComponent,
+            componentProps: {
+                moduleId: this.module.id,
+                module: this.module,
+                description: this.module.description,
+                component: this.module.modname,
+                courseId: this.courseId,
+                displayOptions: {
+                    displayDescription: false,
+                    displayBlog: false,
+                },
+            },
+        });
+
+        if (data) {
+            if (this.loaded && data.action == 'refresh') {
+                this.loaded = false;
+                try {
+                    await this.doRefresh(undefined);
+                } finally {
+                    this.loaded = true;
+                }
+            }
+        }
+    }
+
+    /**
      * Refresh the data.
      *
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
 
         await CoreCourse.invalidateModule(this.module.id);
 

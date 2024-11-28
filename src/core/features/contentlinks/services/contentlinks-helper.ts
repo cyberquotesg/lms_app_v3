@@ -16,12 +16,11 @@ import { Injectable } from '@angular/core';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreContentLinksDelegate, CoreContentLinksAction } from './contentlinks-delegate';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreNavigator } from '@services/navigator';
-import { Params } from '@angular/router';
-import { CoreContentLinksChooseSiteModalComponent } from '../components/choose-site-modal/choose-site-modal';
 import { CoreCustomURLSchemes } from '@services/urlschemes';
+import { CoreModals } from '@services/modals';
 
 /**
  * Service that provides some features regarding content links.
@@ -91,28 +90,16 @@ export class CoreContentLinksHelperProvider {
     }
 
     /**
-     * Goes to a certain page in a certain site. If the site is current site it will perform a regular navigation,
-     * otherwise it will 'redirect' to the other site.
-     *
-     * @param navCtrlUnused Deprecated param.
-     * @param pageName Name of the page to go.
-     * @param pageParams Params to send to the page.
-     * @param siteId Site ID. If not defined, current site.
-     * @returns Promise resolved when done.
-     * @deprecated since 3.9.5. Use CoreNavigator.navigateToSitePath instead.
-     */
-    async goInSite(navCtrlUnused: unknown, pageName: string, pageParams: Params, siteId?: string): Promise<void> {
-        await CoreNavigator.navigateToSitePath(pageName, { params: pageParams, siteId });
-    }
-
-    /**
      * Go to the page to choose a site.
      *
      * @param url URL to treat.
      * @todo set correct root.
      */
     async goToChooseSite(url: string): Promise<void> {
-        await CoreDomUtils.openModal({
+        const { CoreContentLinksChooseSiteModalComponent }
+            = await import('@features/contentlinks/components/choose-site-modal/choose-site-modal');
+
+        await CoreModals.openModal({
             component: CoreContentLinksChooseSiteModalComponent,
             componentProps: {
                 url: url,
@@ -149,7 +136,7 @@ export class CoreContentLinksHelperProvider {
 
                 if (data.site) {
                     // URL is the root of the site.
-                    this.handleRootURL(data.site, openBrowserRoot);
+                    await this.handleRootURL(data.site, openBrowserRoot);
 
                     return true;
                 }
@@ -163,19 +150,19 @@ export class CoreContentLinksHelperProvider {
             if (!CoreSites.isLoggedIn()) {
                 // No current site. Perform the action if only 1 site found, choose the site otherwise.
                 if (action.sites?.length == 1) {
-                    action.action(action.sites[0]);
+                    await action.action(action.sites[0]);
                 } else {
                     this.goToChooseSite(url);
                 }
             } else if (action.sites?.length == 1 && action.sites[0] == CoreSites.getCurrentSiteId()) {
                 // Current site.
-                action.action(action.sites[0]);
+                await action.action(action.sites[0]);
             } else {
                 try {
                     // Not current site or more than one site. Ask for confirmation.
                     await CoreDomUtils.showConfirm(Translate.instant('core.contentlinks.confirmurlothersite'));
                     if (action.sites?.length == 1) {
-                        action.action(action.sites[0]);
+                        await action.action(action.sites[0]);
                     } else {
                         this.goToChooseSite(url);
                     }

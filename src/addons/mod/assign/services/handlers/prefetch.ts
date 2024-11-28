@@ -18,7 +18,6 @@ import { makeSingleton } from '@singletons';
 import {
     AddonModAssign,
     AddonModAssignAssign,
-    AddonModAssignProvider,
     AddonModAssignSubmission,
     AddonModAssignSubmissionStatusOptions,
 } from '../assign';
@@ -35,6 +34,7 @@ import { AddonModAssignSync, AddonModAssignSyncResult } from '../assign-sync';
 import { CoreUser } from '@features/user/services/user';
 import { CoreGradesHelper } from '@features/grades/services/grades-helper';
 import { CoreCourses } from '@features/courses/services/courses';
+import { ADDON_MOD_ASSIGN_COMPONENT } from '../../constants';
 
 /**
  * Handler to prefetch assigns.
@@ -44,7 +44,7 @@ export class AddonModAssignPrefetchHandlerService extends CoreCourseActivityPref
 
     name = 'AddonModAssign';
     modName = 'assign';
-    component = AddonModAssignProvider.COMPONENT;
+    component = ADDON_MOD_ASSIGN_COMPONENT;
     updatesNames = /^configuration$|^.*files$|^submissions$|^grades$|^gradeitems$|^outcomes$|^comments$/;
 
     /**
@@ -166,7 +166,7 @@ export class AddonModAssignPrefetchHandlerService extends CoreCourseActivityPref
 
         // Get intro and activity files from the submission status if it's a student.
         // It's ok if they were already obtained from the assignment instance, they won't be downloaded twice.
-        const files = canViewAllSubmissions ?
+        const files: CoreWSFile[] = canViewAllSubmissions ?
             [] :
             (submissionStatus.assignmentdata?.attachments?.intro || [])
                 .concat(submissionStatus.assignmentdata?.attachments?.activity || []);
@@ -374,10 +374,7 @@ export class AddonModAssignPrefetchHandlerService extends CoreCourseActivityPref
                         return this.prefetchSubmission(assign, courseId, moduleId, submissionOptions, true);
                     });
 
-                    if (!assign.markingworkflow) {
-                        // Get assignment grades only if workflow is not enabled to check grading date.
-                        subPromises.push(AddonModAssign.getAssignmentGrades(assign.id, modOptions));
-                    }
+                    subPromises.push(AddonModAssign.getAssignmentGrades(assign.id, modOptions));
 
                     // Prefetch the submission of the current user even if it does not exist, this will be create it.
                     if (!submissions || !submissions.find((subm: AddonModAssignSubmissionFormatted) => subm.submitid == userId)) {

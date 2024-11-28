@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import {
     AddonMessagesProvider, AddonMessagesMessagePreferences,
     AddonMessagesMessagePreferencesNotification,
@@ -25,9 +25,10 @@ import { CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreConstants } from '@/core/constants';
-import { IonRefresher } from '@ionic/angular';
 import { AddonNotificationsPreferencesNotificationProcessorState } from '@addons/notifications/services/notifications';
 import { CorePlatform } from '@services/platform';
+import { CoreErrorHelper } from '@services/error-helper';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays the messages settings page.
@@ -50,6 +51,7 @@ export class AddonMessagesSettingsPage implements OnInit, OnDestroy {
     siteValue = AddonMessagesProvider.MESSAGE_PRIVACY_SITE;
     groupMessagingEnabled = false;
     sendOnEnter = false;
+    warningMessage = signal<string | undefined>(undefined);
 
     protected loggedInOffLegacyMode = false;
     protected previousContactableValue?: number | boolean;
@@ -107,7 +109,14 @@ export class AddonMessagesSettingsPage implements OnInit, OnDestroy {
             this.preferences = preferences;
             this.contactablePrivacy = preferences.blocknoncontacts;
             this.previousContactableValue = this.contactablePrivacy;
+            this.warningMessage.set(undefined);
         } catch (error) {
+            if (error.errorcode === 'nopermissions') {
+                this.warningMessage.set(CoreErrorHelper.getErrorMessageFromError(error));
+
+                return;
+            }
+
             CoreDomUtils.showErrorModal(error);
         } finally {
             this.preferencesLoaded = true;
@@ -147,7 +156,7 @@ export class AddonMessagesSettingsPage implements OnInit, OnDestroy {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         if (!this.advancedContactable) {
             // Convert from boolean to number.
@@ -251,7 +260,7 @@ export class AddonMessagesSettingsPage implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshPreferences(refresher?: IonRefresher): void {
+    refreshPreferences(refresher?: HTMLIonRefresherElement): void {
         AddonMessages.invalidateMessagePreferences().finally(() => {
             this.fetchPreferences().finally(() => {
                 refresher?.complete();

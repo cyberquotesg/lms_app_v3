@@ -16,7 +16,6 @@ import { Component, OnDestroy, AfterViewInit, ViewChild } from '@angular/core';
 import { CoreListItemsManager } from '@classes/items-management/list-items-manager';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
-import { IonRefresher } from '@ionic/angular';
 import { CoreGroupInfo } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
@@ -28,12 +27,13 @@ import {
     AddonModAssignSubmissionForList,
     AddonModAssignSubmissionsSource,
 } from '../../classes/submissions-source';
-import { AddonModAssignAssign, AddonModAssignProvider } from '../../services/assign';
+import { AddonModAssignAssign } from '../../services/assign';
 import {
-    AddonModAssignSyncProvider,
     AddonModAssignManualSyncData,
     AddonModAssignAutoSyncData,
 } from '../../services/assign-sync';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { ADDON_MOD_ASSIGN_AUTO_SYNCED, ADDON_MOD_ASSIGN_GRADED_EVENT, ADDON_MOD_ASSIGN_MANUAL_SYNCED } from '../../constants';
 
 /**
  * Page that displays a list of submissions of an assignment.
@@ -56,7 +56,7 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
     constructor() {
         // Update data if some grade changes.
         this.gradedObserver = CoreEvents.on(
-            AddonModAssignProvider.GRADED_EVENT,
+            ADDON_MOD_ASSIGN_GRADED_EVENT,
             (data) => {
                 if (
                     this.submissions.loaded &&
@@ -72,7 +72,7 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
         );
 
         // Refresh data if this assign is synchronized.
-        const events = [AddonModAssignSyncProvider.AUTO_SYNCED, AddonModAssignSyncProvider.MANUAL_SYNCED];
+        const events = [ADDON_MOD_ASSIGN_AUTO_SYNCED, ADDON_MOD_ASSIGN_MANUAL_SYNCED];
         this.syncObserver = CoreEvents.onMultiple<AddonModAssignAutoSyncData | AddonModAssignManualSyncData>(
             events,
             (data) => {
@@ -168,6 +168,21 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
     protected async fetchAssignment(sync = false): Promise<void> {
         try {
             await this.submissions.getSource().loadAssignment(sync);
+
+            if (!this.assign) {
+                return;
+            }
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'mod_assign_get_submissions',
+                name: Translate.instant('addon.mod_assign.subpagetitle', {
+                    contextname: this.assign.name,
+                    subpage: Translate.instant('addon.mod_assign.grading'),
+                }),
+                data: { assignid: this.assign.id, category: 'assign' },
+                url: `/mod/assign/view.php?id=${this.assign.cmid}&action=grading`,
+            });
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error getting assigment data.');
         }
@@ -192,7 +207,7 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
      *
      * @param refresher Refresher.
      */
-    refreshList(refresher?: IonRefresher): void {
+    refreshList(refresher?: HTMLIonRefresherElement): void {
         this.refreshAllData(true).finally(() => {
             refresher?.complete();
         });

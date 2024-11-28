@@ -20,6 +20,8 @@ import { CoreUtils } from '@services/utils/utils';
 import { ModalController, Translate } from '@singletons';
 import { AddonModAssignAssign, AddonModAssignPlugin, AddonModAssignSubmission } from '../../services/assign';
 import { AddonModAssignFeedbackDelegate } from '../../services/feedback-delegate';
+import { CoreSharedModule } from '@/core/shared.module';
+import { AddonModAssignComponentsModule } from '../components.module';
 
 /**
  * Modal that allows editing a feedback plugin.
@@ -27,13 +29,18 @@ import { AddonModAssignFeedbackDelegate } from '../../services/feedback-delegate
 @Component({
     selector: 'addon-mod-assign-edit-feedback-modal',
     templateUrl: 'edit-feedback-modal.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        AddonModAssignComponentsModule,
+    ],
 })
 export class AddonModAssignEditFeedbackModalComponent {
 
-    @Input() assign!: AddonModAssignAssign; // The assignment.
-    @Input() submission!: AddonModAssignSubmission; // The submission.
-    @Input() plugin!: AddonModAssignPlugin; // The plugin object.
-    @Input() userId!: number; // The user ID of the submission.
+    @Input({ required: true }) assign!: AddonModAssignAssign; // The assignment.
+    @Input({ required: true }) submission!: AddonModAssignSubmission; // The submission.
+    @Input({ required: true }) plugin!: AddonModAssignPlugin; // The plugin object.
+    @Input({ required: true }) userId!: number; // The user ID of the submission.
 
     @ViewChild('editFeedbackForm') formElement?: ElementRef;
 

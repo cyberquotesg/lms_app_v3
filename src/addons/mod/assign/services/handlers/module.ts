@@ -15,9 +15,9 @@
 import { CoreConstants, ModPurpose } from '@/core/constants';
 import { Injectable, Type } from '@angular/core';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
-import { AddonModAssignIndexComponent } from '../../components/index';
 import { makeSingleton } from '@singletons';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
+import { ADDON_MOD_ASSIGN_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support assign modules.
@@ -25,11 +25,9 @@ import { CoreModuleHandlerBase } from '@features/course/classes/module-base-hand
 @Injectable({ providedIn: 'root' })
 export class AddonModAssignModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_assign';
-
     name = 'AddonModAssign';
     modName = 'assign';
-    protected pageName = AddonModAssignModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_ASSIGN_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_GROUPS]: true,
@@ -51,6 +49,8 @@ export class AddonModAssignModuleHandlerService extends CoreModuleHandlerBase im
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown> | undefined> {
+        const { AddonModAssignIndexComponent } = await import('../../components/index');
+
         return AddonModAssignIndexComponent;
     }
 

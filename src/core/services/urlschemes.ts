@@ -27,9 +27,10 @@ import { CoreApp } from './app';
 import { CoreNavigator, CoreRedirectPayload } from './navigator';
 import { CoreSiteCheckResponse, CoreSites } from './sites';
 import { CoreDomUtils } from './utils/dom';
-import { CoreTextErrorObject, CoreTextUtils } from './utils/text';
-import { CoreUrlUtils } from './utils/url';
+import { CoreErrorHelper, CoreErrorObject } from './error-helper';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from './utils/utils';
+import { CoreLoadings } from './loadings';
 
 /*
  * Provider to handle custom URL schemes.
@@ -101,7 +102,7 @@ export class CoreCustomURLSchemesProvider {
         }
 
         this.lastUrls[url] = Date.now();
-        url = CoreTextUtils.decodeURIComponent(url);
+        url = CoreUrl.decodeURIComponent(url);
 
         // Wait for app to be ready.
         await ApplicationInit.donePromise;
@@ -110,7 +111,7 @@ export class CoreCustomURLSchemesProvider {
         // Some sites add a # at the end of the URL. If it's there, remove it.
         url = url.replace(/\/?(#.*)?\/?$/, '');
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
         let data: CoreCustomURLSchemesParams;
 
         // Get the data from the URL.
@@ -240,13 +241,13 @@ export class CoreCustomURLSchemesProvider {
         url = this.removeCustomURLScheme(url);
 
         // Detect if there's a user specified.
-        const username = CoreUrlUtils.getUsernameFromUrl(url);
+        const username = CoreUrl.getUsernameFromUrl(url);
         if (username) {
             url = url.replace(username + '@', ''); // Remove the username from the URL.
         }
 
         // Get the params of the URL.
-        const params = CoreUrlUtils.extractUrlParams(url);
+        const params = CoreUrl.extractUrlParams(url);
 
         // Remove the params to get the site URL.
         if (url.indexOf('?') != -1) {
@@ -293,7 +294,7 @@ export class CoreCustomURLSchemesProvider {
         url = this.removeCustomURLLinkScheme(url);
 
         // Detect if there's a user specified.
-        const username = CoreUrlUtils.getUsernameFromUrl(url);
+        const username = CoreUrl.getUsernameFromUrl(url);
         if (username) {
             url = url.replace(username + '@', ''); // Remove the username from the URL.
         }
@@ -386,44 +387,31 @@ export class CoreCustomURLSchemesProvider {
      * Go to page to add a site, or open a browser if SSO.
      *
      * @param data URL data.
-     * @param checkResponse Result of checkSite.
+     * @param siteCheck Result of checkSite.
      * @returns Promise resolved when done.
      */
-    protected async goToAddSite(data: CoreCustomURLSchemesParams, checkResponse: CoreSiteCheckResponse): Promise<void> {
-        const ssoNeeded = CoreLoginHelper.isSSOLoginNeeded(checkResponse.code);
+    protected async goToAddSite(data: CoreCustomURLSchemesParams, siteCheck: CoreSiteCheckResponse): Promise<void> {
         const pageParams = {
-            siteUrl: checkResponse.siteUrl,
             username: data.username,
             urlToOpen: data.redirect,
-            siteConfig: checkResponse.config,
+            siteCheck,
         };
 
         if (CoreSites.isLoggedIn()) {
             // Ask the user before changing site.
             await CoreDomUtils.showConfirm(Translate.instant('core.contentlinks.confirmurlothersite'));
 
-            if (!ssoNeeded) {
-                const willReload = await CoreSites.logoutForRedirect(CoreConstants.NO_SITE_ID, {
-                    redirectPath: '/login/credentials',
-                    redirectOptions: { params: pageParams },
-                });
+            const willReload = await CoreSites.logoutForRedirect(CoreConstants.NO_SITE_ID, {
+                redirectPath: '/login/credentials',
+                redirectOptions: { params: pageParams },
+            });
 
-                if (willReload) {
-                    return;
-                }
+            if (willReload) {
+                return;
             }
         }
 
-        if (ssoNeeded) {
-            CoreLoginHelper.confirmAndOpenBrowserForSSOLogin(
-                checkResponse.siteUrl,
-                checkResponse.code,
-                checkResponse.service,
-                checkResponse.config?.launchurl,
-            );
-        } else {
-            await CoreNavigator.navigateToLoginCredentials(pageParams);
-        }
+        await CoreNavigator.navigateToLoginCredentials(pageParams);
     }
 
     /**
@@ -515,6 +503,29 @@ export class CoreCustomURLSchemesProvider {
         }
     }
 
+    /**
+     * Get the last URL used to open the app using a URL scheme.
+     *
+     * @returns URL.
+     */
+    getLastLaunchURL(): Promise<string | undefined> {
+        return new Promise((resolve) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (<any> window).plugins.launchmyapp.getLastIntent(intent => resolve(intent), () => resolve(undefined));
+        });
+    }
+
+    /**
+     * Check if the last URL used to open the app was a token URL.
+     *
+     * @returns Whether was launched with token URL.
+     */
+    async appLaunchedWithTokenURL(): Promise<boolean> {
+        const launchUrl = await this.getLastLaunchURL();
+
+        return !!launchUrl && this.isCustomURLToken(launchUrl);
+    }
+
 }
 
 /**
@@ -528,8 +539,8 @@ export class CoreCustomURLSchemesHandleError extends CoreError {
      * @param error The error message or object.
      * @param data Data obtained from the URL (if any).
      */
-    constructor(public error: string | CoreError | CoreTextErrorObject | null, public data?: CoreCustomURLSchemesParams) {
-        super(CoreTextUtils.getErrorMessageFromError(error));
+    constructor(public error: string | CoreError | CoreErrorObject | null, public data?: CoreCustomURLSchemesParams) {
+        super(CoreErrorHelper.getErrorMessageFromError(error));
     }
 
 }

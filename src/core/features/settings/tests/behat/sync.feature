@@ -1,4 +1,4 @@
-@app @javascript @core_settings
+@core_settings @app @javascript
 Feature: It synchronise sites properly
 
   Background:
@@ -27,8 +27,7 @@ Feature: It synchronise sites properly
     Then I should find "This Choice has offline data to be synchronised." in the app
 
     # Cannot sync in offline
-    When I press the back button in the app
-    And I press the back button in the app
+    When I go back to the root page in the app
     And I press the user menu button in the app
     And I press "Preferences" in the app
     Then I should find "Your device is offline. Connect to the internet to synchronise sites." in the app
@@ -40,17 +39,17 @@ Feature: It synchronise sites properly
 
     # Check synced
     When I press "Synchronise now" "button" in the app
-    And I wait loading to finish in the app
-    And I switch network connection to offline
-    And I press the back button in the app
+    Then I should find "Site synchronisation completed" in the app
+
+    When I switch network connection to offline
+    And I go back in the app
     And I entered the course "Course 1" in the app
     And I press "Sync choice" in the app
     Then I should not find "This Choice has offline data to be synchronised." in the app
 
     # Check limited sync.
     When I switch network connection to cellular
-    And I press the back button in the app
-    And I press the back button in the app
+    And I go back to the root page in the app
     And I press the user menu button in the app
     And I press "Preferences" in the app
 
@@ -103,7 +102,8 @@ Feature: It synchronise sites properly
   Scenario: Sync logged in and logged out sites
     Given I entered the app as "student1"
     And I log out in the app
-    And I entered the choice activity "Sync choice" on course "Course 1" as "student2" in the app
+    And I entered the course "Course 1" as "student2" in the app
+    And I press "Sync choice" in the app
 
     # Add something offline
     When I switch network connection to offline
@@ -112,8 +112,7 @@ Feature: It synchronise sites properly
     And I press "OK" in the app
     Then I should find "This Choice has offline data to be synchronised." in the app
 
-    When I press the back button in the app
-    And I press the back button in the app
+    When I go back to the root page in the app
     And I press the more menu button in the app
     And I press "App settings" in the app
     And I press "Synchronisation" in the app
@@ -124,14 +123,13 @@ Feature: It synchronise sites properly
     When I press "Synchronise now" "button" in the app
     And I wait loading to finish in the app
     And I switch network connection to offline
-    And I press the back button in the app
+    And I go back in the app
     And I entered the course "Course 1" in the app
     And I press "Sync choice" in the app
     Then I should not find "This Choice has offline data to be synchronised." in the app
 
     # Test log in to sync
-    When I press the back button in the app
-    And I press the back button in the app
+    When I go back to the root page in the app
     And I press the more menu button in the app
     And I press "App settings" in the app
     And I press "Synchronisation" in the app

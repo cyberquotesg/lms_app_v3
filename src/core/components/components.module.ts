@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule, Type } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { TranslateModule } from '@ngx-translate/core';
@@ -27,7 +27,6 @@ import { CoreChartComponent } from './chart/chart';
 import { CoreChronoComponent } from './chrono/chrono';
 import { CoreContextMenuComponent } from './context-menu/context-menu';
 import { CoreContextMenuItemComponent } from './context-menu/context-menu-item';
-import { CoreContextMenuPopoverComponent } from './context-menu/context-menu-popover';
 import { CoreDownloadRefreshComponent } from './download-refresh/download-refresh';
 import { CoreDynamicComponent } from './dynamic-component/dynamic-component';
 import { CoreEmptyBoxComponent } from './empty-box/empty-box';
@@ -48,7 +47,6 @@ import { CoreSendMessageFormComponent } from './send-message-form/send-message-f
 import { CoreShowPasswordComponent } from './show-password/show-password';
 import { CoreSitePickerComponent } from './site-picker/site-picker';
 import { CoreSplitViewComponent } from './split-view/split-view';
-import { CoreStyleComponent } from './style/style';
 import { CoreTabComponent } from './tabs/tab';
 import { CoreTabsComponent } from './tabs/tabs';
 import { CoreTabsOutletComponent } from './tabs-outlet/tabs-outlet';
@@ -62,8 +60,23 @@ import { CoreSwipeSlidesComponent } from './swipe-slides/swipe-slides';
 import { CoreSwipeNavigationTourComponent } from './swipe-navigation-tour/swipe-navigation-tour';
 import { CoreMessageComponent } from './message/message';
 import { CoreGroupSelectorComponent } from './group-selector/group-selector';
-import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-button-modal';
 import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
+import { CoreCourseImageComponent } from '@components/course-image/course-image';
+import { CoreSitesListComponent } from './sites-list/sites-list';
+
+/**
+ * Get standalone components for site plugins.
+ *
+ * @returns Returns core standalone components.
+ */
+export async function getCoreStandaloneComponents(): Promise<Type<unknown>[]> {
+    // eslint-disable-next-line deprecation/deprecation
+    const { CoreStyleComponent } = await import('@components/style/style');
+
+    return [
+        CoreStyleComponent,
+    ];
+}
 
 @NgModule({
     declarations: [
@@ -74,7 +87,7 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreChronoComponent,
         CoreContextMenuComponent,
         CoreContextMenuItemComponent,
-        CoreContextMenuPopoverComponent,
+        CoreCourseImageComponent,
         CoreDownloadRefreshComponent,
         CoreDynamicComponent,
         CoreEmptyBoxComponent,
@@ -94,10 +107,9 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreProgressBarComponent,
         CoreRecaptchaComponent,
         CoreSendMessageFormComponent,
-        CoreShowPasswordComponent,
+        CoreShowPasswordComponent, // eslint-disable-line deprecation/deprecation
         CoreSitePickerComponent,
         CoreSplitViewComponent,
-        CoreStyleComponent,
         CoreSwipeSlidesComponent,
         CoreTabComponent,
         CoreTabsComponent,
@@ -108,8 +120,8 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreSpacerComponent,
         CoreHorizontalScrollControlsComponent,
         CoreSwipeNavigationTourComponent,
-        CoreRefreshButtonModalComponent,
         CoreSheetModalComponent,
+        CoreSitesListComponent,
     ],
     imports: [
         CommonModule,
@@ -127,7 +139,7 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreChronoComponent,
         CoreContextMenuComponent,
         CoreContextMenuItemComponent,
-        CoreContextMenuPopoverComponent,
+        CoreCourseImageComponent,
         CoreDownloadRefreshComponent,
         CoreDynamicComponent,
         CoreEmptyBoxComponent,
@@ -147,10 +159,9 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreProgressBarComponent,
         CoreRecaptchaComponent,
         CoreSendMessageFormComponent,
-        CoreShowPasswordComponent,
+        CoreShowPasswordComponent, // eslint-disable-line deprecation/deprecation
         CoreSitePickerComponent,
         CoreSplitViewComponent,
-        CoreStyleComponent,
         CoreSwipeSlidesComponent,
         CoreTabComponent,
         CoreTabsComponent,
@@ -161,8 +172,9 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreSpacerComponent,
         CoreHorizontalScrollControlsComponent,
         CoreSwipeNavigationTourComponent,
-        CoreRefreshButtonModalComponent,
         CoreSheetModalComponent,
+        CoreSitesListComponent,
     ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class CoreComponentsModule {}

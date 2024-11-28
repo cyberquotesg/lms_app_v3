@@ -17,22 +17,41 @@ import { Routes } from '@angular/router';
 
 import { AddonBadgesMyBadgesLinkHandler } from './services/handlers/mybadges-link';
 import { AddonBadgesBadgeLinkHandler } from './services/handlers/badge-link';
+import { AddonBadgesBadgeClassLinkHandler } from './services/handlers/badgeclass-link';
 import { CoreContentLinksDelegate } from '@features/contentlinks/services/contentlinks-delegate';
 import { CoreUserDelegate } from '@features/user/services/user-delegate';
 import { AddonBadgesUserHandler } from './services/handlers/user';
 import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CorePushNotificationsDelegate } from '@features/pushnotifications/services/push-delegate';
 import { AddonBadgesPushClickHandler } from './services/handlers/push-click';
-import { AddonBadgesProvider } from './services/badges';
+import { CoreTagAreaDelegate } from '@features/tag/services/tag-area-delegate';
+import { AddonBadgesTagAreaHandler } from './services/handlers/tag-area';
 
-export const ADDON_BADGES_SERVICES: Type<unknown>[] = [
-    AddonBadgesProvider,
-];
+/**
+ * Get badges services.
+ *
+ * @returns Returns badges services.
+ */
+export async function getBadgesServices(): Promise<Type<unknown>[]> {
+    const { AddonBadgesProvider } = await import('@addons/badges/services/badges');
+
+    return [
+        AddonBadgesProvider,
+    ];
+}
 
 const mainMenuRoutes: Routes = [
     {
+        path: 'badge',
+        loadChildren: () => import('./badge-lazy.module').then(m => m.AddonBadgeLazyModule),
+    },
+    {
         path: 'badges',
         loadChildren: () => import('./badges-lazy.module').then(m => m.AddonBadgesLazyModule),
+    },
+    {
+        path: 'badgeclass',
+        loadChildren: () => import('./badgeclass-lazy.module').then(m => m.AddonBadgeClassLazyModule),
     },
 ];
 
@@ -47,8 +66,10 @@ const mainMenuRoutes: Routes = [
             useValue: () => {
                 CoreContentLinksDelegate.registerHandler(AddonBadgesMyBadgesLinkHandler.instance);
                 CoreContentLinksDelegate.registerHandler(AddonBadgesBadgeLinkHandler.instance);
+                CoreContentLinksDelegate.registerHandler(AddonBadgesBadgeClassLinkHandler.instance);
                 CoreUserDelegate.registerHandler(AddonBadgesUserHandler.instance);
                 CorePushNotificationsDelegate.registerClickHandler(AddonBadgesPushClickHandler.instance);
+                CoreTagAreaDelegate.registerHandler(AddonBadgesTagAreaHandler.instance);
             },
         },
     ],

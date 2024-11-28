@@ -16,17 +16,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 
 import { CoreSites } from '@services/sites';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreQRScan } from '@services/qrscan';
 import { CoreMainMenuDelegate, CoreMainMenuHandlerData } from '../../services/mainmenu-delegate';
 import { CoreMainMenu, CoreMainMenuCustomItem } from '../../services/mainmenu';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreNavigator } from '@services/navigator';
-import { CoreCustomURLSchemes } from '@services/urlschemes';
-import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
-import { CoreTextUtils } from '@services/utils/text';
 import { Translate } from '@singletons';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 import { CoreDom } from '@singletons/dom';
+import { CoreViewer } from '@features/viewer/services/viewer';
 
 /**
  * Page that displays the more page of the app.
@@ -58,7 +55,7 @@ export class CoreMainMenuMorePage implements OnInit, OnDestroy {
 
         this.loadCustomMenuItems();
 
-        this.showScanQR = CoreUtils.canScanQR() &&
+        this.showScanQR = CoreQRScan.canScanQR() &&
                 !CoreSites.getCurrentSite()?.isFeatureDisabled('CoreMainMenuDelegate_QrReader');
     }
 
@@ -77,8 +74,7 @@ export class CoreMainMenuMorePage implements OnInit, OnDestroy {
             this.initHandlers();
         });
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-        deepLinkManager.treatLink();
+        CoreSites.loginNavigationFinished();
     }
 
     /**
@@ -134,7 +130,7 @@ export class CoreMainMenuMorePage implements OnInit, OnDestroy {
      * @param item Item to open.
      */
     openItem(item: CoreMainMenuCustomItem): void {
-        CoreNavigator.navigateToSitePath('viewer/iframe', { params: { title: item.label, url: item.url } });
+        CoreViewer.openIframeViewer(item.label, item.url);
     }
 
     /**
@@ -149,28 +145,21 @@ export class CoreMainMenuMorePage implements OnInit, OnDestroy {
      */
     async scanQR(): Promise<void> {
         // Scan for a QR code.
-        const text = await CoreUtils.scanQR();
+        const text = await CoreQRScan.scanQRWithUrlHandling();
 
         if (!text) {
             return;
         }
 
-        if (CoreCustomURLSchemes.isCustomURL(text)) {
-            // Is a custom URL scheme, handle it.
-            CoreCustomURLSchemes.handleCustomURL(text).catch((error) => {
-                CoreCustomURLSchemes.treatHandleCustomURLError(error);
+        // Check if it's a URL.
+        if (/^[^:]{2,}:\/\/[^ ]+$/i.test(text)) {
+            await CoreSites.visitLink(text, {
+                checkRoot: true,
+                openBrowserRoot: true,
             });
-        } else if (/^[^:]{2,}:\/\/[^ ]+$/i.test(text)) { // Check if it's a URL.
-            // Check if the app can handle the URL.
-            const treated = await CoreContentLinksHelper.handleLink(text, undefined, true, true);
-
-            if (!treated) {
-                // Can't handle it, open it in browser.
-                CoreSites.getCurrentSite()?.openInBrowserWithAutoLogin(text);
-            }
         } else {
             // It's not a URL, open it in a modal so the user can see it and copy it.
-            CoreTextUtils.viewText(Translate.instant('core.qrscanner'), text, {
+            CoreViewer.viewText(Translate.instant('core.qrscanner'), text, {
                 displayCopyButton: true,
             });
         }

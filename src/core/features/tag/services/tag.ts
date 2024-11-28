@@ -14,10 +14,11 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSites } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreError } from '@classes/errors/error';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 const ROOT_CACHE_KEY = 'CoreTag:';
 
@@ -52,7 +53,8 @@ export class CoreTagProvider {
     areTagsAvailableInSite(site?: CoreSite): boolean {
         site = site || CoreSites.getCurrentSite();
 
-        return !!site && site.wsAvailable('core_tag_get_tagindex_per_area') &&
+        return !!site && site.canUseAdvancedFeature('usetags') &&
+            site.wsAvailable('core_tag_get_tagindex_per_area') &&
             site.wsAvailable('core_tag_get_tag_cloud') &&
             site.wsAvailable('core_tag_get_tag_collections') &&
             !site.isFeatureDisabled('NoDelegate_CoreTag');

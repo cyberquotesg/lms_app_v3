@@ -15,11 +15,10 @@
 import { Injectable } from '@angular/core';
 import { CoreLogger } from '@singletons/logger';
 import { CoreSites } from '@services/sites';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
 import { CoreText } from '@singletons/text';
-import { CoreUrl } from '@singletons/url';
 
 /**
  * Interface that all handlers must implement.
@@ -118,7 +117,7 @@ export interface CoreContentLinksAction {
      *
      * @param siteId The site ID.
      */
-    action(siteId: string): void;
+    action(siteId: string): Promise<void>;
 }
 
 /**
@@ -174,7 +173,7 @@ export class CoreContentLinksDelegateService {
 
         const linkActions: CoreContentLinksHandlerActions[] = [];
         const promises: Promise<void>[] = [];
-        const params = CoreUrlUtils.extractUrlParams(url);
+        const params = CoreUrl.extractUrlParams(url);
         const relativeUrl = CoreText.addStartingSlash(CoreUrl.toRelativeURL(site.getURL(), url));
 
         for (const name in this.handlers) {
@@ -194,7 +193,10 @@ export class CoreContentLinksDelegateService {
                     return;
                 }
 
-                const actions = await handler.getActions(siteIds, relativeUrl, params, courseId, data);
+                const actions = await CoreUtils.ignoreErrors(
+                    Promise.resolve(handler.getActions(siteIds, relativeUrl, params, courseId, data)),
+                    <CoreContentLinksAction[]> [],
+                );
 
                 if (actions && actions.length) {
                     // Set default values if any value isn't supplied.

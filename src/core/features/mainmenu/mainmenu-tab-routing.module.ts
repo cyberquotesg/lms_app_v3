@@ -15,7 +15,7 @@
 import { InjectionToken, Injector, ModuleWithProviders, NgModule } from '@angular/core';
 import { Route, Routes } from '@angular/router';
 
-import { ModuleRoutesConfig, resolveModuleRoutes } from '@/app/app-routing.module';
+import { ModuleRoutesConfig, isEmptyRoute, resolveModuleRoutes } from '@/app/app-routing.module';
 
 const MAIN_MENU_TAB_ROUTES = new InjectionToken('MAIN_MENU_TAB_ROUTES');
 
@@ -23,30 +23,38 @@ const MAIN_MENU_TAB_ROUTES = new InjectionToken('MAIN_MENU_TAB_ROUTES');
  * Build module routes.
  *
  * @param injector Injector.
+ * @param mainRoute Main route.
  * @returns Routes.
  */
 export function buildTabMainRoutes(injector: Injector, mainRoute: Route): Routes {
+    const path = mainRoute.path ?? '';
     const routes = resolveModuleRoutes(injector, MAIN_MENU_TAB_ROUTES);
 
-    mainRoute.path = mainRoute.path || '';
-    mainRoute.children = mainRoute.children || [];
-    mainRoute.children = mainRoute.children.concat(routes.children);
+    mainRoute.path = path;
 
-    return [
-        mainRoute,
-        ...routes.siblings,
-    ];
+    if (!('redirectTo' in mainRoute)) {
+        mainRoute.children = mainRoute.children || [];
+        mainRoute.children = mainRoute.children.concat(routes.children);
+    } else if (isEmptyRoute(mainRoute)) {
+        return [];
+    }
+
+    return [mainRoute, ...routes.siblings];
 }
 
+/**
+ * Module used to register children routes for all main menu tabs. These are routes that can be navigated within any tab in the
+ * main menu, but will remain within the navigation stack of the tab rather than overriding the main menu or moving to another tab.
+ *
+ * Some examples of routes registered in this module are:
+ * - /main/{tab}/user
+ * - /main/{tab}/badges
+ * - /main/{tab}/mod_forum
+ * - ...
+ */
 @NgModule()
 export class CoreMainMenuTabRoutingModule {
 
-    /**
-     * Use this function to declare routes that will be children of all main menu tabs root routes.
-     *
-     * @param routes Routes to be children of main menu tabs.
-     * @returns Calculated module.
-     */
     static forChild(routes: ModuleRoutesConfig): ModuleWithProviders<CoreMainMenuTabRoutingModule> {
         return {
             ngModule: CoreMainMenuTabRoutingModule,

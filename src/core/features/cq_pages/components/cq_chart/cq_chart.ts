@@ -13,10 +13,10 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
     @Input() type?: string;
     @Input() stacked?: boolean;
     @Input() lineTension?: number;
-    @Input() data: ChartData;
-    @ViewChild('cqChart') cqChart: ElementRef;
+    @Input() data?: ChartData;
+    @ViewChild('cqChart') cqChart?: ElementRef;
 
-    chart: Chart;
+    chart?: Chart;
     inited: boolean = false;
 
     constructor(CH: CqHelper)
@@ -144,7 +144,7 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
                 }],
             };
         }
-        this.chart = new Chart(this.cqChart.nativeElement, {
+        this.chart = new Chart(this.cqChart?.nativeElement, {
             type: this.type || "line",
             data: this.data,
             options: options,

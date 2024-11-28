@@ -15,7 +15,8 @@
 import { Input, Output, OnInit, OnChanges, SimpleChange, EventEmitter, Component } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { CoreFormFields } from '@singletons/form';
-import { AddonModDataData, AddonModDataEntryField, AddonModDataField, AddonModDataTemplateMode } from '../services/data';
+import { AddonModDataData, AddonModDataEntryField, AddonModDataField } from '../services/data';
+import { AddonModDataTemplateMode } from '../constants';
 
 /**
  * Base class for component to render a field.
@@ -25,8 +26,8 @@ import { AddonModDataData, AddonModDataEntryField, AddonModDataField, AddonModDa
 })
 export abstract class AddonModDataFieldPluginBaseComponent implements OnInit, OnChanges {
 
-    @Input() mode!: AddonModDataTemplateMode; // The render mode.
-    @Input() field!: AddonModDataField; // The field to render.
+    @Input({ required: true }) mode!: AddonModDataTemplateMode; // The render mode.
+    @Input({ required: true }) field!: AddonModDataField; // The field to render.
     @Input() value?: Partial<AddonModDataEntryField>; // The value of the field.
     @Input() database?: AddonModDataData; // Database object.
     @Input() error?: string; // Error when editing.
@@ -74,7 +75,7 @@ export abstract class AddonModDataFieldPluginBaseComponent implements OnInit, On
     }
 
     /**
-     * Component being changed.
+     * @inheritdoc
      */
     ngOnChanges(changes: { [name: string]: SimpleChange }): void {
         if ((this.showMode || this.listMode) && changes.value) {

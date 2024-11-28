@@ -15,13 +15,6 @@
             [componentId]="componentId" [courseId]="courseId" (completionChanged)="onCompletionChange()">
         </core-course-module-info>
 
-        <ion-card class="core-warning-card" *ngIf="warning">
-            <ion-item>
-                <ion-icon name="fas-triangle-exclamation" slot="start" aria-hidden="true"></ion-icon>
-                <ion-label><span [innerHTML]="warning"></span></ion-label>
-            </ion-item>
-        </ion-card>
-
         <div id="main-content" class="set-following-iframe-to-fill">
             <core-format-text [component]="component" [componentId]="componentId" [text]="contents" contextLevel="module"
                 [contextInstanceId]="module.id" [courseId]="courseId">

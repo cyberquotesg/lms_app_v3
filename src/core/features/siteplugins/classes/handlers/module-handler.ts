@@ -18,19 +18,18 @@ import { CoreConstants } from '@/core/constants';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleHandler, CoreCourseModuleHandlerData } from '@features/course/services/module-delegate';
-import { CoreSitePluginsModuleIndexComponent } from '@features/siteplugins/components/module-index/module-index';
 import {
     CoreSitePlugins,
     CoreSitePluginsContent,
     CoreSitePluginsCourseModuleHandlerData,
     CoreSitePluginsPlugin,
-    CoreSitePluginsProvider,
 } from '@features/siteplugins/services/siteplugins';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CoreLogger } from '@singletons/logger';
 import { CoreSitePluginsBaseHandler } from './base-handler';
 import { CoreEvents } from '@singletons/events';
 import { CoreUtils } from '@services/utils/utils';
+import { CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT } from '@features/siteplugins/constants';
 
 /**
  * Handler to support a module using a site plugin.
@@ -90,6 +89,7 @@ export class CoreSitePluginsModuleHandler extends CoreSitePluginsBaseHandler imp
             icon: CoreCourse.getModuleIconSrc(module.modname, icon),
             class: this.handlerSchema.displaydata?.class,
             showDownloadButton: showDowloadButton !== undefined ? showDowloadButton : hasOffline,
+            hasCustomCmListItem: this.handlerSchema.hascustomcmlistitem ?? false,
         };
 
         if (this.handlerSchema.method) {
@@ -113,7 +113,7 @@ export class CoreSitePluginsModuleHandler extends CoreSitePluginsBaseHandler imp
             this.loadCoursePageTemplate(module, courseId, handlerData, method);
 
             // Allow updating the data via event.
-            CoreEvents.on(CoreSitePluginsProvider.UPDATE_COURSE_CONTENT, (data) => {
+            CoreEvents.on(CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT, (data) => {
                 if (data.cmId === module.id) {
                     this.loadCoursePageTemplate(module, courseId, handlerData, method, !data.alreadyFetched);
                 }
@@ -204,6 +204,9 @@ export class CoreSitePluginsModuleHandler extends CoreSitePluginsBaseHandler imp
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { CoreSitePluginsModuleIndexComponent } =
+         await import('@features/siteplugins/components/module-index/module-index');
+
         return CoreSitePluginsModuleIndexComponent;
     }
 

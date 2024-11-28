@@ -12,29 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
-import { Component, OnInit, OnDestroy, Input, ViewChild } from '@angular/core';
-import { CoreIonLoadingElement } from '@classes/ion-loading';
+import { Component, OnInit, OnDestroy, Input, ViewChild, HostBinding, Optional } from '@angular/core';
 
-import { CoreSiteWSPreSets } from '@classes/site';
-import {
-    CoreCourseModuleSummaryResult,
-    CoreCourseModuleSummaryComponent,
-} from '@features/course/components/module-summary/module-summary';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreCourseModuleSummaryResult } from '@features/course/components/module-summary/module-summary';
+import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { CoreCourse } from '@features/course/services/course';
-import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
+import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import {
     CoreCourseModuleDelegate,
     CoreCourseModuleMainComponent,
 } from '@features/course/services/module-delegate';
-import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import {
     CoreSitePlugins,
     CoreSitePluginsContent,
     CoreSitePluginsCourseModuleHandlerData,
 } from '@features/siteplugins/services/siteplugins';
-import { IonRefresher } from '@ionic/angular';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreModals } from '@services/modals';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreSitePluginsPluginContentComponent, CoreSitePluginsPluginContentLoadedData } from '../plugin-content/plugin-content';
 
@@ -48,45 +42,21 @@ import { CoreSitePluginsPluginContentComponent, CoreSitePluginsPluginContentLoad
 })
 export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, CoreCourseModuleMainComponent {
 
-    @Input() module!: CoreCourseModuleData; // The module.
-    @Input() courseId!: number; // Course ID the module belongs to.
+    @Input({ required: true }) module!: CoreCourseModuleData; // The module.
+    @Input({ required: true }) courseId!: number; // Course ID the module belongs to.
     @Input() pageTitle?: string; // Current page title. It can be used by the "new-content" directives.
 
     @ViewChild(CoreSitePluginsPluginContentComponent) content?: CoreSitePluginsPluginContentComponent;
 
-    component?: string;
+    @HostBinding('class') component?: string;
     method?: string;
     args?: Record<string, unknown>;
     initResult?: CoreSitePluginsContent | null;
     preSets?: CoreSiteWSPreSets;
     description?: string;
 
-    /**
-     * @deprecated since 4.0, use module.url instead.
-     */
-    externalUrl?: string;
-    /**
-     * @deprecated since 4.0. It won't be populated anymore.
-     */
-    refreshIcon = CoreConstants.ICON_REFRESH;
-    /**
-     * @deprecated since 4.0.. It won't be populated anymore.
-     */
-    prefetchStatus?: string;
-    /**
-     * @deprecated since 4.0. It won't be populated anymore.
-     */
-    prefetchStatusIcon?: string;
-    /**
-     * @deprecated since 4.0. It won't be populated anymore.
-     */
-    prefetchText?: string;
-    /**
-     * @deprecated since 4.0. It won't be populated anymore.
-     */
-    size?: string;
-
     collapsibleFooterAppearOnBottom = true;
+    addDefaultModuleInfo = false;
 
     displayOpenInBrowser = true;
     displayDescription = true;
@@ -101,6 +71,8 @@ export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, C
     isDestroyed = false;
 
     jsData?: Record<string, unknown>; // Data to pass to the component.
+
+    constructor(@Optional() public courseContentsPage?: CoreCourseContentsPage) {}
 
     /**
      * @inheritdoc
@@ -142,7 +114,6 @@ export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, C
 
         // Get the data for the context menu.
         this.description = this.module.description;
-        this.externalUrl = this.module.url;
     }
 
     /**
@@ -151,7 +122,7 @@ export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, C
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher | null): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement | null): Promise<void> {
         try {
             await this.content?.refreshContent(false);
         } finally {
@@ -163,6 +134,7 @@ export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, C
      * Function called when the data of the site plugin content is loaded.
      */
     contentLoaded(data: CoreSitePluginsPluginContentLoadedData): void {
+        this.addDefaultModuleInfo = !data.content.includes('<core-course-module-info');
         if (data.success) {
             CoreCourse.storeModuleViewed(this.courseId, this.module.id, {
                 sectionId: this.module.section,
@@ -178,15 +150,6 @@ export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, C
     }
 
     /**
-     * Expand the description.
-     *
-     * @deprecated since 4.0
-     */
-    expandDescription(): void {
-        this.openModuleSummary();
-    }
-
-    /**
      * Opens a module summary page.
      */
     async openModuleSummary(): Promise<void> {
@@ -194,7 +157,9 @@ export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, C
             return;
         }
 
-        const data = await CoreDomUtils.openSideModal<CoreCourseModuleSummaryResult>({
+        const { CoreCourseModuleSummaryComponent } = await import('@features/course/components/module-summary/module-summary');
+
+        const data = await CoreModals.openSideModal<CoreCourseModuleSummaryResult>({
             component: CoreCourseModuleSummaryComponent,
             componentProps: {
                 moduleId: this.module.id,
@@ -220,50 +185,7 @@ export class CoreSitePluginsModuleIndexComponent implements OnInit, OnDestroy, C
     }
 
     /**
-     * Prefetch the module.
-     *
-     * @deprecated since 4.0
-     */
-    async prefetch(): Promise<void> {
-        try {
-            // We need to call getDownloadSize, the package might have been updated.
-            const size = await CoreCourseModulePrefetchDelegate.getModuleDownloadSize(this.module, this.courseId, true);
-
-            await CoreDomUtils.confirmDownloadSize(size);
-
-            await CoreCourseModulePrefetchDelegate.prefetchModule(this.module, this.courseId, true);
-        } catch (error) {
-            if (!this.isDestroyed) {
-                CoreDomUtils.showErrorModalDefault(error, 'core.errordownloading', true);
-            }
-        }
-    }
-
-    /**
-     * Confirm and remove downloaded files.
-     *
-     * @deprecated since 4.0
-     */
-    async removeFiles(): Promise<void> {
-        let modal: CoreIonLoadingElement | undefined;
-
-        try {
-            await CoreDomUtils.showDeleteConfirm('addon.storagemanager.confirmdeletedatafrom', { name: this.module.name });
-
-            modal = await CoreDomUtils.showModalLoading();
-
-            await CoreCourseHelper.removeModuleStoredData(this.module, this.courseId);
-        } catch (error) {
-            if (error) {
-                CoreDomUtils.showErrorModal(error);
-            }
-        } finally {
-            modal?.dismiss();
-        }
-    }
-
-    /**
-     * Component destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.isDestroyed = true;

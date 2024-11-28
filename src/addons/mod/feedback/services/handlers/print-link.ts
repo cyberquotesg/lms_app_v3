@@ -20,7 +20,8 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { makeSingleton } from '@singletons';
-import { AddonModFeedbackModuleHandlerService } from './module';
+import { ADDON_MOD_FEEDBACK_PAGE_NAME } from '../../constants';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Content links handler for feedback print questions.
@@ -39,7 +40,7 @@ export class AddonModFeedbackPrintLinkHandlerService extends CoreContentLinksHan
     getActions(siteIds: string[], url: string, params: Record<string, string>): CoreContentLinksAction[] {
         return [{
             action: async (siteId: string) => {
-                const modal = await CoreDomUtils.showModalLoading();
+                const modal = await CoreLoadings.show();
 
                 const moduleId = Number(params.id);
 
@@ -49,8 +50,8 @@ export class AddonModFeedbackPrintLinkHandlerService extends CoreContentLinksHan
                         { siteId, readingStrategy: CoreSitesReadingStrategy.PREFER_CACHE },
                     );
 
-                    CoreNavigator.navigateToSitePath(
-                        AddonModFeedbackModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/form`,
+                    await CoreNavigator.navigateToSitePath(
+                        ADDON_MOD_FEEDBACK_PAGE_NAME + `/${module.course}/${module.id}/form`,
                         {
                             params: {
                                 preview: true,

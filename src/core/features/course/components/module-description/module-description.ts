@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, Input } from '@angular/core';
+import { ContextLevel } from '@/core/constants';
+import { CoreSharedModule } from '@/core/shared.module';
+import { toBoolean } from '@/core/transforms/boolean';
+import { Component, HostBinding, Input } from '@angular/core';
 
 /**
  * Component to display the description of a module.
@@ -30,11 +33,16 @@ import { Component, Input } from '@angular/core';
  *
  * <core-course-module-description [description]="myDescription"></core-course-module-description>
  *
- * @deprecated since 4.0 use core-course-module-info
+ * @deprecated since 4.0 use core-course-module-info instead.
+ * Keeping this a bit more to avoid plugins breaking.
  */
 @Component({
     selector: 'core-course-module-description',
     templateUrl: 'core-course-module-description.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreCourseModuleDescriptionComponent {
 
@@ -42,9 +50,13 @@ export class CoreCourseModuleDescriptionComponent {
     @Input() note?: string; // A note to display along with the description.
     @Input() component?: string; // Component for format text directive.
     @Input() componentId?: string | number; // Component ID to use in conjunction with the component.
-    @Input() showFull?: string | boolean; // Whether to always display the full description.
-    @Input() contextLevel?: string; // The context level.
+    @Input({ transform: toBoolean }) showFull = false; // Whether to always display the full description.
+    @Input() contextLevel?: ContextLevel; // The context level.
     @Input() contextInstanceId?: number; // The instance ID related to the context.
     @Input() courseId?: number; // Course ID the text belongs to. It can be used to improve performance with filters.
+
+    @HostBinding('class.deprecated') get isDeprecated(): boolean {
+        return true;
+    }
 
 }

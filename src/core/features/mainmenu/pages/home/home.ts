@@ -21,7 +21,6 @@ import { CoreTabsOutletComponent, CoreTabsOutletTab } from '@components/tabs-out
 import { CoreMainMenuHomeDelegate, CoreMainMenuHomeHandlerToDisplay } from '../../services/home-delegate';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreMainMenuHomeHandlerService } from '@features/mainmenu/services/handlers/mainmenu';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 
 /**
  * Page that displays the Home.
@@ -40,23 +39,20 @@ export class CoreMainMenuHomePage implements OnInit {
 
     protected subscription?: Subscription;
     protected updateSiteObserver?: CoreEventObserver;
-    protected deepLinkManager?: CoreMainMenuDeepLinkManager;
 
     /**
      * @inheritdoc
      */
-    ngOnInit(): void {
-        this.deepLinkManager = new CoreMainMenuDeepLinkManager();
-
-        this.loadSiteName();
+    async ngOnInit(): Promise<void> {
+        await this.loadSiteName();
 
         this.subscription = CoreMainMenuHomeDelegate.getHandlersObservable().subscribe((handlers) => {
             handlers && this.initHandlers(handlers);
         });
 
         // Refresh the enabled flags if site is updated.
-        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, () => {
-            this.loadSiteName();
+        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, async () => {
+            await this.loadSiteName();
         }, CoreSites.getCurrentSiteId());
     }
 
@@ -99,15 +95,16 @@ export class CoreMainMenuHomePage implements OnInit {
     /**
      * Load the site name.
      */
-    protected loadSiteName(): void {
-        this.siteName = CoreSites.getRequiredCurrentSite().getSiteName() || '';
+    protected async loadSiteName(): Promise<void> {
+        const site = CoreSites.getRequiredCurrentSite();
+        this.siteName = await site.getSiteName() || '';
     }
 
     /**
      * Tab was selected.
      */
     tabSelected(): void {
-        this.deepLinkManager?.treatLink();
+        CoreSites.loginNavigationFinished();
     }
 
     /**

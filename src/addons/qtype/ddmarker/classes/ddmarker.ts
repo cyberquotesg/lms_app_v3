@@ -13,12 +13,17 @@
 // limitations under the License.
 
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreCoordinates, CoreDom } from '@singletons/dom';
 import { CoreEventObserver } from '@singletons/events';
 import { CoreLogger } from '@singletons/logger';
 import { AddonQtypeDdMarkerQuestionData } from '../component/ddmarker';
 import { AddonQtypeDdMarkerGraphicsApi } from './graphics_api';
+import { CoreUtils } from '@services/utils/utils';
+import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreExternalContentDirective } from '@directives/external-content';
+import { CoreLinkDirective } from '@directives/link';
+import { ElementRef } from '@angular/core';
 
 /**
  * Class to make a question of ddmarker type work.
@@ -93,6 +98,8 @@ export class AddonQtypeDdMarkerQuestion {
         drag.classList.add('item' + itemNo);
         drag.classList.remove('dragplaceholder'); // In case it has it.
         dragHome.classList.add('dragplaceholder');
+
+        this.treatAnchors(drag);
 
         // Insert the new drag after the dragHome.
         dragHome.parentElement?.insertBefore(drag, dragHome.nextSibling);
@@ -249,6 +256,7 @@ export class AddonQtypeDdMarkerQuestion {
             // Marker text already exists. Update it or remove it if empty.
             if (markerText !== '') {
                 existingMarkerText.innerHTML = markerText;
+                this.treatAnchors(existingMarkerText);
             } else {
                 existingMarkerText.remove();
             }
@@ -259,12 +267,13 @@ export class AddonQtypeDdMarkerQuestion {
 
             span.className = classNames;
             span.innerHTML = markerText;
+            this.treatAnchors(span);
 
             markerTexts.appendChild(span);
         }
 
         // Check that a function to draw this shape exists.
-        const drawFunc = 'drawShape' + CoreTextUtils.ucFirst(shape);
+        const drawFunc = 'drawShape' + CoreText.capitalize(shape);
         if (!(this[drawFunc] instanceof Function)) {
             return;
         }
@@ -677,7 +686,7 @@ export class AddonQtypeDdMarkerQuestion {
     /**
      * Wait for the background image to be loaded.
      */
-    pollForImageLoad(): void {
+    async pollForImageLoad(): Promise<void> {
         if (this.afterImageLoadDone) {
             // Already treated.
             return;
@@ -688,21 +697,28 @@ export class AddonQtypeDdMarkerQuestion {
             return;
         }
 
+        // Wait for external-content to finish, otherwise the image doesn't have a src and the calculations are wrong.
+        await CoreDirectivesRegistry.waitDirectivesReady(bgImg, undefined, CoreExternalContentDirective);
+
         if (!bgImg.src && this.imgSrc) {
             bgImg.src = this.imgSrc;
         }
 
-        const imgLoaded = (): void => {
+        const imgLoaded = async (): Promise<void> => {
             bgImg.removeEventListener('load', imgLoaded);
 
             this.makeImageDropable();
 
-            setTimeout(() => {
-                this.redrawDragsAndDrops();
-            });
-
             this.afterImageLoadDone = true;
             this.question.loaded = true;
+
+            // Wait for image to be visible, otherwise the calculated positions are wrong.
+            const visiblePromise = CoreDom.waitToBeVisible(bgImg);
+
+            await CoreUtils.ignoreErrors(CoreUtils.timeoutPromise(visiblePromise, 500));
+            visiblePromise.cancel(); // In case of timeout, cancel the promise.
+
+            this.redrawDragsAndDrops();
         };
 
         if (!bgImg.src || (bgImg.complete && bgImg.naturalWidth)) {
@@ -884,6 +900,19 @@ export class AddonQtypeDdMarkerQuestion {
         if (itemNo !== null) {
             drag.classList.remove('item' + itemNo);
         }
+    }
+
+    /**
+     * Treat anchors inside an element, adding the core-link directive.
+     *
+     * @param el Element to treat.
+     */
+    protected treatAnchors(el: HTMLElement): void {
+        Array.from(el.querySelectorAll('a')).forEach((anchor) => {
+            const linkDir = new CoreLinkDirective(new ElementRef(anchor));
+            linkDir.capture = true;
+            linkDir.ngOnInit();
+        });
     }
 
 }

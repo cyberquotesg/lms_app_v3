@@ -25,7 +25,7 @@ import { AddonModAssignSubmissionHandler } from '@addons/mod/assign/services/sub
 import { Injectable, Type } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreFileHelper } from '@services/file-helper';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
@@ -41,11 +41,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     type = 'onlinetext';
 
     /**
-     * Whether the plugin can be edited in offline for existing submissions. In general, this should return false if the
-     * plugin uses Moodle filters. The reason is that the app only prefetches filtered data, and the user should edit
-     * unfiltered data.
-     *
-     * @returns Boolean or promise resolved with boolean: whether it can be edited in offline.
+     * @inheritdoc
      */
     canEditOffline(): boolean {
         // This plugin uses Moodle filters, it cannot be edited in offline.
@@ -53,11 +49,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     }
 
     /**
-     * Check if a plugin has no data.
-     *
-     * @param assign The assignment.
-     * @param plugin The plugin object.
-     * @returns Whether the plugin is empty.
+     * @inheritdoc
      */
     isEmpty(assign: AddonModAssignAssign, plugin: AddonModAssignPlugin): boolean {
         const text = AddonModAssign.getSubmissionPluginText(plugin, true);
@@ -67,15 +59,30 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     }
 
     /**
-     * This function will be called when the user wants to create a new submission based on the previous one.
-     * It should add to pluginData the data to send to server based in the data in plugin (previous attempt).
-     *
-     * @param assign The assignment.
-     * @param plugin The plugin object.
-     * @param pluginData Object where to store the data to send.
-     * @param userId User ID. If not defined, site's current user.
-     * @param siteId Site ID. If not defined, current site.
-     * @returns If the function is async, it should return a Promise resolved when done.
+     * @inheritdoc
+     */
+    isEmptyForEdit(
+        assign: AddonModAssignAssign,
+        plugin: AddonModAssignPlugin,
+        inputData: AddonModAssignSubmissionOnlineTextData,
+     ): boolean {
+        const text = this.getTextToSubmit(plugin, inputData);
+
+        if (CoreText.countWords(text) > 0) {
+            return false;
+        }
+
+        // Check if the online text submission contains video, audio or image elements
+        // that can be ignored and stripped by count_words().
+        if (/<\s*((video|audio)[^>]*>(.*?)<\s*\/\s*(video|audio)>)|(img[^>]*>)/.test(text)) {
+            return false;
+        }
+
+        return true;
+     }
+
+    /**
+     * @inheritdoc
      */
     async copySubmissionData(
         assign: AddonModAssignAssign,
@@ -102,23 +109,14 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     }
 
     /**
-     * Return the Component to use to display the plugin data, either in read or in edit mode.
-     * It's recommended to return the class of the component, but you can also return an instance of the component.
-     *
-     * @returns The component (or promise resolved with component) to use, undefined if not found.
+     * @inheritdoc
      */
     getComponent(): Type<AddonModAssignSubmissionPluginBaseComponent> {
         return AddonModAssignSubmissionOnlineTextComponent;
     }
 
     /**
-     * Get files used by this plugin.
-     * The files returned by this function will be prefetched when the user prefetches the assign.
-     *
-     * @param assign The assignment.
-     * @param submission The submission.
-     * @param plugin The plugin object.
-     * @returns The files (or promise resolved with the files).
+     * @inheritdoc
      */
     getPluginFiles(
         assign: AddonModAssignAssign,
@@ -129,11 +127,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     }
 
     /**
-     * Get the size of data (in bytes) this plugin will send to copy a previous submission.
-     *
-     * @param assign The assignment.
-     * @param plugin The plugin object.
-     * @returns The size (or promise resolved with size).
+     * @inheritdoc
      */
     async getSizeForCopy(assign: AddonModAssignAssign, plugin: AddonModAssignPlugin): Promise<number> {
         const text = AddonModAssign.getSubmissionPluginText(plugin, true);
@@ -145,12 +139,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     }
 
     /**
-     * Get the size of data (in bytes) this plugin will send to add or edit a submission.
-     *
-     * @param assign The assignment.
-     * @param submission The submission.
-     * @param plugin The plugin object.
-     * @returns The size (or promise resolved with size).
+     * @inheritdoc
      */
     getSizeForEdit(
         assign: AddonModAssignAssign,
@@ -173,17 +162,11 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
         const text = inputData.onlinetext_editor_text;
         const files = plugin.fileareas && plugin.fileareas[0] && plugin.fileareas[0].files || [];
 
-        return CoreTextUtils.restorePluginfileUrls(text, files || []);
+        return CoreFileHelper.restorePluginfileUrls(text, files || []);
     }
 
     /**
-     * Check if the submission data has changed for this plugin.
-     *
-     * @param assign The assignment.
-     * @param submission The submission.
-     * @param plugin The plugin object.
-     * @param inputData Data entered by the user for the submission.
-     * @returns Boolean (or promise resolved with boolean): whether the data has changed.
+     * @inheritdoc
      */
     async hasDataChanged(
         assign: AddonModAssignAssign,
@@ -209,31 +192,21 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     }
 
     /**
-     * Whether or not the handler is enabled on a site level.
-     *
-     * @returns True or promise resolved with true if enabled.
+     * @inheritdoc
      */
     async isEnabled(): Promise<boolean> {
         return true;
     }
 
     /**
-     * Whether or not the handler is enabled for edit on a site level.
-     *
-     * @returns Whether or not the handler is enabled for edit on a site level.
+     * @inheritdoc
      */
     isEnabledForEdit(): boolean {
         return true;
     }
 
     /**
-     * Prepare and add to pluginData the data to send to the server based on the input data.
-     *
-     * @param assign The assignment.
-     * @param submission The submission.
-     * @param plugin The plugin object.
-     * @param inputData Data entered by the user for the submission.
-     * @param pluginData Object where to store the data to send.
+     * @inheritdoc
      */
     prepareSubmissionData(
         assign: AddonModAssignAssign,
@@ -248,7 +221,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
         // Check word limit.
         const configs = AddonModAssignHelper.getPluginConfig(assign, 'assignsubmission', plugin.type);
         if (parseInt(configs.wordlimitenabled, 10)) {
-            const words = CoreTextUtils.countWords(text);
+            const words = CoreText.countWords(text);
             const wordlimit = parseInt(configs.wordlimit, 10);
             if (words > wordlimit) {
                 const params = { $a: { count: words, limit: wordlimit } };
@@ -259,7 +232,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
         }
 
         // Add some HTML to the text if needed.
-        text = CoreTextUtils.formatHtmlLines(text);
+        text = CoreText.formatHtmlLines(text);
 
         pluginData.onlinetext_editor = {
             text: text,
@@ -269,14 +242,7 @@ export class AddonModAssignSubmissionOnlineTextHandlerService implements AddonMo
     }
 
     /**
-     * Prepare and add to pluginData the data to send to the server based on the offline data stored.
-     * This will be used when performing a synchronization.
-     *
-     * @param assign The assignment.
-     * @param submission The submission.
-     * @param plugin The plugin object.
-     * @param offlineData Offline data stored.
-     * @param pluginData Object where to store the data to send.
+     * @inheritdoc
      */
     prepareSyncData(
         assign: AddonModAssignAssign,

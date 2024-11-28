@@ -1,3 +1,7 @@
+GENERAL
+- go to ./cordova-plugin-moodleapp
+- npm run prod
+
 WEB
 - Branch: cyberquote-development
 - npm run web_dev
@@ -26,3 +30,7 @@ IOS
 - Build via XCode
 - Archive
 - Distribute
+
+IF ERROR
+- create symlink to connect node to node.exe
+sudo ln -s /mnt/c/Program\ Files/nodejs/node.exe /usr/local/bin/node

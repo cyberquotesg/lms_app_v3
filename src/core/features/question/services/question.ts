@@ -16,7 +16,7 @@ import { Injectable } from '@angular/core';
 
 import { CoreFile } from '@services/file';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile } from '@services/ws';
@@ -28,97 +28,106 @@ import {
     QUESTION_ANSWERS_TABLE_NAME,
     QUESTION_TABLE_NAME,
 } from './database/question';
+import {
+    QUESTION_COMPLETE_STATE_CLASSES,
+    QUESTION_FINISHED_STATE_CLASSES,
+    QUESTION_GAVE_UP_STATE_CLASSES,
+    QUESTION_GRADED_STATE_CLASSES,
+    QUESTION_INVALID_STATE_CLASSES,
+    QUESTION_NEEDS_GRADING_STATE_CLASSES,
+    QUESTION_TODO_STATE_CLASSES,
+} from '@features/question/constants';
 
 const QUESTION_PREFIX_REGEX = /q\d+:(\d+)_/;
 const STATES: Record<string, CoreQuestionState> = {
     todo: {
         name: 'todo',
-        class: 'core-question-notyetanswered',
         status: 'notyetanswered',
+        stateclass: 'notyetanswered',
         active: true,
         finished: false,
     },
     invalid: {
         name: 'invalid',
-        class: 'core-question-invalidanswer',
         status: 'invalidanswer',
+        stateclass: 'invalidanswer',
         active: true,
         finished: false,
     },
     complete: {
         name: 'complete',
-        class: 'core-question-answersaved',
         status: 'answersaved',
+        stateclass: 'answersaved',
         active: true,
         finished: false,
     },
     needsgrading: {
         name: 'needsgrading',
-        class: 'core-question-requiresgrading',
         status: 'requiresgrading',
+        stateclass: 'requiresgrading',
         active: false,
         finished: true,
     },
     finished: {
         name: 'finished',
-        class: 'core-question-complete',
         status: 'complete',
+        stateclass: 'complete',
         active: false,
         finished: true,
     },
     gaveup: {
         name: 'gaveup',
-        class: 'core-question-notanswered',
         status: 'notanswered',
+        stateclass: 'notanswered',
         active: false,
         finished: true,
     },
     gradedwrong: {
         name: 'gradedwrong',
-        class: 'core-question-incorrect',
         status: 'incorrect',
+        stateclass: 'incorrect',
         active: false,
         finished: true,
     },
     gradedpartial: {
         name: 'gradedpartial',
-        class: 'core-question-partiallycorrect',
         status: 'partiallycorrect',
+        stateclass: 'partiallycorrect',
         active: false,
         finished: true,
     },
     gradedright: {
         name: 'gradedright',
-        class: 'core-question-correct',
         status: 'correct',
+        stateclass: 'correct',
         active: false,
         finished: true,
     },
     mangrwrong: {
         name: 'mangrwrong',
-        class: 'core-question-incorrect',
         status: 'incorrect',
+        stateclass: 'incorrect',
         active: false,
         finished: true,
     },
     mangrpartial: {
         name: 'mangrpartial',
-        class: 'core-question-partiallycorrect',
         status: 'partiallycorrect',
+        stateclass: 'partiallycorrect',
         active: false,
         finished: true,
     },
     mangrright: {
         name: 'mangrright',
-        class: 'core-question-correct',
         status: 'correct',
+        stateclass: 'correct',
         active: false,
         finished: true,
     },
     cannotdeterminestatus: { // Special state for Mobile, sometimes we won't have enough data to detemrine the state.
         name: 'cannotdeterminestatus',
-        class: 'core-question-unknown',
         status: 'cannotdeterminestatus',
+        stateclass: undefined,
         active: true,
         finished: false,
     },
@@ -314,7 +323,7 @@ export class CoreQuestionProvider {
      * @returns Question component ID.
      */
     getQuestionComponentId(question: CoreQuestionQuestionParsed, componentId: string | number): string {
-        return componentId + '_' + question.number;
+        return componentId + '_' + question.questionnumber;
     }
 
     /**
@@ -385,11 +394,15 @@ export class CoreQuestionProvider {
         const parsedQuestions: CoreQuestionQuestionParsed[] = questions;
 
         parsedQuestions.forEach((question) => {
+            if (question.questionnumber === undefined && typeof question.number === 'number') {
+                question.questionnumber = String(question.number);
+            }
+
             if (!question.settings) {
                 return;
             }
 
-            question.parsedSettings = CoreTextUtils.parseJSON(question.settings, null);
+            question.parsedSettings = CoreText.parseJSON(question.settings, null);
         });
 
         return parsedQuestions;
@@ -547,14 +560,11 @@ export class CoreQuestionProvider {
         state: string,
         siteId?: string,
     ): Promise<void> {
-
         const site = await CoreSites.getSite(siteId);
         const entry: CoreQuestionDBRecord = {
             component,
             componentid: componentId,
             attemptid: attemptId,
-            userid: userId,
-            number: question.number, // eslint-disable-line id-blacklist
             slot: question.slot,
             state: state,
         };
@@ -571,8 +581,16 @@ export const CoreQuestion = makeSingleton(CoreQuestionProvider);
  */
 export type CoreQuestionState = {
     name: string; // Name of the state.
-    class: string; // Class to style the state.
     status: string; // The string key to translate the state.
+    stateclass: // A machine-readable class name for the state that this question attempt is in.
+        typeof QUESTION_TODO_STATE_CLASSES[number] |
+        typeof QUESTION_INVALID_STATE_CLASSES[number] |
+        typeof QUESTION_COMPLETE_STATE_CLASSES[number] |
+        typeof QUESTION_NEEDS_GRADING_STATE_CLASSES[number] |
+        typeof QUESTION_FINISHED_STATE_CLASSES[number] |
+        typeof QUESTION_GAVE_UP_STATE_CLASSES[number] |
+        typeof QUESTION_GRADED_STATE_CLASSES[number] |
+        undefined;
     active: boolean; // Whether the question with this state is active.
     finished: boolean; // Whether the question with this state is finished.
 };
@@ -594,20 +612,38 @@ export type CoreQuestionQuestionWSData = {
     lastactiontime?: number; // The timestamp of the most recent step in this question attempt.
     hasautosavedstep?: boolean; // Whether this question attempt has autosaved data.
     flagged: boolean; // Whether the question is flagged or not.
-    // eslint-disable-next-line id-blacklist
-    number?: number; // Question ordering number in the quiz.
-    state?: string; // The state where the question is in. It won't be returned if the user cannot see it.
-    status?: string; // Current formatted state of the question.
+    questionnumber?: string; // @since 4.2. Question ordering number in the quiz.
+    state?: string; // The state where the question is in terms of correctness.
+                    // It will not be returned if the user cannot see it due to the quiz display correctness settings.
+    status?: string; // Human readable state of the question.
+    stateclass?: // @since 4.4. A machine-readable class name for the state that this question attempt is in.
+        typeof QUESTION_TODO_STATE_CLASSES[number] |
+        typeof QUESTION_INVALID_STATE_CLASSES[number] |
+        typeof QUESTION_COMPLETE_STATE_CLASSES[number] |
+        typeof QUESTION_NEEDS_GRADING_STATE_CLASSES[number] |
+        typeof QUESTION_FINISHED_STATE_CLASSES[number] |
+        typeof QUESTION_GAVE_UP_STATE_CLASSES[number] |
+        typeof QUESTION_GRADED_STATE_CLASSES[number];
     blockedbyprevious?: boolean; // Whether the question is blocked by the previous question.
     mark?: string; // The mark awarded. It will be returned only if the user is allowed to see it.
     maxmark?: number; // The maximum mark possible for this question attempt.
     settings?: string; // Question settings (JSON encoded).
+
+    /** @deprecatedonmoodle since 4.2. Use questionnumber instead. */
+    number?: number; // eslint-disable-line id-blacklist
 };
 /**
  * Question data with parsed data.
  */
 export type CoreQuestionQuestionParsed = CoreQuestionQuestionWSData & {
     parsedSettings?: Record<string, unknown> | null;
+};
+
+/**
+ * Question with some calculated data for the view.
+ */
+export type CoreQuestionQuestionForView = CoreQuestionQuestionParsed & {
+    readableMark?: string;
 };
 
 /**

@@ -15,13 +15,14 @@
 import { Component, OnInit } from '@angular/core';
 
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreCourse } from '@features/course/services/course';
+import { CoreCourse, CoreCourseWSSection, sectionContentIsModule } from '@features/course/services/course';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { CoreCourseHelper, CoreCourseSection } from '@features/course/services/course-helper';
 import { CoreNavigator } from '@services/navigator';
 import { CoreConstants } from '@/core/constants';
-import { IonRefresher } from '@ionic/angular';
 import { CoreUtils } from '@services/utils/utils';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 
 /**
  * Page that displays all modules of a certain type in a course.
@@ -29,24 +30,58 @@ import { CoreUtils } from '@services/utils/utils';
 @Component({
     selector: 'page-core-course-list-mod-type',
     templateUrl: 'list-mod-type.html',
+    styles: `core-course-module:last-child {
+        --activity-border: 0px;
+        --card-padding-bottom: 0px;
+    }`,
 })
 export class CoreCourseListModTypePage implements OnInit {
+
+    private static readonly PAGE_LENGTH = 10; // How many activities should load each time showMoreActivities is called.
 
     sections: CoreCourseSection[] = [];
     title = '';
     loaded = false;
-    courseId?: number;
+    courseId = 0;
+    canLoadMore = false;
+    lastShownSectionIndex = -1;
+    isModule = sectionContentIsModule;
 
     protected modName?: string;
     protected archetypes: Record<string, number> = {}; // To speed up the check of modules.
+    protected logView: () => void;
+
+    constructor() {
+        this.logView = CoreTime.once(async () => {
+            if (!this.modName) {
+                return;
+            }
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'core_course_get_contents',
+                name: this.title,
+                data: { category: this.modName },
+                url: (this.modName === 'resources' ? '/course/resources.php' : `/mod/${this.modName}/index.php`) +
+                    `?id=${this.courseId}`,
+            });
+        });
+    }
 
     /**
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
-        this.title = CoreNavigator.getRouteParam('title') || '';
-        this.courseId = CoreNavigator.getRouteNumberParam('courseId');
-        this.modName = CoreNavigator.getRouteParam('modName');
+        try {
+            this.title = CoreNavigator.getRouteParam('title') || '';
+            this.courseId = CoreNavigator.getRequiredRouteParam('courseId');
+            this.modName = CoreNavigator.getRequiredRouteParam('modName');
+        } catch (error) {
+            CoreDomUtils.showErrorModal(error);
+            CoreNavigator.back();
+
+            return;
+        }
 
         try {
             await this.fetchData();
@@ -57,8 +92,6 @@ export class CoreCourseListModTypePage implements OnInit {
 
     /**
      * Fetches the data.
-     *
-     * @returns Resolved when done.
      */
     protected async fetchData(): Promise<void> {
         if (!this.courseId) {
@@ -69,55 +102,95 @@ export class CoreCourseListModTypePage implements OnInit {
             // Get all the modules in the course.
             let sections = await CoreCourse.getSections(this.courseId, false, true);
 
-            sections = sections.filter((section) => {
-                if (!section.modules) {
-                    return false;
-                }
-
-                section.modules = section.modules.filter((mod) => {
-                    if (!CoreCourseHelper.canUserViewModule(mod, section) || !CoreCourse.moduleHasView(mod)) {
-                        // Ignore this module.
-                        return false;
-                    }
-
-                    if (this.modName === 'resources') {
-                        // Check that the module is a resource.
-                        if (this.archetypes[mod.modname] === undefined) {
-                            this.archetypes[mod.modname] = CoreCourseModuleDelegate.supportsFeature<number>(
-                                mod.modname,
-                                CoreConstants.FEATURE_MOD_ARCHETYPE,
-                                CoreConstants.MOD_ARCHETYPE_OTHER,
-                            );
-                        }
-
-                        if (this.archetypes[mod.modname] == CoreConstants.MOD_ARCHETYPE_RESOURCE) {
-                            return true;
-                        }
-
-                    } else if (mod.modname == this.modName) {
-                        return true;
-                    }
-                });
-
-                return section.modules.length > 0;
-            });
+            sections = this.filterSectionsAndContents(sections);
 
             const result = await CoreCourseHelper.addHandlerDataForModules(sections, this.courseId);
 
             this.sections = result.sections;
+
+            this.lastShownSectionIndex = -1;
+            this.showMoreActivities();
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error getting data');
         }
     }
 
     /**
+     * Given a list of sections, return only those with contents to display. Also filter the contents to only include
+     * the ones that should be displayed.
+     *
+     * @param sections Sections.
+     * @returns Filtered sections.
+     */
+    protected filterSectionsAndContents(sections: CoreCourseWSSection[]): CoreCourseWSSection[] {
+        return sections.filter((section) => {
+            if (!section.contents.length || section.hiddenbynumsections) {
+                return false;
+            }
+
+            section.contents = section.contents.filter((modOrSubsection) => {
+                if (!sectionContentIsModule(modOrSubsection)) {
+                    const formattedSections = this.filterSectionsAndContents([modOrSubsection]);
+
+                    return !!formattedSections.length;
+                }
+
+                if (!CoreCourseHelper.canUserViewModule(modOrSubsection, section) ||
+                    !CoreCourse.moduleHasView(modOrSubsection) ||
+                    modOrSubsection.visibleoncoursepage === 0) {
+                    // Ignore this module.
+                    return false;
+                }
+
+                if (this.modName === 'resources') {
+                    // Check that the module is a resource.
+                    if (this.archetypes[modOrSubsection.modname] === undefined) {
+                        this.archetypes[modOrSubsection.modname] = CoreCourseModuleDelegate.supportsFeature<number>(
+                            modOrSubsection.modname,
+                            CoreConstants.FEATURE_MOD_ARCHETYPE,
+                            CoreConstants.MOD_ARCHETYPE_OTHER,
+                        );
+                    }
+
+                    if (this.archetypes[modOrSubsection.modname] === CoreConstants.MOD_ARCHETYPE_RESOURCE) {
+                        return true;
+                    }
+
+                } else if (modOrSubsection.modname === this.modName) {
+                    return true;
+                }
+            });
+
+            return section.contents.length > 0;
+        });
+    }
+
+    /**
+     * Show more activities.
+     *
+     * @param infiniteComplete Infinite scroll complete function. Only used from core-infinite-loading.
+     */
+    showMoreActivities(infiniteComplete?: () => void): void {
+        let modulesLoaded = 0;
+        while (this.lastShownSectionIndex < this.sections.length - 1 && modulesLoaded < CoreCourseListModTypePage.PAGE_LENGTH) {
+            this.lastShownSectionIndex++;
+
+            const sectionModules = CoreCourse.getSectionsModules([this.sections[this.lastShownSectionIndex]]);
+            modulesLoaded += sectionModules.length;
+        }
+
+        this.canLoadMore = this.lastShownSectionIndex < this.sections.length - 1;
+
+        infiniteComplete?.();
+    }
+
+    /**
      * Refresh the data.
      *
      * @param refresher Refresher.
-     * @returns Promise resolved when done.
      */
-    async refreshData(refresher: IonRefresher): Promise<void> {
-        await CoreUtils.ignoreErrors(CoreCourse.invalidateSections(this.courseId || 0));
+    async refreshData(refresher: HTMLIonRefresherElement): Promise<void> {
+        await CoreUtils.ignoreErrors(CoreCourse.invalidateSections(this.courseId));
 
         try {
             await this.fetchData();

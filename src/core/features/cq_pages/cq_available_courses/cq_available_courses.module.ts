@@ -9,6 +9,7 @@ import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
 
 import { CqAvailableCourses } from './cq_available_courses';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 const routes: Routes = [
     {
@@ -35,5 +36,6 @@ const routes: Routes = [
         CqAvailableCourses,
     ],
     exports: [RouterModule],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class CqAvailableCoursesModule {}

@@ -15,11 +15,12 @@
 import { Injectable } from '@angular/core';
 
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreLoadings } from '@services/loadings';
 import { CoreFileUploaderHelper } from '@features/fileuploader/services/fileuploader-helper';
 import { AddonPrivateFiles, AddonPrivateFilesGetUserInfoWSResult } from './privatefiles';
 import { CoreError } from '@classes/errors/error';
 import { makeSingleton, Translate } from '@singletons';
+import { CoreToasts } from '@services/toasts';
 
 /**
  * Service that provides some helper functions regarding private and site files.
@@ -59,12 +60,16 @@ export class AddonPrivateFilesHelperProvider {
         }
 
         // File uploaded. Move it to private files.
-        const modal = await CoreDomUtils.showModalLoading('core.fileuploader.uploading', true);
+        const modal = await CoreLoadings.show('core.fileuploader.uploading', true);
 
         try {
             await AddonPrivateFiles.moveFromDraftToPrivate(result.itemid);
 
-            CoreDomUtils.showToast('core.fileuploader.fileuploaded', true, undefined, 'core-toast-success');
+            CoreToasts.show({
+                message: 'core.fileuploader.fileuploaded',
+                translateMessage: true,
+                cssClass: 'core-toast-success',
+            });
         } finally {
             modal.dismiss();
         }

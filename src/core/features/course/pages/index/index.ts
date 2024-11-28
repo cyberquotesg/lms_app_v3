@@ -20,15 +20,17 @@ import { CoreCourseFormatDelegate } from '../../services/format-delegate';
 import { CoreCourseOptionsDelegate } from '../../services/course-options-delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreCourse, CoreCourseModuleCompletionStatus, CoreCourseWSSection } from '@features/course/services/course';
+import { CoreCourse, CoreCourseProvider, CoreCourseWSSection } from '@features/course/services/course';
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
-import { CONTENTS_PAGE_NAME } from '@features/course/course.module';
+import { CONTENTS_PAGE_NAME } from '@features/course/constants';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCoursesHelper, CoreCourseWithImageAndColor } from '@features/courses/services/courses-helper';
 import { CoreColors } from '@singletons/colors';
 import { CorePath } from '@singletons/path';
+import { CoreSites } from '@services/sites';
+import { CoreWait } from '@singletons/wait';
 
 // by rachmad
 import { IonRefresher } from '@ionic/angular';
@@ -39,7 +41,8 @@ import { CoreCourses } from '@features/courses/services/courses';
 import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
 import { CoreCourseSync, CoreCourseSyncProvider } from '@features/course/services/sync';
-import { CoreSiteWSPreSets, CoreSite, WSObservable } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
+import { CoreSiteWSPreSets, WSObservable } from '@classes/sites/authenticated-site';
 import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grades';
 
 /**
@@ -47,7 +50,10 @@ import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grade
  */
 @Component({
     selector: 'page-core-course-index',
+    
+    // by rachmad
     templateUrl: 'index.new.html',
+
     styleUrls: ['index.scss'],
 })
 
@@ -60,7 +66,13 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     title = '';
     category = '';
+
+    // by rachmad
     course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {courseImage, fullname, basicInformation, hasEnded, hasEnrolled, isSelfEnrol, selfEnrolId, hasAccredited};
+    /* *a/
+    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
+    /* */
+
     tabs: CourseTab[] = [];
     loaded = false;
     progress?: number;
@@ -74,11 +86,11 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         onModule: {},
     };
 
-    sections: CoreCourseWSSection[] = []; // List of course sections.
     protected currentPagePath = '';
     protected fullScreenObserver: CoreEventObserver;
     protected selectTabObserver: CoreEventObserver;
-    protected completionObserver: CoreEventObserver;
+    protected progressObserver: CoreEventObserver;
+    protected sections: CoreCourseWSSection[] = []; // List of course sections.
     protected firstTabName?: string;
     protected module?: CoreCourseModuleData;
     protected modNavOptions?: CoreNavigationOptions;
@@ -92,8 +104,8 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     // by rachmad
     // constructor(private route: ActivatedRoute) {
-    constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper) {
-        super(renderer, CH);
+    constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper, elementRef: ElementRef) {
+        super(renderer, CH, elementRef);
 
         this.selectTabObserver = CoreEvents.on(CoreEvents.SELECT_COURSE_TAB, (data) => {
             if (!data.name) {
@@ -101,7 +113,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
                 if (data.sectionId) {
                     this.contentsTab.pageParams.sectionId = data.sectionId;
                 }
-                if (data.sectionNumber) {
+                if (data.sectionNumber !== undefined) {
                     this.contentsTab.pageParams.sectionNumber = data.sectionNumber;
                 }
 
@@ -116,33 +128,16 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             }
         });
 
-        // The completion of any of the modules have changed.
-        this.completionObserver = CoreEvents.on(CoreEvents.MANUAL_COMPLETION_CHANGED, (data) => {
-            if (data.completion.courseId != this.course?.id) {
+        const siteId = CoreSites.getCurrentSiteId();
+
+        this.progressObserver = CoreEvents.on(CoreCourseProvider.PROGRESS_UPDATED, (data) => {
+            if (!this.course || this.course.id !== data.courseId || !('progress' in this.course)) {
                 return;
             }
 
-            if (data.completion.valueused !== false || !this.course || !('progress' in this.course) ||
-                    typeof this.course.progress != 'number') {
-                return;
-            }
-
-            // If the completion value is not used, the page won't be reloaded, so update the progress bar.
-            const completionModules = (<CoreCourseModuleData[]> [])
-                .concat(...this.sections.map((section) => section.modules))
-                .map((module) => module.completion && module.completion > 0 ? 1 : module.completion)
-                .reduce((accumulator, currentValue) => (accumulator || 0) + (currentValue || 0), 0);
-
-            const moduleProgressPercent = 100 / (completionModules || 1);
-            // Use min/max here to avoid floating point rounding errors over/under-flowing the progress bar.
-            if (data.completion.state === CoreCourseModuleCompletionStatus.COMPLETION_COMPLETE) {
-                this.course.progress = Math.min(100, this.course.progress + moduleProgressPercent);
-            } else {
-                this.course.progress = Math.max(0, this.course.progress - moduleProgressPercent);
-            }
-
+            this.course.progress = data.progress;
             this.updateProgress();
-        });
+        }, siteId);
 
         this.fullScreenObserver = CoreEvents.on(CoreEvents.FULL_SCREEN_CHANGED, (event: { enabled: boolean }) => {
             this.fullScreenEnabled = event.enabled;
@@ -157,7 +152,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
      */
     async ngOnInit(): Promise<void> {
         // Increase route depth.
-        const path = CoreNavigator.getRouteFullPath(this.route.snapshot);
+        const path = CoreNavigator.getRouteFullPath(this.route);
 
         CoreNavigator.increaseRouteDepth(path.replace(/(\/deep)+/, ''));
 
@@ -173,29 +168,24 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         this.firstTabName = CoreNavigator.getRouteParam('selectedTab');
         this.module = CoreNavigator.getRouteParam<CoreCourseModuleData>('module');
-        this.isGuest = !!CoreNavigator.getRouteBooleanParam('isGuest');
+        this.isGuest = CoreNavigator.getRouteBooleanParam('isGuest') ??
+            (!!this.course && (await CoreCourseHelper.courseUsesGuestAccessInfo(this.course.id)).guestAccess);
+
         this.modNavOptions = CoreNavigator.getRouteParam<CoreNavigationOptions>('modNavOptions');
         this.openModule = CoreNavigator.getRouteBooleanParam('openModule') ?? true; // If false, just scroll to module.
-        if (!this.modNavOptions) {
-            // Fallback to old way of passing params. @deprecated since 4.0.
-            const modParams = CoreNavigator.getRouteParam<Params>('modParams');
-            if (modParams) {
-                this.modNavOptions = { params: modParams };
-            }
-        }
-
         this.currentPagePath = CoreNavigator.getCurrentPath();
         this.contentsTab.page = CorePath.concatenatePaths(this.currentPagePath, this.contentsTab.page);
         this.contentsTab.pageParams = {
             course: this.course,
             sectionId: CoreNavigator.getRouteNumberParam('sectionId'),
             sectionNumber: CoreNavigator.getRouteNumberParam('sectionNumber'),
+            blockInstanceId: CoreNavigator.getRouteNumberParam('blockInstanceId'),
             isGuest: this.isGuest,
         };
 
         if (this.module) {
             this.contentsTab.pageParams.moduleId = this.module.id;
-            if (!this.contentsTab.pageParams.sectionId && !this.contentsTab.pageParams.sectionNumber) {
+            if (!this.contentsTab.pageParams.sectionId && this.contentsTab.pageParams.sectionNumber === undefined) {
                 // No section specified, use module section.
                 this.contentsTab.pageParams.sectionId = this.module.section;
             }
@@ -268,7 +258,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         // Select the tab if needed.
         this.firstTabName = undefined;
         if (tabToLoad) {
-            await CoreUtils.nextTick();
+            await CoreWait.nextTick();
 
             this.tabsComponent?.selectByIndex(tabToLoad);
         }
@@ -291,6 +281,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         this.updateProgress();
 
+        // Load sections.
+        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
+
         // by rachmad
         let presets: CoreSiteWSPreSets = {
             getFromCache: false,
@@ -304,9 +297,6 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         });
         this.sections = sections;
 
-        // Load sections.
-        // this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
-
         if (!this.sections) {
             return;
         }
@@ -319,11 +309,11 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
      * @inheritdoc
      */
     ngOnDestroy(): void {
-        const path = CoreNavigator.getRouteFullPath(this.route.snapshot);
+        const path = CoreNavigator.getRouteFullPath(this.route);
 
         CoreNavigator.decreaseRouteDepth(path.replace(/(\/deep)+/, ''));
         this.selectTabObserver?.off();
-        this.completionObserver?.off();
+        this.progressObserver?.off();
         this.fullScreenObserver?.off();
     }
 
@@ -465,7 +455,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         this.course = course;
 
         // fake values to force compiler accept the variable
-        if (typeof this.course!.courseImage == "undefined") this.course!.courseImage = null;
+        if (typeof this.course!.courseImage == "undefined") this.course!.courseImage = "";
         if (typeof this.course!.fullname == "undefined") this.course!.fullname = "";
         if (typeof this.course!.basicInformation == "undefined") this.course!.basicInformation = [];
         if (typeof this.course!.hasEnded == "undefined") this.course!.hasEnded = false;

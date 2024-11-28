@@ -26,15 +26,14 @@ import {
 import { CoreUtils } from '@services/utils/utils';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreEvents } from '@singletons/events';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton } from '@singletons';
 import { CoreError } from '@classes/errors/error';
 import { AddonMessagesSyncEvents, AddonMessagesSyncProvider } from './messages-sync';
 import { CoreWSError } from '@classes/errors/wserror';
 import { AddonNotificationsPreferencesNotificationProcessorState } from '@addons/notifications/services/notifications';
-
-const ROOT_CACHE_KEY = 'mmaMessages:';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 declare module '@singletons/events' {
 
@@ -56,11 +55,19 @@ declare module '@singletons/events' {
 
 }
 
+export const enum AddonMessagesUpdateConversationAction {
+    MUTE = 'mute',
+    FAVOURITE = 'favourite',
+    DELETE = 'delete',
+}
+
 /**
  * Service to handle messages.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonMessagesProvider {
+
+    protected static readonly ROOT_CACHE_KEY = 'mmaMessages:';
 
     static readonly NEW_MESSAGE_EVENT = 'addon_messages_new_message_event';
     static readonly READ_CHANGED_EVENT = 'addon_messages_read_changed_event';
@@ -97,7 +104,7 @@ export class AddonMessagesProvider {
      * @param userId User ID of the person to add.
      * @param siteId Site ID. If not defined, use current site.
      * @returns Resolved when done.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     protected async addContact(userId: number, siteId?: string): Promise<void> {
         const site = await CoreSites.getSite(siteId);
@@ -395,7 +402,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForBlockedContacts(userId: number): string {
-        return ROOT_CACHE_KEY + 'blockedContacts:' + userId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'blockedContacts:' + userId;
     }
 
     /**
@@ -404,7 +411,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForContacts(): string {
-        return ROOT_CACHE_KEY + 'contacts';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'contacts';
     }
 
     /**
@@ -413,7 +420,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForUserContacts(): string {
-        return ROOT_CACHE_KEY + 'userContacts';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'userContacts';
     }
 
     /**
@@ -422,7 +429,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForContactRequests(): string {
-        return ROOT_CACHE_KEY + 'contactRequests';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'contactRequests';
     }
 
     /**
@@ -431,7 +438,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForContactRequestsCount(): string {
-        return ROOT_CACHE_KEY + 'contactRequestsCount';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'contactRequestsCount';
     }
 
     /**
@@ -441,7 +448,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     getCacheKeyForDiscussion(userId: number): string {
-        return ROOT_CACHE_KEY + 'discussion:' + userId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'discussion:' + userId;
     }
 
     /**
@@ -451,7 +458,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForMessageCount(userId: number): string {
-        return ROOT_CACHE_KEY + 'count:' + userId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'count:' + userId;
     }
 
     /**
@@ -460,7 +467,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForUnreadConversationCounts(): string {
-        return ROOT_CACHE_KEY + 'unreadConversationCounts';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'unreadConversationCounts';
     }
 
     /**
@@ -469,7 +476,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForDiscussions(): string {
-        return ROOT_CACHE_KEY + 'discussions';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'discussions';
     }
 
     /**
@@ -480,7 +487,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForConversation(userId: number, conversationId: number): string {
-        return ROOT_CACHE_KEY + 'conversation:' + userId + ':' + conversationId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'conversation:' + userId + ':' + conversationId;
     }
 
     /**
@@ -491,7 +498,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForConversationBetweenUsers(userId: number, otherUserId: number): string {
-        return ROOT_CACHE_KEY + 'conversationBetweenUsers:' + userId + ':' + otherUserId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'conversationBetweenUsers:' + userId + ':' + otherUserId;
     }
 
     /**
@@ -502,7 +509,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForConversationMembers(userId: number, conversationId: number): string {
-        return ROOT_CACHE_KEY + 'conversationMembers:' + userId + ':' + conversationId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'conversationMembers:' + userId + ':' + conversationId;
     }
 
     /**
@@ -513,7 +520,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForConversationMessages(userId: number, conversationId: number): string {
-        return ROOT_CACHE_KEY + 'conversationMessages:' + userId + ':' + conversationId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'conversationMessages:' + userId + ':' + conversationId;
     }
 
     /**
@@ -534,7 +541,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForConversationCounts(): string {
-        return ROOT_CACHE_KEY + 'conversationCounts';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'conversationCounts';
     }
 
     /**
@@ -545,7 +552,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForMemberInfo(userId: number, otherUserId: number): string {
-        return ROOT_CACHE_KEY + 'memberInfo:' + userId + ':' + otherUserId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'memberInfo:' + userId + ':' + otherUserId;
     }
 
     /**
@@ -555,7 +562,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getCacheKeyForSelfConversation(userId: number): string {
-        return ROOT_CACHE_KEY + 'selfconversation:' + userId;
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'selfconversation:' + userId;
     }
 
     /**
@@ -574,7 +581,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getRootCacheKeyForConversations(): string {
-        return ROOT_CACHE_KEY + 'conversations:';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'conversations:';
     }
 
     /**
@@ -582,7 +589,7 @@ export class AddonMessagesProvider {
      *
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved with the WS data.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     async getAllContacts(siteId?: string): Promise<AddonMessagesGetContactsWSResponse> {
         siteId = siteId || CoreSites.getCurrentSiteId();
@@ -634,7 +641,7 @@ export class AddonMessagesProvider {
      *
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved with the WS data.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     async getContacts(siteId?: string): Promise<AddonMessagesGetContactsWSResponse> {
         const site = await CoreSites.getSite(siteId);
@@ -1131,7 +1138,7 @@ export class AddonMessagesProvider {
 
         const result = await site.read<AddonMessagesGetConversationCountsWSResponse>(
             'core_message_get_conversation_counts',
-            { },
+            {},
             preSets,
         );
 
@@ -1387,7 +1394,7 @@ export class AddonMessagesProvider {
      * @returns Cache key.
      */
     protected getMessagePreferencesCacheKey(): string {
-        return ROOT_CACHE_KEY + 'messagePreferences';
+        return AddonMessagesProvider.ROOT_CACHE_KEY + 'messagePreferences';
     }
 
     /**
@@ -2120,7 +2127,7 @@ export class AddonMessagesProvider {
      *
      * @param userIdFrom User Id for the sender.
      * @returns Promise resolved with boolean marking success or not.
-     * @deprecated since Moodle 3.6
+     * @deprecatedonmoodle since 3.6
      */
     async markAllMessagesRead(userIdFrom?: number): Promise<boolean> {
         const params: AddonMessagesMarkAllMessagesAsReadWSParams = {
@@ -2485,7 +2492,7 @@ export class AddonMessagesProvider {
 
         if (response && response[0] && response[0].msgid === -1) {
             // There was an error, and it should be translated already.
-            throw new CoreError(response[0].errormessage);
+            throw new CoreWSError({ message: response[0].errormessage, errorcode: 'sendmessageerror' });
         }
 
         try {
@@ -2705,7 +2712,7 @@ export class AddonMessagesProvider {
      * @param conversations Array of conversations.
      * @returns Conversations sorted with most recent last.
      */
-    sortConversations(conversations: AddonMessagesConversationFormatted[]): AddonMessagesConversationFormatted[] {
+    sortConversations(conversations: AddonMessagesConversationFormatted[] = []): AddonMessagesConversationFormatted[] {
         return conversations.sort((a, b) => {
             const timeA = Number(a.lastmessagedate);
             const timeB = Number(b.lastmessagedate);
@@ -3049,12 +3056,14 @@ export type AddonMessagesMessagePreferencesNotificationProcessor = {
     lockedmessage?: string; // @since 3.6. Text to display if locked.
     userconfigured: number; // Is configured?.
     enabled?: boolean; // @since 4.0. Processor enabled.
-    loggedin: AddonNotificationsPreferencesNotificationProcessorState; // @deprecated removed on 4.0.
-    loggedoff: AddonNotificationsPreferencesNotificationProcessorState; // @deprecated removed on 4.0.
+    loggedin: AddonNotificationsPreferencesNotificationProcessorState; // @deprecatedonmoodle since 4.0.
+    loggedoff: AddonNotificationsPreferencesNotificationProcessorState; // @deprecatedonmoodle since 4.0.
 };
 
 /**
  * Message discussion (before 3.6).
+ *
+ * @deprecatedonmoodle since 3.6.
  */
 export type AddonMessagesDiscussion = {
     fullname: string; // Full name of the other user in the discussion.
@@ -3669,8 +3678,9 @@ export type AddonMessagesReadChangedEventData = {
 export type AddonMessagesNewMessagedEventData = {
     conversationId?: number;
     userId?: number;
-    message: string;
+    message?: string; // If undefined it means the conversation has no messages, e.g. last message was deleted.
     timecreated: number;
+    userFrom?: AddonMessagesConversationMember;
     isfavourite: boolean;
     type?: number;
 };
@@ -3680,7 +3690,7 @@ export type AddonMessagesNewMessagedEventData = {
  */
 export type AddonMessagesUpdateConversationListEventData = {
     conversationId: number;
-    action: string;
+    action: AddonMessagesUpdateConversationAction;
     value?: boolean;
 };
 

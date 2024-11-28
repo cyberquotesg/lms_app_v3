@@ -13,16 +13,17 @@
 // limitations under the License.
 
 import { Injector, NgModule } from '@angular/core';
-import { RouterModule, ROUTES, Routes } from '@angular/router';
+import { ROUTES, Routes } from '@angular/router';
 
 import { CoreSharedModule } from '@/core/shared.module';
-import { AddonBlogEntriesPage } from './pages/entries/entries';
+import { AddonBlogIndexPage } from './pages/index';
 import { CoreCommentsComponentsModule } from '@features/comments/components/components.module';
 
 import { CoreTagComponentsModule } from '@features/tag/components/components.module';
-import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
-import { AddonBlogMainMenuHandlerService } from './services/handlers/mainmenu';
 import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
+import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
+import { ADDON_BLOG_MAINMENU_PAGE_NAME } from './constants';
+import { canLeaveGuard } from '@guards/can-leave';
 
 /**
  * Build module routes.
@@ -30,13 +31,23 @@ import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/comp
  * @param injector Injector.
  * @returns Routes.
  */
-function buildRoutes(injector: Injector): Routes {
+ function buildRoutes(injector: Injector): Routes {
     return [
-        ...buildTabMainRoutes(injector, {
+        {
+            path: 'index',
+            component: AddonBlogIndexPage,
             data: {
-                mainMenuTabRoot: AddonBlogMainMenuHandlerService.PAGE_NAME,
+                mainMenuTabRoot: ADDON_BLOG_MAINMENU_PAGE_NAME,
             },
-            component: AddonBlogEntriesPage,
+        },
+        {
+            path: 'edit/:id',
+            loadComponent: () => import('./pages/edit-entry/edit-entry').then(c => c.AddonBlogEditEntryPage),
+            canDeactivate: [canLeaveGuard],
+        },
+        ...buildTabMainRoutes(injector, {
+            redirectTo: 'index',
+            pathMatch: 'full',
         }),
     ];
 }
@@ -48,7 +59,9 @@ function buildRoutes(injector: Injector): Routes {
         CoreTagComponentsModule,
         CoreMainMenuComponentsModule,
     ],
-    exports: [RouterModule],
+    declarations: [
+        AddonBlogIndexPage,
+    ],
     providers: [
         {
             provide: ROUTES,
@@ -56,9 +69,6 @@ function buildRoutes(injector: Injector): Routes {
             deps: [Injector],
             useFactory: buildRoutes,
         },
-    ],
-    declarations: [
-        AddonBlogEntriesPage,
     ],
 })
 export class AddonBlogLazyModule {}

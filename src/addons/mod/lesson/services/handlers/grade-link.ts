@@ -22,7 +22,8 @@ import { CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { makeSingleton } from '@singletons';
 import { AddonModLesson } from '../lesson';
-import { AddonModLessonModuleHandlerService } from './module';
+import { ADDON_MOD_LESSON_PAGE_NAME } from '../../constants';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Handler to treat links to lesson grade.
@@ -55,7 +56,7 @@ export class AddonModLessonGradeLinkHandlerService extends CoreContentLinksModul
         const moduleId = Number(params.id);
         const userId = Number(params.userid) || 0;
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             const module = await CoreCourse.getModuleBasicInfo(
@@ -69,7 +70,7 @@ export class AddonModLessonGradeLinkHandlerService extends CoreContentLinksModul
             if (accessInfo.canviewreports) {
                 // User can view reports, go to view the report.
                 CoreNavigator.navigateToSitePath(
-                    AddonModLessonModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/user-retake/${userId}`,
+                    ADDON_MOD_LESSON_PAGE_NAME + `/${module.course}/${module.id}/user-retake/${userId}`,
                     {
                         siteId,
                     },

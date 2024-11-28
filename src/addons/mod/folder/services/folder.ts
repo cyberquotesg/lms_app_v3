@@ -14,15 +14,15 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
-
-const ROOT_CACHE_KEY = 'mmaModFolder:';
+import { ADDON_MOD_FOLDER_COMPONENT } from '../constants';
 
 /**
  * Service that provides some features for folder.
@@ -30,7 +30,7 @@ const ROOT_CACHE_KEY = 'mmaModFolder:';
 @Injectable({ providedIn: 'root' })
 export class AddonModFolderProvider {
 
-    static readonly COMPONENT = 'mmaModFolder';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModFolder:';
 
     /**
      * Get a folder by course module ID.
@@ -68,7 +68,7 @@ export class AddonModFolderProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getFolderCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModFolderProvider.COMPONENT,
+            component: ADDON_MOD_FOLDER_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy),
         };
 
@@ -90,7 +90,7 @@ export class AddonModFolderProvider {
      * @returns Cache key.
      */
     protected getFolderCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'folder:' + courseId;
+        return AddonModFolderProvider.ROOT_CACHE_KEY + 'folder:' + courseId;
     }
 
     /**
@@ -126,23 +126,19 @@ export class AddonModFolderProvider {
      * Report a folder as being viewed.
      *
      * @param id Module ID.
-     * @param name Name of the folder.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModFolderViewFolderWSParams = {
             folderid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_folder_view_folder',
             params,
-            AddonModFolderProvider.COMPONENT,
+            ADDON_MOD_FOLDER_COMPONENT,
             id,
-            name,
-            'folder',
-            {},
             siteId,
         );
     }

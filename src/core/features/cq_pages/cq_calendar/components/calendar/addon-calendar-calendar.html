@@ -1,45 +1,34 @@
-<!-- Add buttons to the nav bar. -->
-<core-navbar-buttons slot="end" prepend>
-    <core-context-menu>
-        <core-context-menu-item *ngIf="canNavigate && !selectedMonthIsCurrent() && displayNavButtons" [priority]="900"
-            [content]="'addon.calendar.currentmonth' | translate" iconAction="fas-calendar-day" (action)="goToCurrentMonth()">
-        </core-context-menu-item>
-    </core-context-menu>
-</core-navbar-buttons>
-
 <core-loading [hideUntil]="loaded">
     <div class="core-swipe-slides-container">
         <!-- Period name and arrows to navigate. -->
-        <ion-grid class="ion-no-padding addon-calendar-navigation">
-            <ion-row class="ion-align-items-center">
-                <ion-col class="ion-text-start" *ngIf="canNavigate">
-                    <ion-button fill="clear" (click)="loadPrevious()" [attr.aria-label]="'core.previous' | translate">
-                        <ion-icon name="fas-chevron-left" slot="icon-only" aria-hidden="true"></ion-icon>
-                    </ion-button>
-                </ion-col>
-                <ion-col class="ion-text-center addon-calendar-period">
-                    <h2 id="addon-calendar-monthname">
-                        {{ periodName }}
-                        <ion-spinner *ngIf="!selectedMonthLoaded()" class="addon-calendar-loading-month">
-                        </ion-spinner>
-                    </h2>
-                </ion-col>
-                <ion-col class="ion-text-end" *ngIf="canNavigate">
-                    <ion-button fill="clear" (click)="loadNext()" [attr.aria-label]="'core.next' | translate">
-                        <ion-icon name="fas-chevron-right" slot="icon-only" aria-hidden="true"></ion-icon>
-                    </ion-button>
-                </ion-col>
-            </ion-row>
+        <ion-grid class="addon-calendar-navigation pt-0 pl-cs pr-cs pb-cs" style="display: flex; justify-content: space-between;">
+            <button fill="clear" (click)="loadPrevious()" [attr.aria-label]="'core.previous' | translate" [disabled]="!canNavigate" class="calendar-navigation-button" size="small">
+                <ion-icon name="fas-chevron-left" slot="icon-only" aria-hidden="true" style="font-size: 16px;"></ion-icon>
+            </button>
+
+            <h5 id="addon-calendar-monthname">
+                <b>{{ periodName }}</b>
+            </h5>
+
+            <div>
+                <button fill="clear" (click)="goToCurrentMonth()" [attr.aria-label]="'addon.calendar.currentmonth' | translate" [disabled]="!canNavigate || selectedMonthIsCurrent()" class="calendar-navigation-button" size="small">
+                    <ion-icon name="fas-calendar-day" slot="icon-only" aria-hidden="true" style="font-size: 16px;"></ion-icon>
+                </button>
+
+                <button fill="clear" (click)="loadNext()" [attr.aria-label]="'core.next' | translate" [disabled]="!canNavigate" class="calendar-navigation-button" size="small">
+                    <ion-icon name="fas-chevron-right" slot="icon-only" aria-hidden="true" style="font-size: 16px;"></ion-icon>
+                </button>
+            </div>
         </ion-grid>
 
         <core-swipe-slides [manager]="manager">
-            <ng-template let-month="item" let-activeView="active">
+            <ng-template let-month="item">
                 <!-- Calendar view. -->
-                <ion-grid class="addon-calendar-months" role="table" aria-describedby="addon-calendar-monthname">
+                <ion-grid *ngIf="selectedMonthLoaded()" class="addon-calendar-months" role="table" aria-describedby="addon-calendar-monthname">
                     <div role="rowgroup">
                         <!-- List of days. -->
                         <ion-row role="row">
-                            <ion-col class="ion-text-center addon-calendar-weekday" *ngFor="let day of month.weekDays" role="columnheader">
+                            <ion-col class="ion-text-center addon-calendar-weekday pt-12 pb-12" *ngFor="let day of month.weekDays" role="columnheader">
                                 <span class="sr-only">{{ day.fullname | translate }}</span>
                                 <span class="ion-hide-md-up" aria-hidden="true">{{ day.shortname | translate }}</span>
                                 <span class="ion-hide-md-down" aria-hidden="true">{{ day.fullname | translate }}</span>
@@ -57,9 +46,9 @@
                                     "today": month.isCurrentMonth && day.istoday,
                                     "weekend": day.isweekend,
                                     "duration_finish": day.haslastdayofevent
-                                }' [class.addon-calendar-event-past-day]="month.isPastMonth || day.ispast" role="cell"
-                                (ariaButtonClick)="dayClicked(day.mday)" [tabindex]="activeView ? 0 : -1">
-                                <p class="addon-calendar-day-number">
+                                }' [class.addon-calendar-event-past-day]="month.isPastMonth || day.ispast" role="cell" tabindex="0"
+                                (ariaButtonClick)="dayClicked(day.mday)">
+                                <p class="addon-calendar-day-number" role="button">
                                     <span aria-hidden="true">{{ day.mday }}</span>
                                     <span class="sr-only">{{ day.periodName | translate }}</span>
                                 </p>
@@ -72,8 +61,8 @@
                                 <div class="ion-hide-md-down addon-calendar-day-events" *ngIf="day.filteredEvents">
                                     <ng-container *ngFor="let event of day.filteredEvents | slice:0:4; let index = index">
                                         <div *ngIf="index < 3 || day.filteredEvents.length == 4" class="addon-calendar-event"
-                                            [class.addon-calendar-event-past]="event.ispast" (ariaButtonClick)="eventClicked(event, $event)"
-                                            [tabindex]="activeView ? 0 : -1">
+                                            [class.addon-calendar-event-past]="event.ispast" role="button" tabindex="0"
+                                            (ariaButtonClick)="eventClicked(event, $event)">
                                             <span class="calendar_event_type calendar_event_{{event.formattedType}}"></span>
                                             <ion-icon *ngIf="event.offline && !event.deleted" name="fas-clock"
                                                 [attr.aria-label]="'core.notsent' | translate"></ion-icon>
@@ -103,8 +92,11 @@
                         </ion-row>
                     </div>
                 </ion-grid>
+
+                <div *ngIf="!selectedMonthLoaded()" class="base-background" style="width: 100vw; max-width: 100vw; padding-top: 100px; text-align: center;">
+                    <ion-spinner class="addon-calendar-loading-month"></ion-spinner>
+                </div>
             </ng-template>
         </core-swipe-slides>
     </div>
-
 </core-loading>

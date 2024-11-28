@@ -13,17 +13,17 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { COURSE_PAGE_NAME } from '@features/course/course.module';
+import { COURSE_PAGE_NAME } from '@features/course/constants';
 
 import { CoreGrades } from '@features/grades/services/grades';
 import { CoreUserProfile } from '@features/user/services/user';
 import {
     CoreUserDelegateContext,
-    CoreUserDelegateService ,
+    CoreUserProfileHandlerType ,
     CoreUserProfileHandler,
     CoreUserProfileHandlerData,
 } from '@features/user/services/user-delegate';
-import { PARTICIPANTS_PAGE_NAME } from '@features/user/user.module';
+import { PARTICIPANTS_PAGE_NAME } from '@features/user/constants';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
@@ -38,7 +38,7 @@ export class CoreGradesUserHandlerService implements CoreUserProfileHandler {
 
     name = 'CoreGrades'; // This name doesn't match any disabled feature, they'll be checked in isEnabledForContext.
     priority = 500;
-    type = CoreUserDelegateService.TYPE_NEW_PAGE;
+    type = CoreUserProfileHandlerType.LIST_ITEM;
     cacheEnabled = true;
 
     /**

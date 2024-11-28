@@ -16,25 +16,16 @@ import { NgModule } from '@angular/core';
 
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreCoursesCourseListItemComponent } from './course-list-item/course-list-item';
-import { CoreCoursesCourseProgressComponent } from './course-progress/course-progress';
-import { CoreCoursesCourseOptionsMenuComponent } from './course-options-menu/course-options-menu';
-import { CoreCoursesSelfEnrolPasswordComponent } from './self-enrol-password/self-enrol-password';
 
 @NgModule({
     declarations: [
         CoreCoursesCourseListItemComponent,
-        CoreCoursesCourseProgressComponent,
-        CoreCoursesCourseOptionsMenuComponent,
-        CoreCoursesSelfEnrolPasswordComponent,
     ],
     imports: [
         CoreSharedModule,
     ],
     exports: [
         CoreCoursesCourseListItemComponent,
-        CoreCoursesCourseProgressComponent,
-        CoreCoursesCourseOptionsMenuComponent,
-        CoreCoursesSelfEnrolPasswordComponent,
     ],
 })
 export class CoreCoursesComponentsModule {}

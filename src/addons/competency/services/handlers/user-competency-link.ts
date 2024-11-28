@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ADDON_COMPETENCY_COMPETENCIES_PAGE, ADDON_COMPETENCY_SUMMARY_PAGE } from '@addons/competency/competency.module';
+import { ADDON_COMPETENCY_COMPETENCIES_PAGE, ADDON_COMPETENCY_SUMMARY_PAGE } from '@addons/competency/constants';
 import { Injectable } from '@angular/core';
 import { CoreContentLinksHandlerBase } from '@features/contentlinks/classes/base-handler';
 import { CoreContentLinksAction } from '@features/contentlinks/services/contentlinks-delegate';
@@ -35,8 +35,8 @@ export class AddonCompetencyUserCompetencyLinkHandlerService extends CoreContent
      */
     getActions(siteIds: string[], url: string, params: Record<string, string>): CoreContentLinksAction[] {
         return [{
-            action: (siteId: string): void => {
-                CoreNavigator.navigateToSitePath(
+            action: async (siteId: string): Promise<void> => {
+                await CoreNavigator.navigateToSitePath(
                     `${ADDON_COMPETENCY_COMPETENCIES_PAGE}/${params.id}/${ADDON_COMPETENCY_SUMMARY_PAGE}`,
                     { siteId },
                 );
@@ -48,10 +48,7 @@ export class AddonCompetencyUserCompetencyLinkHandlerService extends CoreContent
      * @inheritdoc
      */
     async isEnabled(siteId: string): Promise<boolean> {
-        // Handler is disabled if all competency features are disabled.
-        const disabled = await AddonCompetency.allCompetenciesDisabled(siteId);
-
-        return !disabled;
+        return AddonCompetency.areCompetenciesEnabled({ siteId });
     }
 
 }

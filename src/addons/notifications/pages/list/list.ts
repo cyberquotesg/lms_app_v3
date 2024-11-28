@@ -13,26 +13,27 @@
 // limitations under the License.
 
 import { AfterViewInit, Component, OnDestroy, ViewChild } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import {
-    AddonNotifications, AddonNotificationsProvider,
+    AddonNotifications, AddonNotificationsNotificationMessageFormatted, AddonNotificationsProvider,
 } from '../../services/notifications';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { CorePushNotificationsDelegate } from '@features/pushnotifications/services/push-delegate';
 import { CoreSites } from '@services/sites';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
 import { CoreTimeUtils } from '@services/utils/time';
 import { AddonNotificationsNotificationsSource } from '@addons/notifications/classes/notifications-source';
 import { CoreListItemsManager } from '@classes/items-management/list-items-manager';
-import { AddonNotificationsNotificationToRender } from '@addons/notifications/services/notifications-helper';
 import { AddonLegacyNotificationsNotificationsSource } from '@addons/notifications/classes/legacy-notifications-source';
+import { CoreLocalNotifications } from '@services/local-notifications';
+import { CoreConfig } from '@services/config';
+import { CoreConstants } from '@/core/constants';
+import { CorePlatform } from '@services/platform';
 
 /**
  * Page that displays the list of notifications.
@@ -45,16 +46,19 @@ import { AddonLegacyNotificationsNotificationsSource } from '@addons/notificatio
 export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
-    notifications!: CoreListItemsManager<AddonNotificationsNotificationToRender, AddonNotificationsNotificationsSource>;
+    notifications!: CoreListItemsManager<AddonNotificationsNotificationMessageFormatted, AddonNotificationsNotificationsSource>;
     fetchMoreNotificationsFailed = false;
     canMarkAllNotificationsAsRead = false;
     loadingMarkAllNotificationsAsRead = false;
+    hasNotificationsPermission = true;
+    permissionWarningHidden = false;
 
     protected isCurrentView?: boolean;
     protected cronObserver?: CoreEventObserver;
     protected readObserver?: CoreEventObserver;
     protected pushObserver?: Subscription;
     protected pendingRefresh = false;
+    protected appResumeSubscription?: Subscription;
 
     constructor() {
         try {
@@ -69,7 +73,14 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         } catch(error) {
             CoreDomUtils.showErrorModal(error);
             CoreNavigator.back();
+
+            return;
         }
+
+        this.checkPermission();
+        this.appResumeSubscription = CorePlatform.resume.subscribe(() => {
+            this.checkPermission();
+        });
     }
 
     /**
@@ -118,8 +129,15 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
             this.loadMarkAllAsReadButton();
         });
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-        deepLinkManager.treatLink();
+        CoreSites.loginNavigationFinished();
+    }
+
+    /**
+     * Check if the app has permission to display notifications.
+     */
+    protected async checkPermission(): Promise<void> {
+        this.permissionWarningHidden = !!(await CoreConfig.get(CoreConstants.DONT_SHOW_NOTIFICATIONS_PERMISSION_WARNING, 0));
+        this.hasNotificationsPermission = await CoreLocalNotifications.hasNotificationsPermission();
     }
 
     /**
@@ -206,11 +224,26 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    async refreshNotifications(refresher?: IonRefresher): Promise<void> {
+    async refreshNotifications(refresher?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(AddonNotifications.invalidateNotificationsList());
         await CoreUtils.ignoreErrors(this.fetchNotifications(true));
 
         refresher?.complete();
+    }
+
+    /**
+     * Open notification settings.
+     */
+    openSettings(): void {
+        CoreLocalNotifications.openNotificationSettings();
+    }
+
+    /**
+     * Hide permission warning.
+     */
+    hidePermissionWarning(): void {
+        CoreConfig.set(CoreConstants.DONT_SHOW_NOTIFICATIONS_PERMISSION_WARNING, 1);
+        this.permissionWarningHidden = true;
     }
 
     /**
@@ -243,6 +276,7 @@ export class AddonNotificationsListPage implements AfterViewInit, OnDestroy {
         this.readObserver?.off();
         this.pushObserver?.unsubscribe();
         this.notifications?.destroy();
+        this.appResumeSubscription?.unsubscribe();
     }
 
 }

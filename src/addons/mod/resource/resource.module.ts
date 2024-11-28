@@ -12,36 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { APP_INITIALIZER, NgModule, Type } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { Routes } from '@angular/router';
 import { CoreContentLinksDelegate } from '@features/contentlinks/services/contentlinks-delegate';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CorePluginFileDelegate } from '@services/plugin-file-delegate';
-import { AddonModResourceComponentsModule } from './components/components.module';
 import { AddonModResourceIndexLinkHandler } from './services/handlers/index-link';
 import { AddonModResourceListLinkHandler } from './services/handlers/list-link';
-import { AddonModResourceModuleHandlerService, AddonModResourceModuleHandler } from './services/handlers/module';
+import { AddonModResourceModuleHandler } from './services/handlers/module';
 import { AddonModResourcePluginFileHandler } from './services/handlers/pluginfile';
 import { AddonModResourcePrefetchHandler } from './services/handlers/prefetch';
-import { AddonModResourceProvider } from './services/resource';
-
-export const ADDON_MOD_RESOURCE_SERVICES: Type<unknown>[] = [
-    AddonModResourceProvider,
-];
+import { ADDON_MOD_RESOURCE_PAGE_NAME } from './constants';
 
 const routes: Routes = [
     {
-        path: AddonModResourceModuleHandlerService.PAGE_NAME,
-        loadChildren: () => import('./resource-lazy.module').then(m => m.AddonModResourceLazyModule),
+        path: ADDON_MOD_RESOURCE_PAGE_NAME,
+        loadChildren: () => import('./resource-lazy.module'),
     },
 ];
 
 @NgModule({
     imports: [
         CoreMainMenuTabRoutingModule.forChild(routes),
-        AddonModResourceComponentsModule,
     ],
     providers: [
         {

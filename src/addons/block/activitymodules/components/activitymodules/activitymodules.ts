@@ -22,6 +22,8 @@ import { Translate } from '@singletons';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreNavigator } from '@services/navigator';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
+import { CoreUrl } from '@singletons/url';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render an "activity modules" block.
@@ -29,7 +31,11 @@ import { CoreCourseHelper } from '@features/course/services/course-helper';
 @Component({
     selector: 'addon-block-activitymodules',
     templateUrl: 'addon-block-activitymodules.html',
-    styleUrls: ['activitymodules.scss'],
+    styleUrl: 'activitymodules.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonBlockActivityModulesComponent extends CoreBlockBaseComponent implements OnInit {
 
@@ -62,39 +68,43 @@ export class AddonBlockActivityModulesComponent extends CoreBlockBaseComponent i
         const archetypes: Record<string, number> = {};
         const modIcons: Record<string, string> = {};
         let modFullNames: Record<string, string> = {};
-        sections.forEach((section) => {
-            if (!section.modules) {
+        const brandedIcons: Record<string, boolean|undefined> = {};
+
+        const modules = CoreCourse.getSectionsModules(sections, {
+            ignoreSection: section => !CoreCourseHelper.canUserViewSection(section),
+            ignoreModule: module => !CoreCourseHelper.canUserViewModule(module) || !CoreCourse.moduleHasView(module),
+        });
+
+        modules.forEach((mod) => {
+            if (archetypes[mod.modname] !== undefined) {
                 return;
             }
 
-            section.modules.forEach((mod) => {
-                if (!CoreCourseHelper.canUserViewModule(mod, section) || !CoreCourse.moduleHasView(mod) ||
-                    modFullNames[mod.modname] !== undefined) {
-                    // Ignore this module.
-                    return;
-                }
+            // Get the archetype of the module type.
+            archetypes[mod.modname] = CoreCourseModuleDelegate.supportsFeature<number>(
+                mod.modname,
+                CoreConstants.FEATURE_MOD_ARCHETYPE,
+                CoreConstants.MOD_ARCHETYPE_OTHER,
+            );
 
-                // Get the archetype of the module type.
-                if (archetypes[mod.modname] === undefined) {
-                    archetypes[mod.modname] = CoreCourseModuleDelegate.supportsFeature<number>(
-                        mod.modname,
-                        CoreConstants.FEATURE_MOD_ARCHETYPE,
-                        CoreConstants.MOD_ARCHETYPE_OTHER,
-                    );
+            // Get the full name of the module type.
+            if (archetypes[mod.modname] === CoreConstants.MOD_ARCHETYPE_RESOURCE) {
+                // All resources are gathered in a single "Resources" option.
+                if (!modFullNames['resources']) {
+                    modFullNames['resources'] = Translate.instant('core.resources');
                 }
+            } else {
+                modFullNames[mod.modname] = mod.modplural;
+            }
 
-                // Get the full name of the module type.
-                if (archetypes[mod.modname] == CoreConstants.MOD_ARCHETYPE_RESOURCE) {
-                    // All resources are gathered in a single "Resources" option.
-                    if (!modFullNames['resources']) {
-                        modFullNames['resources'] = Translate.instant('core.resources');
-                    }
-                } else {
-                    modFullNames[mod.modname] = mod.modplural;
-                }
+            brandedIcons[mod.modname] = mod.branded;
+
+            // If this is not a theme image, leave it undefined to avoid having specific activity icons.
+            if (CoreUrl.isThemeImageUrl(mod.modicon)) {
                 modIcons[mod.modname] = mod.modicon;
-            });
+            }
         });
+
         // Sort the modnames alphabetically.
         modFullNames = CoreUtils.sortValues(modFullNames);
         for (const modName in modFullNames) {
@@ -107,6 +117,7 @@ export class AddonBlockActivityModulesComponent extends CoreBlockBaseComponent i
                 iconModName,
                 name: modFullNames[modName],
                 modName,
+                branded: brandedIcons[iconModName],
             });
         }
     }
@@ -145,4 +156,5 @@ type AddonBlockActivityModuleEntry = {
     name: string;
     modName: string;
     iconModName: string;
+    branded?: boolean;
 };

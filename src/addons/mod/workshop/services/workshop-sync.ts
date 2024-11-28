@@ -21,15 +21,12 @@ import { CoreNetwork } from '@services/network';
 import { CoreFileEntry } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
 import { CoreSync, CoreSyncResult } from '@services/sync';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreErrorHelper } from '@services/error-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate, makeSingleton } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { AddonModWorkshop,
-    AddonModWorkshopAction,
     AddonModWorkshopData,
-    AddonModWorkshopProvider,
-    AddonModWorkshopSubmissionType,
 } from './workshop';
 import { AddonModWorkshopHelper } from './workshop-helper';
 import { AddonModWorkshopOffline,
@@ -38,15 +35,18 @@ import { AddonModWorkshopOffline,
     AddonModWorkshopOfflineEvaluateSubmission,
     AddonModWorkshopOfflineSubmission,
 } from './workshop-offline';
+import {
+    ADDON_MOD_WORKSHOP_AUTO_SYNCED,
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    AddonModWorkshopAction,
+    AddonModWorkshopSubmissionType,
+} from '@addons/mod/workshop/constants';
 
 /**
  * Service to sync workshops.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModWorkshopSyncResult> {
-
-    static readonly AUTO_SYNCED = 'addon_mod_workshop_autom_synced';
-    static readonly MANUAL_SYNCED = 'addon_mod_workshop_manual_synced';
 
     protected componentTranslatableString = 'workshop';
 
@@ -94,7 +94,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
 
             if (data && data.updated) {
                 // Sync done. Send event.
-                CoreEvents.trigger(AddonModWorkshopSyncProvider.AUTO_SYNCED, {
+                CoreEvents.trigger(ADDON_MOD_WORKSHOP_AUTO_SYNCED, {
                     workshopId: workshopId,
                     warnings: data.warnings,
                 }, siteId);
@@ -136,7 +136,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
         }
 
         // Verify that workshop isn't blocked.
-        if (CoreSync.isBlocked(AddonModWorkshopProvider.COMPONENT, workshopId, siteId)) {
+        if (CoreSync.isBlocked(ADDON_MOD_WORKSHOP_COMPONENT, workshopId, siteId)) {
             this.logger.debug(`Cannot sync workshop '${workshopId}' because it is blocked.`);
 
             throw new CoreSyncBlockedError(Translate.instant('core.errorsyncblocked', { $a: this.componentTranslate }));
@@ -163,7 +163,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
         };
 
         // Sync offline logs.
-        await CoreUtils.ignoreErrors(CoreCourseLogHelper.syncActivity(AddonModWorkshopProvider.COMPONENT, workshopId, siteId));
+        await CoreUtils.ignoreErrors(CoreCourseLogHelper.syncActivity(ADDON_MOD_WORKSHOP_COMPONENT, workshopId, siteId));
 
         // Get offline submissions to be sent.
         const syncs = await Promise.all([
@@ -311,7 +311,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
             return;
         }
 
-        submissionActions.forEach(async (action) => {
+        await Promise.all(submissionActions.map(async (action) => {
             submissionId = action.submissionid > 0 ? action.submissionid : submissionId;
 
             try {
@@ -373,7 +373,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
             } catch (error) {
                 if (error && CoreUtils.isWebServiceError(error)) {
                     // The WebService has thrown an error, this means it cannot be performed. Discard.
-                    discardError = CoreTextUtils.getErrorMessageFromError(error);
+                    discardError = CoreErrorHelper.getErrorMessageFromError(error);
                 }
 
                 // Couldn't connect to server, reject.
@@ -397,7 +397,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
                     siteId,
                 );
             }
-        });
+        }));
 
         if (discardError) {
             // Submission was discarded, add a warning.
@@ -472,7 +472,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
         } catch (error) {
             if (error && CoreUtils.isWebServiceError(error)) {
                 // The WebService has thrown an error, this means it cannot be performed. Discard.
-                discardError = CoreTextUtils.getErrorMessageFromError(error);
+                discardError = CoreErrorHelper.getErrorMessageFromError(error);
             } else {
                 // Couldn't connect to server, reject.
                 throw error;
@@ -545,7 +545,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
         } catch (error) {
             if (error && CoreUtils.isWebServiceError(error)) {
                 // The WebService has thrown an error, this means it cannot be performed. Discard.
-                discardError = CoreTextUtils.getErrorMessageFromError(error);
+                discardError = CoreErrorHelper.getErrorMessageFromError(error);
             } else {
                 // Couldn't connect to server, reject.
                 throw error;
@@ -613,7 +613,7 @@ export class AddonModWorkshopSyncProvider extends CoreSyncBaseProvider<AddonModW
         } catch (error) {
             if (error && CoreUtils.isWebServiceError(error)) {
                 // The WebService has thrown an error, this means it cannot be performed. Discard.
-                discardError = CoreTextUtils.getErrorMessageFromError(error);
+                discardError = CoreErrorHelper.getErrorMessageFromError(error);
             } else {
                 // Couldn't connect to server, reject.
                 throw error;

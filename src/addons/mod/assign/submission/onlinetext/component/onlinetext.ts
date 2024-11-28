@@ -13,14 +13,17 @@
 // limitations under the License.
 
 import { AddonModAssignSubmissionPluginBaseComponent } from '@addons/mod/assign/classes/base-submission-plugin-component';
-import { AddonModAssignProvider, AddonModAssign } from '@addons/mod/assign/services/assign';
+import { AddonModAssign } from '@addons/mod/assign/services/assign';
 import { AddonModAssignOffline } from '@addons/mod/assign/services/assign-offline';
 import { Component, OnInit, ElementRef } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { AddonModAssignSubmissionOnlineTextPluginData } from '../services/handler';
+import { ContextLevel } from '@/core/constants';
+import { ADDON_MOD_ASSIGN_COMPONENT } from '@addons/mod/assign/constants';
+import { CoreViewer } from '@features/viewer/services/viewer';
 
 /**
  * Component to render an onlinetext submission plugin.
@@ -31,9 +34,9 @@ import { AddonModAssignSubmissionOnlineTextPluginData } from '../services/handle
 })
 export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignSubmissionPluginBaseComponent implements OnInit {
 
-    control?: FormControl;
+    control?: FormControl<string>;
     words = 0;
-    component = AddonModAssignProvider.COMPONENT;
+    component = ADDON_MOD_ASSIGN_COMPONENT;
     text = '';
     loaded = false;
     wordLimitEnabled = false;
@@ -66,8 +69,11 @@ export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignS
         this.wordLimit = parseInt(this.configs?.wordlimit || '0');
 
         try {
-            if (offlineData && offlineData.plugindata && offlineData.plugindata.onlinetext_editor) {
-                this.text = (<AddonModAssignSubmissionOnlineTextPluginData>offlineData.plugindata).onlinetext_editor.text;
+            if (offlineData && offlineData.plugindata) {
+                // Offline submission, get text if submission is not removed.
+                if (offlineData.plugindata.onlinetext_editor) {
+                    this.text = (<AddonModAssignSubmissionOnlineTextPluginData>offlineData.plugindata).onlinetext_editor.text;
+                }
             } else {
                 // No offline data found, return online text.
                 this.text = AddonModAssign.getSubmissionPluginText(this.plugin);
@@ -82,11 +88,11 @@ export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignS
 
                     if (this.text) {
                         // Open a new state with the interpolated contents.
-                        CoreTextUtils.viewText(this.plugin.name, this.text, {
+                        CoreViewer.viewText(this.plugin.name, this.text, {
                             component: this.component,
                             componentId: this.assign.cmid,
                             filter: true,
-                            contextLevel: 'module',
+                            contextLevel: ContextLevel.MODULE,
                             instanceId: this.assign.cmid,
                             courseId: this.assign.course,
                         });
@@ -94,12 +100,12 @@ export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignS
                 });
             } else {
                 // Create and add the control.
-                this.control = this.fb.control(this.text);
+                this.control = this.fb.control(this.text, { nonNullable: true });
             }
 
             // Calculate initial words.
             if (this.wordLimitEnabled) {
-                this.words = CoreTextUtils.countWords(this.text);
+                this.words = CoreText.countWords(this.text);
             }
         } finally {
             this.loaded = true;
@@ -111,7 +117,7 @@ export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignS
      *
      * @param text The new text.
      */
-    onChange(text: string): void {
+    onChange(text?: string | null): void {
         // Count words if needed.
         if (this.wordLimitEnabled) {
             // Cancel previous wait.
@@ -120,7 +126,7 @@ export class AddonModAssignSubmissionOnlineTextComponent extends AddonModAssignS
             // Wait before calculating, if the user keeps inputing we won't calculate.
             // This is to prevent slowing down devices, this calculation can be slow if the text is long.
             this.wordCountTimeout = window.setTimeout(() => {
-                this.words = CoreTextUtils.countWords(text);
+                this.words = CoreText.countWords(text);
             }, 1500);
         }
     }

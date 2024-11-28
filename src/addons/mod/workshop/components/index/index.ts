@@ -21,14 +21,11 @@ import { IonContent } from '@ionic/angular';
 import { CoreGroupInfo, CoreGroups } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreModals } from '@services/modals';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
-import { AddonModWorkshopModuleHandlerService } from '../../services/handlers/module';
 import {
-    AddonModWorkshopProvider,
-    AddonModWorkshopPhase,
     AddonModWorkshop,
     AddonModWorkshopData,
     AddonModWorkshopGetWorkshopAccessInformationWSResponse,
@@ -47,12 +44,19 @@ import {
 } from '../../services/workshop-helper';
 import { AddonModWorkshopOffline, AddonModWorkshopOfflineSubmission } from '../../services/workshop-offline';
 import {
-    AddonModWorkshopSyncProvider,
     AddonModWorkshopSync,
     AddonModWorkshopAutoSyncData,
     AddonModWorkshopSyncResult,
 } from '../../services/workshop-sync';
-import { AddonModWorkshopPhaseInfoComponent } from '../phase/phase';
+import {
+    ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED,
+    ADDON_MOD_WORKSHOP_AUTO_SYNCED,
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    ADDON_MOD_WORKSHOP_PAGE_NAME,
+    ADDON_MOD_WORKSHOP_PER_PAGE,
+    ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED,
+    AddonModWorkshopPhase,
+} from '@addons/mod/workshop/constants';
 
 /**
  * Component that displays a workshop index page.
@@ -65,8 +69,8 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
 
     @Input() group = 0;
 
-    component = AddonModWorkshopProvider.COMPONENT;
-    moduleName = 'workshop';
+    component = ADDON_MOD_WORKSHOP_COMPONENT;
+    pluginName = 'workshop';
 
     workshop?: AddonModWorkshopData;
     page = 0;
@@ -101,7 +105,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
     protected obsAssessmentSaved: CoreEventObserver;
     protected appResumeSubscription: Subscription;
     protected syncObserver?: CoreEventObserver;
-    protected syncEventName = AddonModWorkshopSyncProvider.AUTO_SYNCED;
+    protected syncEventName = ADDON_MOD_WORKSHOP_AUTO_SYNCED;
 
     constructor (
     @Optional() content: IonContent,
@@ -110,12 +114,12 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
         super('AddonModWorkshopIndexComponent', content, courseContentsPage);
 
         // Listen to submission and assessment changes.
-        this.obsSubmissionChanged = CoreEvents.on(AddonModWorkshopProvider.SUBMISSION_CHANGED, (data) => {
+        this.obsSubmissionChanged = CoreEvents.on(ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED, (data) => {
             this.eventReceived(data);
         }, this.siteId);
 
         // Listen to submission and assessment changes.
-        this.obsAssessmentSaved = CoreEvents.on(AddonModWorkshopProvider.ASSESSMENT_SAVED, (data) => {
+        this.obsAssessmentSaved = CoreEvents.on(ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED, (data) => {
             this.eventReceived(data);
         }, this.siteId);
 
@@ -125,7 +129,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
         });
 
         // Refresh workshop on sync.
-        this.syncObserver = CoreEvents.on(AddonModWorkshopSyncProvider.AUTO_SYNCED, (data) => {
+        this.syncObserver = CoreEvents.on(ADDON_MOD_WORKSHOP_AUTO_SYNCED, (data) => {
             // Update just when all database is synced.
             this.eventReceived(data);
         }, this.siteId);
@@ -255,7 +259,9 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             return; // Shouldn't happen.
         }
 
-        await AddonModWorkshop.logView(this.workshop.id, this.workshop.name);
+        await CoreUtils.ignoreErrors(AddonModWorkshop.logView(this.workshop.id));
+
+        this.analyticsLogEvent('mod_workshop_view_workshop');
     }
 
     /**
@@ -280,8 +286,8 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
 
         this.page = page;
 
-        this.hasNextPage = numEntries >= AddonModWorkshopProvider.PER_PAGE && ((this.page + 1) *
-            AddonModWorkshopProvider.PER_PAGE) < report.totalcount;
+        this.hasNextPage = numEntries >= ADDON_MOD_WORKSHOP_PER_PAGE && ((this.page + 1) *
+            ADDON_MOD_WORKSHOP_PER_PAGE) < report.totalcount;
 
         const grades: AddonModWorkshopGradesData[] = report.grades || [];
 
@@ -289,13 +295,13 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
 
         await Promise.all(grades.map(async (grade) => {
             const submission: AddonModWorkshopSubmissionDataWithOfflineData = {
-                id: grade.submissionid,
+                id: grade.submissionid || 0,
                 workshopid: workshop.id,
                 example: false,
                 authorid: grade.userid,
-                timecreated: grade.submissionmodified,
-                timemodified: grade.submissionmodified,
-                title: grade.submissiontitle,
+                timecreated: grade.submissionmodified || 0,
+                timemodified: grade.submissionmodified || 0,
+                title: grade.submissiontitle || '',
                 content: '',
                 contenttrust: 0,
                 attachment: 0,
@@ -377,7 +383,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
 
             const submissionId = this.submission?.id || 0;
             CoreNavigator.navigateToSitePath(
-                AddonModWorkshopModuleHandlerService.PAGE_NAME + `/${this.courseId}/${this.module.id}/${submissionId}/edit`,
+                `${ADDON_MOD_WORKSHOP_PAGE_NAME}/${this.courseId}/${this.module.id}/${submissionId}/edit`,
                 { params },
             );
 
@@ -391,9 +397,11 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
         if (!this.phases || !this.workshop) {
             return;
         }
+        const { AddonModWorkshopPhaseInfoModalComponent } =
+            await import('@addons/mod/workshop/components/phase-modal/phase-modal');
 
-        const modalData = await CoreDomUtils.openModal<boolean>({
-            component: AddonModWorkshopPhaseInfoComponent,
+        const modalData = await CoreModals.openModal<boolean>({
+            component: AddonModWorkshopPhaseInfoModalComponent,
             componentProps: {
                 phases: CoreUtils.objectToArray(this.phases),
                 workshopPhase: this.workshop.phase,

@@ -15,16 +15,16 @@
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreWSError } from '@classes/errors/wserror';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
-
-const ROOT_CACHE_KEY = 'AddonModBBB:';
+import { ADDON_MOD_BBB_COMPONENT } from '../constants';
 
 /**
  * Service that provides some features for Big Blue Button activity.
@@ -32,7 +32,7 @@ const ROOT_CACHE_KEY = 'AddonModBBB:';
 @Injectable({ providedIn: 'root' })
 export class AddonModBBBService {
 
-    static readonly COMPONENT = 'mmaModBigBlueButtonBN';
+    protected static readonly ROOT_CACHE_KEY = 'AddonModBBB:';
 
     /**
      * End a meeting.
@@ -74,7 +74,7 @@ export class AddonModBBBService {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getBBBsCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModBBBService.COMPONENT,
+            component: ADDON_MOD_BBB_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
 
@@ -99,7 +99,7 @@ export class AddonModBBBService {
      * @returns Cache key.
      */
     protected getBBBsCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'bbb:' + courseId;
+        return AddonModBBBService.ROOT_CACHE_KEY + 'bbb:' + courseId;
     }
 
     /**
@@ -165,7 +165,7 @@ export class AddonModBBBService {
             cacheKey: this.getMeetingInfoCacheKey(id, groupId),
             getCacheUsingCacheKey: true,
             uniqueCacheKey: true,
-            component: AddonModBBBService.COMPONENT,
+            component: ADDON_MOD_BBB_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -204,7 +204,7 @@ export class AddonModBBBService {
      * @returns Cache key prefix.
      */
     protected getMeetingInfoCacheKeyPrefix(id: number): string {
-        return ROOT_CACHE_KEY + 'meetingInfo:' + id + ':';
+        return AddonModBBBService.ROOT_CACHE_KEY + 'meetingInfo:' + id + ':';
     }
 
     /**
@@ -228,7 +228,7 @@ export class AddonModBBBService {
         };
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getRecordingsCacheKey(id, groupId),
-            component: AddonModBBBService.COMPONENT,
+            component: ADDON_MOD_BBB_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -247,7 +247,7 @@ export class AddonModBBBService {
 
         return {
             ...result.tabledata,
-            parsedData: CoreTextUtils.parseJSON(result.tabledata?.data, []),
+            parsedData: CoreText.parseJSON(result.tabledata?.data, []),
         };
     }
 
@@ -269,30 +269,26 @@ export class AddonModBBBService {
      * @returns Cache key prefix.
      */
     protected getRecordingsCacheKeyPrefix(id: number): string {
-        return ROOT_CACHE_KEY + 'recordings:' + id + ':';
+        return AddonModBBBService.ROOT_CACHE_KEY + 'recordings:' + id + ':';
     }
 
     /**
      * Report a BBB as being viewed.
      *
      * @param id BBB instance ID.
-     * @param name Name of the BBB.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModBBBViewBigBlueButtonBNWSParams = {
             bigbluebuttonbnid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_bigbluebuttonbn_view_bigbluebuttonbn',
             params,
-            AddonModBBBService.COMPONENT,
+            ADDON_MOD_BBB_COMPONENT,
             id,
-            name,
-            'bigbluebuttonbn',
-            {},
             siteId,
         );
     }
@@ -548,3 +544,15 @@ export type AddonModBBBRecordingsWSTableData = {
 export type AddonModBBBRecordingsTableData = AddonModBBBRecordingsWSTableData & {
     parsedData: Record<string, string|number|boolean>[];
 };
+
+/**
+ * Recording playback types.
+ */
+export enum AddonModBBBRecordingPlaybackTypes {
+    NOTES = 'notes',
+    PODCAST = 'podcast',
+    PRESENTATION = 'presentation',
+    SCREENSHARE = 'screenshare',
+    STATISTICS = 'statistics',
+    VIDEO = 'video',
+}

@@ -13,9 +13,19 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CoreUtils } from '@services/utils/utils';
-import { makeSingleton, NgZone } from '@singletons';
+import { CoreWait } from '@singletons/wait';
+import { makeSingleton, NgZone, Router } from '@singletons';
 import { BehatTestsWindow, TestingBehatRuntime } from './behat-runtime';
+import {
+    GuardsCheckEnd,
+    GuardsCheckStart,
+    NavigationCancel,
+    NavigationEnd,
+    NavigationError,
+    NavigationStart,
+} from '@angular/router';
+import { filter } from 'rxjs';
+import { CoreNavigator } from '@services/navigator';
 
 /**
  * Behat block JS manager.
@@ -24,6 +34,7 @@ import { BehatTestsWindow, TestingBehatRuntime } from './behat-runtime';
 export class TestingBehatBlockingService {
 
     protected waitingBlocked = false;
+    protected waitingGuardEnd = false;
     protected recentMutation = false;
     protected lastMutation = 0;
     protected initialized = false;
@@ -47,6 +58,47 @@ export class TestingBehatBlockingService {
         win.M = win.M ?? {};
         win.M.util = win.M.util ?? {};
         win.M.util.pending_js = win.M.util.pending_js ?? [];
+
+        Router.events
+            .pipe(filter(event =>
+                event instanceof NavigationStart ||
+                event instanceof NavigationEnd ||
+                event instanceof NavigationError ||
+                event instanceof NavigationCancel ||
+                event instanceof GuardsCheckStart ||
+                event instanceof GuardsCheckEnd))
+            .subscribe(async (event) => {
+                if (!('id' in event)) {
+                    return;
+                }
+
+                const blockName = `navigation-${event.id}`;
+                if (event instanceof NavigationStart) {
+                    this.block(blockName);
+                } else if (event instanceof GuardsCheckStart) {
+                    // This event is triggered before the guards are checked, so we need to wait for the end.
+                    this.waitingGuardEnd = CoreNavigator.currentRouteCanBlockLeave();
+
+                    // No deactivation needed.
+                    if (!this.waitingGuardEnd) {
+                        return;
+                    }
+
+                    await CoreWait.wait(500);
+
+                    if (this.waitingGuardEnd) {
+                        // The guard is still running (this case can unexpetedly unblock the tests)
+                        // or a user confirmation is shown. Unblock.
+                        this.waitingGuardEnd = false;
+                        this.unblock(blockName);
+                    }
+                } else if (event instanceof GuardsCheckEnd) {
+                    // Guards check ended.
+                    this.waitingGuardEnd = false;
+                } else {
+                    this.unblock(blockName);
+                }
+            });
 
         TestingBehatRuntime.log('Initialized!');
     }
@@ -117,7 +169,7 @@ export class TestingBehatBlockingService {
                 // https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#timers
                 // "This API does not guarantee that timers will run exactly on schedule.
                 // Delays due to CPU load, other tasks, etc, are to be expected."
-                await CoreUtils.nextTicks(10);
+                await CoreWait.nextTicks(10);
             }
 
             // Check there isn't a spinner...
@@ -136,6 +188,18 @@ export class TestingBehatBlockingService {
      */
     async delay(): Promise<void> {
         const key = this.block('forced-delay');
+        this.unblock(key);
+    }
+
+    /**
+     * Adds a pending key to the array, and remove it after some time.
+     *
+     * @param milliseconds Number of milliseconds to wait before the key is removed.
+     * @returns Promise resolved after the time has passed.
+     */
+    async wait(milliseconds: number): Promise<void> {
+        const key = this.block();
+        await CoreWait.wait(milliseconds);
         this.unblock(key);
     }
 
@@ -193,18 +257,21 @@ export class TestingBehatBlockingService {
      * (and if not, removes it).
      */
     protected async checkUIBlocked(): Promise<void> {
-        await CoreUtils.nextTick();
+        await CoreWait.nextTick();
 
         const blockingElements = Array.from(
-            document.querySelectorAll<HTMLElement>('div.core-loading-container, ion-loading, .click-block-active'),
+            document.querySelectorAll<HTMLElement>('div.core-loading-container, ion-loading'),
         );
 
         const isBlocked = blockingElements.some(element => {
+            // @TODO Fix ion-loading present check with CoreDom.isElementVisible.
+            // ion-loading never has offsetParent since position is fixed.
+            // Using isElementVisible solve the problem but will block behats (like BBB).
             if (!element.offsetParent) {
                 return false;
             }
 
-            const slide = element.closest('ion-slide');
+            const slide = element.closest('swiper-slide');
             if (slide && !slide.classList.contains('swiper-slide-active')) {
                 return false;
             }
@@ -236,15 +303,27 @@ export class TestingBehatBlockingService {
             NgZone.run(() => {
                 const index = requestIndex++;
                 const key = 'httprequest-' + index;
+                const isAsync = args[2] !== false;
 
                 try {
-                // Add to the list of pending requests.
+                    // Add to the list of pending requests.
                     TestingBehatBlocking.block(key);
 
                     // Detect when it finishes and remove it from the list.
-                    this.addEventListener('loadend', () => {
-                        TestingBehatBlocking.unblock(key);
-                    });
+                    if (isAsync) {
+                        this.addEventListener('loadend', () => {
+                            TestingBehatBlocking.unblock(key);
+                        });
+                    } else {
+                        const realSend = this.send;
+                        this.send = (...args) => {
+                            try {
+                                return realSend.apply(this, args);
+                            } finally {
+                                TestingBehatBlocking.unblock(key);
+                            }
+                        };
+                    }
 
                     return realOpen.apply(this, args);
                 } catch (error) {
@@ -253,6 +332,13 @@ export class TestingBehatBlockingService {
                 }
             });
         };
+    }
+
+    /**
+     * Wait for pending list to be empty.
+     */
+    async waitForPending(): Promise<void> {
+        await CoreWait.waitFor(() => this.pendingList.length === 0);
     }
 
 }

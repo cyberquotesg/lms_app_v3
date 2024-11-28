@@ -1,9 +1,15 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host {
 
     .addon-forum-star {
         color: var(--core-star-color);
+    }
+
+    .core-groupname {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .addon-mod-forum-discussion.item {

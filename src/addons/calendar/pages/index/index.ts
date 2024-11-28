@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
@@ -29,10 +28,9 @@ import { CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { ActivatedRoute, Params } from '@angular/router';
 import { AddonCalendarCalendarComponent } from '../../components/calendar/calendar';
 import { AddonCalendarUpcomingEventsComponent } from '../../components/upcoming-events/upcoming-events';
-import { AddonCalendarFilterComponent } from '../../components/filter/filter';
 import { CoreNavigator } from '@services/navigator';
 import { CoreConstants } from '@/core/constants';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
+import { CoreModals } from '@services/modals';
 
 /**
  * Page that displays the calendar events.
@@ -62,7 +60,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
     year?: number;
     month?: number;
     canCreate = false;
-    courses: Partial<CoreEnrolledCourseData>[] = [];
+    courses: CoreEnrolledCourseData[] = [];
     loaded = false;
     hasOffline = false;
     isOnline = false;
@@ -160,7 +158,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
     }
 
     /**
-     * View loaded.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.loadUpcoming = !!CoreNavigator.getRouteBooleanParam('upcoming');
@@ -179,8 +177,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
             }
         });
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-        deepLinkManager.treatLink();
+        CoreSites.loginNavigationFinished();
     }
 
     /**
@@ -200,7 +197,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
             try {
                 const result = await AddonCalendarSync.syncEvents();
                 if (result.warnings && result.warnings.length) {
-                    CoreDomUtils.showErrorModal(result.warnings[0]);
+                    CoreDomUtils.showAlert(undefined, result.warnings[0]);
                 }
 
                 if (result.updated) {
@@ -263,7 +260,7 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
      * @param showErrors Whether to show sync errors to the user.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void, showErrors?: boolean): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void, showErrors?: boolean): Promise<void> {
         if (!this.loaded) {
             return;
         }
@@ -331,7 +328,9 @@ export class AddonCalendarIndexPage implements OnInit, OnDestroy {
      * Show the filter menu.
      */
     async openFilter(): Promise<void> {
-        await CoreDomUtils.openSideModal({
+        const { AddonCalendarFilterComponent } = await import('../../components/filter/filter');
+
+        await CoreModals.openSideModal({
             component: AddonCalendarFilterComponent,
             componentProps: {
                 courses: this.courses,

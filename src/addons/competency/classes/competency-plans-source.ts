@@ -14,9 +14,10 @@
 
 import { Params } from '@angular/router';
 import { CoreRoutedItemsManagerSource } from '@classes/items-management/routed-items-manager-source';
-import { ADDON_COMPETENCY_COMPETENCIES_PAGE } from '../competency.module';
+import { ADDON_COMPETENCY_COMPETENCIES_PAGE } from '../constants';
 import { AddonCompetency, AddonCompetencyPlan, AddonCompetencyProvider } from '../services/competency';
 import { AddonCompetencyHelper } from '../services/competency-helper';
+import { CoreIonicColorNames } from '@singletons/colors';
 
 /**
  * Provides a collection of learning plans.
@@ -73,13 +74,13 @@ export class AddonCompetencyPlansSource extends CoreRoutedItemsManagerSource<Add
             plan.statusname = AddonCompetencyHelper.getPlanStatusName(plan.status);
             switch (plan.status) {
                 case AddonCompetencyProvider.STATUS_ACTIVE:
-                    plan.statuscolor = 'success';
+                    plan.statuscolor = CoreIonicColorNames.SUCCESS;
                     break;
                 case AddonCompetencyProvider.STATUS_COMPLETE:
-                    plan.statuscolor = 'danger';
+                    plan.statuscolor = CoreIonicColorNames.DANGER;
                     break;
                 default:
-                    plan.statuscolor = 'warning';
+                    plan.statuscolor = CoreIonicColorNames.WARNING;
                     break;
             }
         });

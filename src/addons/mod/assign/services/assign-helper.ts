@@ -15,9 +15,8 @@
 import { Injectable } from '@angular/core';
 import { CoreFileUploader, CoreFileUploaderStoreFilesResult } from '@features/fileuploader/services/fileuploader';
 import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
-import { FileEntry, DirectoryEntry } from '@ionic-native/file/ngx';
+import { FileEntry, DirectoryEntry } from '@awesome-cordova-plugins/file/ngx';
 import {
-    AddonModAssignProvider,
     AddonModAssignAssign,
     AddonModAssignSubmission,
     AddonModAssignParticipant,
@@ -37,6 +36,7 @@ import { AddonModAssignFeedbackDelegate } from './feedback-delegate';
 import { makeSingleton } from '@singletons';
 import { CoreFormFields } from '@singletons/form';
 import { CoreFileEntry } from '@services/file-helper';
+import { ADDON_MOD_ASSIGN_COMPONENT } from '../constants';
 
 /**
  * Service that provides some helper functions for assign.
@@ -81,6 +81,12 @@ export class AddonModAssignHelperProvider {
             return true;
         }
 
+        if (await CoreUtils.promiseWorks(AddonModAssignOffline.getSubmission(assign.id, submission.userid))) {
+            // Submission was saved or deleted offline, allow editing it or creating a new one.
+            return true;
+        }
+
+        // Submission was created online, check if plugins allow editing it.
         let canEdit = true;
 
         const promises = submission.plugins
@@ -227,6 +233,31 @@ export class AddonModAssignHelperProvider {
 
         const anyNotEmpty = submission.plugins?.some((plugin) =>
             !AddonModAssignSubmissionDelegate.isPluginEmpty(assign, plugin));
+
+        // If any plugin is not empty, we consider that the submission is not empty either.
+        if (anyNotEmpty) {
+            return false;
+        }
+
+        // If all the plugins were empty (or there were no plugins), we consider the submission to be empty.
+        return true;
+    }
+
+    /**
+     * Check whether the edited submission has no content.
+     *
+     * @param assign Assignment object.
+     * @param submission Submission to inspect.
+     * @param inputData Data entered in the submission form.
+     * @returns Whether the submission is empty.
+     */
+    isSubmissionEmptyForEdit(
+        assign: AddonModAssignAssign,
+        submission: AddonModAssignSubmission,
+        inputData: CoreFormFields,
+    ): boolean {
+        const anyNotEmpty = submission.plugins?.some((plugin) =>
+            !AddonModAssignSubmissionDelegate.isPluginEmptyForEdit(assign, plugin, inputData));
 
         // If any plugin is not empty, we consider that the submission is not empty either.
         if (anyNotEmpty) {
@@ -467,7 +498,7 @@ export class AddonModAssignHelperProvider {
             submission.manyGroups = !!participant.groups && participant.groups.length > 1;
             submission.noGroups = !!participant.groups && participant.groups.length == 0;
             if (participant.groupname) {
-                submission.groupid = participant.groupid;
+                submission.groupid = participant.groupid ?? 0;
                 submission.groupname = participant.groupname;
             }
 
@@ -650,7 +681,7 @@ export class AddonModAssignHelperProvider {
      * @returns Promise resolved with the itemId.
      */
     uploadFile(assignId: number, file: CoreFileEntry, itemId?: number, siteId?: string): Promise<number> {
-        return CoreFileUploader.uploadOrReuploadFile(file, itemId, AddonModAssignProvider.COMPONENT, assignId, siteId);
+        return CoreFileUploader.uploadOrReuploadFile(file, itemId, ADDON_MOD_ASSIGN_COMPONENT, assignId, siteId);
     }
 
     /**
@@ -664,7 +695,7 @@ export class AddonModAssignHelperProvider {
      * @returns Promise resolved with the itemId.
      */
     uploadFiles(assignId: number, files: CoreFileEntry[], siteId?: string): Promise<number> {
-        return CoreFileUploader.uploadOrReuploadFiles(files, AddonModAssignProvider.COMPONENT, assignId, siteId);
+        return CoreFileUploader.uploadOrReuploadFiles(files, ADDON_MOD_ASSIGN_COMPONENT, assignId, siteId);
     }
 
     /**
@@ -724,18 +755,15 @@ export const AddonModAssignHelper = makeSingleton(AddonModAssignHelperProvider);
 /**
  * Assign submission with some calculated data.
  */
-export type AddonModAssignSubmissionFormatted =
-    Omit<AddonModAssignSubmission, 'userid'|'groupid'> & {
-        userid?: number; // Student id.
-        groupid?: number; // Group id.
-        blindid?: number; // Calculated in the app. Blindid of the user that did the submission.
-        submitid?: number; // Calculated in the app. Userid or blindid of the user that did the submission.
-        userfullname?: string; // Calculated in the app. Full name of the user that did the submission.
-        userprofileimageurl?: string; // Calculated in the app. Avatar of the user that did the submission.
-        manyGroups?: boolean; // Calculated in the app. Whether the user belongs to more than 1 group.
-        noGroups?: boolean; // Calculated in the app. Whether the user doesn't belong to any group.
-        groupname?: string; // Calculated in the app. Name of the group the submission belongs to.
-    };
+export interface AddonModAssignSubmissionFormatted extends AddonModAssignSubmission {
+    blindid?: number; // Calculated in the app. Blindid of the user that did the submission.
+    submitid?: number; // Calculated in the app. Userid or blindid of the user that did the submission.
+    userfullname?: string; // Calculated in the app. Full name of the user that did the submission.
+    userprofileimageurl?: string; // Calculated in the app. Avatar of the user that did the submission.
+    manyGroups?: boolean; // Calculated in the app. Whether the user belongs to more than 1 group.
+    noGroups?: boolean; // Calculated in the app. Whether the user doesn't belong to any group.
+    groupname?: string; // Calculated in the app. Name of the group the submission belongs to.
+}
 
 /**
  * Assignment plugin config.

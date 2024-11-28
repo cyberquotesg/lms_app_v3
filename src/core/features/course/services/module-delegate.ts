@@ -14,9 +14,8 @@
 
 import { Injectable, Type } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
-import { IonRefresher } from '@ionic/angular';
 
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseModuleDefaultHandler } from './handlers/default-module';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
@@ -26,6 +25,7 @@ import { makeSingleton } from '@singletons';
 import { CoreCourseModuleData } from './course-helper';
 import { CoreNavigationOptions } from '@services/navigator';
 import { CoreIonicColorNames } from '@singletons/colors';
+import { DownloadStatus } from '@/core/constants';
 
 /**
  * Interface that all course module handlers must implement.
@@ -93,6 +93,7 @@ export interface CoreCourseModuleHandler extends CoreDelegateHandler {
      * @param module Module to get the icon from.
      * @param modicon The mod icon string.
      * @returns Whether the icon should be treated as a shape.
+     * @deprecated since 4.3. Now it uses platform information. This function is not used anymore.
      */
     iconIsShape?(module?: CoreCourseModuleData, modicon?: string): Promise<boolean | undefined> | boolean | undefined;
 
@@ -123,6 +124,14 @@ export interface CoreCourseModuleHandler extends CoreDelegateHandler {
      * @returns Promise resolved when done.
      */
     openActivityPage(module: CoreCourseModuleData, courseId: number, options?: CoreNavigationOptions): Promise<void>;
+
+    /**
+     * Whether the activity is branded.
+     * This information is used, for instance, to decide if a filter should be applied to the icon or not.
+     *
+     * @returns bool True if the activity is branded, false otherwise.
+     */
+    isBranded?(): Promise<boolean>;
 }
 
 /**
@@ -156,6 +165,8 @@ export interface CoreCourseModuleHandlerData {
 
     /**
      * The color of the extra badge. Default: primary.
+     *
+     * @deprecated since 4.3 Not used anymore.
      */
     extraBadgeColor?: CoreIonicColorNames;
 
@@ -167,9 +178,24 @@ export interface CoreCourseModuleHandlerData {
     showDownloadButton?: boolean;
 
     /**
+     * Wether activity has the custom cmlist item flag enabled.
+     *
+     * Activities like label uses this flag to indicate that it should be
+     * displayed as a custom course item instead of a tipical activity card.
+     */
+    hasCustomCmListItem?: boolean;
+
+    /**
      * The buttons to display in the module item.
+     *
+     * @deprecated since 4.3 Use button instead. It will only display the first.
      */
     buttons?: CoreCourseModuleHandlerButton[];
+
+    /**
+     * The button to display in the module item.
+     */
+    button?: CoreCourseModuleHandlerButton;
 
     /**
      * Whether to display a spinner where the download button is displayed. The module icon, title, etc. will be displayed.
@@ -197,7 +223,7 @@ export interface CoreCourseModuleHandlerData {
      *
      * @param status Module status.
      */
-    updateStatus?(status: string): void;
+    updateStatus?(status: DownloadStatus): void;
 
     /**
      * On Destroy function in case it's needed.
@@ -216,7 +242,7 @@ export interface CoreCourseModuleMainComponent {
      * @param showErrors If show errors to the user of hide them.
      * @returns Promise resolved when done.
      */
-    doRefresh(refresher?: IonRefresher | null, showErrors?: boolean): Promise<void>;
+    doRefresh(refresher?: HTMLIonRefresherElement | null, showErrors?: boolean): Promise<void>;
 }
 
 /**
@@ -237,20 +263,6 @@ export interface CoreCourseModuleHandlerButton {
      * Whether the button should be hidden.
      */
     hidden?: boolean;
-
-    /**
-     * The name of the button icon to use in iOS instead of "icon".
-     *
-     * @deprecated since 3.9.5. Now the icon must be the same for all platforms.
-     */
-    iosIcon?: string;
-
-    /**
-     * The name of the button icon to use in MaterialDesign instead of "icon".
-     *
-     * @deprecated since 3.9.5. Now the icon must be the same for all platforms.
-     */
-    mdIcon?: string;
 
     /**
      * Action to perform when the button is clicked.
@@ -274,7 +286,7 @@ export class CoreCourseModuleDelegateService extends CoreDelegate<CoreCourseModu
     protected handlerNameProperty = 'modName';
 
     constructor(protected defaultHandler: CoreCourseModuleDefaultHandler) {
-        super('CoreCourseModuleDelegate', true);
+        super('CoreCourseModuleDelegate');
     }
 
     /**
@@ -412,6 +424,7 @@ export class CoreCourseModuleDelegateService extends CoreDelegate<CoreCourseModu
      * @param modicon The mod icon string.
      * @param module The module to use.
      * @returns Whether the icon should be treated as a shape.
+     * @deprecated since 4.3. Now it uses platform information. This function is not used anymore.
      */
     async moduleIconIsShape(modname: string, modicon?: string, module?: CoreCourseModuleData): Promise<boolean | undefined> {
         return await this.executeFunctionOnEnabled<Promise<boolean>>(modname, 'iconIsShape', [module, modicon]);

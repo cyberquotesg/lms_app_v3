@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
-import { FileEntry, DirectoryEntry } from '@ionic-native/file/ngx';
-import { IonRefresher } from '@ionic/angular';
+import { FileEntry, DirectoryEntry } from '@awesome-cordova-plugins/file/ngx';
 import { Md5 } from 'ts-md5';
 
 import { CoreSharedFiles } from '@features/sharedfiles/services/sharedfiles';
@@ -22,6 +21,7 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CorePath } from '@singletons/path';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Component to display the list of shared files, either as a modal or inside a page.
@@ -34,11 +34,11 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
 
     @Input() siteId?: string;
     @Input() mimetypes?: string[];
-    @Input() isModal?: boolean; // Whether the component is loaded in a modal.
-    @Input() manage?: boolean;
-    @Input() pick?: boolean; // To pick a file you MUST use a modal.
+    @Input({ transform: toBoolean }) isModal = false; // Whether the component is loaded in a modal.
+    @Input({ transform: toBoolean }) manage = false;
+    @Input({ transform: toBoolean }) pick = false; // To pick a file you MUST use a modal.
     @Input() path?: string;
-    @Input() showSitePicker?: boolean;
+    @Input({ transform: toBoolean }) showSitePicker = false;
     @Output() onPathChanged = new EventEmitter<string>();
     @Output() onFilePicked = new EventEmitter<FileEntry>();
 
@@ -82,7 +82,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshFiles(refresher: IonRefresher): void {
+    refreshFiles(refresher: HTMLIonRefresherElement): void {
         this.loadFiles().finally(() => {
             refresher.complete();
         });
@@ -124,7 +124,7 @@ export class CoreSharedFilesListComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const hash = <string> Md5.hashAsciiStr(path);
+        const hash = Md5.hashAsciiStr(path);
 
         CoreNavigator.navigate(`../${hash}`, {
             params: {

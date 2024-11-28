@@ -17,11 +17,19 @@ import { NgModule } from '@angular/core';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreCourseComponentsModule } from '@features/course/components/components.module';
 
+// by rachmad
+/* *a/
 import { AddonModPageIndexComponent } from './index/index';
+/* */
+import { AddonModPageIndexComponent as Old } from './index/index';
+import { AddonModPageIndexComponent } from './index/index.new';
 
 @NgModule({
     declarations: [
         AddonModPageIndexComponent,
+
+        // by rachmad
+        Old,
     ],
     imports: [
         CoreSharedModule,

@@ -23,10 +23,13 @@ import { CoreUtils } from '@services/utils/utils';
 import { Subscription } from 'rxjs';
 import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
 import { CoreConfig } from '@services/config';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreToasts } from '@services/toasts';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
 import { CoreNetwork } from '@services/network';
+import { CoreLoginHelper } from '@features/login/services/login-helper';
+import { CoreSitesFactory } from '@services/sites-factory';
+import { CoreText } from '@singletons/text';
 
 /**
  * Device Info to be shown and copied to clipboard.
@@ -57,6 +60,7 @@ interface CoreSettingsDeviceInfo {
     uuid?: string;
     pushId?: string;
     localNotifAvailable: string;
+    encryptedPushSupported?: boolean;
 }
 
 /**
@@ -74,6 +78,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
     currentLangName?: string;
     fsClickable = false;
     showDevOptions = false;
+    displaySiteUrl = false;
     protected devOptionsClickCounter = 0;
     protected devOptionsForced = false;
     protected devOptionsClickTimeout?: number;
@@ -81,9 +86,6 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
     protected onlineObserver?: Subscription;
 
     constructor() {
-        const sitesProvider = CoreSites.instance;
-        const device = Device.instance;
-        const translate = Translate.instance;
         const navigator = window.navigator;
 
         this.deviceInfo = {
@@ -123,7 +125,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
                     this.deviceOsTranslated = matches[1];
                 } else {
                     this.deviceInfo.deviceOs = 'unknown';
-                    this.deviceOsTranslated = translate.instant('core.unknown');
+                    this.deviceOsTranslated = Translate.instant('core.unknown');
                 }
             }
         } else {
@@ -134,43 +136,35 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
                 this.deviceOsTranslated = matches[1];
             } else {
                 this.deviceInfo.deviceOs = 'unknown';
-                this.deviceOsTranslated = translate.instant('core.unknown');
+                this.deviceOsTranslated = Translate.instant('core.unknown');
             }
         }
 
-        if (navigator) {
-            if (navigator.userAgent) {
-                this.deviceInfo.userAgent = navigator.userAgent;
-            }
-
-            if (navigator.language) {
-                this.deviceInfo.browserLanguage = navigator.language;
-            }
+        if (navigator.userAgent) {
+            this.deviceInfo.userAgent = navigator.userAgent;
         }
 
-        if (device) {
-            if (device.cordova) {
-                this.deviceInfo.cordovaVersion = device.cordova;
-            }
-            if (device.platform) {
-                this.deviceInfo.platform = device.platform;
-            }
-            if (device.version) {
-                this.deviceInfo.osVersion = device.version;
-            }
-            if (device.model) {
-                this.deviceInfo.model = device.model;
-            }
-            if (device.uuid) {
-                this.deviceInfo.uuid = device.uuid;
-            }
+        if (navigator.language) {
+            this.deviceInfo.browserLanguage = navigator.language;
         }
 
-        const currentSite = sitesProvider.getCurrentSite();
+        if (Device.cordova) {
+            this.deviceInfo.cordovaVersion = Device.cordova;
+        }
+        if (Device.platform) {
+            this.deviceInfo.platform = Device.platform;
+        }
+        if (Device.version) {
+            this.deviceInfo.osVersion = Device.version;
+        }
+        if (Device.model) {
+            this.deviceInfo.model = Device.model;
+        }
+        if (Device.uuid) {
+            this.deviceInfo.uuid = Device.uuid;
+        }
 
-        this.deviceInfo.siteUrl = (currentSite?.getURL()) ||
-            (typeof CoreConstants.CONFIG.siteurl == 'string' && CoreConstants.CONFIG.siteurl) || undefined;
-        this.deviceInfo.isPrefixedUrl = !!CoreConstants.CONFIG.siteurl;
+        const currentSite = CoreSites.getCurrentSite();
         this.deviceInfo.siteId = currentSite?.getId();
         this.deviceInfo.siteVersion = currentSite?.getInfo()?.release;
 
@@ -189,28 +183,41 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
      * Async part of the constructor.
      */
     protected async asyncInit(): Promise<void> {
-        const fileProvider = CoreFile.instance;
-
         const lang = await CoreLang.getCurrentLanguage();
         this.deviceInfo.currentLanguage = lang;
         this.currentLangName = CoreConstants.CONFIG.languages[lang];
 
-        if (fileProvider.isAvailable()) {
-            const basepath = await fileProvider.getBasePath();
+        const currentSite = CoreSites.getCurrentSite();
+        const isSingleFixedSite = await CoreLoginHelper.isSingleFixedSite();
+        const sites = await CoreLoginHelper.getAvailableSites();
+        const firstUrl = isSingleFixedSite && sites[0].url;
+
+        this.deviceInfo.siteUrl = currentSite?.getURL() || firstUrl || undefined;
+        this.deviceInfo.isPrefixedUrl = !!sites.length;
+        this.displaySiteUrl = !!this.deviceInfo.siteUrl &&
+            (currentSite ?? CoreSitesFactory.makeUnauthenticatedSite(this.deviceInfo.siteUrl)).shouldDisplayInformativeLinks();
+
+        if (CoreFile.isAvailable()) {
+            const basepath = await CoreFile.getBasePath();
             this.deviceInfo.fileSystemRoot = basepath;
-            this.fsClickable = fileProvider.usesHTMLAPI();
+            this.fsClickable = CoreFile.usesHTMLAPI();
         }
 
         const showDevOptionsOnConfig = await CoreConfig.get('showDevOptions', 0);
-        this.devOptionsForced = CoreConstants.BUILD.isDevelopment || CoreConstants.BUILD.isTesting;
+        this.devOptionsForced = CoreConstants.enableDevTools();
         this.showDevOptions = this.devOptionsForced || showDevOptionsOnConfig == 1;
+
+        const publicKey = this.deviceInfo.pushId ?
+            await CoreUtils.ignoreErrors(CorePushNotifications.getPublicKey()) :
+            undefined;
+        this.deviceInfo.encryptedPushSupported = publicKey !== undefined;
     }
 
     /**
      * Copies device info into the clipboard.
      */
     copyInfo(): void {
-        CoreUtils.copyToClipboard(JSON.stringify(this.deviceInfo));
+        CoreText.copyToClipboard(JSON.stringify(this.deviceInfo));
     }
 
     /**
@@ -222,7 +229,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         const el = <Element>e.target;
         const text = el?.closest('ion-item')?.textContent?.trim();
 
-        text && CoreUtils.copyToClipboard(text);
+        text && CoreText.copyToClipboard(text);
     }
 
     /**
@@ -248,7 +255,10 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
                 this.showDevOptions = true;
                 await CoreConfig.set('showDevOptions', 1);
 
-                CoreDomUtils.showToast('core.settings.youradev', true);
+                CoreToasts.show({
+                    message: 'core.settings.youradev',
+                    translateMessage: true,
+                });
             } else {
                 this.showDevOptions = false;
                 await CoreConfig.delete('showDevOptions');

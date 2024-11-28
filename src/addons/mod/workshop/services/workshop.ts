@@ -14,58 +14,34 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreGradesMenuItem } from '@features/grades/services/grades-helper';
 import { CoreNetwork } from '@services/network';
 import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreTextFormat, defaultTextFormat } from '@services/utils/text';
+import { CoreTextFormat, defaultTextFormat } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreStatusWithWarningsWSResponse, CoreWS, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreFormFields } from '@singletons/form';
 import { AddonModWorkshopOffline } from './workshop-offline';
-import { AddonModWorkshopAutoSyncData, AddonModWorkshopSyncProvider } from './workshop-sync';
-
-const ROOT_CACHE_KEY = 'mmaModWorkshop:';
-
-export enum AddonModWorkshopPhase {
-    PHASE_SETUP = 10,
-    PHASE_SUBMISSION = 20,
-    PHASE_ASSESSMENT = 30,
-    PHASE_EVALUATION = 40,
-    PHASE_CLOSED = 50,
-}
-
-export enum AddonModWorkshopSubmissionType {
-    SUBMISSION_TYPE_DISABLED = 0,
-    SUBMISSION_TYPE_AVAILABLE = 1,
-    SUBMISSION_TYPE_REQUIRED = 2,
-}
-
-export enum AddonModWorkshopExampleMode {
-    EXAMPLES_VOLUNTARY = 0,
-    EXAMPLES_BEFORE_SUBMISSION = 1,
-    EXAMPLES_BEFORE_ASSESSMENT = 2,
-}
-
-export enum AddonModWorkshopAction {
-    ADD = 'add',
-    DELETE = 'delete',
-    UPDATE = 'update',
-}
-
-export enum AddonModWorkshopAssessmentMode {
-    ASSESSMENT = 'assessment',
-    PREVIEW = 'preview',
-}
-
-export enum AddonModWorkshopOverallFeedbackMode {
-    DISABLED = 0,
-    ENABLED_OPTIONAL = 1,
-    ENABLED_REQUIRED = 2,
-}
+import { AddonModWorkshopAutoSyncData } from './workshop-sync';
+import {
+    ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED,
+    ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED,
+    ADDON_MOD_WORKSHOP_AUTO_SYNCED,
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    ADDON_MOD_WORKSHOP_PER_PAGE,
+    ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED,
+    AddonModWorkshopAction,
+    AddonModWorkshopAssessmentMode,
+    AddonModWorkshopExampleMode,
+    AddonModWorkshopOverallFeedbackMode,
+    AddonModWorkshopPhase,
+    AddonModWorkshopSubmissionType,
+} from '@addons/mod/workshop/constants';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 declare module '@singletons/events' {
 
@@ -75,10 +51,10 @@ declare module '@singletons/events' {
      * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
      */
     export interface CoreEventsData {
-        [AddonModWorkshopSyncProvider.AUTO_SYNCED]: AddonModWorkshopAutoSyncData;
-        [AddonModWorkshopProvider.SUBMISSION_CHANGED]: AddonModWorkshopSubmissionChangedEventData;
-        [AddonModWorkshopProvider.ASSESSMENT_SAVED]: AddonModWorkshopAssessmentSavedChangedEventData;
-        [AddonModWorkshopProvider.ASSESSMENT_INVALIDATED]: AddonModWorkshopAssessmentInvalidatedChangedEventData;
+        [ADDON_MOD_WORKSHOP_AUTO_SYNCED]: AddonModWorkshopAutoSyncData;
+        [ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED]: AddonModWorkshopSubmissionChangedEventData;
+        [ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED]: AddonModWorkshopAssessmentSavedChangedEventData;
+        [ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED]: AddonModWorkshopAssessmentInvalidatedChangedEventData;
     }
 }
 
@@ -88,12 +64,7 @@ declare module '@singletons/events' {
 @Injectable({ providedIn: 'root' })
 export class AddonModWorkshopProvider {
 
-    static readonly COMPONENT = 'mmaModWorkshop';
-    static readonly PER_PAGE = 10;
-
-    static readonly SUBMISSION_CHANGED = 'addon_mod_workshop_submission_changed';
-    static readonly ASSESSMENT_SAVED = 'addon_mod_workshop_assessment_saved';
-    static readonly ASSESSMENT_INVALIDATED = 'addon_mod_workshop_assessment_invalidated';
+    protected static readonly ROOT_CACHE_KEY = 'mmaModWorkshop:';
 
     /**
      * Get cache key for workshop data WS calls.
@@ -102,7 +73,7 @@ export class AddonModWorkshopProvider {
      * @returns Cache key.
      */
     protected getWorkshopDataCacheKey(courseId: number): string {
-        return ROOT_CACHE_KEY + 'workshop:' + courseId;
+        return AddonModWorkshopProvider.ROOT_CACHE_KEY + 'workshop:' + courseId;
     }
 
     /**
@@ -112,7 +83,7 @@ export class AddonModWorkshopProvider {
      * @returns Cache key.
      */
     protected getWorkshopDataPrefixCacheKey(workshopId: number): string {
-        return ROOT_CACHE_KEY + workshopId;
+        return AddonModWorkshopProvider.ROOT_CACHE_KEY + workshopId;
     }
 
     /**
@@ -248,7 +219,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getWorkshopDataCacheKey(courseId),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
         const response = await site.read<AddonModWorkshopGetWorkshopsByCoursesWSResponse>(
@@ -345,7 +316,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getWorkshopAccessInformationDataCacheKey(workshopId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -390,7 +361,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getUserPlanDataCacheKey(workshopId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -437,7 +408,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSubmissionsDataCacheKey(workshopId, userId, groupId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -483,7 +454,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSubmissionDataCacheKey(workshopId, submissionId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -523,7 +494,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getGradesDataCacheKey(workshopId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -561,13 +532,13 @@ export class AddonModWorkshopProvider {
             workshopid: workshopId,
             groupid: options.groupId,
             page: options.page || 0,
-            perpage: options.perPage || AddonModWorkshopProvider.PER_PAGE,
+            perpage: options.perPage || ADDON_MOD_WORKSHOP_PER_PAGE,
         };
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getGradesReportDataCacheKey(workshopId, options.groupId),
             updateFrequency: CoreSite.FREQUENCY_OFTEN,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -592,7 +563,7 @@ export class AddonModWorkshopProvider {
         return this.fetchGradeReportsRecursive(workshopId, [], {
             ...options, // Include all options.
             page: 0,
-            perPage: options.perPage || AddonModWorkshopProvider.PER_PAGE,
+            perPage: options.perPage || ADDON_MOD_WORKSHOP_PER_PAGE,
             siteId: options.siteId || CoreSites.getCurrentSiteId(),
         });
     }
@@ -611,7 +582,7 @@ export class AddonModWorkshopProvider {
         options: AddonModWorkshopGetGradesReportOptions = {},
     ): Promise<AddonModWorkshopGradesData[]> {
         options.page = options.page ?? 0;
-        options.perPage = options.perPage ?? AddonModWorkshopProvider.PER_PAGE;
+        options.perPage = options.perPage ?? ADDON_MOD_WORKSHOP_PER_PAGE;
 
         const report = await this.getGradesReport(workshopId, options);
 
@@ -663,7 +634,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getSubmissionAssessmentsDataCacheKey(workshopId, submissionId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -967,7 +938,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getReviewerAssessmentsDataCacheKey(workshopId, options.userId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -1017,7 +988,7 @@ export class AddonModWorkshopProvider {
 
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getAssessmentDataCacheKey(workshopId, assessmentId),
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -1065,7 +1036,7 @@ export class AddonModWorkshopProvider {
         const preSets: CoreSiteWSPreSets = {
             cacheKey: this.getAssessmentFormDataCacheKey(workshopId, assessmentId, mode),
             updateFrequency: CoreSite.FREQUENCY_RARELY,
-            component: AddonModWorkshopProvider.COMPONENT,
+            component: ADDON_MOD_WORKSHOP_COMPONENT,
             componentId: options.cmId,
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
@@ -1100,23 +1071,25 @@ export class AddonModWorkshopProvider {
             const args: string[] = field.name.split('_');
             const name = args[0];
             const idx = args[3];
-            const idy = args[6] || false;
+            const idy = args[6];
+            const idxNumber = parseInt(args[3], 10);
+            const idyNumber = parseInt(args[6], 10);
 
-            if (parseInt(idx, 10) + '' == idx) {
+            if (!isNaN(idxNumber)) {
                 if (!parsedFields[idx]) {
                     parsedFields[idx] = {
-                        number: idx + 1, // eslint-disable-line id-blacklist
+                        number: idxNumber + 1, // eslint-disable-line id-blacklist
                     };
                 }
 
-                if (idy && parseInt(idy, 10) + '' == idy) {
+                if (!isNaN(idyNumber)) {
                     if (!parsedFields[idx].fields) {
                         parsedFields[idx].fields = [];
                     }
 
                     if (!parsedFields[idx].fields[idy]) {
                         parsedFields[idx].fields[idy] = {
-                            number: idy + 1, // eslint-disable-line id-blacklist
+                            number: idyNumber + 1, // eslint-disable-line id-blacklist
                         };
                     }
                     parsedFields[idx].fields[idy][name] = field.value;
@@ -1443,23 +1416,19 @@ export class AddonModWorkshopProvider {
      * Report the workshop as being viewed.
      *
      * @param id Workshop ID.
-     * @param name Name of the workshop.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logView(id: number, name?: string, siteId?: string): Promise<void> {
+    async logView(id: number, siteId?: string): Promise<void> {
         const params: AddonModWorkshopViewWorkshopWSParams = {
             workshopid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_workshop_view_workshop',
             params,
-            AddonModWorkshopProvider.COMPONENT,
+            ADDON_MOD_WORKSHOP_COMPONENT,
             id,
-            name,
-            'workshop',
-            {},
             siteId,
         );
     }
@@ -1469,23 +1438,19 @@ export class AddonModWorkshopProvider {
      *
      * @param id Submission ID.
      * @param workshopId Workshop ID.
-     * @param name Name of the workshop.
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved when the WS call is successful.
      */
-    async logViewSubmission(id: number, workshopId: number, name?: string, siteId?: string): Promise<void> {
+    async logViewSubmission(id: number, workshopId: number, siteId?: string): Promise<void> {
         const params: AddonModWorkshopViewSubmissionWSParams = {
             submissionid: id,
         };
 
-        await CoreCourseLogHelper.logSingle(
+        await CoreCourseLogHelper.log(
             'mod_workshop_view_submission',
             params,
-            AddonModWorkshopProvider.COMPONENT,
+            ADDON_MOD_WORKSHOP_COMPONENT,
             workshopId,
-            name,
-            'workshop',
-            params,
             siteId,
         );
     }
@@ -1774,9 +1739,9 @@ export type AddonModWorkshoGradesReportData = {
 
 export type AddonModWorkshopGradesData = {
     userid: number; // The id of the user being displayed in the report.
-    submissionid: number; // Submission id.
-    submissiontitle: string; // Submission title.
-    submissionmodified: number; // Timestamp submission was updated.
+    submissionid?: number; // Submission id.
+    submissiontitle?: string; // Submission title.
+    submissionmodified?: number; // Timestamp submission was updated.
     submissiongrade?: number; // Aggregated grade for the submission.
     gradinggrade?: number; // Computed grade for the assessment.
     submissiongradeover?: number; // Grade for the assessment overrided by the teacher.
@@ -1938,7 +1903,7 @@ export type AddonModWorkshopGetSubmissionsOptions = AddonModWorkshopUserOptions 
  * Options to pass to fetchAllGradeReports.
  */
 export type AddonModWorkshopFetchAllGradesReportOptions = AddonModWorkshopGroupOptions & {
-    perPage?: number; // Records per page to return. Default AddonModWorkshopProvider.PER_PAGE.
+    perPage?: number; // Records per page to return. Default ADDON_MOD_WORKSHOP_PER_PAGE.
 };
 
 /**

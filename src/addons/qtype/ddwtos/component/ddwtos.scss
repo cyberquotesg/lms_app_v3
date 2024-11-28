@@ -1,6 +1,16 @@
-@import "~core/features/question/question";
+@use "theme/globals" as *;
 
 // Style ddwtos content a bit. Almost all these styles are copied from Moodle.
+
+:host {
+    --cursor: pointer;
+
+    .readonly,
+    core-format-text ::ng-deep .readonly {
+        --cursor: default;
+    }
+}
+
 .addon-qtype-ddwtos-container {
     min-height: 80px; // To display the loading.
     position: relative;
@@ -13,7 +23,6 @@ core-format-text ::ng-deep, .drags ::ng-deep {
     }
 
     .draghome {
-        margin-bottom: 1em;
         max-width: calc(100%);
     }
 
@@ -27,7 +36,7 @@ core-format-text ::ng-deep, .drags ::ng-deep {
         border: 1px solid var(--core-dd-question-border);
         margin-bottom: 2px;
         border-radius: 5px;
-        cursor: pointer;
+        cursor: var(--cursor);
     }
     .draghome, .drag {
         display: inline-block;
@@ -37,6 +46,10 @@ core-format-text ::ng-deep, .drags ::ng-deep {
         white-space: normal;
         overflow: visible;
         word-wrap: break-word;
+        margin-bottom: 1em;
+        border-radius: 5px;
+        line-height: 25px;
+        cursor: var(--cursor);
     }
     .draghome, .drag.unplaced{
         border: 1px solid var(--core-dd-question-border);
@@ -46,9 +59,6 @@ core-format-text ::ng-deep, .drags ::ng-deep {
     }
     .drag {
         z-index: 2;
-        border-radius: 5px;
-        line-height: 25px;
-        cursor: pointer;
     }
     .drag.selected,
     .drop.selected {
@@ -60,15 +70,8 @@ core-format-text ::ng-deep, .drags ::ng-deep {
     &.notreadonly .draghome,
     &.notreadonly .drop,
     &.notreadonly .answercontainer {
-        cursor: pointer;
+        cursor: var(--cursor);
         border-radius: 5px;
-    }
-
-    &.readonly .drag,
-    &.readonly .draghome,
-    &.readonly .drop,
-    &.readonly .answercontainer {
-        cursor: default;
     }
 
     span.incorrect {

@@ -13,15 +13,14 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { Params } from '@angular/router';
 import { CoreContentLinksHandlerBase } from '@features/contentlinks/classes/base-handler';
 import { CoreContentLinksAction } from '@features/contentlinks/services/contentlinks-delegate';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSitesReadingStrategy } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreLoadings } from '@services/loadings';
 import { makeSingleton } from '@singletons';
-import { AddonModForumModuleHandlerService } from './module';
+import { ADDON_MOD_FORUM_PAGE_NAME } from '../../constants';
 
 /**
  * Content links handler for forum new discussion.
@@ -40,11 +39,11 @@ export class AddonModForumPostLinkHandlerService extends CoreContentLinksHandler
     getActions(
         siteIds: string[],
         url: string,
-        params: Params,
+        params: Record<string, string>,
     ): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]> {
         return [{
             action: async (siteId): Promise<void> => {
-                const modal = await CoreDomUtils.showModalLoading();
+                const modal = await CoreLoadings.show();
                 const forumId = parseInt(params.forum, 10);
 
                 try {
@@ -55,7 +54,7 @@ export class AddonModForumPostLinkHandlerService extends CoreContentLinksHandler
                     );
 
                     await CoreNavigator.navigateToSitePath(
-                        `${AddonModForumModuleHandlerService.PAGE_NAME}/${module.course}/${module.id}/new/0`,
+                        `${ADDON_MOD_FORUM_PAGE_NAME}/${module.course}/${module.id}/new/0`,
                         { siteId, params: { forumId: module.instance } },
                     );
                 } finally {
@@ -69,7 +68,7 @@ export class AddonModForumPostLinkHandlerService extends CoreContentLinksHandler
     /**
      * @inheritdoc
      */
-    async isEnabled(siteId: string, url: string, params: Params): Promise<boolean> {
+    async isEnabled(siteId: string, url: string, params: Record<string, string>): Promise<boolean> {
         return params.forum !== undefined;
     }
 

@@ -17,7 +17,7 @@ import { Injectable, Type } from '@angular/core';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
 import { makeSingleton } from '@singletons';
-import { AddonModDataIndexComponent } from '../../components/index';
+import { ADDON_MOD_DATA_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support data modules.
@@ -25,11 +25,9 @@ import { AddonModDataIndexComponent } from '../../components/index';
 @Injectable({ providedIn: 'root' })
 export class AddonModDataModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_data';
-
     name = 'AddonModData';
     modName = 'data';
-    protected pageName = AddonModDataModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_DATA_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_GROUPS]: true,
@@ -50,6 +48,8 @@ export class AddonModDataModuleHandlerService extends CoreModuleHandlerBase impl
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { AddonModDataIndexComponent } = await import('../../components/index');
+
         return AddonModDataIndexComponent;
     }
 

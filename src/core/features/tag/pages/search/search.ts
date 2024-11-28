@@ -13,17 +13,18 @@
 // limitations under the License.
 
 import { Component, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 
-import { CoreApp } from '@services/app';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreUrl } from '@singletons/url';
 import { CoreTagCloud, CoreTagCollection, CoreTagCloudTag, CoreTag } from '@features/tag/services/tag';
 import { Translate } from '@singletons';
 import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 import { CoreNavigator } from '@services/navigator';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreKeyboard } from '@singletons/keyboard';
+import { CoreSites } from '@services/sites';
 
 /**
  * Page that displays most used tags and allows searching.
@@ -42,6 +43,21 @@ export class CoreTagSearchPage implements OnInit {
     loaded = false;
     searching = false;
 
+    protected logView: () => void;
+    protected logSearch?: () => void;
+
+    constructor() {
+        this.logView = CoreTime.once(async () => {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'core_tag_get_tag_cloud',
+                name: Translate.instant('core.tag.searchtags'),
+                data: { category: 'tag' },
+                url: '/tag/search.php',
+            });
+        });
+    }
+
     /**
      * View loaded.
      */
@@ -49,8 +65,7 @@ export class CoreTagSearchPage implements OnInit {
         this.collectionId = CoreNavigator.getRouteNumberParam('collectionId') || 0;
         this.query = CoreNavigator.getRouteParam('query') || '';
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-        deepLinkManager.treatLink();
+        CoreSites.loginNavigationFinished();
 
         this.fetchData().finally(() => {
             this.loaded = true;
@@ -63,6 +78,10 @@ export class CoreTagSearchPage implements OnInit {
                 this.fetchCollections(),
                 this.fetchTags(),
             ]);
+
+            if (!this.query) {
+                this.logView();
+            }
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading tags.');
         }
@@ -92,13 +111,15 @@ export class CoreTagSearchPage implements OnInit {
      */
     async fetchTags(): Promise<void> {
         this.cloud = await CoreTag.getTagCloud(this.collectionId, undefined, undefined, this.query);
+
+        this.logSearch?.();
     }
 
     /**
      * Go to tag index page.
      */
     openTag(tag: CoreTagCloudTag): void {
-        const url = CoreTextUtils.decodeURI(tag.viewurl);
+        const url = CoreUrl.decodeURI(tag.viewurl);
         CoreContentLinksHelper.handleLink(url);
     }
 
@@ -107,7 +128,7 @@ export class CoreTagSearchPage implements OnInit {
      *
      * @param refresher Refresher event.
      */
-    refreshData(refresher?: IonRefresher): void {
+    refreshData(refresher?: HTMLIonRefresherElement): void {
         CoreUtils.allPromises([
             CoreTag.invalidateTagCollections(),
             CoreTag.invalidateTagCloud(this.collectionId, undefined, undefined, this.query),
@@ -120,17 +141,40 @@ export class CoreTagSearchPage implements OnInit {
      * Search tags.
      *
      * @param query Search query.
+     * @param collectionId Collection ID to use.
      * @returns Resolved when done.
      */
-    searchTags(query: string): Promise<void> {
+    searchTags(query: string, collectionId?: number): Promise<void> {
         this.searching = true;
         this.query = query;
-        CoreApp.closeKeyboard();
+        if (collectionId !== undefined) {
+            this.collectionId = collectionId;
+        }
+
+        this.logSearch = CoreTime.once(() => this.performLogSearch());
+        CoreKeyboard.close();
 
         return this.fetchTags().catch((error) => {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading tags.');
         }).finally(() => {
             this.searching = false;
+        });
+    }
+
+    /**
+     * Log search.
+     */
+    protected async performLogSearch(): Promise<void> {
+        if (!this.query) {
+            return;
+        }
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+            ws: 'core_tag_get_tag_cloud',
+            name: Translate.instant('core.tag.searchtags'),
+            data: { category: 'tag' },
+            url: `/tag/search.php&query=${this.query}&tc=${this.collectionId}&go=${Translate.instant('core.search')}`,
         });
     }
 

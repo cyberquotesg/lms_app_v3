@@ -21,6 +21,8 @@ import { CoreWSFile } from '@services/ws';
 import { AddonModAssignSubmissionsDBRecordFormatted } from './assign-offline';
 import { CoreFormFields } from '@singletons/form';
 import type { AddonModAssignSubmissionPluginBaseComponent } from '@addons/mod/assign/classes/base-submission-plugin-component';
+import { CoreSites } from '@services/sites';
+import { ADDON_MOD_ASSIGN_FEATURE_NAME } from '../constants';
 
 /**
  * Interface that all submission handlers must implement.
@@ -58,6 +60,20 @@ export interface AddonModAssignSubmissionHandler extends CoreDelegateHandler {
     isEmpty?(
         assign: AddonModAssignAssign,
         plugin: AddonModAssignPlugin,
+    ): boolean;
+
+    /**
+     * Check if a plugin has no data in the edit form.
+     *
+     * @param assign The assignment.
+     * @param plugin The plugin object.
+     * @param inputData Data entered by the user for the submission.
+     * @returns Whether the plugin is empty.
+     */
+    isEmptyForEdit?(
+        assign: AddonModAssignAssign,
+        plugin: AddonModAssignPlugin,
+        inputData: CoreFormFields,
     ): boolean;
 
     /**
@@ -194,7 +210,7 @@ export interface AddonModAssignSubmissionHandler extends CoreDelegateHandler {
         submission: AddonModAssignSubmission,
         plugin: AddonModAssignPlugin,
         inputData: CoreFormFields,
-    ): boolean | Promise<boolean>;
+    ): Promise<boolean>;
 
     /**
      * Whether or not the handler is enabled for edit on a site level.
@@ -277,7 +293,14 @@ export class AddonModAssignSubmissionDelegateService extends CoreDelegate<AddonM
     constructor(
         protected defaultHandler: AddonModAssignDefaultSubmissionHandler,
     ) {
-        super('AddonModAssignSubmissionDelegate', true);
+        super('AddonModAssignSubmissionDelegate');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    async isEnabled(): Promise<boolean> {
+        return !(await CoreSites.isFeatureDisabled(ADDON_MOD_ASSIGN_FEATURE_NAME));
     }
 
     /**
@@ -491,6 +514,22 @@ export class AddonModAssignSubmissionDelegateService extends CoreDelegate<AddonM
      */
     isPluginEmpty(assign: AddonModAssignAssign, plugin: AddonModAssignPlugin): boolean | undefined {
         return this.executeFunctionOnEnabled(plugin.type, 'isEmpty', [assign, plugin]);
+    }
+
+    /**
+     * Check if a plugin has no data in the edit form
+     *
+     * @param assign The assignment.
+     * @param plugin The plugin object.
+     * @param inputData Data entered in the submission form.
+     * @returns Whether the plugin is empty.
+     */
+    isPluginEmptyForEdit(
+        assign: AddonModAssignAssign,
+        plugin: AddonModAssignPlugin,
+        inputData: CoreFormFields,
+    ): boolean | undefined {
+        return this.executeFunctionOnEnabled(plugin.type, 'isEmptyForEdit', [assign, plugin, inputData]);
     }
 
     /**

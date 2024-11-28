@@ -16,9 +16,8 @@ import { Injectable } from '@angular/core';
 import { CoreFileUploaderStoreFilesResult } from '@features/fileuploader/services/fileuploader';
 import { CoreFile } from '@services/file';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { makeSingleton } from '@singletons';
-import { AddonModForumProvider } from './forum';
 import {
     AddonModForumOfflineDiscussionDBRecord,
     AddonModForumOfflineReplyDBRecord,
@@ -26,6 +25,7 @@ import {
     REPLIES_TABLE,
 } from './database/offline';
 import { CorePath } from '@singletons/path';
+import { ADDON_MOD_FORUM_ALL_PARTICIPANTS } from '../constants';
 
 /**
  * Service to handle offline forum.
@@ -168,7 +168,7 @@ export class AddonModForumOfflineProvider {
             subject: subject,
             message: message,
             options: JSON.stringify(options || {}),
-            groupid: groupId || AddonModForumProvider.ALL_PARTICIPANTS,
+            groupid: groupId || ADDON_MOD_FORUM_ALL_PARTICIPANTS,
             userid: userId || site.getUserId(),
             timecreated: timeCreated || Date.now(),
         };
@@ -399,7 +399,7 @@ export class AddonModForumOfflineProvider {
         R extends { options: string },
         O extends Record<string, unknown> = Record<string, unknown>
     >(record: R): Omit<R, 'options'> & { options: O } {
-        record.options = CoreTextUtils.parseJSON(record.options);
+        record.options = CoreText.parseJSON(record.options);
 
         return record as unknown as Omit<R, 'options'> & { options: O };
     }

@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host {
     .core-login-onboarding-step {
@@ -28,6 +28,6 @@
     }
 
     h1 {
-        font-size: 22px;
+        font-size: var(--mdl-typography-heading3-fontSize);
     }
 }

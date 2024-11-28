@@ -14,11 +14,12 @@
 
 import { Component, Optional, OnInit, OnDestroy } from '@angular/core';
 import { CoreCourseModuleMainResourceComponent } from '@features/course/classes/main-resource-component';
-import { AddonModBook, AddonModBookBookWSData, AddonModBookNumbering, AddonModBookTocChapter } from '../../services/book';
+import { AddonModBook, AddonModBookBookWSData, AddonModBookTocChapter } from '../../services/book';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreNavigator } from '@services/navigator';
-import { AddonModBookModuleHandlerService } from '../../services/handlers/module';
+import { CoreUtils } from '@services/utils/utils';
+import { ADDON_MOD_BOOK_PAGE_NAME, AddonModBookNumbering } from '../../constants';
 
 /**
  * Component that displays a book entry page.
@@ -29,6 +30,7 @@ import { AddonModBookModuleHandlerService } from '../../services/handlers/module
 })
 export class AddonModBookIndexComponent extends CoreCourseModuleMainResourceComponent implements OnInit, OnDestroy {
 
+    pluginName = 'book';
     showNumbers = true;
     addPadding = true;
     showBullets = false;
@@ -102,7 +104,9 @@ export class AddonModBookIndexComponent extends CoreCourseModuleMainResourceComp
      * @inheritdoc
      */
     protected async logActivity(): Promise<void> {
-        AddonModBook.logView(this.module.instance, undefined, this.module.name);
+        await CoreUtils.ignoreErrors(AddonModBook.logView(this.module.instance));
+
+        this.analyticsLogEvent('mod_book_view_book');
     }
 
     /**
@@ -112,7 +116,7 @@ export class AddonModBookIndexComponent extends CoreCourseModuleMainResourceComp
      */
     async openBook(chapterId?: number): Promise<void> {
         await CoreNavigator.navigateToSitePath(
-            `${AddonModBookModuleHandlerService.PAGE_NAME}/${this.courseId}/${this.module.id}/contents`,
+            `${ADDON_MOD_BOOK_PAGE_NAME}/${this.courseId}/${this.module.id}/contents`,
             { params: { chapterId } },
         );
 

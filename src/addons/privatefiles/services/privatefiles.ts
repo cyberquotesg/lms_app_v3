@@ -17,8 +17,10 @@ import { Injectable } from '@angular/core';
 import { CoreSites } from '@services/sites';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { CoreWSExternalWarning } from '@services/ws';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { makeSingleton } from '@singletons';
+import { ContextLevel } from '@/core/constants';
+import { CoreFileUploader } from '@features/fileuploader/services/fileuploader';
 
 const ROOT_CACHE_KEY = 'mmaFiles:';
 
@@ -136,7 +138,7 @@ export class AddonPrivateFilesProvider {
             contextid: -1,
             component: 'user',
             filearea: 'private',
-            contextlevel: 'user',
+            contextlevel: ContextLevel.USER,
             instanceid: CoreSites.getCurrentSite()?.getUserId(),
             itemid: 0,
             filepath: '',
@@ -387,6 +389,41 @@ export class AddonPrivateFilesProvider {
         return site.write('core_user_add_user_private_files', params, preSets);
     }
 
+    /**
+     * Delete a private file.
+     *
+     * @param files Private files to remove.
+     * @param siteId Site ID.
+     */
+    async deleteFiles(files: AddonPrivateFilesFile[], siteId?: string): Promise<void> {
+        const site = await CoreSites.getSite(siteId);
+
+        const { draftitemid } = await site.write<AddonPrivateFilesPreparePrivateFilesForEditionWSResponse>(
+            'core_user_prepare_private_files_for_edition',
+            {},
+        );
+
+        await CoreFileUploader.deleteDraftFiles(draftitemid, files.map(file => ({
+            filename: file.filename,
+            filepath: file.filepath,
+        })));
+
+        await site.write('core_user_update_private_files', { draftitemid });
+    }
+
+    /**
+     * Can delete private files in site.
+     *
+     * @param siteId Site ID
+     *
+     * @returns true or false.
+     */
+    async canDeletePrivateFiles(siteId?: string): Promise<boolean> {
+        const site = await CoreSites.getSite(siteId);
+
+        return site.wsAvailable('core_user_update_private_files') && site.canUseAdvancedFeature('privatefiles');
+    }
+
 }
 
 export const AddonPrivateFiles = makeSingleton(AddonPrivateFilesProvider);
@@ -416,6 +453,7 @@ export type AddonPrivateFilesFile = {
 export type AddonPrivateFilesFileCalculatedData = {
     fileurl: string; // File URL, using same name as CoreWSExternalFile.
     imgPath?: string; // Path to file icon's image.
+    selected?: boolean;
 };
 /**
  * Params of WS core_files_get_files.
@@ -428,7 +466,7 @@ export type AddonPrivateFilesGetFilesWSParams = {
     filepath: string; // File path.
     filename: string; // File name.
     modified?: number; // Timestamp to return files changed after this time.
-    contextlevel?: string; // The context level for the file location.
+    contextlevel?: ContextLevel; // The context level for the file location.
     instanceid?: number; // The instance id for where the file is located.
 };
 
@@ -470,4 +508,13 @@ export type AddonPrivateFilesGetUserInfoWSResult = {
  */
 type AddonPrivateFilesAddUserPrivateFilesWSParams = {
     draftid: number; // Draft area id.
+};
+
+/**
+ * Body of core_user_prepare_private_files_for_edition WS response.
+ */
+type AddonPrivateFilesPreparePrivateFilesForEditionWSResponse = {
+    areaoptions: { name: string; value: string | number }[];
+    draftitemid: number;
+    warnings?: CoreWSExternalWarning[];
 };

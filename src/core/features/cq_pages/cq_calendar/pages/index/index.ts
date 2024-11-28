@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild, Renderer2 } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, Renderer2, ElementRef } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -29,10 +29,9 @@ import { CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { ActivatedRoute, Params } from '@angular/router';
 import { AddonCalendarCalendarComponent } from '../../components/calendar/calendar';
 import { AddonCalendarUpcomingEventsComponent } from '../../components/upcoming-events/upcoming-events';
-import { AddonCalendarFilterComponent } from '../../components/filter/filter';
 import { CoreNavigator } from '@services/navigator';
 import { CoreConstants } from '@/core/constants';
-import { CoreMainMenuDeepLinkManager } from '@features/mainmenu/classes/deep-link-manager';
+import { CoreModals } from '@services/modals';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
@@ -42,7 +41,7 @@ import { CqPage } from '../../../classes/cq_page';
  */
 @Component({
     selector: 'page-addon-calendar-index',
-    templateUrl: 'index.new.html',
+    templateUrl: 'index.html',
 })
 export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy {
 
@@ -66,7 +65,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
     year?: number;
     month?: number;
     canCreate = false;
-    courses: Partial<CoreEnrolledCourseData>[] = [];
+    courses: CoreEnrolledCourseData[] = [];
     loaded = false;
     hasOffline = false;
     isOnline = false;
@@ -88,9 +87,9 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
 
     constructor(
         protected route: ActivatedRoute,
-        renderer: Renderer2, CH: CqHelper
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
@@ -169,7 +168,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
     }
 
     /**
-     * View loaded.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.loadUpcoming = !!CoreNavigator.getRouteBooleanParam('upcoming');
@@ -188,8 +187,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
             }
         });
 
-        const deepLinkManager = new CoreMainMenuDeepLinkManager();
-        deepLinkManager.treatLink();
+        CoreSites.loginNavigationFinished();
     }
 
     /**
@@ -209,7 +207,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
             try {
                 const result = await AddonCalendarSync.syncEvents();
                 if (result.warnings && result.warnings.length) {
-                    CoreDomUtils.showErrorModal(result.warnings[0]);
+                    CoreDomUtils.showAlert(undefined, result.warnings[0]);
                 }
 
                 if (result.updated) {
@@ -272,7 +270,7 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
      * @param showErrors Whether to show sync errors to the user.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void, showErrors?: boolean): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void, showErrors?: boolean): Promise<void> {
         if (!this.loaded) {
             return;
         }
@@ -299,14 +297,11 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
         promises.push(AddonCalendar.invalidateAllowedEventTypes());
 
         // Refresh the sub-component.
-        // if (this.showCalendar && this.calendarComponent) {
-        //     promises.push(this.calendarComponent.refreshData(afterChange));
-        // } else if (!this.showCalendar && this.upcomingEventsComponent) {
-        //     promises.push(this.upcomingEventsComponent.refreshData());
-        // }
-
-        if (this.calendarComponent) promises.push(this.calendarComponent.refreshData(afterChange));
-        if (this.upcomingEventsComponent) promises.push(this.upcomingEventsComponent.refreshData());
+        if (this.showCalendar && this.calendarComponent) {
+            promises.push(this.calendarComponent.refreshData(afterChange));
+        } else if (!this.showCalendar && this.upcomingEventsComponent) {
+            promises.push(this.upcomingEventsComponent.refreshData());
+        }
 
         await Promise.all(promises).finally(() => this.fetchData(sync, showErrors));
     }
@@ -343,7 +338,9 @@ export class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy 
      * Show the filter menu.
      */
     async openFilter(): Promise<void> {
-        await CoreDomUtils.openSideModal({
+        const { AddonCalendarFilterComponent } = await import('../../components/filter/filter');
+
+        await CoreModals.openSideModal({
             component: AddonCalendarFilterComponent,
             componentProps: {
                 courses: this.courses,

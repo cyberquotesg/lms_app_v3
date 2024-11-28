@@ -23,22 +23,21 @@ import { CoreNetwork } from '@services/network';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreSync, CoreSyncResult } from '@services/sync';
 import { CoreTimeUtils } from '@services/utils/time';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { AddonModLessonRetakeFinishedInSyncDBRecord, RETAKES_FINISHED_SYNC_TABLE_NAME } from './database/lesson';
 import { AddonModLessonGetPasswordResult, AddonModLessonPrefetchHandler } from './handlers/prefetch';
-import { AddonModLesson, AddonModLessonLessonWSData, AddonModLessonProvider } from './lesson';
+import { AddonModLesson, AddonModLessonLessonWSData } from './lesson';
 import { AddonModLessonOffline, AddonModLessonPageAttemptRecord } from './lesson-offline';
+import { ADDON_MOD_LESSON_AUTO_SYNCED, ADDON_MOD_LESSON_COMPONENT } from '../constants';
 
 /**
  * Service to sync lesson.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonModLessonSyncProvider extends CoreCourseActivitySyncBaseProvider<AddonModLessonSyncResult> {
-
-    static readonly AUTO_SYNCED = 'addon_mod_lesson_autom_synced';
 
     protected componentTranslatableString = 'lesson';
 
@@ -144,7 +143,7 @@ export class AddonModLessonSyncProvider extends CoreCourseActivitySyncBaseProvid
 
             if (result?.updated) {
                 // Sync successful, send event.
-                CoreEvents.trigger(AddonModLessonSyncProvider.AUTO_SYNCED, {
+                CoreEvents.trigger(ADDON_MOD_LESSON_AUTO_SYNCED, {
                     lessonId: lesson.id,
                     warnings: result.warnings,
                 }, siteId);
@@ -196,7 +195,7 @@ export class AddonModLessonSyncProvider extends CoreCourseActivitySyncBaseProvid
         }
 
         // Verify that lesson isn't blocked.
-        if (!ignoreBlock && CoreSync.isBlocked(AddonModLessonProvider.COMPONENT, lessonId, siteId)) {
+        if (!ignoreBlock && CoreSync.isBlocked(ADDON_MOD_LESSON_COMPONENT, lessonId, siteId)) {
             this.logger.debug('Cannot sync lesson ' + lessonId + ' because it is blocked.');
 
             throw new CoreSyncBlockedError(Translate.instant('core.errorsyncblocked', { $a: this.componentTranslate }));
@@ -226,7 +225,7 @@ export class AddonModLessonSyncProvider extends CoreCourseActivitySyncBaseProvid
     ): Promise<AddonModLessonSyncResult> {
         // Sync offline logs.
         await CoreUtils.ignoreErrors(
-            CoreCourseLogHelper.syncActivity(AddonModLessonProvider.COMPONENT, lessonId, siteId),
+            CoreCourseLogHelper.syncActivity(ADDON_MOD_LESSON_COMPONENT, lessonId, siteId),
         );
 
         const result: AddonModLessonSyncResult = {
@@ -464,7 +463,7 @@ export class AddonModLessonSyncProvider extends CoreCourseActivitySyncBaseProvid
 
             // Mark the retake as finished in a sync if it can be reviewed.
             if (!ignoreBlock && response.data?.reviewlesson) {
-                const params = CoreUrlUtils.extractUrlParams(<string> response.data.reviewlesson.value);
+                const params = CoreUrl.extractUrlParams(<string> response.data.reviewlesson.value);
                 if (params.pageid) {
                     // The retake can be reviewed, mark it as finished. Don't block the user for this.
                     this.setRetakeFinishedInSync(lessonId, retake.retake, Number(params.pageid), siteId);

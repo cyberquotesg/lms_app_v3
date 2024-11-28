@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Directive, Input, OnInit, ElementRef, Optional, SecurityContext } from '@angular/core';
+import { Directive, Input, OnInit, ElementRef, SecurityContext } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
-import { IonContent } from '@ionic/angular';
 
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
 import { CoreConstants } from '@/core/constants';
 import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 import { CoreCustomURLSchemes } from '@services/urlschemes';
 import { DomSanitizer } from '@singletons';
 import { CoreFilepool } from '@services/filepool';
-import { CoreUrl } from '@singletons/url';
 import { CoreDom } from '@singletons/dom';
+import { toBoolean } from '../transforms/boolean';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Directive to open a link in external browser or in the app.
@@ -39,25 +38,32 @@ import { CoreDom } from '@singletons/dom';
 export class CoreLinkDirective implements OnInit {
 
     @Input() href?: string | SafeUrl; // Link URL.
-    @Input() capture?: boolean | string; // If the link needs to be captured by the app.
-    @Input() inApp?: boolean | string; // True to open in embedded browser, false to open in system browser.
-    @Input() autoLogin: boolean | string = true; // Whether to try to use auto-login. Values yes/no/check are deprecated.
-    @Input() showBrowserWarning = true; // Whether to show a warning before opening browser. Defaults to true.
+    @Input({ transform: toBoolean }) capture = false; // If the link needs to be captured by the app.
+    @Input({ transform: toBoolean }) inApp = false; // True to open in embedded browser, false to open in system browser.
+    @Input({ transform: toBoolean }) autoLogin = true; // Whether to try to use auto-login.
+    @Input({ transform: toBoolean }) showBrowserWarning = true; // Whether to show a warning before opening browser.
 
-    protected element: HTMLElement;
+    protected element: HTMLElement | HTMLIonFabButtonElement | HTMLIonButtonElement | HTMLIonItemElement;
 
     constructor(
         element: ElementRef,
-        @Optional() protected content: IonContent,
     ) {
         this.element = element.nativeElement;
     }
 
     /**
-     * Function executed when the component is initialized.
+     * @inheritdoc
      */
-    ngOnInit(): void {
-        CoreDom.initializeClickableElementA11y(this.element, (event) => this.performAction(event));
+    async ngOnInit(): Promise<void> {
+        let hasNativeButton = false;
+        if ('componentOnReady' in this.element) {
+            await this.element.componentOnReady();
+
+            // Native buttons may be already accessible and does not neet to set TabIndex and role.
+            hasNativeButton = !!this.element.shadowRoot?.querySelector('.button-native');
+        }
+
+        CoreDom.initializeClickableElementA11y(this.element, (event) => this.performAction(event), !hasNativeButton);
     }
 
     /**
@@ -79,7 +85,7 @@ export class CoreLinkDirective implements OnInit {
 
         href = href || this.element.getAttribute('href') || this.element.getAttribute('xlink:href');
 
-        if (!href || CoreUrlUtils.getUrlScheme(href) == 'javascript') {
+        if (!href || CoreUrl.getUrlProtocol(href) === 'javascript') {
             return;
         }
 
@@ -88,10 +94,8 @@ export class CoreLinkDirective implements OnInit {
 
         const openIn = this.element.getAttribute('data-open-in');
 
-        if (CoreUtils.isTrueOrOne(this.capture)) {
-            href = CoreTextUtils.decodeURI(href);
-
-            const treated = await CoreContentLinksHelper.handleLink(href, undefined, true, true);
+        if (this.capture) {
+            const treated = await CoreContentLinksHelper.handleLink(CoreUrl.decodeURI(href), undefined, true, true);
 
             if (!treated) {
                 this.navigate(href, openIn);
@@ -110,7 +114,7 @@ export class CoreLinkDirective implements OnInit {
      */
     protected async navigate(href: string, openIn?: string | null): Promise<void> {
 
-        if (CoreUrlUtils.isLocalFileUrl(href)) {
+        if (CoreUrl.isLocalFileUrl(href)) {
             return this.openLocalFile(href);
         }
 
@@ -174,8 +178,7 @@ export class CoreLinkDirective implements OnInit {
      */
     protected async openExternalLink(href: string, openIn?: string | null): Promise<void> {
         // Priority order is: core-link inApp attribute > forceOpenLinksIn setting > data-open-in HTML attribute.
-        const openInApp = this.inApp !== undefined ?
-            CoreUtils.isTrueOrOne(this.inApp) :
+        const openInApp = this.inApp ??
             (CoreConstants.CONFIG.forceOpenLinksIn !== 'browser' &&
                 (CoreConstants.CONFIG.forceOpenLinksIn === 'app' || openIn === 'app'));
 
@@ -202,7 +205,7 @@ export class CoreLinkDirective implements OnInit {
 
             if (isDownloading) {
                 // Wait for the download to finish before opening the file to prevent downloading it twice.
-                const modal = await CoreDomUtils.showModalLoading();
+                const modal = await CoreLoadings.show();
 
                 try {
                     const path = await CoreFilepool.downloadUrl(currentSite.getId(), href);
@@ -216,11 +219,7 @@ export class CoreLinkDirective implements OnInit {
             }
         }
 
-        const autoLogin = typeof this.autoLogin === 'boolean' ?
-            this.autoLogin :
-            !CoreUtils.isFalseOrZero(this.autoLogin) && this.autoLogin !== 'no'; // Support deprecated values yes/no/check.
-
-        if (autoLogin) {
+        if (this.autoLogin) {
             if (openInApp) {
                 await currentSite.openInAppWithAutoLogin(href);
             } else {

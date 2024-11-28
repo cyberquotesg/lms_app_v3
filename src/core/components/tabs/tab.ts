@@ -41,11 +41,11 @@ import { CoreTabsComponent } from './tabs';
  */
 @Component({
     selector: 'core-tab',
-    template: '<ng-container *ngIf="loaded" [ngTemplateOutlet]="template"></ng-container>',
+    template: '<ng-container *ngIf="loaded && template" [ngTemplateOutlet]="template" />',
 })
 export class CoreTabComponent implements OnInit, OnDestroy, CoreTabBase {
 
-    @Input() title!: string; // The tab title.
+    @Input({ required: true }) title!: string; // The tab title.
     @Input() icon?: string; // The tab icon.
     @Input() badge?: string; // A badge to add in the tab.
     @Input() badgeStyle?: string; // The badge color.
@@ -68,7 +68,7 @@ export class CoreTabComponent implements OnInit, OnDestroy, CoreTabBase {
     @Input() id = ''; // An ID to identify the tab.
     @Output() ionSelect: EventEmitter<CoreTabComponent> = new EventEmitter<CoreTabComponent>();
 
-    @ContentChild(TemplateRef) template?: TemplateRef<unknown>; // Template defined by the content.
+    @ContentChild(TemplateRef) template?: TemplateRef<void>; // Template defined by the content.
 
     element: HTMLElement; // The core-tab element.
     loaded = false;

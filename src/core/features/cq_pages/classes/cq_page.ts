@@ -1,7 +1,11 @@
-import { Renderer2 } from '@angular/core';
+import { Renderer2, ElementRef } from '@angular/core';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { Params } from '@angular/router';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
+import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreCancellablePromise } from '@classes/cancellable-promise';
+import { CoreLoadingComponent } from '@components/loading/loading';
+import { CoreDom } from '@singletons/dom';
 import { CqGeneral } from './cq_general';
 import { CqHelper } from '../services/cq_helper';
 
@@ -19,6 +23,9 @@ export class CqPage extends CqGeneral
      * as pageJob has beed defined, system will look for corresponding function to run and mark it as done
      * within that function, must call 'pageJobExecuter'
     */
+
+    protected domPromise?: CoreCancellablePromise<void>;
+    protected element: HTMLElement;
 
     pageStatus = false;
     pageIsForcedFirstload = false;
@@ -41,9 +48,11 @@ export class CqPage extends CqGeneral
     cqCountry: any;
     cqOrganization: any;
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
         super(CH);
+
+        this.element = elementRef.nativeElement;
     }
 
     usuallyOnInit(beforePageLoad?: any): void
@@ -83,10 +92,14 @@ export class CqPage extends CqGeneral
     usuallyOnViewDidLeave(): void
     {
     }
+    usuallyOnDestroy(): void
+    {
+        this.domPromise?.cancel();
+    }
 
     consumePageParams(): void
     {
-        console.log("pageParams", JSON.stringify(this.pageParams));
+        // this.CH.log("pageParams", JSON.stringify(this.pageParams));
 
         for (let paramName in this.pageParams)
         {
@@ -96,13 +109,15 @@ export class CqPage extends CqGeneral
     }
     consumePageDefault(): void
     {
-        console.log("pageDefaults", JSON.stringify(this.pageDefaults));
+        // this.CH.log("pageDefaults", JSON.stringify(this.pageDefaults));
 
         for (let key in this.pageDefaults)
         {
             if (typeof this.pageDefaults[key] != 'object') this.pageData[key] = this.pageDefaults[key];
             else this.pageData[key] = JSON.parse(JSON.stringify(this.pageDefaults[key]));
         }
+
+        // this.CH.log("pageData after implements pageDefaults", JSON.stringify(this.pageData));
     }
 
     /* handles page load
@@ -110,6 +125,8 @@ export class CqPage extends CqGeneral
     */
     pageLoad(moreloader?: any, refresher?: any, pageJob?: any, isDependantCall?: boolean, finalCallback?: any): void
     {
+        // this.CH.log("running pageLoad with pageData", JSON.stringify(this.pageData));
+
         let firstload = !this.pageStatus;
         let loadingmore = typeof moreloader != 'undefined' && moreloader != null;
         let refreshing = typeof refresher != 'undefined' && refresher != null;
@@ -355,12 +372,30 @@ export class CqPage extends CqGeneral
             // a moment after slide, make sure the slider has proper height
             setTimeout(() => {
                 let parent = document.querySelector(pageClass) as HTMLElement | null;
-                let activeChild = document.querySelector(pageClass + " .swiper-wrapper .swiper-slide-active > div:first-child") as HTMLDivElement | null;
+                let activeChild = document.querySelector(pageClass + " .swiper-slide-active > div:first-child") as HTMLDivElement | null;
                 if (parent && activeChild)
                 {
                     parent.style.height = activeChild.offsetHeight + 0 + "px";
                 }
             }, time);
         }
+    }
+
+    /**
+     * Wait until all <core-loading> children inside the page.
+     *
+     * @returns Promise resolved when loadings are done.
+     */
+    protected async waitLoadingsDone(): Promise<void> {
+        this.domPromise = CoreDom.waitToBeInDOM(this.element);
+
+        await this.domPromise;
+
+        const page = this.element.closest('.ion-page');
+        if (!page) {
+            return;
+        }
+
+        await CoreDirectivesRegistry.waitDirectivesReady(page, 'core-loading', CoreLoadingComponent);
     }
 }

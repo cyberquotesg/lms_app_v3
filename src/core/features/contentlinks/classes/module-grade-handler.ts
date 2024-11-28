@@ -15,7 +15,7 @@
 import { CoreContentLinksAction } from '../services/contentlinks-delegate';
 import { CoreContentLinksHandlerBase } from './base-handler';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreLoadings } from '@services/loadings';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 
 /**
@@ -72,11 +72,11 @@ export class CoreContentLinksModuleGradeHandler extends CoreContentLinksHandlerB
         return [{
             action: async (siteId): Promise<void> => {
                 // Check if userid is the site's current user.
-                const modal = await CoreDomUtils.showModalLoading();
+                const modal = await CoreLoadings.show();
                 const site = await CoreSites.getSite(siteId);
                 if (!params.userid || Number(params.userid) == site.getUserId()) {
                     // No user specified or current user. Navigate to module.
-                    CoreCourseHelper.navigateToModule(
+                    await CoreCourseHelper.navigateToModule(
                         Number(params.id),
                         {
                             courseId: courseIdentifier,
@@ -86,10 +86,10 @@ export class CoreContentLinksModuleGradeHandler extends CoreContentLinksHandlerB
                     );
                 } else if (this.canReview) {
                     // Use the goToReview function.
-                    this.goToReview(url, params, courseIdentifier, siteId);
+                    await this.goToReview(url, params, courseIdentifier, siteId);
                 } else {
                     // Not current user and cannot review it in the app, open it in browser.
-                    site.openInBrowserWithAutoLogin(url);
+                    await site.openInBrowserWithAutoLogin(url);
                 }
 
                 modal.dismiss();

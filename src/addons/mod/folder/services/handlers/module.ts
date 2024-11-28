@@ -18,9 +18,9 @@ import { CoreModuleHandlerBase } from '@features/course/classes/module-base-hand
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleHandler, CoreCourseModuleHandlerData } from '@features/course/services/module-delegate';
 import { CoreNavigator } from '@services/navigator';
-import { CoreDomUtils } from '@services/utils/dom';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
 import { makeSingleton } from '@singletons';
-import { AddonModFolderIndexComponent } from '../../components/index';
+import { ADDON_MOD_FOLDER_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support folder modules.
@@ -28,11 +28,9 @@ import { AddonModFolderIndexComponent } from '../../components/index';
 @Injectable({ providedIn: 'root' })
 export class AddonModFolderModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_folder';
-
     name = 'AddonModFolder';
     modName = 'folder';
-    protected pageName = AddonModFolderModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_FOLDER_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_MOD_ARCHETYPE]: CoreConstants.MOD_ARCHETYPE_RESOURCE,
@@ -60,7 +58,7 @@ export class AddonModFolderModuleHandlerService extends CoreModuleHandlerBase im
 
         if (module.description) {
             // Module description can contain the folder contents if it's inline, remove it.
-            const descriptionElement = CoreDomUtils.convertToElement(module.description);
+            const descriptionElement = convertTextToHTMLElement(module.description);
 
             Array.from(descriptionElement.querySelectorAll('.foldertree, .folderbuttons, .tertiary-navigation'))
                 .forEach(element => element.remove());
@@ -86,6 +84,8 @@ export class AddonModFolderModuleHandlerService extends CoreModuleHandlerBase im
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown> | undefined> {
+        const { AddonModFolderIndexComponent } = await import('../../components/index');
+
         return AddonModFolderIndexComponent;
     }
 

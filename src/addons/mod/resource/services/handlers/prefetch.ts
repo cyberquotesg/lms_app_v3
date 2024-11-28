@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
 import { Injectable } from '@angular/core';
 import { CoreCourseResourcePrefetchHandlerBase } from '@features/course/classes/resource-prefetch-handler';
 import { CoreCourse, CoreCourseAnyModuleData } from '@features/course/services/course';
@@ -20,8 +20,9 @@ import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreFilepool } from '@services/filepool';
 import { CoreSites } from '@services/sites';
 import { makeSingleton } from '@singletons';
-import { AddonModResource, AddonModResourceProvider } from '../resource';
+import { AddonModResource } from '../resource';
 import { AddonModResourceHelper } from '../resource-helper';
+import { ADDON_MOD_RESOURCE_COMPONENT } from '../../constants';
 
 /**
  * Handler to prefetch resources.
@@ -31,23 +32,23 @@ export class AddonModResourcePrefetchHandlerService extends CoreCourseResourcePr
 
     name = 'AddonModResource';
     modName = 'resource';
-    component = AddonModResourceProvider.COMPONENT;
+    component = ADDON_MOD_RESOURCE_COMPONENT;
 
     /**
      * @inheritdoc
      */
-    determineStatus(module: CoreCourseAnyModuleData, status: string): string {
-        if (status == CoreConstants.DOWNLOADED && module) {
+    determineStatus(module: CoreCourseAnyModuleData, status: DownloadStatus): DownloadStatus {
+        if (status === DownloadStatus.DOWNLOADED && module) {
             // If the main file is an external file, always display the module as outdated.
             if ('contentsinfo' in module && module.contentsinfo) {
                 if (module.contentsinfo.repositorytype) {
                     // It's an external file.
-                    return CoreConstants.OUTDATED;
+                    return DownloadStatus.OUTDATED;
                 }
             } else if (module.contents) {
                 const mainFile = module.contents[0];
                 if (mainFile && mainFile.isexternalfile) {
-                    return CoreConstants.OUTDATED;
+                    return DownloadStatus.OUTDATED;
                 }
             }
         }

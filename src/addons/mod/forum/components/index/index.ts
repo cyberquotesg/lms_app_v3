@@ -15,13 +15,11 @@
 import { Component, Optional, OnInit, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonContent } from '@ionic/angular';
-import { ModalOptions } from '@ionic/core';
 
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import {
     AddonModForum,
     AddonModForumData,
-    AddonModForumProvider,
     AddonModForumSortOrder,
     AddonModForumDiscussion,
     AddonModForumNewDiscussionData,
@@ -36,7 +34,6 @@ import { CoreEvents, CoreEventObserver } from '@singletons/events';
 import {
     AddonModForumAutoSyncData,
     AddonModForumManualSyncData,
-    AddonModForumSyncProvider,
     AddonModForumSyncResult,
 } from '@addons/mod/forum/services/forum-sync';
 import { CoreSites } from '@services/sites';
@@ -44,11 +41,8 @@ import { CoreUser } from '@features/user/services/user';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
-import { AddonModForumDiscussionOptionsMenuComponent } from '../discussion-options-menu/discussion-options-menu';
-import { AddonModForumSortOrderSelectorComponent } from '../sort-order-selector/sort-order-selector';
 import { CoreScreen } from '@services/screen';
 import { AddonModForumPrefetchHandler } from '../../services/handlers/prefetch';
-import { AddonModForumModuleHandlerService } from '../../services/handlers/module';
 import { CoreRatingProvider } from '@features/rating/services/rating';
 import { CoreRatingSyncProvider } from '@features/rating/services/rating-sync';
 import { CoreRatingOffline } from '@features/rating/services/rating-offline';
@@ -57,7 +51,23 @@ import { AddonModForumDiscussionItem, AddonModForumDiscussionsSource } from '../
 import { CoreListItemsManager } from '@classes/items-management/list-items-manager';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { CorePromisedValue } from '@classes/promised-value';
-
+import { CoreNavigator } from '@services/navigator';
+import {
+    ADDON_MOD_FORUM_AUTO_SYNCED,
+    ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT,
+    ADDON_MOD_FORUM_COMPONENT,
+    ADDON_MOD_FORUM_MANUAL_SYNCED,
+    ADDON_MOD_FORUM_NEW_DISCUSSION_EVENT,
+    ADDON_MOD_FORUM_PAGE_NAME,
+    ADDON_MOD_FORUM_PREFERENCE_SORTORDER,
+    ADDON_MOD_FORUM_REPLY_DISCUSSION_EVENT,
+    ADDON_MOD_FORUM_SEARCH_PAGE_NAME,
+    AddonModForumType,
+} from '@addons/mod/forum/constants';
+import { CoreSearchGlobalSearch } from '@features/search/services/global-search';
+import { CoreToasts } from '@services/toasts';
+import { CorePopovers } from '@services/popovers';
+import { CoreLoadings } from '@services/loadings';
 /**
  * Component that displays a forum entry page.
  */
@@ -70,8 +80,8 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
-    component = AddonModForumProvider.COMPONENT;
-    moduleName = 'forum';
+    component = ADDON_MOD_FORUM_COMPONENT;
+    pluginName = 'forum';
     descriptionNote?: string;
     promisedDiscussions: CorePromisedValue<AddonModForumDiscussionsManager>;
     discussionsItems: AddonModForumDiscussionItem[] = [];
@@ -84,12 +94,10 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
     hasOfflineRatings = false;
     showQAMessage = false;
     isSetPinAvailable = false;
-    sortOrderSelectorModalOptions: ModalOptions = {
-        component: AddonModForumSortOrderSelectorComponent,
-    };
+    showSearch = false;
 
     protected fetchContentDefaultError = 'addon.mod_forum.errorgetforum';
-    protected syncEventName = AddonModForumSyncProvider.AUTO_SYNCED;
+    protected syncEventName = ADDON_MOD_FORUM_AUTO_SYNCED;
     protected syncManualObserver?: CoreEventObserver; // It will observe the sync manual event.
     protected replyObserver?: CoreEventObserver;
     protected newDiscObserver?: CoreEventObserver;
@@ -185,16 +193,12 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         this.sortOrders = AddonModForum.getAvailableSortOrders();
         this.isSetPinAvailable = AddonModForum.isSetPinStateAvailableForSite();
 
-        this.sortOrderSelectorModalOptions.componentProps = {
-            sortOrders: this.sortOrders,
-        };
-
         await super.ngOnInit();
 
         // Initialize discussions manager.
         const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(
             AddonModForumDiscussionsSource,
-            [this.courseId, this.module.id, this.courseContentsPage ? `${AddonModForumModuleHandlerService.PAGE_NAME}/` : ''],
+            [this.courseId, this.module.id, this.courseContentsPage ? `${ADDON_MOD_FORUM_PAGE_NAME}/` : ''],
         );
 
         this.sourceUnsubscribe = source.addListener({
@@ -235,20 +239,20 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         this.promisedDiscussions.resolve(new AddonModForumDiscussionsManager(source, this));
 
         // Refresh data if this forum discussion is synchronized from discussions list.
-        this.syncManualObserver = CoreEvents.on(AddonModForumSyncProvider.MANUAL_SYNCED, (data) => {
+        this.syncManualObserver = CoreEvents.on(ADDON_MOD_FORUM_MANUAL_SYNCED, (data) => {
             this.autoSyncEventReceived(data);
         }, this.siteId);
 
         // Listen for discussions added. When a discussion is added, we reload the data.
         this.newDiscObserver = CoreEvents.on(
-            AddonModForumProvider.NEW_DISCUSSION_EVENT,
+            ADDON_MOD_FORUM_NEW_DISCUSSION_EVENT,
             (data) => this.eventReceived(true, data),
         );
         this.replyObserver = CoreEvents.on(
-            AddonModForumProvider.REPLY_DISCUSSION_EVENT,
+            ADDON_MOD_FORUM_REPLY_DISCUSSION_EVENT,
             (data) => this.eventReceived(false, data),
         );
-        this.changeDiscObserver = CoreEvents.on(AddonModForumProvider.CHANGE_DISCUSSION_EVENT, data => {
+        this.changeDiscObserver = CoreEvents.on(ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT, data => {
             if (!this.forum) {
                 return;
             }
@@ -305,6 +309,9 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
                 this.hasOffline = this.hasOffline || this.hasOfflineRatings;
             }
         });
+
+        // Initialize search.
+        this.showSearch = await this.isSearchEnabled();
     }
 
     async ngAfterViewInit(): Promise<void> {
@@ -330,6 +337,22 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         this.ratingSyncObserver && this.ratingSyncObserver.off();
         this.sourceUnsubscribe && this.sourceUnsubscribe();
         this.discussions?.destroy();
+    }
+
+    /**
+     * Open search page.
+     */
+    async openSearch(): Promise<void> {
+        if (!this.forum) {
+            return;
+        }
+
+        await CoreNavigator.navigateToSitePath(ADDON_MOD_FORUM_SEARCH_PAGE_NAME, {
+            params: {
+                courseId: this.courseId,
+                forumId: this.forum.id,
+            },
+        });
     }
 
     /**
@@ -389,11 +412,11 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         this.dataRetrieved.emit(forum);
 
         switch (forum.type) {
-            case 'news':
-            case 'blog':
+            case AddonModForumType.NEWS:
+            case AddonModForumType.BLOG:
                 this.addDiscussionText = Translate.instant('addon.mod_forum.addanewtopic');
                 break;
-            case 'qanda':
+            case AddonModForumType.QANDA:
                 this.addDiscussionText = Translate.instant('addon.mod_forum.addanewquestion');
                 break;
             default:
@@ -406,7 +429,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
 
             if (updated) {
                 // Sync successful, send event.
-                CoreEvents.trigger(AddonModForumSyncProvider.MANUAL_SYNCED, {
+                CoreEvents.trigger(ADDON_MOD_FORUM_MANUAL_SYNCED, {
                     forumId: forum.id,
                     userId: CoreSites.getCurrentSiteUserId(),
                     source: 'index',
@@ -429,7 +452,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
                     const cutoffDateReached = AddonModForumHelper.isCutoffDateReached(forum)
                                     && !accessInfo.cancanoverridecutoff;
                     this.canAddDiscussion = !!forum.cancreatediscussions && !cutoffDateReached;
-                    this.showQAMessage = forum.type === 'qanda' && !accessInfo.canviewqandawithoutposting;
+                    this.showQAMessage = forum.type === AddonModForumType.QANDA && !accessInfo.canviewqandawithoutposting;
 
                     return;
                 }),
@@ -470,10 +493,6 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         const selectedOrder = await AddonModForum.getSelectedSortOrder();
 
         discussions.getSource().selectedSortOrder = selectedOrder;
-
-        if (this.sortOrderSelectorModalOptions.componentProps) {
-            this.sortOrderSelectorModalOptions.componentProps.selected = selectedOrder.value;
-        }
     }
 
     /**
@@ -493,7 +512,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         }
 
         if (this.sortingAvailable) {
-            promises.push(CoreUser.invalidateUserPreference(AddonModForumProvider.PREFERENCE_SORTORDER));
+            promises.push(CoreUser.invalidateUserPreference(ADDON_MOD_FORUM_PREFERENCE_SORTORDER));
         }
 
         await Promise.all(promises);
@@ -538,7 +557,10 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
 
         try {
             if (isNewDiscussion) {
-                CoreDomUtils.showToast('addon.mod_forum.postaddedsuccess', true);
+                CoreToasts.show({
+                    message: 'addon.mod_forum.postaddedsuccess',
+                    translateMessage: true,
+                });
 
                 const newDiscGroupId = (data as AddonModForumNewDiscussionData).groupId;
 
@@ -583,34 +605,21 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
     /**
      * Changes the sort order.
      *
-     * @param sortOrder Sort order new data.
+     * @param sortOrderValue Sort order new data.
      */
-    async setSortOrder(sortOrder: AddonModForumSortOrder): Promise<void> {
-        if (this.discussions && sortOrder.value != this.discussions.getSource().selectedSortOrder?.value) {
+    async setSortOrder(sortOrderValue: number): Promise<void> {
+        const sortOrder = this.sortOrders.find(sortOrder => sortOrder.value === sortOrderValue);
+
+        if (this.discussions && sortOrder && sortOrder.value != this.discussions.getSource().selectedSortOrder?.value) {
             this.discussions.getSource().selectedSortOrder = sortOrder;
             this.discussions.getSource().setDirty(true);
 
-            if (this.sortOrderSelectorModalOptions.componentProps) {
-                this.sortOrderSelectorModalOptions.componentProps.selected = sortOrder.value;
-            }
-
             try {
-                await CoreUser.setUserPreference(AddonModForumProvider.PREFERENCE_SORTORDER, sortOrder.value.toFixed(0));
+                await CoreUser.setUserPreference(ADDON_MOD_FORUM_PREFERENCE_SORTORDER, sortOrder.value.toFixed(0));
                 await this.showLoadingAndFetch();
             } catch (error) {
                 CoreDomUtils.showErrorModalDefault(error, 'Error updating preference.');
             }
-        }
-    }
-
-    /**
-     * Display the sort order selector modal.
-     */
-    async showSortOrderSelector(): Promise<void> {
-        const modalData = await CoreDomUtils.openModal<AddonModForumSortOrder>(this.sortOrderSelectorModalOptions);
-
-        if (modalData) {
-            this.setSortOrder(modalData);
         }
     }
 
@@ -628,7 +637,10 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         event.preventDefault();
         event.stopPropagation();
 
-        const popoverData = await CoreDomUtils.openPopover<{ action?: string; value: boolean }>({
+        const { AddonModForumDiscussionOptionsMenuComponent } =
+            await import('../discussion-options-menu/discussion-options-menu');
+
+        const popoverData = await CorePopovers.open<{ action?: string; value: boolean }>({
             component: AddonModForumDiscussionOptionsMenuComponent,
             componentProps: {
                 discussion,
@@ -659,7 +671,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
      * Group has changed.
      */
     async groupChanged(): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             await Promise.all([
@@ -671,6 +683,21 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
         } finally {
             modal.dismiss();
         }
+    }
+
+    /**
+     * Check if forum search is available.
+     *
+     * @returns Whether forum search is available.
+     */
+    protected async isSearchEnabled(): Promise<boolean> {
+        if (!CoreSearchGlobalSearch.isEnabled()) {
+            return false;
+        }
+
+        const searchAreas = await CoreSearchGlobalSearch.getSearchAreas();
+
+        return !!searchAreas.find(({ id }) => id === 'mod_forum-post');
     }
 
 }
@@ -708,12 +735,14 @@ class AddonModForumDiscussionsManager extends CoreListItemsManager<AddonModForum
         }
 
         try {
-            await AddonModForum.logView(forum.id, forum.name);
+            await AddonModForum.logView(forum.id);
 
             CoreCourse.checkModuleCompletion(this.page.courseId, this.page.module.completiondata);
         } catch {
             // Ignore errors.
         }
+
+        this.page.analyticsLogEvent('mod_forum_view_forum');
     }
 
     /**

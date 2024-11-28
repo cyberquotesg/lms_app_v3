@@ -14,12 +14,12 @@
 
 import { Component, ElementRef } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreFileUploaderStoreFilesResult } from '@features/fileuploader/services/fileuploader';
 import { AddonModQuizEssayQuestion, CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
 import { CoreQuestionHelper } from '@features/question/services/question-helper';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreFileSession } from '@services/file-session';
 import { CoreQuestion } from '@features/question/services/question';
 import { CoreFileEntry } from '@services/file-helper';
@@ -32,7 +32,7 @@ import { CoreFileEntry } from '@services/file-helper';
 })
 export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonModQuizEssayQuestion> {
 
-    formControl?: FormControl;
+    formControl?: FormControl<string | null>;
     attachments?: CoreFileEntry[];
     uploadFilesSupported = false;
 
@@ -52,7 +52,7 @@ export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonMod
 
         this.initEssayComponent(this.review);
 
-        this.formControl = this.fb.control(this.question?.textarea?.text);
+        this.formControl = this.fb.control(this.question?.textarea?.text ?? null);
 
         if (this.question?.allowsAttachments && this.uploadFilesSupported && !this.review) {
             this.loadAttachments();
@@ -71,7 +71,7 @@ export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonMod
 
         if (this.offlineEnabled && this.question.localAnswers?.attachments_offline) {
 
-            const attachmentsData: CoreFileUploaderStoreFilesResult = CoreTextUtils.parseJSON(
+            const attachmentsData: CoreFileUploaderStoreFilesResult = CoreText.parseJSON(
                 this.question.localAnswers.attachments_offline,
                 {
                     online: [],

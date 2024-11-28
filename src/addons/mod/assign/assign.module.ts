@@ -22,43 +22,61 @@ import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-ro
 import { CorePushNotificationsDelegate } from '@features/pushnotifications/services/push-delegate';
 import { CoreCronDelegate } from '@services/cron';
 import { CORE_SITE_SCHEMAS } from '@services/sites';
-import { AddonModAssignComponentsModule } from './components/components.module';
 import { AddonModAssignFeedbackModule } from './feedback/feedback.module';
-import { AddonModAssignProvider } from './services/assign';
-import { AddonModAssignHelperProvider } from './services/assign-helper';
-import { AddonModAssignOfflineProvider } from './services/assign-offline';
-import { AddonModAssignSyncProvider } from './services/assign-sync';
 import { OFFLINE_SITE_SCHEMA } from './services/database/assign';
-import { AddonModAssignFeedbackDelegateService } from './services/feedback-delegate';
 import { AddonModAssignIndexLinkHandler } from './services/handlers/index-link';
 import { AddonModAssignListLinkHandler } from './services/handlers/list-link';
-import { AddonModAssignModuleHandler, AddonModAssignModuleHandlerService } from './services/handlers/module';
+import { AddonModAssignModuleHandler } from './services/handlers/module';
 import { AddonModAssignPrefetchHandler } from './services/handlers/prefetch';
 import { AddonModAssignPushClickHandler } from './services/handlers/push-click';
 import { AddonModAssignSyncCronHandler } from './services/handlers/sync-cron';
-import { AddonModAssignSubmissionDelegateService } from './services/submission-delegate';
 import { AddonModAssignSubmissionModule } from './submission/submission.module';
+import { ADDON_MOD_ASSIGN_COMPONENT, ADDON_MOD_ASSIGN_PAGE_NAME } from './constants';
 
-export const ADDON_MOD_ASSIGN_SERVICES: Type<unknown>[] = [
-    AddonModAssignProvider,
-    AddonModAssignOfflineProvider,
-    AddonModAssignSyncProvider,
-    AddonModAssignHelperProvider,
-    AddonModAssignFeedbackDelegateService,
-    AddonModAssignSubmissionDelegateService,
-];
+/**
+ * Get mod assign services.
+ *
+ * @returns Returns mod assign services.
+ */
+export async function getModAssignServices(): Promise<Type<unknown>[]> {
+    const { AddonModAssignProvider } = await import('@addons/mod/assign/services/assign');
+    const { AddonModAssignOfflineProvider } = await import('@addons/mod/assign/services/assign-offline');
+    const { AddonModAssignSyncProvider } = await import('@addons/mod/assign/services/assign-sync');
+    const { AddonModAssignHelperProvider } = await import('@addons/mod/assign/services/assign-helper');
+    const { AddonModAssignFeedbackDelegateService } = await import('@addons/mod/assign/services/feedback-delegate');
+    const { AddonModAssignSubmissionDelegateService } = await import('@addons/mod/assign/services/submission-delegate');
+
+    return [
+        AddonModAssignProvider,
+        AddonModAssignOfflineProvider,
+        AddonModAssignSyncProvider,
+        AddonModAssignHelperProvider,
+        AddonModAssignFeedbackDelegateService,
+        AddonModAssignSubmissionDelegateService,
+    ];
+}
+
+/**
+ * Get assign component modules.
+ *
+ * @returns Assign component modules.
+ */
+export async function getModAssignComponentModules(): Promise<unknown[]> {
+    const { AddonModAssignComponentsModule } = await import('@addons/mod/assign/components/components.module');
+
+    return [AddonModAssignComponentsModule];
+}
 
 const routes: Routes = [
     {
-        path: AddonModAssignModuleHandlerService.PAGE_NAME,
-        loadChildren: () => import('./assign-lazy.module').then(m => m.AddonModAssignLazyModule),
+        path: ADDON_MOD_ASSIGN_PAGE_NAME,
+        loadChildren: () => import('./assign-lazy.module'),
     },
 ];
 
 @NgModule({
     imports: [
         CoreMainMenuTabRoutingModule.forChild(routes),
-        AddonModAssignComponentsModule,
         AddonModAssignSubmissionModule,
         AddonModAssignFeedbackModule,
     ],
@@ -79,7 +97,7 @@ const routes: Routes = [
                 CoreCronDelegate.register(AddonModAssignSyncCronHandler.instance);
                 CorePushNotificationsDelegate.registerClickHandler(AddonModAssignPushClickHandler.instance);
 
-                CoreCourseHelper.registerModuleReminderClick(AddonModAssignProvider.COMPONENT);
+                CoreCourseHelper.registerModuleReminderClick(ADDON_MOD_ASSIGN_COMPONENT);
             },
         },
     ],

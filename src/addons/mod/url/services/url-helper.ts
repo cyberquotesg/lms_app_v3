@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
+import { CoreLoadings } from '@services/loadings';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { makeSingleton } from '@singletons';
 
 /**
@@ -30,14 +29,13 @@ export class AddonModUrlHelperProvider {
      * @param url The URL to go to.
      */
     async open(url: string): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
-            const treated = await CoreContentLinksHelper.handleLink(url, undefined, true, true);
-
-            if (!treated) {
-                await CoreSites.getCurrentSite()?.openInBrowserWithAutoLogin(url);
-            }
+            await CoreSites.visitLink(url, {
+                checkRoot: true,
+                openBrowserRoot: true,
+            });
         } finally {
             modal.dismiss();
         }

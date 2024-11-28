@@ -23,8 +23,10 @@ import { CoreSitesReadingStrategy } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSFile } from '@services/ws';
 import { makeSingleton } from '@singletons';
-import { AddonModGlossary, AddonModGlossaryEntry, AddonModGlossaryGlossary, AddonModGlossaryProvider } from '../glossary';
+import { AddonModGlossary, AddonModGlossaryEntry, AddonModGlossaryGlossary } from '../glossary';
 import { AddonModGlossarySync, AddonModGlossarySyncResult } from '../glossary-sync';
+import { ContextLevel } from '@/core/constants';
+import { ADDON_MOD_GLOSSARY_COMPONENT } from '../../constants';
 
 /**
  * Handler to prefetch forums.
@@ -34,7 +36,7 @@ export class AddonModGlossaryPrefetchHandlerService extends CoreCourseActivityPr
 
     name = 'AddonModGlossary';
     modName = 'glossary';
-    component = AddonModGlossaryProvider.COMPONENT;
+    component = ADDON_MOD_GLOSSARY_COMPONENT;
     updatesNames = /^configuration$|^.*files$|^entries$/;
 
     /**
@@ -45,7 +47,7 @@ export class AddonModGlossaryPrefetchHandlerService extends CoreCourseActivityPr
             const glossary = await AddonModGlossary.getGlossary(courseId, module.id);
 
             const entries = await AddonModGlossary.fetchAllEntries(
-                (options) => AddonModGlossary.getEntriesByLetter(glossary.id, 'ALL', options),
+                (options) => AddonModGlossary.getEntriesByLetter(glossary.id, options),
                 {
                     cmId: module.id,
                 },
@@ -125,43 +127,23 @@ export class AddonModGlossaryPrefetchHandlerService extends CoreCourseActivityPr
                     break;
                 case 'cat':
                     promises.push(AddonModGlossary.fetchAllEntries(
-                        (newOptions) => AddonModGlossary.getEntriesByCategory(
-                            glossary.id,
-                            AddonModGlossaryProvider.SHOW_ALL_CATEGORIES,
-                            newOptions,
-                        ),
+                        (newOptions) => AddonModGlossary.getEntriesByCategory(glossary.id, newOptions),
                         options,
                     ));
                     break;
                 case 'date':
                     promises.push(AddonModGlossary.fetchAllEntries(
-                        (newOptions) => AddonModGlossary.getEntriesByDate(
-                            glossary.id,
-                            'CREATION',
-                            'DESC',
-                            newOptions,
-                        ),
+                        (newOptions) => AddonModGlossary.getEntriesByDate(glossary.id, 'CREATION', newOptions),
                         options,
                     ));
                     promises.push(AddonModGlossary.fetchAllEntries(
-                        (newOptions) => AddonModGlossary.getEntriesByDate(
-                            glossary.id,
-                            'UPDATE',
-                            'DESC',
-                            newOptions,
-                        ),
+                        (newOptions) => AddonModGlossary.getEntriesByDate(glossary.id, 'UPDATE', newOptions),
                         options,
                     ));
                     break;
                 case 'author':
                     promises.push(AddonModGlossary.fetchAllEntries(
-                        (newOptions) => AddonModGlossary.getEntriesByAuthor(
-                            glossary.id,
-                            'ALL',
-                            'LASTNAME',
-                            'ASC',
-                            newOptions,
-                        ),
+                        (newOptions) => AddonModGlossary.getEntriesByAuthor(glossary.id, newOptions),
                         options,
                     ));
                     break;
@@ -171,17 +153,17 @@ export class AddonModGlossaryPrefetchHandlerService extends CoreCourseActivityPr
 
         // Fetch all entries to get information from.
         promises.push(AddonModGlossary.fetchAllEntries(
-            (newOptions) => AddonModGlossary.getEntriesByLetter(glossary.id, 'ALL', newOptions),
+            (newOptions) => AddonModGlossary.getEntriesByLetter(glossary.id, newOptions),
             options,
         ).then((entries) => {
             const promises: Promise<unknown>[] = [];
-            const commentsEnabled = !CoreComments.areCommentsDisabledInSite();
+            const commentsEnabled = CoreComments.areCommentsEnabledInSite();
 
             entries.forEach((entry) => {
                 // Don't fetch individual entries, it's too many WS calls.
                 if (glossary.allowcomments && commentsEnabled) {
                     promises.push(CoreComments.getComments(
-                        'module',
+                        ContextLevel.MODULE,
                         glossary.coursemodule,
                         'mod_glossary',
                         entry.id,

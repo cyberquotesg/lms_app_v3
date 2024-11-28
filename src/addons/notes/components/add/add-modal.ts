@@ -14,23 +14,30 @@
 
 import { AddonNotes, AddonNotesPublishState } from '@addons/notes/services/notes';
 import { Component, ViewChild, ElementRef, Input } from '@angular/core';
-import { CoreApp } from '@services/app';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
+import { CoreDomUtils } from '@services/utils/dom';
 import { CoreForms } from '@singletons/form';
 import { ModalController } from '@singletons';
+import { CoreKeyboard } from '@singletons/keyboard';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreToasts, ToastDuration } from '@services/toasts';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Component that displays a text area for composing a note.
  */
 @Component({
     templateUrl: 'add-modal.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonNotesAddComponent {
 
     @ViewChild('itemEdit') formElement?: ElementRef;
 
-    @Input() courseId!: number;
+    @Input({ required: true }) courseId!: number;
     @Input() userId?: number;
     @Input() type: AddonNotesPublishState = 'personal';
     text = '';
@@ -45,8 +52,8 @@ export class AddonNotesAddComponent {
         e.preventDefault();
         e.stopPropagation();
 
-        CoreApp.closeKeyboard();
-        const loadingModal = await CoreDomUtils.showModalLoading('core.sending', true);
+        CoreKeyboard.close();
+        const loadingModal = await CoreLoadings.show('core.sending', true);
 
         // Freeze the add note button.
         this.processing = true;
@@ -57,7 +64,11 @@ export class AddonNotesAddComponent {
             CoreForms.triggerFormSubmittedEvent(this.formElement, sent, CoreSites.getCurrentSiteId());
 
             ModalController.dismiss(<AddonNotesAddModalReturn>{ type: this.type, sent: true }).finally(() => {
-                CoreDomUtils.showToast(sent ? 'addon.notes.eventnotecreated' : 'core.datastoredoffline', true, ToastDuration.LONG);
+                CoreToasts.show({
+                    message: sent ? 'addon.notes.eventnotecreated' : 'core.datastoredoffline',
+                    translateMessage: true,
+                    duration: ToastDuration.LONG,
+                });
             });
         } catch (error){
             CoreDomUtils.showErrorModal(error);

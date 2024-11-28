@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef, Input } from '@angular/core';
-import { MediaFile } from '@ionic-native/media-capture/ngx';
+import { MediaFile } from '@awesome-cordova-plugins/media-capture/ngx';
 
 import { CoreFile, CoreFileProvider } from '@services/file';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -24,6 +24,8 @@ import { CoreError } from '@classes/errors/error';
 import { CoreCaptureError } from '@classes/errors/captureerror';
 import { CoreCanceledError } from '@classes/errors/cancelederror';
 import { CorePath } from '@singletons/path';
+import { toBoolean } from '@/core/transforms/boolean';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page to capture media in browser.
@@ -41,7 +43,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
     @Input() mimetype?: string;
     @Input() extension?: string;
     @Input() quality?: number; // Only for images.
-    @Input() returnDataUrl?: boolean; // Whether it should return a data img. Only for images.
+    @Input({ transform: toBoolean }) returnDataUrl = false; // Whether it should return a data img. Only for images.
 
     @ViewChild('streamVideo') streamVideo?: ElementRef;
     @ViewChild('previewVideo') previewVideo?: ElementRef;
@@ -210,7 +212,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
             // Get the image from the video and set it to the canvas, using video width/height.
             const width = this.streamVideo?.nativeElement.videoWidth;
             const height = this.streamVideo?.nativeElement.videoHeight;
-            const loadingModal = await CoreDomUtils.showModalLoading();
+            const loadingModal = await CoreLoadings.show();
 
             this.imgCanvas.nativeElement.width = width;
             this.imgCanvas.nativeElement.height = height;
@@ -312,7 +314,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const loadingModal = await CoreDomUtils.showModalLoading();
+        const loadingModal = await CoreLoadings.show();
 
         try {
             // Capturing in browser. Write the blob in a file.
@@ -324,7 +326,7 @@ export class CoreEmulatorCaptureMediaComponent implements OnInit, OnDestroy {
             const fileEntry = await CoreFile.writeFile(this.getFilePath(), this.mediaBlob);
 
             if (this.isImage && !this.isCaptureImage) {
-                this.dismissWithData(fileEntry.toURL());
+                this.dismissWithData(CoreFile.getFileEntryURL(fileEntry));
             } else {
                 // The capture plugin should return a MediaFile, not a FileEntry. Convert it.
                 const metadata = await CoreFile.getMetadata(fileEntry);

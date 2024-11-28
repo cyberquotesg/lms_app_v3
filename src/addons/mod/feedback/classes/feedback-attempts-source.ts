@@ -16,12 +16,13 @@ import { CoreRoutedItemsManagerSource } from '@classes/items-management/routed-i
 import { CoreGroupInfo, CoreGroups } from '@services/groups';
 import {
     AddonModFeedback,
-    AddonModFeedbackProvider,
     AddonModFeedbackWSAnonAttempt,
     AddonModFeedbackWSAttempt,
     AddonModFeedbackWSFeedback,
 } from '../services/feedback';
 import { AddonModFeedbackHelper } from '../services/feedback-helper';
+import { Params } from '@angular/router';
+import { ADDON_MOD_FEEDBACK_PER_PAGE } from '../constants';
 
 /**
  * Feedback attempts.
@@ -37,8 +38,7 @@ export class AddonModFeedbackAttemptsSource extends CoreRoutedItemsManagerSource
     anonymous?: AddonModFeedbackWSAnonAttempt[];
     anonymousTotal?: number;
     groupInfo?: CoreGroupInfo;
-
-    protected feedback?: AddonModFeedbackWSFeedback;
+    feedback?: AddonModFeedbackWSFeedback;
 
     constructor(courseId: number, cmId: number) {
         super();
@@ -52,6 +52,15 @@ export class AddonModFeedbackAttemptsSource extends CoreRoutedItemsManagerSource
      */
     getItemPath(attempt: AddonModFeedbackAttemptItem): string {
         return attempt.id.toString();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    getItemQueryParams(): Params {
+        return {
+            groupId: this.selectedGroup,
+        };
     }
 
     /**
@@ -111,7 +120,7 @@ export class AddonModFeedbackAttemptsSource extends CoreRoutedItemsManagerSource
      * @inheritdoc
      */
     protected getPageLength(): number {
-        return AddonModFeedbackProvider.PER_PAGE;
+        return ADDON_MOD_FEEDBACK_PER_PAGE;
     }
 
     /**
@@ -137,10 +146,10 @@ export class AddonModFeedbackAttemptsSource extends CoreRoutedItemsManagerSource
         const pageAttempts: AddonModFeedbackAttemptItem[] = [
             // The page argument is ignored in the webservice when there is only one page,
             // so we should ignore the responses of pages beyond the first if that's the case.
-            ...(page === 0 || result.totalattempts > AddonModFeedbackProvider.PER_PAGE)
+            ...(page === 0 || result.totalattempts > ADDON_MOD_FEEDBACK_PER_PAGE)
                 ? result.attempts
                 : [],
-            ...(page === 0 || result.totalanonattempts > AddonModFeedbackProvider.PER_PAGE)
+            ...(page === 0 || result.totalanonattempts > ADDON_MOD_FEEDBACK_PER_PAGE)
                 ? result.anonattempts
                 : [],
         ];

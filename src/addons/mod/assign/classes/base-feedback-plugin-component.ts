@@ -15,10 +15,10 @@
 import { Component, Input } from '@angular/core';
 import { CoreCanceledError } from '@classes/errors/cancelederror';
 import { CoreError } from '@classes/errors/error';
-import { CoreDomUtils } from '@services/utils/dom';
-import { AddonModAssignEditFeedbackModalComponent } from '../components/edit-feedback-modal/edit-feedback-modal';
+import { CoreModals } from '@services/modals';
 import { AddonModAssignFeedbackCommentsTextData } from '../feedback/comments/services/handler';
 import { AddonModAssignAssign, AddonModAssignPlugin, AddonModAssignSubmission } from '../services/assign';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Base class for component to render a feedback plugin.
@@ -28,13 +28,13 @@ import { AddonModAssignAssign, AddonModAssignPlugin, AddonModAssignSubmission } 
 })
 export class AddonModAssignFeedbackPluginBaseComponent implements IAddonModAssignFeedbackPluginComponent {
 
-    @Input() assign!: AddonModAssignAssign; // The assignment.
-    @Input() submission!: AddonModAssignSubmission; // The submission.
-    @Input() plugin!: AddonModAssignPlugin; // The plugin object.
-    @Input() userId!: number; // The user ID of the submission.
+    @Input({ required: true }) assign!: AddonModAssignAssign; // The assignment.
+    @Input({ required: true }) submission!: AddonModAssignSubmission; // The submission.
+    @Input({ required: true }) plugin!: AddonModAssignPlugin; // The plugin object.
+    @Input({ required: true }) userId!: number; // The user ID of the submission.
     @Input() configs?: Record<string,string>; // The configs for the plugin.
-    @Input() canEdit = false; // Whether the user can edit.
-    @Input() edit = false; // Whether the user is editing.
+    @Input({ transform: toBoolean }) canEdit = false; // Whether the user can edit.
+    @Input({ transform: toBoolean }) edit = false; // Whether the user is editing.
 
     /**
      * Open a modal to edit the feedback plugin.
@@ -46,8 +46,11 @@ export class AddonModAssignFeedbackPluginBaseComponent implements IAddonModAssig
             throw new CoreError('Cannot edit feedback');
         }
 
+        const { AddonModAssignEditFeedbackModalComponent } =
+            await import('@addons/mod/assign/components/edit-feedback-modal/edit-feedback-modal');
+
         // Create the navigation modal.
-        const modalData = await CoreDomUtils.openModal<AddonModAssignFeedbackCommentsTextData>({
+        const modalData = await CoreModals.openModal<AddonModAssignFeedbackCommentsTextData>({
             component: AddonModAssignEditFeedbackModalComponent,
             componentProps: {
                 assign: this.assign,

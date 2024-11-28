@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CoreSiteInfoUserHomepage } from '@classes/site';
+import { CoreSiteInfoUserHomepage } from '@classes/sites/unauthenticated-site';
 import { CoreMainMenuHandler, CoreMainMenuHandlerData } from '@features/mainmenu/services/mainmenu-delegate';
 import { CoreSiteHomeHomeHandler } from '@features/sitehome/services/handlers/sitehome-home';
 import { CoreSites } from '@services/sites';
@@ -60,9 +60,10 @@ export class CoreCoursesMyCoursesMainMenuHandlerService implements CoreMainMenuH
      * @inheritdoc
      */
     getDisplayData(): CoreMainMenuHandlerData {
-        const site = CoreSites.getCurrentSite();
+        const userHomePage = CoreSites.getCurrentSite()?.getInfo()?.userhomepage;
 
-        const displayMyCourses = site?.getInfo() && site?.getInfo()?.userhomepage === CoreSiteInfoUserHomepage.HOMEPAGE_MYCOURSES;
+        const displayMyCourses = userHomePage === CoreSiteInfoUserHomepage.HOMEPAGE_MYCOURSES ||
+            userHomePage === CoreSiteInfoUserHomepage.HOMEPAGE_URL;
 
         return {
             title: 'core.courses.mycourses',

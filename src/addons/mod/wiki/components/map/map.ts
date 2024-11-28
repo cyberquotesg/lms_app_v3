@@ -15,7 +15,9 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ModalController } from '@singletons';
 import { AddonModWikiPageDBRecord } from '../../services/database/wiki';
-import { AddonModWikiSubwikiPage } from '../../services/wiki';
+import { AddonModWikiSubwikiPage, AddonModWikiWiki } from '../../services/wiki';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Modal to display the map of a Wiki.
@@ -23,10 +25,16 @@ import { AddonModWikiSubwikiPage } from '../../services/wiki';
 @Component({
     selector: 'page-addon-mod-wiki-map',
     templateUrl: 'map.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonModWikiMapModalComponent implements OnInit {
 
     @Input() pages: (AddonModWikiSubwikiPage | AddonModWikiPageDBRecord)[] = [];
+    @Input() wiki?: AddonModWikiWiki;
+    @Input() selectedId?: number;
     @Input() selectedTitle?: string;
     @Input() moduleId?: number;
     @Input() courseId?: number;
@@ -39,6 +47,16 @@ export class AddonModWikiMapModalComponent implements OnInit {
      */
     ngOnInit(): void {
         this.constructMap();
+
+        if (this.selectedId && this.wiki) {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'mod_wiki_get_subwiki_pages',
+                name: this.selectedTitle || this.wiki.name,
+                data: { id: this.wiki.id, pageid: this.selectedId, category: 'wiki' },
+                url: `/mod/wiki/map.php?pageid=${this.selectedId}`,
+            });
+        }
     }
 
     /**

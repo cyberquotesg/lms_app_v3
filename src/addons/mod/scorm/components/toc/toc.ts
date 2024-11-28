@@ -14,8 +14,10 @@
 
 import { Component, Input, OnInit } from '@angular/core';
 import { ModalController } from '@singletons';
-import { AddonModScormGetScormAccessInformationWSResponse, AddonModScormProvider } from '../../services/scorm';
+import { AddonModScormGetScormAccessInformationWSResponse } from '../../services/scorm';
 import { AddonModScormTOCScoWithIcon } from '../../services/scorm-helper';
+import { AddonModScormMode } from '../../constants';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Modal to display the TOC of a SCORM.
@@ -23,15 +25,20 @@ import { AddonModScormTOCScoWithIcon } from '../../services/scorm-helper';
 @Component({
     selector: 'addon-mod-scorm-toc',
     templateUrl: 'toc.html',
+    styleUrl: 'toc.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonModScormTocComponent implements OnInit {
 
     @Input() toc: AddonModScormTOCScoWithIcon[] = [];
     @Input() attemptToContinue?: number;
     @Input() selected?: number;
-    @Input() moduleId!: number;
-    @Input() courseId!: number;
-    @Input() accessInfo!: AddonModScormGetScormAccessInformationWSResponse;
+    @Input({ required: true }) moduleId!: number;
+    @Input({ required: true }) courseId!: number;
+    @Input({ required: true }) accessInfo!: AddonModScormGetScormAccessInformationWSResponse;
     @Input() mode = '';
 
     isBrowse = false;
@@ -41,8 +48,8 @@ export class AddonModScormTocComponent implements OnInit {
      * @inheritdoc
      */
     ngOnInit(): void {
-        this.isBrowse = this.mode === AddonModScormProvider.MODEBROWSE;
-        this.isReview = this.mode === AddonModScormProvider.MODEREVIEW;
+        this.isBrowse = this.mode === AddonModScormMode.BROWSE;
+        this.isReview = this.mode === AddonModScormMode.REVIEW;
     }
 
     /**

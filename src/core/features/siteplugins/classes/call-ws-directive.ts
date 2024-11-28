@@ -15,7 +15,7 @@
 import { Input, OnInit, OnDestroy, ElementRef, Output, EventEmitter, Directive } from '@angular/core';
 import { Subscription } from 'rxjs';
 
-import { CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreSitePluginsPluginContentComponent } from '../components/plugin-content/plugin-content';
 import { CoreSitePlugins } from '../services/siteplugins';
 import { CoreLogger } from '@singletons/logger';
@@ -27,7 +27,7 @@ import { CoreFormFields, CoreForms } from '@singletons/form';
 @Directive()
 export class CoreSitePluginsCallWSBaseDirective implements OnInit, OnDestroy {
 
-    @Input() name!: string; // The name of the WS to call.
+    @Input({ required: true }) name!: string; // The name of the WS to call.
     @Input() params?: Record<string, unknown>; // The params for the WS call.
     @Input() preSets?: CoreSiteWSPreSets; // The preSets for the WS call.
     @Input() useOtherDataForWS?: string[] | unknown; // Whether to include other data in the params for the WS.
@@ -127,7 +127,7 @@ export class CoreSitePluginsCallWSBaseDirective implements OnInit, OnDestroy {
     }
 
     /**
-     * Directive destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.invalidateObserver?.unsubscribe();

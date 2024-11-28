@@ -474,6 +474,10 @@ body
 
 	    	    ion-buttons
 	    	    {
+	    	    	ion-back-button
+	    	    	{
+	    	    		color: white;
+	    	    	}
 	    	    	ion-button
 	    	    	{
 	    	    		background: transparent !important;
@@ -838,16 +842,16 @@ body
 			}
 		}
 	}
-	ion-slides
+	swiper-container
 	{
+		max-height: none !important;
+
 		&.page-slider
 		{
-			.swiper-wrapper
+			swiper-slide
 			{
-				.swiper-slide
-				{
-					align-items: flex-start;
-				}
+				justify-content: flex-start;
+				align-items: flex-start;
 			}
 		}
 	}
@@ -1290,6 +1294,7 @@ body
 			}
 		}
 	}
+
 	button,
 	.button
 	{
@@ -2338,7 +2343,7 @@ body
         z-index: 999;
     }
 
-	// ============================================================================================= not logged in pages
+	// ============================================================================================= logged in pages
 	&.logged-in
 	{
 		/* *a/

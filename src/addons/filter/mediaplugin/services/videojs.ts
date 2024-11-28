@@ -16,8 +16,8 @@ import { Injectable } from '@angular/core';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CoreExternalContentDirective } from '@directives/external-content';
 import { CoreLang } from '@services/lang';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreText } from '@singletons/text';
+import { CoreUrl } from '@singletons/url';
 import { makeSingleton } from '@singletons';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CoreEvents } from '@singletons/events';
@@ -64,7 +64,7 @@ export class AddonFilterMediaPluginVideoJSService {
         // Create player.
         const videojs = await this.getVideoJS();
         const dataSetupString = element.getAttribute('data-setup') || element.getAttribute('data-setup-lazy') || '{}';
-        const data = CoreTextUtils.parseJSON<VideoJSOptions>(dataSetupString, {});
+        const data = CoreText.parseJSON<VideoJSOptions>(dataSetupString, {});
         const player = videojs(
             element,
             {
@@ -106,8 +106,8 @@ export class AddonFilterMediaPluginVideoJSService {
         }
 
         const dataSetupString = video.getAttribute('data-setup') || video.getAttribute('data-setup-lazy') || '{}';
-        const data = CoreTextUtils.parseJSON<VideoJSOptions>(dataSetupString, {});
-        const youtubeUrl = data.techOrder?.[0] == 'youtube' && CoreUrlUtils.getYoutubeEmbedUrl(data.sources?.[0]?.src);
+        const data = CoreText.parseJSON<VideoJSOptions>(dataSetupString, {});
+        const youtubeUrl = data.techOrder?.[0] == 'youtube' && CoreUrl.getYoutubeEmbedUrl(data.sources?.[0]?.src);
 
         if (!youtubeUrl) {
             return;
@@ -165,6 +165,14 @@ export class AddonFilterMediaPluginVideoJSService {
         const videoWidth = player.videoWidth();
         const videoHeight = player.videoHeight();
         const playerDimensions = player.currentDimensions();
+        const offsetParentWidth = player.el().offsetParent?.clientWidth;
+
+        if (offsetParentWidth && playerDimensions.width > offsetParentWidth) {
+            // The player is bigger than the container. Resize it.
+            player.dimension('width', offsetParentWidth);
+            playerDimensions.width = offsetParentWidth;
+        }
+
         if (!videoWidth || !videoHeight || !playerDimensions.width || videoWidth === playerDimensions.width) {
             return;
         }

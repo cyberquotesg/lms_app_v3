@@ -15,11 +15,12 @@
 import { Input, OnInit, ElementRef, Directive } from '@angular/core';
 
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreErrorHelper } from '@services/error-helper';
 import { Translate } from '@singletons';
 import { CoreSitePluginsPluginContentComponent } from '../components/plugin-content/plugin-content';
 import { CoreSitePluginsCallWSBaseDirective } from './call-ws-directive';
+import { toBoolean } from '@/core/transforms/boolean';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Base class for directives to call a WS when the element is clicked.
@@ -30,7 +31,7 @@ import { CoreSitePluginsCallWSBaseDirective } from './call-ws-directive';
 export class CoreSitePluginsCallWSOnClickBaseDirective extends CoreSitePluginsCallWSBaseDirective implements OnInit {
 
     @Input() confirmMessage?: string; // Message to confirm the action. If not supplied, no confirmation. If empty, default message.
-    @Input() showError?: boolean | string; // Whether to show an error message if the WS call fails. Defaults to true.
+    @Input({ transform: toBoolean }) showError = true; // Whether to show an error message if the WS call fails.
 
     constructor(
         element: ElementRef,
@@ -67,16 +68,16 @@ export class CoreSitePluginsCallWSOnClickBaseDirective extends CoreSitePluginsCa
      * @inheritdoc
      */
     protected async callWS(): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             await super.callWS();
         } catch (error) {
-            if (this.showError === undefined || CoreUtils.isTrueOrOne(this.showError)) {
+            if (this.showError) {
                 CoreDomUtils.showErrorModalDefault(
                     error,
                     Translate.instant('core.serverconnection', {
-                        details: CoreTextUtils.getErrorMessageFromError(error) ?? 'Unknown error',
+                        details: CoreErrorHelper.getErrorMessageFromError(error) ?? 'Unknown error',
                     }),
                 );
             }

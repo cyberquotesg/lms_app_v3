@@ -23,17 +23,16 @@ import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
 import { CoreEvents } from '@singletons/events';
-import { AddonModChoice, AddonModChoiceProvider } from './choice';
+import { AddonModChoice } from './choice';
 import { AddonModChoiceOffline } from './choice-offline';
 import { AddonModChoicePrefetchHandler } from './handlers/prefetch';
+import { ADDON_MOD_CHOICE_AUTO_SYNCED, ADDON_MOD_CHOICE_COMPONENT } from '../constants';
 
 /**
  * Service to sync choices.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonModChoiceSyncProvider extends CoreCourseActivitySyncBaseProvider<AddonModChoiceSyncResult> {
-
-    static readonly AUTO_SYNCED = 'addon_mod_choice_autom_synced';
 
     protected componentTranslatableString = 'choice';
 
@@ -81,7 +80,7 @@ export class AddonModChoiceSyncProvider extends CoreCourseActivitySyncBaseProvid
 
             if (result?.updated) {
                 // Sync successful, send event.
-                CoreEvents.trigger(AddonModChoiceSyncProvider.AUTO_SYNCED, {
+                CoreEvents.trigger(ADDON_MOD_CHOICE_AUTO_SYNCED, {
                     choiceId: response.choiceid,
                     userId: response.userid,
                     warnings: result.warnings,
@@ -150,7 +149,7 @@ export class AddonModChoiceSyncProvider extends CoreCourseActivitySyncBaseProvid
         };
 
         // Sync offline logs.
-        await CoreUtils.ignoreErrors(CoreCourseLogHelper.syncActivity(AddonModChoiceProvider.COMPONENT, choiceId, siteId));
+        await CoreUtils.ignoreErrors(CoreCourseLogHelper.syncActivity(ADDON_MOD_CHOICE_COMPONENT, choiceId, siteId));
 
         const data = await CoreUtils.ignoreErrors(AddonModChoiceOffline.getResponse(choiceId, siteId, userId));
 

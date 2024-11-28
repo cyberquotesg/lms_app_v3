@@ -21,7 +21,8 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { makeSingleton } from '@singletons';
-import { AddonModLessonModuleHandlerService } from './module';
+import { ADDON_MOD_LESSON_PAGE_NAME } from '../../constants';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Handler to treat links to lesson report.
@@ -47,12 +48,12 @@ export class AddonModLessonReportLinkHandlerService extends CoreContentLinksHand
         params: Record<string, string>,
     ): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]> {
         return [{
-            action: (siteId) => {
+            action: async (siteId) => {
                 if (!params.action || params.action == 'reportoverview') {
                     // Go to overview.
-                    this.openReportOverview(Number(params.id), Number(params.group), siteId);
+                    await this.openReportOverview(Number(params.id), Number(params.group), siteId);
                 } else if (params.action == 'reportdetail') {
-                    this.openUserRetake(Number(params.id), Number(params.userid), Number(params.try), siteId);
+                    await this.openUserRetake(Number(params.id), Number(params.userid), Number(params.try), siteId);
                 }
             },
         }];
@@ -86,7 +87,7 @@ export class AddonModLessonReportLinkHandlerService extends CoreContentLinksHand
      */
     protected async openReportOverview(moduleId: number, groupId?: number, siteId?: string): Promise<void> {
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             // Get the module object.
@@ -106,7 +107,7 @@ export class AddonModLessonReportLinkHandlerService extends CoreContentLinksHand
             };
 
             CoreNavigator.navigateToSitePath(
-                `${AddonModLessonModuleHandlerService.PAGE_NAME}/${module.course}/${module.id}`,
+                `${ADDON_MOD_LESSON_PAGE_NAME}/${module.course}/${module.id}`,
                 { params, siteId },
             );
         } catch (error) {
@@ -132,7 +133,7 @@ export class AddonModLessonReportLinkHandlerService extends CoreContentLinksHand
         siteId: string,
     ): Promise<void> {
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             // Get the module object.
@@ -145,7 +146,7 @@ export class AddonModLessonReportLinkHandlerService extends CoreContentLinksHand
             };
 
             CoreNavigator.navigateToSitePath(
-                AddonModLessonModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/user-retake/${userId}`,
+                ADDON_MOD_LESSON_PAGE_NAME + `/${module.course}/${module.id}/user-retake/${userId}`,
                 { params, siteId },
             );
         } catch (error) {

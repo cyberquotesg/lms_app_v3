@@ -25,6 +25,7 @@ import { CoreAccountsList, CoreLoginHelper } from '@features/login/services/logi
 import { CoreNetwork } from '@services/network';
 import { Subscription } from 'rxjs';
 import { CoreNavigator } from '@services/navigator';
+import { CoreToasts } from '@services/toasts';
 
 /**
  * Page that displays the synchronization settings.
@@ -32,7 +33,6 @@ import { CoreNavigator } from '@services/navigator';
 @Component({
     selector: 'page-core-app-settings-synchronization',
     templateUrl: 'synchronization.html',
-    styleUrls: ['../../../login/sitelist.scss'],
 })
 export class CoreSettingsSynchronizationPage implements OnInit, OnDestroy {
 
@@ -80,11 +80,11 @@ export class CoreSettingsSynchronizationPage implements OnInit, OnDestroy {
 
             const siteInfo = site.getInfo();
 
-            siteEntry.siteName = site.getSiteName();
+            siteEntry.siteName = await site.getSiteName();
 
             if (siteInfo) {
                 siteEntry.siteUrl = siteInfo.siteurl;
-                siteEntry.fullName = siteInfo.fullname;
+                siteEntry.fullname = siteInfo.fullname;
             }
         });
 
@@ -105,10 +105,8 @@ export class CoreSettingsSynchronizationPage implements OnInit, OnDestroy {
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
-        const currentSiteId = CoreSites.getCurrentSiteId();
-
         try {
-            this.accountsList = await CoreLoginHelper.getAccountsList(currentSiteId);
+            this.accountsList = await CoreLoginHelper.getAccountsList();
         } catch {
             // Ignore errors.
         }
@@ -134,6 +132,11 @@ export class CoreSettingsSynchronizationPage implements OnInit, OnDestroy {
         // Using syncOnlyOnWifi false to force manual sync.
         try {
             await CoreSettingsHelper.synchronizeSite(false, siteId);
+
+            CoreToasts.show({
+                message: 'core.settings.sitesynccompleted',
+                translateMessage: true,
+            });
         } catch (error) {
             if (this.isDestroyed) {
                 return;

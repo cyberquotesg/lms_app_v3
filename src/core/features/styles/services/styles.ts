@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSitePublicConfigResponse } from '@classes/site';
+import { CoreSitePublicConfigResponse } from '@classes/sites/unauthenticated-site';
 import { CoreApp } from '@services/app';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
@@ -148,8 +148,15 @@ export class CoreStylesService {
             this.removeSite(site.getId());
         });
 
-        // Load temporary styles when site config is checked in login.
+        // Load temporary styles when site config is checked in login/reconnect.
         CoreEvents.on(CoreEvents.LOGIN_SITE_CHECKED, (data) => {
+            if (data.siteId) {
+                // Reconnecting to a site, enable the site styles.
+                this.enableSiteStyles(data.siteId);
+
+                return;
+            }
+
             this.loadTmpStyles(data.config).catch((error) => {
                 this.logger.error('Error loading tmp styles', error);
             });
@@ -163,8 +170,9 @@ export class CoreStylesService {
                 return;
             }
 
-            // The tmp styles are from a site that wasn't added in the end. Just remove them.
+            // User didn't access the site, unload tmp styles and site styles if any.
             this.unloadTmpStyles();
+            this.clear();
         });
     }
 
@@ -218,7 +226,7 @@ export class CoreStylesService {
             contents = (await handler.getStyle(siteId, config)).trim();
         }
 
-        const hash = <string>Md5.hashAsciiStr(contents);
+        const hash = Md5.hashAsciiStr(contents);
 
         // Update the styles only if they have changed.
         if (this.stylesEls[siteId][handler.name] === hash) {
@@ -278,8 +286,7 @@ export class CoreStylesService {
             this.disableStyleElement(style, true);
         });
 
-        // Set StatusBar properties.
-        CoreApp.setStatusBarColor();
+        CoreApp.setSystemUIColors();
     }
 
     /**
@@ -341,7 +348,7 @@ export class CoreStylesService {
                 this.disableStyleElementByName(siteId, sourceName, false);
             }
 
-            CoreApp.setStatusBarColor();
+            CoreApp.setSystemUIColors();
         }
     }
 
@@ -371,8 +378,7 @@ export class CoreStylesService {
         }));
 
         if (!disabled) {
-            // Set StatusBar properties.
-            CoreApp.setStatusBarColor();
+            CoreApp.setSystemUIColors();
         }
     }
 
@@ -390,7 +396,7 @@ export class CoreStylesService {
             await this.setStyle(CoreStylesService.TMP_SITE_ID, handler, false, config);
         }));
 
-        CoreApp.setStatusBarColor();
+        CoreApp.setSystemUIColors();
     }
 
     /**
@@ -438,7 +444,7 @@ export class CoreStylesService {
             }
             delete this.stylesEls[siteId];
 
-            CoreApp.setStatusBarColor();
+            CoreApp.setSystemUIColors();
         }
     }
 

@@ -15,20 +15,20 @@
 import {
     AddonModDataEntryField,
     AddonModDataField,
-    AddonModDataProvider,
     AddonModDataSearchEntriesAdvancedFieldFormatted,
     AddonModDataSubfieldData,
 } from '@addons/mod/data/services/data';
 import { AddonModDataFieldHandler } from '@addons/mod/data/services/data-fields-delegate';
 import { Injectable, Type } from '@angular/core';
 import { CoreFileUploader, CoreFileUploaderStoreFilesResult } from '@features/fileuploader/services/fileuploader';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { CoreFileSession } from '@services/file-session';
 import { CoreFormFields } from '@singletons/form';
 import { makeSingleton, Translate } from '@singletons';
 import { AddonModDataFieldPictureComponent } from '../component/picture';
 import { CoreFileEntry } from '@services/file-helper';
 import type { AddonModDataFieldPluginBaseComponent } from '@addons/mod/data/classes/base-field-plugin-component';
+import { ADDON_MOD_DATA_COMPONENT } from '@addons/mod/data/constants';
 
 /**
  * Handler for picture data field plugin.
@@ -90,7 +90,7 @@ export class AddonModDataFieldPictureHandlerService implements AddonModDataField
      * @inheritdoc
      */
     getFieldEditFiles(field: AddonModDataField): CoreFileEntry[] {
-        return CoreFileSession.getFiles(AddonModDataProvider.COMPONENT, field.dataid + '_' + field.id);
+        return CoreFileSession.getFiles(ADDON_MOD_DATA_COMPONENT, field.dataid + '_' + field.id);
     }
 
     /**

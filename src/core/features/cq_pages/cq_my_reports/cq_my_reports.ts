@@ -1,19 +1,42 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { IonSlides } from '@ionic/angular';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { Swiper } from 'swiper';
+import { register } from 'swiper/element/bundle';
+import { CoreSwiper } from '@singletons/swiper';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { ChartData } from 'chart.js';
 
+register();
+
 @Component({
     selector: 'cq_my_reports',
     templateUrl: './cq_my_reports.html',
-    styles: ['./cq_my_reports.scss'],
+    styleUrls: ['./cq_my_reports.scss'],
 })
-export class CqMyReports extends CqPage implements OnInit
+export class CqMyReports extends CqPage implements OnInit, OnDestroy
 {
-    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
+    protected pageSlider?: Swiper;
+    @ViewChild('swiperRef') set swiperRef(swiperRef: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(async () => {
+            await this.waitLoadingsDone();
+
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef);
+            if (!swiper) {
+                return;
+            }
+
+            this.pageSlider = swiper;
+            this.pageSlider.on('slideChange', () => {
+                this.pageSliderChange();
+            });
+        });
+    }
 
     pageParams: any = {
     };
@@ -32,9 +55,11 @@ export class CqMyReports extends CqPage implements OnInit
         },
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
+
+        this.element = elementRef.nativeElement;
 
         CH.getUser().getUserFullNameWithDefault(CH.getUserId()).then((userFullName) => {
             this.pageData.userFullName = userFullName;
@@ -44,7 +69,6 @@ export class CqMyReports extends CqPage implements OnInit
             initialSlide: 0,
             speed: 400,
             centerInsufficientSlides: true,
-            centeredSlides: false,
             centeredSlidesBounds: true,
             breakpoints: {},
         };
@@ -57,9 +81,6 @@ export class CqMyReports extends CqPage implements OnInit
         this.pageData.pageSliderOptions = {
             initialSlide: 0,
             speed: 400,
-            centerInsufficientSlides: true,
-            centeredSlides: true,
-            centeredSlidesBounds: true,
             slidesPerView: 1,
         };
     }
@@ -69,6 +90,7 @@ export class CqMyReports extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -115,6 +137,10 @@ export class CqMyReports extends CqPage implements OnInit
 
             // cqConfig
             var cqConfig : any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+            cqConfig.mobileChartType = cqConfig.mobileChartType || cqConfig.mobile_chart_type;
+            cqConfig.mobileChartStacked = cqConfig.mobileChartStacked || cqConfig.mobile_chart_stacked;
+            cqConfig.mobileChartLineTension = cqConfig.mobileChartLineTension || cqConfig.mobile_chart_line_tension;
+
             if (!this.CH.isSame(this.pageData.CqConfig, cqConfig))
             {
                 this.pageData.CqConfig = cqConfig;
@@ -278,7 +304,7 @@ export class CqMyReports extends CqPage implements OnInit
         {
             this.pageData.selectedYear = year;
             let yearIndex = this.pageData.availableYears.indexOf(this.pageData.selectedYear);
-            this.pageSlider.slideTo(yearIndex);
+            this.pageSlider?.slideTo(yearIndex);
             if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
         }
     }
@@ -286,15 +312,14 @@ export class CqMyReports extends CqPage implements OnInit
     {
         if (this.pageStatus)
         {
-            this.pageSlider.getActiveIndex().then((index) => {
-                this.pageData.selectedYear = this.pageData.availableYears[index];
-                if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
-                else
-                {
-                    this.adjustScreenHeight(".page-slider-cqmr");
-                    this.CH.log('final data', this.pageData);
-                }
-            });
+            let index = this.pageSlider?.activeIndex || 0;
+            this.pageData.selectedYear = this.pageData.availableYears[index];
+            if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
+            else
+            {
+                this.adjustScreenHeight(".page-slider-cqmr");
+                this.CH.log('final data', this.pageData);
+            }
         }
         else
         {

@@ -19,10 +19,9 @@ import { CoreCourseModuleHandler, CoreCourseModuleHandlerData } from '@features/
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { makeSingleton } from '@singletons';
 import { AddonModLtiHelper } from '../lti-helper';
-import { AddonModLtiIndexComponent } from '../../components/index';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 import { CoreCourse } from '@features/course/services/course';
-import { CoreSites } from '@services/sites';
+import { ADDON_MOD_LTI_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support LTI modules.
@@ -30,11 +29,9 @@ import { CoreSites } from '@services/sites';
 @Injectable({ providedIn: 'root' })
 export class AddonModLtiModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_lti';
-
     name = 'AddonModLti';
     modName = 'lti';
-    protected pageName = AddonModLtiModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_LTI_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_GROUPS]: false,
@@ -45,7 +42,7 @@ export class AddonModLtiModuleHandlerService extends CoreModuleHandlerBase imple
         [CoreConstants.FEATURE_GRADE_OUTCOMES]: true,
         [CoreConstants.FEATURE_BACKUP_MOODLE2]: true,
         [CoreConstants.FEATURE_SHOW_DESCRIPTION]: true,
-        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_CONTENT,
+        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_OTHER,
     };
 
     /**
@@ -59,7 +56,7 @@ export class AddonModLtiModuleHandlerService extends CoreModuleHandlerBase imple
     ): Promise<CoreCourseModuleHandlerData> {
         const data = await super.getData(module, courseId, sectionId, forCoursePage);
         data.showDownloadButton = false;
-        data.buttons = [{
+        data.button = {
             icon: 'fas-up-right-from-square',
             label: 'addon.mod_lti.launchactivity',
             action: (event: Event, module: CoreCourseModuleData, courseId: number): void => {
@@ -68,7 +65,7 @@ export class AddonModLtiModuleHandlerService extends CoreModuleHandlerBase imple
 
                 CoreCourse.storeModuleViewed(courseId, module.id);
             },
-        }];
+        };
 
         return data;
     }
@@ -77,6 +74,8 @@ export class AddonModLtiModuleHandlerService extends CoreModuleHandlerBase imple
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { AddonModLtiIndexComponent } = await import('../../components/index');
+
         return AddonModLtiIndexComponent;
     }
 
@@ -85,19 +84,6 @@ export class AddonModLtiModuleHandlerService extends CoreModuleHandlerBase imple
      */
     getIconSrc(module?: CoreCourseModuleData | undefined, modicon?: string | undefined): string | undefined {
         return module?.modicon ?? modicon ?? CoreCourse.getModuleIconSrc(this.modName);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    iconIsShape(module?: CoreCourseModuleData | undefined, modicon?: string | undefined): boolean | undefined {
-        const iconUrl = module?.modicon ?? modicon;
-
-        if (!iconUrl) {
-            return true;
-        }
-
-        return iconUrl.startsWith(CoreSites.getRequiredCurrentSite().siteUrl);
     }
 
 }

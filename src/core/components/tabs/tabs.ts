@@ -22,6 +22,7 @@ import {
 
 import { CoreTabsBaseComponent } from '@classes/tabs';
 import { CoreTabComponent } from './tab';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * This component displays some top scrollable tabs that will autohide on vertical scroll.
@@ -44,10 +45,21 @@ import { CoreTabComponent } from './tab';
 })
 export class CoreTabsComponent extends CoreTabsBaseComponent<CoreTabComponent> implements AfterViewInit {
 
-    @Input() parentScrollable = false; // Determine if the scroll should be in the parent content or the tab itself.
+    @Input({ transform: toBoolean }) parentScrollable = false; // Determine if scroll should be in the parent content or the tab.
     @Input() layout: 'icon-top' | 'icon-start' | 'icon-end' | 'icon-bottom' | 'icon-hide' | 'label-hide' = 'icon-hide';
 
-    @ViewChild('originalTabs') originalTabsRef?: ElementRef;
+    @ViewChild('originalTabs')
+    set originalTabs(originalTabs: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(() => {
+            if (originalTabs.nativeElement && !this.originalTabsContainer) {
+                this.originalTabsContainer = this.originalTabs?.nativeElement;
+            }
+        }, 0);
+    }
 
     protected originalTabsContainer?: HTMLElement; // The container of the original tabs. It will include each tab's content.
 
@@ -60,15 +72,6 @@ export class CoreTabsComponent extends CoreTabsBaseComponent<CoreTabComponent> i
         if (this.isDestroyed) {
             return;
         }
-
-        this.originalTabsContainer = this.originalTabsRef?.nativeElement;
-    }
-
-    /**
-     * Initialize the tabs, determining the first tab to be shown.
-     */
-    protected async initializeTabs(): Promise<void> {
-        await super.initializeTabs();
     }
 
     /**

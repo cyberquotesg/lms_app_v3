@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { toBoolean } from '@/core/transforms/boolean';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import {
     CoreReportBuilder,
@@ -20,14 +21,15 @@ import {
     CoreReportBuilderRetrieveReportMapped,
     REPORT_ROWS_LIMIT,
 } from '@features/reportbuilder/services/reportbuilder';
-import { IonRefresher } from '@ionic/angular';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextErrorObject } from '@services/utils/text';
+import { CoreErrorObject } from '@services/error-helper';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate } from '@singletons';
+import { CoreTime } from '@singletons/time';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -35,12 +37,11 @@ import { map } from 'rxjs/operators';
     selector: 'core-report-builder-report-detail',
     templateUrl: './report-detail.html',
     styleUrls: ['./report-detail.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CoreReportBuilderReportDetailComponent implements OnInit {
 
-    @Input() reportId!: string;
-    @Input() isBlock = true;
+    @Input({ required: true }) reportId!: string;
+    @Input({ transform: toBoolean }) isBlock = true;
     @Input() perPage?: number;
     @Input() layout: 'card' | 'table' | 'adaptative' = 'adaptative';
     @Output() onReportLoaded = new EventEmitter<CoreReportBuilderReportDetail>();
@@ -49,19 +50,22 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
         return this.layout === 'card' || (CoreScreen.isMobile && this.layout === 'adaptative');
     }
 
-    state$: Readonly<BehaviorSubject<CoreReportBuilderReportDetailState>> = new BehaviorSubject({
-        report: null,
-        loaded: false,
-        canLoadMoreRows: true,
-        errorLoadingRows: false,
-        cardviewShowFirstTitle: false,
-        cardVisibleColumns: 1,
-        page: 0,
-    });
+    state$: Readonly<BehaviorSubject<CoreReportBuilderReportDetailState>> =
+        new BehaviorSubject<CoreReportBuilderReportDetailState>({
+            report: null,
+            loaded: false,
+            canLoadMoreRows: false,
+            errorLoadingRows: false,
+            cardviewShowFirstTitle: false,
+            cardVisibleColumns: 1,
+            page: 0,
+        });
 
     source$: Observable<string>;
 
     isString = (value: unknown): boolean => CoreReportBuilder.isString(value);
+
+    protected logView: (report: CoreReportBuilderRetrieveReportMapped) => void;
 
     constructor() {
         this.source$ = this.state$.pipe(
@@ -72,6 +76,18 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
                 return source ?? 'system';
             }),
         );
+
+        this.logView = CoreTime.once(async (report) => {
+            await CoreUtils.ignoreErrors(CoreReportBuilder.viewReport(this.reportId));
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'core_reportbuilder_view_report',
+                name: report.details.name,
+                data: { id: this.reportId, category: 'reportbuilder' },
+                url: `/reportbuilder/view.php?id=${this.reportId}`,
+            });
+        });
     }
 
     /**
@@ -105,17 +121,17 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
                 return;
             }
 
-            await CoreReportBuilder.viewReport(this.reportId);
-
             this.updateState({
                 report,
                 cardVisibleColumns: report.details.settingsdata.cardviewVisibleColumns,
                 cardviewShowFirstTitle: report.details.settingsdata.cardviewShowFirstTitle,
+                canLoadMoreRows: report.data.totalrowcount > report.data.rows.length,
             });
 
+            this.logView(report);
             this.onReportLoaded.emit(report.details);
         } catch {
-            const errorConfig: CoreTextErrorObject = {
+            const errorConfig: CoreErrorObject = {
                 title: Translate.instant('core.error'),
                 body: `
                     <p>${Translate.instant('addon.mod_page.errorwhileloadingthepage')}</p>
@@ -154,12 +170,11 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
      *
      * @param ionRefresher ionic refresher.
      */
-    async refreshReport(ionRefresher?: IonRefresher): Promise<void> {
+    async refreshReport(ionRefresher?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(CoreReportBuilder.invalidateReport());
         this.updateState({ page: 0, canLoadMoreRows: false });
         await CoreUtils.ignoreErrors(this.getReport());
         await ionRefresher?.complete();
-        this.updateState({ canLoadMoreRows: true });
     }
 
     /**
@@ -209,12 +224,12 @@ export class CoreReportBuilderReportDetailComponent implements OnInit {
                         ],
                     },
                 },
+                canLoadMoreRows: newReport.data.totalrowcount > report.data.rows.length + newReport.data.rows.length,
             });
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading more reports');
 
-            this.updateState({ canLoadMoreRows: false });
-            this.updateState({ errorLoadingRows: true });
+            this.updateState({ canLoadMoreRows: false, errorLoadingRows: true });
         }
 
         complete();

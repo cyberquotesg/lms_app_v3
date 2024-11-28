@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { AddonModAssignFeedbackPluginBaseComponent } from '@addons/mod/assign/classes/base-feedback-plugin-component';
-import { AddonModAssignProvider, AddonModAssign } from '@addons/mod/assign/services/assign';
+import { ADDON_MOD_ASSIGN_COMPONENT } from '@addons/mod/assign/constants';
+import { AddonModAssign } from '@addons/mod/assign/services/assign';
 import { Component, OnInit } from '@angular/core';
 import { CoreWSFile } from '@services/ws';
 
@@ -26,7 +27,7 @@ import { CoreWSFile } from '@services/ws';
 })
 export class AddonModAssignFeedbackEditPdfComponent extends AddonModAssignFeedbackPluginBaseComponent implements OnInit {
 
-    component = AddonModAssignProvider.COMPONENT;
+    component = ADDON_MOD_ASSIGN_COMPONENT;
     files: CoreWSFile[] = [];
 
     /**
@@ -34,6 +35,8 @@ export class AddonModAssignFeedbackEditPdfComponent extends AddonModAssignFeedba
      */
     async ngOnInit(): Promise<void> {
         if (this.plugin) {
+            this.plugin.fileareas = this.plugin.fileareas?.filter((filearea) => filearea.area === 'download');
+
             this.files = AddonModAssign.getSubmissionPluginAttachments(this.plugin);
         }
     }

@@ -15,14 +15,12 @@
 import { Component, ViewChild, ElementRef, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 
-import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreCountry, CoreUtils } from '@services/utils/utils';
 import { CoreWS, CoreWSExternalWarning } from '@services/ws';
-import { CoreConstants } from '@/core/constants';
 import { Translate } from '@singletons';
-import { CoreSitePublicConfigResponse } from '@classes/site';
+import { CoreSitePublicConfigResponse, CoreUnauthenticatedSite } from '@classes/sites/unauthenticated-site';
 import { CoreUserProfileFieldDelegate } from '@features/user/services/user-profile-field-delegate';
 
 import {
@@ -35,6 +33,11 @@ import { CoreForms } from '@singletons/form';
 import { CoreRecaptchaComponent } from '@components/recaptcha/recaptcha';
 import { CorePath } from '@singletons/path';
 import { CoreDom } from '@singletons/dom';
+import { CoreSitesFactory } from '@services/sites-factory';
+import { EMAIL_SIGNUP_FEATURE_NAME } from '@features/login/constants';
+import { CoreInputErrorsMessages } from '@components/input-errors/input-errors';
+import { CoreViewer } from '@features/viewer/services/viewer';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page to signup using email.
@@ -46,12 +49,17 @@ import { CoreDom } from '@singletons/dom';
 })
 export class CoreLoginEmailSignupPage implements OnInit {
 
+    // Accept A-Z in strict chars pattern to be able to differentiate it from the lowercase pattern.
+    protected static readonly USERNAME_STRICT_CHARS_PATTERN = '^[A-Z-.@_a-z0-9]*$';
+    protected static readonly USERNAME_LOWERCASE_PATTERN = '^[^A-Z]*$';
+
     @ViewChild(CoreRecaptchaComponent) recaptchaComponent?: CoreRecaptchaComponent;
     @ViewChild('ageForm') ageFormElement?: ElementRef;
     @ViewChild('signupFormEl') signupFormElement?: ElementRef;
 
     signupForm: FormGroup;
-    siteUrl!: string;
+    site!: CoreUnauthenticatedSite;
+    displaySiteUrl = false;
     siteConfig?: CoreSitePublicConfigResponse;
     siteName?: string;
     authInstructions = '';
@@ -61,26 +69,27 @@ export class CoreLoginEmailSignupPage implements OnInit {
     settingsLoaded = false;
     allRequiredSupported = true;
     signupUrl?: string;
+    formSubmitClicked = false;
     captcha = {
         recaptcharesponse: '',
     };
 
     // Data for age verification.
     ageVerificationForm: FormGroup;
-    countryControl: FormControl;
-    signUpCountryControl?: FormControl;
+    countryControl: FormControl<string>;
+    signUpCountryControl?: FormControl<string>;
     isMinor = false; // Whether the user is minor age.
     ageDigitalConsentVerification?: boolean; // Whether the age verification is enabled.
     supportName?: string;
     supportEmail?: string;
 
     // Validation errors.
-    usernameErrors: Record<string, string>;
-    passwordErrors: Record<string, string>;
-    emailErrors: Record<string, string>;
-    email2Errors: Record<string, string>;
-    policyErrors: Record<string, string>;
-    namefieldsErrors?: Record<string, Record<string, string>>;
+    usernameErrors: CoreInputErrorsMessages;
+    passwordErrors: CoreInputErrorsMessages;
+    emailErrors: CoreInputErrorsMessages;
+    email2Errors: CoreInputErrorsMessages;
+    policyErrors: CoreInputErrorsMessages;
+    namefieldsErrors?: Record<string, CoreInputErrorsMessages>;
 
     constructor(
         protected fb: FormBuilder,
@@ -91,27 +100,31 @@ export class CoreLoginEmailSignupPage implements OnInit {
         this.ageVerificationForm = this.fb.group({
             age: ['', Validators.required],
         });
-        this.countryControl = this.fb.control('', Validators.required);
+        this.countryControl = this.fb.control('', { validators: Validators.required, nonNullable: true });
         this.ageVerificationForm.addControl('country', this.countryControl);
 
         // Create the signupForm with the basic controls. More controls will be added later.
         this.signupForm = this.fb.group({
-            username: ['', Validators.required],
             password: ['', Validators.required],
             email: ['', Validators.compose([Validators.required, Validators.email])],
             email2: ['', Validators.compose([Validators.required, Validators.email])],
         });
 
         // Setup validation errors.
-        this.usernameErrors = CoreLoginHelper.getErrorMessages('core.login.usernamerequired');
-        this.passwordErrors = CoreLoginHelper.getErrorMessages('core.login.passwordrequired');
-        this.emailErrors = CoreLoginHelper.getErrorMessages('core.login.missingemail');
-        this.policyErrors = CoreLoginHelper.getErrorMessages('core.login.policyagree');
-        this.email2Errors = CoreLoginHelper.getErrorMessages(
-            'core.login.missingemail',
-            undefined,
-            'core.login.emailnotmatch',
-        );
+        this.usernameErrors = {
+            required: 'core.login.usernamerequired',
+            pattern: {
+                [CoreLoginEmailSignupPage.USERNAME_STRICT_CHARS_PATTERN]: 'core.login.invalidusername',
+                [CoreLoginEmailSignupPage.USERNAME_LOWERCASE_PATTERN]: 'core.login.usernamelowercase',
+            },
+        };
+        this.passwordErrors = { required: 'core.login.passwordrequired' };
+        this.emailErrors = { required: 'core.login.missingemail' };
+        this.policyErrors = { required: 'core.policy.policyagree' };
+        this.email2Errors = {
+            required: 'core.login.missingemail',
+            pattern: 'core.login.emailnotmatch',
+        };
     }
 
     /**
@@ -126,7 +139,8 @@ export class CoreLoginEmailSignupPage implements OnInit {
             return;
         }
 
-        this.siteUrl = siteUrl;
+        this.site = CoreSitesFactory.makeUnauthenticatedSite(siteUrl);
+        this.displaySiteUrl = this.site.shouldDisplayInformativeLinks();
 
         // Fetch the data.
         this.fetchData().finally(() => {
@@ -138,8 +152,15 @@ export class CoreLoginEmailSignupPage implements OnInit {
      * Complete the FormGroup using the settings received from server.
      */
     protected completeFormGroup(): void {
+        const checkStrictChars = this.settings?.extendedusernamechars === false;
+        this.signupForm.addControl('username', this.fb.control('', Validators.compose([
+            Validators.required,
+            Validators.pattern(CoreLoginEmailSignupPage.USERNAME_LOWERCASE_PATTERN),
+            checkStrictChars ?  Validators.pattern(CoreLoginEmailSignupPage.USERNAME_STRICT_CHARS_PATTERN) : undefined,
+        ])));
+
         this.signupForm.addControl('city', this.fb.control(this.settings?.defaultcity || ''));
-        this.signUpCountryControl = this.fb.control(this.settings?.country || '');
+        this.signUpCountryControl = this.fb.control(this.settings?.country || '', { nonNullable: true });
         this.signupForm.addControl('country', this.signUpCountryControl);
 
         // Add the name fields.
@@ -160,10 +181,11 @@ export class CoreLoginEmailSignupPage implements OnInit {
     protected async fetchData(): Promise<void> {
         try {
             // Get site config.
-            this.siteConfig = await CoreSites.getSitePublicConfig(this.siteUrl);
+            this.siteConfig = await this.site.getPublicConfig();
             this.signupUrl = CorePath.concatenatePaths(this.siteConfig.httpswwwroot, 'login/signup.php');
 
-            if (this.treatSiteConfig()) {
+            const configValid = await this.treatSiteConfig();
+            if (configValid) {
                 // Check content verification.
                 if (this.ageDigitalConsentVerification === undefined) {
 
@@ -171,7 +193,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
                         CoreWS.callAjax<IsAgeVerificationEnabledWSResponse>(
                             'core_auth_is_age_digital_consent_verification_enabled',
                             {},
-                            { siteUrl: this.siteUrl },
+                            { siteUrl: this.site.getURL() },
                         ),
                     );
 
@@ -195,11 +217,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
      * @returns Promise resolved when done.
      */
     protected async getSignupSettings(): Promise<void> {
-        this.settings = await CoreWS.callAjax<AuthEmailSignupSettings>(
-            'auth_email_get_signup_settings',
-            {},
-            { siteUrl: this.siteUrl },
-        );
+        this.settings = await CoreLoginHelper.getEmailSignupSettings(this.site.getURL());
 
         if (CoreUserProfileFieldDelegate.hasRequiredUnsupportedField(this.settings.profilefields)) {
             this.allRequiredSupported = false;
@@ -220,7 +238,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
         const namefieldsErrors = {};
         if (this.settings.namefields) {
             this.settings.namefields.forEach((field) => {
-                namefieldsErrors[field] = CoreLoginHelper.getErrorMessages('core.login.missing' + field);
+                namefieldsErrors[field] = { required: 'core.login.missing' + field };
             });
         }
         this.namefieldsErrors = namefieldsErrors;
@@ -233,9 +251,10 @@ export class CoreLoginEmailSignupPage implements OnInit {
      *
      * @returns True if success.
      */
-    protected treatSiteConfig(): boolean {
-        if (this.siteConfig?.registerauth == 'email' && !CoreLoginHelper.isEmailSignupDisabled(this.siteConfig)) {
-            this.siteName = CoreConstants.CONFIG.sitename ? CoreConstants.CONFIG.sitename : this.siteConfig.sitename;
+    protected async treatSiteConfig(): Promise<boolean> {
+        if (this.siteConfig?.registerauth == 'email' && !this.site.isFeatureDisabled(EMAIL_SIGNUP_FEATURE_NAME)) {
+            this.siteName = await this.site.getSiteName();
+
             this.authInstructions = this.siteConfig.authinstructions;
             this.ageDigitalConsentVerification = this.siteConfig.agedigitalconsentverification;
             this.supportName = this.siteConfig.supportname;
@@ -266,6 +285,8 @@ export class CoreLoginEmailSignupPage implements OnInit {
         e.preventDefault();
         e.stopPropagation();
 
+        this.formSubmitClicked = true;
+
         if (!this.signupForm.valid || (this.settings?.recaptchapublickey && !this.captcha.recaptcharesponse)) {
             // Form not valid. Mark all controls as dirty to display errors.
             for (const name in this.signupForm.controls) {
@@ -286,20 +307,20 @@ export class CoreLoginEmailSignupPage implements OnInit {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         const params: SignupUserWSParams = {
             username: this.signupForm.value.username.trim().toLowerCase(),
             password: this.signupForm.value.password,
-            firstname: CoreTextUtils.cleanTags(this.signupForm.value.firstname),
-            lastname: CoreTextUtils.cleanTags(this.signupForm.value.lastname),
+            firstname: CoreText.cleanTags(this.signupForm.value.firstname),
+            lastname: CoreText.cleanTags(this.signupForm.value.lastname),
             email: this.signupForm.value.email.trim(),
-            city: CoreTextUtils.cleanTags(this.signupForm.value.city),
+            city: CoreText.cleanTags(this.signupForm.value.city),
             country: this.signupForm.value.country,
         };
 
         if (this.siteConfig?.launchurl) {
-            params.redirect = CoreLoginHelper.prepareForSSOLogin(this.siteUrl, undefined, this.siteConfig.launchurl);
+            params.redirect = await CoreLoginHelper.prepareForSSOLogin(this.site.getURL(), undefined, this.siteConfig.launchurl);
         }
 
         // Get the recaptcha response (if needed).
@@ -319,7 +340,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
             const result = await CoreWS.callAjax<SignupUserWSResult>(
                 'auth_email_signup_user',
                 params,
-                { siteUrl: this.siteUrl },
+                { siteUrl: this.site.getURL() },
             );
 
             if (result.success) {
@@ -359,14 +380,14 @@ export class CoreLoginEmailSignupPage implements OnInit {
      * @returns Escaped mail.
      */
     escapeMail(text: string): string {
-        return CoreTextUtils.escapeForRegex(text);
+        return CoreText.escapeForRegex(text);
     }
 
     /**
      * Show authentication instructions.
      */
     showAuthInstructions(): void {
-        CoreTextUtils.viewText(Translate.instant('core.login.instructions'), this.authInstructions);
+        CoreViewer.viewText(Translate.instant('core.login.instructions'), this.authInstructions);
     }
 
     /**
@@ -374,7 +395,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
      */
     showContactOnSite(): void {
         CoreUtils.openInBrowser(
-            CorePath.concatenatePaths(this.siteUrl, '/login/verify_age_location.php'),
+            CorePath.concatenatePaths(this.site.getURL(), '/login/verify_age_location.php'),
             { showBrowserWarning: false },
         );
     }
@@ -395,14 +416,14 @@ export class CoreLoginEmailSignupPage implements OnInit {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         const params = this.ageVerificationForm.value;
 
         params.age = parseInt(params.age, 10); // Use just the integer part.
 
         try {
-            const result = await CoreWS.callAjax<IsMinorWSResult>('core_auth_is_minor', params, { siteUrl: this.siteUrl });
+            const result = await CoreWS.callAjax<IsMinorWSResult>('core_auth_is_minor', params, { siteUrl: this.site.getURL() });
 
             CoreForms.triggerFormSubmittedEvent(this.ageFormElement, true);
 

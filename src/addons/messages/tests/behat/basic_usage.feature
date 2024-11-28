@@ -1,4 +1,4 @@
-@core @core_message @app @javascript
+@addon_messages @app @javascript
 Feature: Test basic usage of messages in app
   In order to participate with messages while using the mobile app
   As a student
@@ -52,15 +52,22 @@ Feature: Test basic usage of messages in app
     And I replace "/.*/" within ".message-time" with "[Date]"
     Then the UI should match the snapshot
 
-    When I press the back button in the app
+    When I go back in the app
     And I press "Contacts" near "No contact requests" in the app
     Then the header should be "Contacts" in the app
     And I should find "Teacher teacher" in the app
 
-    When I press the back button in the app
+    When I go back in the app
     And I press "Teacher teacher" in the app
     Then the header should be "Teacher teacher" in the app
     And I should find "heeey student" in the app
+    And the following events should have been logged for "teacher1" in the app:
+      | name                              | relateduser |
+      | \core\event\message_contact_added | student1    |
+      | \core\event\message_sent	      | student1    |
+    And the following events should have been logged for "student1" in the app:
+      | name                       | relateduser |
+      | \core\event\message_viewed | teacher1    |
 
   Scenario: Search users
     Given I entered the app as "student1"
@@ -153,8 +160,7 @@ Feature: Test basic usage of messages in app
     And I press "Remove from contacts" in the app
     And I press "Remove" in the app
     And I wait loading to finish in the app
-    And I press the back button in the app
-    And I press the back button in the app
+    And I go back 2 times in the app
     And I press "Display options" in the app
     Then I should find "Add to contacts" in the app
 
@@ -181,7 +187,7 @@ Feature: Test basic usage of messages in app
     Then I should find "byee" in the app
 
     When I switch network connection to wifi
-    And I press the back button in the app
+    And I go back in the app
     And I press "Student1 student1" in the app
     Then I should find "heeey student" in the app
     And I should find "byee" in the app
@@ -272,7 +278,7 @@ Feature: Test basic usage of messages in app
     When I press "star message" in the app
     And I press "Display options" in the app
     And I press "Star conversation" in the app
-    And I press the back button in the app
+    And I go back in the app
     Then I should find "Private (1)" in the app
     And I should find "Starred (2)" in the app
 
@@ -338,7 +344,8 @@ Feature: Test basic usage of messages in app
     When I press "Mute" in the app
     Then I should find "Muted conversation" in the app
 
-    When I press "Messages" in the app
+    When I go back to the root page in the app
+    And I press "Messages" in the app
     And I press "Private (1)" in the app
     And I press "Student2 student2" in the app
     Then I should find "test message" in the app
@@ -360,7 +367,7 @@ Feature: Test basic usage of messages in app
     Then I should find "self conversation offline" in the app
 
     When I switch network connection to wifi
-    And I press the back button in the app
+    And I go back in the app
     And I press "Student1 student1" in the app
     And I press "Display options" in the app
     Then I should find "Show delete messages" in the app
@@ -387,7 +394,7 @@ Feature: Test basic usage of messages in app
     Then I should not find "self conversation online" in the app
     And I should not find "self conversation offline" in the app
 
-    When I press the back button in the app
+    When I go back in the app
     And I press "Search people and messages" in the app
     And I set the field "Search" to "Student1 student1" in the app
     And I press "Search" "button" in the app
@@ -396,8 +403,7 @@ Feature: Test basic usage of messages in app
     And I press "Send" in the app
     Then I should find "auto search test" in the app
 
-    When I press the back button in the app
-    And I press the back button in the app
+    When I go back 2 times in the app
     And I press "Private" in the app
     And I press "Student1 student1" in the app
     Then I should find "auto search test" in the app

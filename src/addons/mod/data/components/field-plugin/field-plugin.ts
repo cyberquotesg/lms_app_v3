@@ -17,8 +17,9 @@ import { FormGroup } from '@angular/forms';
 import { CoreDynamicComponent } from '@components/dynamic-component/dynamic-component';
 import { CoreFormFields } from '@singletons/form';
 import { AddonModDataEntryFieldInitialized, AddonModDataFieldPluginBaseComponent } from '../../classes/base-field-plugin-component';
-import { AddonModDataData, AddonModDataField, AddonModDataTemplateMode } from '../../services/data';
+import { AddonModDataData, AddonModDataField } from '../../services/data';
 import { AddonModDataFieldsDelegate } from '../../services/data-fields-delegate';
+import { AddonModDataTemplateMode } from '../../constants';
 
 /**
  * Component that displays a database field plugin.
@@ -31,8 +32,8 @@ export class AddonModDataFieldPluginComponent implements OnInit, OnChanges {
 
     @ViewChild(CoreDynamicComponent) dynamicComponent?: CoreDynamicComponent<AddonModDataFieldPluginBaseComponent>;
 
-    @Input() mode!: AddonModDataTemplateMode; // The render mode.
-    @Input() field!: AddonModDataField; // The field to render.
+    @Input({ required: true }) mode!: AddonModDataTemplateMode; // The render mode.
+    @Input({ required: true }) field!: AddonModDataField; // The field to render.
     @Input() value?: unknown; // The value of the field.
     @Input() database?: AddonModDataData; // Database object.
     @Input() error?: string; // Error when editing.

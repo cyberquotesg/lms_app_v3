@@ -20,22 +20,19 @@ import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreGradesHelper, CoreGradesMenuItem } from '@features/grades/services/grades-helper';
 import { CoreUser, CoreUserProfile } from '@features/user/services/user';
 import { CanLeave } from '@guards/can-leave';
-import { IonContent, IonRefresher } from '@ionic/angular';
+import { IonContent } from '@ionic/angular';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreSync } from '@services/sync';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { Translate } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreForms } from '@singletons/form';
 import { AddonModWorkshopAssessmentStrategyComponent } from '../../components/assessment-strategy/assessment-strategy';
 import {
-    AddonModWorkshopProvider,
     AddonModWorkshop,
-    AddonModWorkshopPhase,
     AddonModWorkshopSubmissionChangedEventData,
-    AddonModWorkshopAction,
     AddonModWorkshopData,
     AddonModWorkshopGetWorkshopAccessInformationWSResponse,
     AddonModWorkshopAssessmentSavedChangedEventData,
@@ -46,7 +43,19 @@ import {
     AddonModWorkshopSubmissionDataWithOfflineData,
 } from '../../services/workshop-helper';
 import { AddonModWorkshopOffline } from '../../services/workshop-offline';
-import { AddonModWorkshopSyncProvider, AddonModWorkshopAutoSyncData } from '../../services/workshop-sync';
+import { AddonModWorkshopAutoSyncData } from '../../services/workshop-sync';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreTime } from '@singletons/time';
+import {
+    ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED,
+    ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED,
+    ADDON_MOD_WORKSHOP_AUTO_SYNCED,
+    ADDON_MOD_WORKSHOP_COMPONENT,
+    ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED,
+    AddonModWorkshopAction,
+    AddonModWorkshopPhase,
+} from '@addons/mod/workshop/constants';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays a workshop submission.
@@ -97,12 +106,12 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
     };
 
     protected hasOffline = false;
-    protected component = AddonModWorkshopProvider.COMPONENT;
+    protected component = ADDON_MOD_WORKSHOP_COMPONENT;
     protected forceLeave = false;
     protected obsAssessmentSaved: CoreEventObserver;
     protected syncObserver: CoreEventObserver;
     protected isDestroyed = false;
-    protected fetchSuccess = false;
+    protected logView: () => void;
 
     constructor(
         protected fb: FormBuilder,
@@ -116,15 +125,17 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
         this.feedbackForm.addControl('grade', this.fb.control(''));
         this.feedbackForm.addControl('text', this.fb.control(''));
 
-        this.obsAssessmentSaved = CoreEvents.on(AddonModWorkshopProvider.ASSESSMENT_SAVED, (data) => {
+        this.obsAssessmentSaved = CoreEvents.on(ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED, (data) => {
             this.eventReceived(data);
         }, this.siteId);
 
         // Refresh workshop on sync.
-        this.syncObserver = CoreEvents.on(AddonModWorkshopSyncProvider.AUTO_SYNCED, (data) => {
+        this.syncObserver = CoreEvents.on(ADDON_MOD_WORKSHOP_AUTO_SYNCED, (data) => {
             // Update just when all database is synced.
             this.eventReceived(data);
         }, this.siteId);
+
+        this.logView = CoreTime.once(() => this.performLogView());
     }
 
     /**
@@ -442,7 +453,7 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
         try {
             await Promise.all(promises);
         } finally {
-            CoreEvents.trigger(AddonModWorkshopProvider.ASSESSMENT_INVALIDATED, null, this.siteId);
+            CoreEvents.trigger(ADDON_MOD_WORKSHOP_ASSESSMENT_INVALIDATED, null, this.siteId);
 
             await this.fetchSubmissionData();
 
@@ -455,7 +466,7 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
      *
      * @param refresher Refresher.
      */
-    refreshSubmission(refresher: IonRefresher): void {
+    refreshSubmission(refresher: HTMLIonRefresherElement): void {
         if (this.loaded) {
             this.refreshAllData().finally(() => {
                 refresher?.complete();
@@ -500,7 +511,7 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
      * @returns Resolved when done.
      */
     protected async sendEvaluation(): Promise<void> {
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         const inputData: {
             grade: number | string;
@@ -508,9 +519,9 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
             published: boolean;
         } = this.feedbackForm.value;
 
-        inputData.grade = inputData.grade >= 0 ? inputData.grade : '';
+        inputData.grade = Number(inputData.grade) >= 0 ? inputData.grade : '';
         // Add some HTML to the message if needed.
-        inputData.text = CoreTextUtils.formatHtmlLines(inputData.text);
+        inputData.text = CoreText.formatHtmlLines(inputData.text);
 
         // Try to send it to server.
         try {
@@ -530,7 +541,7 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
                     submissionId: this.submissionId,
                 };
 
-                CoreEvents.trigger(AddonModWorkshopProvider.SUBMISSION_CHANGED, data, this.siteId);
+                CoreEvents.trigger(ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED, data, this.siteId);
             });
         } catch (message) {
             CoreDomUtils.showErrorModalDefault(message, 'Cannot save submission evaluation');
@@ -549,7 +560,7 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.deleting', true);
+        const modal = await CoreLoadings.show('core.deleting', true);
 
         let success = false;
         try {
@@ -567,7 +578,7 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
                     submissionId: this.submissionId,
                 };
 
-                CoreEvents.trigger(AddonModWorkshopProvider.SUBMISSION_CHANGED, data, this.siteId);
+                CoreEvents.trigger(ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED, data, this.siteId);
 
                 this.forceLeavePage();
             }
@@ -590,7 +601,7 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
                 submissionId: this.submissionId,
             };
 
-            CoreEvents.trigger(AddonModWorkshopProvider.SUBMISSION_CHANGED, data, this.siteId);
+            CoreEvents.trigger(ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED, data, this.siteId);
 
             await this.refreshAllData();
         });
@@ -599,19 +610,21 @@ export class AddonModWorkshopSubmissionPage implements OnInit, OnDestroy, CanLea
     /**
      * Log submission viewed.
      */
-    protected async logView(): Promise<void> {
-        if (this.fetchSuccess) {
-            return; // Already done.
-        }
-
-        this.fetchSuccess = true;
-
+    protected async performLogView(): Promise<void> {
         try {
-            await AddonModWorkshop.logViewSubmission(this.submissionId, this.workshopId, this.workshop.name);
+            await AddonModWorkshop.logViewSubmission(this.submissionId, this.workshopId);
             CoreCourse.checkModuleCompletion(this.courseId, this.module.completiondata);
         } catch {
             // Ignore errors.
         }
+
+        CoreAnalytics.logEvent({
+            type: CoreAnalyticsEventType.VIEW_ITEM,
+            ws: 'mod_workshop_view_submission',
+            name: this.workshop.name,
+            data: { id: this.workshop.id, submissionid: this.submissionId, category: 'workshop' },
+            url: `/mod/workshop/submission.php?cmid=${this.module.id}&id=${this.submissionId}`,
+        });
     }
 
     /**

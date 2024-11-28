@@ -14,7 +14,6 @@
 
 import { Component, Input, OnInit, OnChanges, SimpleChange, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 
-import { CoreEventLoadingChangedData, CoreEvents } from '@singletons/events';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreAnimations } from '@components/animations';
 import { Translate } from '@singletons';
@@ -22,6 +21,8 @@ import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CorePromisedValue } from '@classes/promised-value';
 import { AsyncDirective } from '@classes/async-directive';
 import { CorePlatform } from '@services/platform';
+import { CoreWait } from '@singletons/wait';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Component to show a loading spinner and message while data is being loaded.
@@ -51,9 +52,9 @@ import { CorePlatform } from '@services/platform';
 })
 export class CoreLoadingComponent implements OnInit, OnChanges, AfterViewInit, AsyncDirective, OnDestroy {
 
-    @Input() hideUntil: unknown = false; // Determine when should the contents be shown.
+    @Input({ transform: toBoolean }) hideUntil = false; // Determine when should the contents be shown.
     @Input() message?: string; // Message to show while loading.
-    @Input() fullscreen = true; // Use the whole screen.
+    @Input({ transform: toBoolean }) fullscreen = true; // Use the whole screen.
 
     uniqueId: string;
     loaded = false;
@@ -73,13 +74,13 @@ export class CoreLoadingComponent implements OnInit, OnChanges, AfterViewInit, A
 
         // Throttle 20ms to let mutations resolve.
         const throttleMutation = CoreUtils.throttle(async () => {
-            await CoreUtils.nextTick();
+            await CoreWait.nextTick();
             if (!this.loaded) {
                 return;
             }
 
             this.element.style.display = 'inline';
-            await CoreUtils.nextTick();
+            await CoreWait.nextTick();
             this.element.style.removeProperty('display');
         }, 20);
 
@@ -108,7 +109,7 @@ export class CoreLoadingComponent implements OnInit, OnChanges, AfterViewInit, A
      * @inheritdoc
      */
     ngAfterViewInit(): void {
-        this.changeState(!!this.hideUntil);
+        this.changeState(this.hideUntil);
     }
 
     /**
@@ -116,7 +117,7 @@ export class CoreLoadingComponent implements OnInit, OnChanges, AfterViewInit, A
      */
     ngOnChanges(changes: { [name: string]: SimpleChange }): void {
         if (changes.hideUntil) {
-            this.changeState(!!this.hideUntil);
+            this.changeState(this.hideUntil);
         }
     }
 
@@ -153,12 +154,6 @@ export class CoreLoadingComponent implements OnInit, OnChanges, AfterViewInit, A
             this.lastScrollPosition = this.getScrollPosition();
             this.mutationObserver.disconnect();
         }
-
-        // Event has been deprecated since app 4.0.
-        CoreEvents.trigger(CoreEvents.CORE_LOADING_CHANGED, <CoreEventLoadingChangedData> {
-            loaded,
-            uniqueId: this.uniqueId,
-        });
     }
 
     /**

@@ -17,7 +17,6 @@ import { CoreEvents } from '@singletons/events';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreSyncBlockedError } from '@classes/base-sync';
 import {
-    AddonModAssignProvider,
     AddonModAssignAssign,
     AddonModAssignSubmission,
     AddonModAssign,
@@ -40,15 +39,13 @@ import { CoreNetworkError } from '@classes/errors/network-error';
 import { CoreGradesFormattedItem, CoreGradesHelper } from '@features/grades/services/grades-helper';
 import { AddonModAssignSubmissionDelegate } from './submission-delegate';
 import { AddonModAssignFeedbackDelegate } from './feedback-delegate';
+import { ADDON_MOD_ASSIGN_AUTO_SYNCED, ADDON_MOD_ASSIGN_COMPONENT } from '../constants';
 
 /**
  * Service to sync assigns.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonModAssignSyncProvider extends CoreCourseActivitySyncBaseProvider<AddonModAssignSyncResult> {
-
-    static readonly AUTO_SYNCED = 'addon_mod_assign_autom_synced';
-    static readonly MANUAL_SYNCED = 'addon_mod_assign_manual_synced';
 
     protected componentTranslatableString = 'assign';
 
@@ -129,7 +126,7 @@ export class AddonModAssignSyncProvider extends CoreCourseActivitySyncBaseProvid
                 : await this.syncAssignIfNeeded(assignId, siteId);
 
             if (result?.updated) {
-                CoreEvents.trigger(AddonModAssignSyncProvider.AUTO_SYNCED, {
+                CoreEvents.trigger(ADDON_MOD_ASSIGN_AUTO_SYNCED, {
                     assignId: assignId,
                     warnings: result.warnings,
                     gradesBlocked: result.gradesBlocked,
@@ -170,7 +167,7 @@ export class AddonModAssignSyncProvider extends CoreCourseActivitySyncBaseProvid
         }
 
         // Verify that assign isn't blocked.
-        if (CoreSync.isBlocked(AddonModAssignProvider.COMPONENT, assignId, siteId)) {
+        if (CoreSync.isBlocked(ADDON_MOD_ASSIGN_COMPONENT, assignId, siteId)) {
             this.logger.debug('Cannot sync assign ' + assignId + ' because it is blocked.');
 
             throw new CoreSyncBlockedError(Translate.instant('core.errorsyncblocked', { $a: this.componentTranslate }));
@@ -193,7 +190,7 @@ export class AddonModAssignSyncProvider extends CoreCourseActivitySyncBaseProvid
     protected async performSyncAssign(assignId: number, siteId: string): Promise<AddonModAssignSyncResult> {
         // Sync offline logs.
         await CoreUtils.ignoreErrors(
-            CoreCourseLogHelper.syncActivity(AddonModAssignProvider.COMPONENT, assignId, siteId),
+            CoreCourseLogHelper.syncActivity(ADDON_MOD_ASSIGN_COMPONENT, assignId, siteId),
         );
 
         const result: AddonModAssignSyncResult = {
@@ -334,27 +331,29 @@ export class AddonModAssignSyncProvider extends CoreCourseActivitySyncBaseProvid
         }
 
         try {
-            if (submission?.plugins) {
-                // Prepare plugins data.
-                await Promise.all(submission.plugins.map((plugin) =>
-                    AddonModAssignSubmissionDelegate.preparePluginSyncData(
-                        assign,
-                        submission,
-                        plugin,
-                        offlineData,
-                        pluginData,
-                        siteId,
-                    )));
-            }
+            if (Object.keys(offlineData.plugindata).length == 0) {
+                await AddonModAssign.removeSubmissionOnline(assign.id, offlineData.userid, siteId);
+            } else {
+                if (submission?.plugins) {
+                    // Prepare plugins data.
+                    await Promise.all(submission.plugins.map((plugin) =>
+                        AddonModAssignSubmissionDelegate.preparePluginSyncData(
+                            assign,
+                            submission,
+                            plugin,
+                            offlineData,
+                            pluginData,
+                            siteId,
+                        )));
+                }
 
-            // Now save the submission.
-            if (Object.keys(pluginData).length > 0) {
+                // Now save the submission.
                 await AddonModAssign.saveSubmissionOnline(assign.id, pluginData, siteId);
-            }
 
-            if (assign.submissiondrafts && offlineData.submitted) {
-                // The user submitted the assign manually. Submit it for grading.
-                await AddonModAssign.submitForGradingOnline(assign.id, !!offlineData.submissionstatement, siteId);
+                if (assign.submissiondrafts && offlineData.submitted) {
+                    // The user submitted the assign manually. Submit it for grading.
+                    await AddonModAssign.submitForGradingOnline(assign.id, !!offlineData.submissionstatement, siteId);
+                }
             }
 
             // Submission data sent, update cached data. No need to block the user for this.
@@ -433,7 +432,7 @@ export class AddonModAssignSyncProvider extends CoreCourseActivitySyncBaseProvid
         };
 
         // Check if this grade sync is blocked.
-        if (CoreSync.isBlocked(AddonModAssignProvider.COMPONENT, syncId, siteId)) {
+        if (CoreSync.isBlocked(ADDON_MOD_ASSIGN_COMPONENT, syncId, siteId)) {
             this.logger.error(`Cannot sync grade for assign ${assign.id} and user ${userId} because it is blocked.!!!!`);
 
             throw new CoreSyncBlockedError(Translate.instant(

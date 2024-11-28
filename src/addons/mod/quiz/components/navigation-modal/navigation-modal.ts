@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, Input } from '@angular/core';
+import { CoreSharedModule } from '@/core/shared.module';
+import { toBoolean } from '@/core/transforms/boolean';
+import { Component, Input, OnInit } from '@angular/core';
 
 import { CoreQuestionQuestionParsed } from '@features/question/services/question';
+import { CoreQuestionHelper } from '@features/question/services/question-helper';
 import { ModalController } from '@singletons';
 
 /**
@@ -23,13 +26,33 @@ import { ModalController } from '@singletons';
 @Component({
     selector: 'addon-mod-quiz-navigation-modal',
     templateUrl: 'navigation-modal.html',
+    styleUrl: 'navigation-modal.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonModQuizNavigationModalComponent {
+export class AddonModQuizNavigationModalComponent implements OnInit {
 
     @Input() navigation?: AddonModQuizNavigationQuestion[]; // Whether the user is reviewing the attempt.
-    @Input() summaryShown?: boolean; // Whether summary is currently being shown.
+    @Input({ transform: toBoolean }) summaryShown = false; // Whether summary is currently being shown.
+    @Input() nextPage?: number; // Next page.
     @Input() currentPage?: number; // Current page.
-    @Input() isReview?: boolean; // Whether the user is reviewing the attempt.
+    @Input({ transform: toBoolean }) isReview = false; // Whether the user is reviewing the attempt.
+    @Input({ transform: toBoolean }) isSequential = false; // Whether quiz navigation is sequential.
+
+    correctIcon = '';
+    incorrectIcon = '';
+    partialCorrectIcon = '';
+
+    /**
+     * @inheritdoc
+     */
+    ngOnInit(): void {
+        this.correctIcon = CoreQuestionHelper.getCorrectIcon().fullName;
+        this.incorrectIcon = CoreQuestionHelper.getIncorrectIcon().fullName;
+        this.partialCorrectIcon = CoreQuestionHelper.getPartiallyCorrectIcon().fullName;
+    }
 
     /**
      * Close modal.

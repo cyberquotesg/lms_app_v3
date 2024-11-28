@@ -19,8 +19,10 @@ import { CoreCommentsModule } from './comments/comments.module';
 import { CoreContentLinksModule } from './contentlinks/contentlinks.module';
 import { CoreCourseModule } from './course/course.module';
 import { CoreCoursesModule } from './courses/courses.module';
+import { CoreDataPrivacyModule } from './dataprivacy/dataprivacy.module';
 import { CoreEditorModule } from './editor/editor.module';
 import { CoreEmulatorModule } from './emulator/emulator.module';
+import { CoreEnrolModule } from './enrol/enrol.module';
 import { CoreFileUploaderModule } from './fileuploader/fileuploader.module';
 import { CoreFilterModule } from './filter/filter.module';
 import { CoreGradesModule } from './grades/grades.module';
@@ -44,7 +46,9 @@ import { CoreUserToursModule } from './usertours/user-tours.module';
 import { CoreViewerModule } from './viewer/viewer.module';
 import { CoreXAPIModule } from './xapi/xapi.module';
 import { CoreReportBuilderModule } from './reportbuilder/reportbuilder.module';
+import { CorePolicyModule } from './policy/policy.module';
 
+// by rachmad
 import { CQPagesModule } from './cq_pages/cq_pages.module';
 
 @NgModule({
@@ -54,7 +58,9 @@ import { CQPagesModule } from './cq_pages/cq_pages.module';
         CoreContentLinksModule,
         CoreCourseModule,
         CoreCoursesModule,
+        CoreDataPrivacyModule,
         CoreEditorModule,
+        CoreEnrolModule,
         CoreFileUploaderModule,
         CoreFilterModule,
         CoreGradesModule,
@@ -78,9 +84,12 @@ import { CQPagesModule } from './cq_pages/cq_pages.module';
         CoreViewerModule,
         CoreXAPIModule,
         CoreReportBuilderModule,
+        CorePolicyModule,
 
         // Import last to allow overrides.
         CoreEmulatorModule,
+
+        // by rachmad
         CQPagesModule,
     ],
 })

@@ -1,20 +1,43 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { Swiper } from 'swiper';
+import { register } from 'swiper/element/bundle';
+import { CoreSwiper } from '@singletons/swiper';
 import { Router, Event, NavigationStart, NavigationEnd, NavigationError} from '@angular/router';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
-import { IonSlides } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
+
+register();
 
 @Component({
     selector: 'cq_available_courses',
     templateUrl: './cq_available_courses.html',
-    styles: ['cq_available_courses.scss'],
+    styleUrls: ['cq_available_courses.scss'],
 })
-export class CqAvailableCourses extends CqPage implements OnInit
+export class CqAvailableCourses extends CqPage implements OnInit, OnDestroy
 {
-    @ViewChild('pageSlider', { static: true }) private pageSlider: IonSlides;
+    protected pageSlider?: Swiper;
+    @ViewChild('swiperRef') set swiperRef(swiperRef: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(async () => {
+            await this.waitLoadingsDone();
+
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef);
+            if (!swiper) {
+                return;
+            }
+
+            this.pageSlider = swiper;
+            this.pageSlider.on('slideChange', () => {
+                this.pageSliderChange();
+            });
+        });
+    }
 
     pageParams: any = {
         media: "",
@@ -56,9 +79,9 @@ export class CqAvailableCourses extends CqPage implements OnInit
         courses: 0,
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper, private router: Router)
+    constructor(renderer: Renderer2, CH: CqHelper, private router: Router, elementRef: ElementRef)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.router.events.subscribe((event: Event) => {
             // if (event instanceof NavigationStart || event instanceof NavigationEnd)
@@ -101,6 +124,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -141,6 +165,8 @@ export class CqAvailableCourses extends CqPage implements OnInit
 
             // cqConfig
             var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+            cqConfig.mobileListLength = cqConfig.mobileListLength || cqConfig.mobile_list_length;
+            cqConfig.mobileCourseMedia = cqConfig.mobileCourseMedia || cqConfig.mobile_course_media;
 
             this.pageData.online.length = this.pageData.offline.length = cqConfig.mobileListLength;
             this.pageData.medias = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
@@ -148,9 +174,6 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageData.sliderOptions = {
                 initialSlide: this.pageData.medias.indexOf(this.pageData.media),
                 speed: 400,
-                centerInsufficientSlides: true,
-                centeredSlides: true,
-                centeredSlidesBounds: true,
                 slidesPerView: 1,
             };
 
@@ -267,7 +290,7 @@ export class CqAvailableCourses extends CqPage implements OnInit
             this.pageData.media = media;
             let mediaIndex = this.pageData.medias.indexOf(this.pageData.media);
             this.CH.log('select media is accepted, sliding to', mediaIndex);
-            this.pageSlider.slideTo(mediaIndex);
+            this.pageSlider?.slideTo(mediaIndex);
 
             if (forceRefresh && !this.pageData[this.pageData.media].initiated)
             {
@@ -284,31 +307,29 @@ export class CqAvailableCourses extends CqPage implements OnInit
     {
         if (this.pageStatus)
         {
-            this.CH.log('slider change and reacting for it');
-            this.pageSlider.getActiveIndex().then((index) => {
-                this.CH.log('have done reacting the slider change');
+            this.CH.log('have done reacting the slider change');
 
-                this.pageData.media = this.pageData.medias[index];
-                const stateParams: any = {
-                    media: this.pageData.media,
-                };
-                CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
-                    params: stateParams,
-                    preferCurrentTab: false,
-                });
-
-                if (!this.pageData[this.pageData.media].initiated)
-                {
-                    this.CH.log("haven't initiated yet, force refresh");
-                    this.pageForceReferesh();
-                }
-                else
-                {
-                    this.CH.log("have initiated, no need to force refresh");
-                    this.adjustScreenHeight(".page-slider-cqac");
-                    this.CH.log('final data', this.pageData);
-                }
+            let index = this.pageSlider?.activeIndex || 0;
+            this.pageData.media = this.pageData.medias[index];
+            const stateParams: any = {
+                media: this.pageData.media,
+            };
+            CoreNavigator.navigateToSitePath('/CqAvailableCourses/index', {
+                params: stateParams,
+                preferCurrentTab: false,
             });
+
+            if (!this.pageData[this.pageData.media].initiated)
+            {
+                this.CH.log("haven't initiated yet, force refresh");
+                this.pageForceReferesh();
+            }
+            else
+            {
+                this.CH.log("have initiated, no need to force refresh");
+                this.adjustScreenHeight(".page-slider-cqac");
+                this.CH.log('final data', this.pageData);
+            }
         }
         else
         {

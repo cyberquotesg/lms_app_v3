@@ -30,3 +30,7 @@ IOS
 - Build via XCode
 - Archive
 - Distribute
+
+IF ERROR
+- create symlink to connect node to node.exe
+sudo ln -s /mnt/c/Program\ Files/nodejs/node.exe /usr/local/bin/node

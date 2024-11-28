@@ -11,7 +11,7 @@
 
 <ion-content class="limited-width">
     <ion-refresher slot="fixed" [disabled]="!userLoaded" (ionRefresh)="refreshUser($event.target)">
-        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
+        <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}" />
     </ion-refresher>
     <core-loading [hideUntil]="userLoaded">
         <div *ngIf="user">
@@ -43,32 +43,27 @@
                     <ion-card-content>
 
                         <div *ngIf="user.email" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="mail"></ion-icon></div>
+                            <div class="card-item-icon"><ion-icon name="mail" /></div>
                             <div class="card-item-text"><a href="mailto:{{user.email}}" core-link auto-login="no" [showBrowserWarning]="false">{{ user.email }}</a></div>
                         </div>
 
-                        <div *ngIf="formattedAddress" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="home"></ion-icon></div>
-                            <div class="card-item-text"><a [href]="encodedAddress" core-link auto-login="no" [showBrowserWarning]="false">{{ formattedAddress }}</a></div>
-                        </div>
-
                         <div *ngIf="clonedUser.country_text" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="earth"></ion-icon></div>
+                            <div class="card-item-icon"><ion-icon name="earth" /></div>
                             <div class="card-item-text">{{ clonedUser.country_text }}</div>
                         </div>
 
                         <div *ngIf="organizationCombined" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="business"></ion-icon></div>
+                            <div class="card-item-icon"><ion-icon name="business" /></div>
                             <div class="card-item-text">{{ organizationCombined }}</div>
                         </div>
 
                         <div *ngIf="licenseCombined" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="ribbon"></ion-icon></div>
+                            <div class="card-item-icon"><ion-icon name="ribbon" /></div>
                             <div class="card-item-text">{{ licenseCombined }}</div>
                         </div>
 
                         <div *ngIf="interests" class="card-item">
-                            <div class="card-item-icon"><ion-icon name="heart-circle"></ion-icon></div>
+                            <div class="card-item-icon"><ion-icon name="heart-circle" /></div>
                             <div class="card-item-text">
                                 <div class="cq-tag-wrapper" style="margin-top: -4px;">
                                     <span *ngFor="let interest of interests" class="cq-tag">{{ interest }}</span>
@@ -90,8 +85,7 @@
                 <ion-card class="">
                     <ion-card-content>
                         <p>
-                            <core-format-text [text]="user.description" contextLevel="user" [contextInstanceId]="user.id">
-                            </core-format-text>
+                            <core-format-text [text]="user.description" contextLevel="user" [contextInstanceId]="user.id" [courseId]="courseId" />
                         </p>
                     </ion-card-content>
                 </ion-card>

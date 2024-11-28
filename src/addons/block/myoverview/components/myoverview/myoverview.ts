@@ -26,15 +26,18 @@ import { CoreCoursesHelper, CoreEnrolledCourseDataWithExtraInfoAndOptions } from
 import { CoreCourseHelper, CorePrefetchStatusInfo } from '@features/course/services/course-helper';
 import { CoreCourseOptionsDelegate } from '@features/course/services/course-options-delegate';
 import { CoreBlockBaseComponent } from '@features/block/classes/base-block-component';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { AddonCourseCompletion } from '@addons/coursecompletion/services/coursecompletion';
-import { IonRefresher, IonSearchbar } from '@ionic/angular';
+import { IonSearchbar } from '@ionic/angular';
 import { CoreNavigator } from '@services/navigator';
 import { PageLoadWatcher } from '@classes/page-load-watcher';
 import { PageLoadsManager } from '@classes/page-loads-manager';
+import { DownloadStatus } from '@/core/constants';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCoursesComponentsModule } from '@features/courses/components/components.module';
 
 const FILTER_PRIORITY: AddonBlockMyOverviewTimeFilters[] =
     ['all', 'inprogress', 'future', 'past', 'favourite', 'allincludinghidden', 'hidden'];
@@ -45,7 +48,12 @@ const FILTER_PRIORITY: AddonBlockMyOverviewTimeFilters[] =
 @Component({
     selector: 'addon-block-myoverview',
     templateUrl: 'addon-block-myoverview.html',
-    styleUrls: ['myoverview.scss'],
+    styleUrl: 'myoverview.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreCoursesComponentsModule,
+    ],
 })
 export class AddonBlockMyOverviewComponent extends CoreBlockBaseComponent implements OnInit, OnDestroy, OnChanges {
 
@@ -54,7 +62,7 @@ export class AddonBlockMyOverviewComponent extends CoreBlockBaseComponent implem
     prefetchCoursesData: CorePrefetchStatusInfo = {
         icon: '',
         statusTranslatable: 'core.loading',
-        status: '',
+        status: DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED,
         loading: true,
     };
 
@@ -176,6 +184,8 @@ export class AddonBlockMyOverviewComponent extends CoreBlockBaseComponent implem
      * @inheritdoc
      */
     ngOnChanges(changes: SimpleChanges): void {
+        super.ngOnChanges(changes);
+
         if (this.loaded && changes.block) {
             // Block was re-fetched, load content.
             this.reloadContent();
@@ -189,7 +199,7 @@ export class AddonBlockMyOverviewComponent extends CoreBlockBaseComponent implem
      * @param done Function to call when done.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void): Promise<void> {
         if (this.loaded) {
             return this.refreshContent().finally(() => {
                 refresher?.complete();
@@ -365,7 +375,7 @@ export class AddonBlockMyOverviewComponent extends CoreBlockBaseComponent implem
         this.filters.show.custom = config?.displaygroupingcustomfield?.value == '1' && !!config?.customfieldsexport?.value;
 
         this.filters.customFilters = this.filters.show.custom
-            ? CoreTextUtils.parseJSON(config?.customfieldsexport?.value || '[]', [])
+            ? CoreText.parseJSON(config?.customfieldsexport?.value || '[]', [])
             : [];
 
         // Check if any selector is shown and not disabled.

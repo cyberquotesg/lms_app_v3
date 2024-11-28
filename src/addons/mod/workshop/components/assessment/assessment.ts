@@ -26,6 +26,7 @@ import {
     AddonModWorkshopSubmissionDataWithOfflineData,
 } from '../../services/workshop-helper';
 import { AddonModWorkshopOffline } from '../../services/workshop-offline';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Component that displays workshop assessment.
@@ -36,12 +37,12 @@ import { AddonModWorkshopOffline } from '../../services/workshop-offline';
 })
 export class AddonModWorkshopAssessmentComponent implements OnInit {
 
-    @Input() assessment!: AddonModWorkshopSubmissionAssessmentWithFormData;
-    @Input() courseId!: number;
-    @Input() workshop!: AddonModWorkshopData;
-    @Input() access!: AddonModWorkshopGetWorkshopAccessInformationWSResponse;
-    @Input() submission!: AddonModWorkshopSubmissionDataWithOfflineData;
-    @Input() module!: CoreCourseModuleData;
+    @Input({ required: true }) assessment!: AddonModWorkshopSubmissionAssessmentWithFormData;
+    @Input({ required: true }) courseId!: number;
+    @Input({ required: true }) workshop!: AddonModWorkshopData;
+    @Input({ required: true }) access!: AddonModWorkshopGetWorkshopAccessInformationWSResponse;
+    @Input({ required: true }) submission!: AddonModWorkshopSubmissionDataWithOfflineData;
+    @Input({ required: true }) module!: CoreCourseModuleData;
 
     canViewAssessment = false;
     canSelfAssess = false;
@@ -123,7 +124,7 @@ export class AddonModWorkshopAssessmentComponent implements OnInit {
             };
 
             if (!this.submission) {
-                const modal = await CoreDomUtils.showModalLoading();
+                const modal = await CoreLoadings.show();
 
                 try {
                     params.submission = await AddonModWorkshopHelper.getSubmissionById(

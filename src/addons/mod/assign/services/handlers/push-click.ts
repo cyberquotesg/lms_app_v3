@@ -16,10 +16,11 @@ import { Injectable } from '@angular/core';
 import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CorePushNotificationsClickHandler } from '@features/pushnotifications/services/push-delegate';
 import { CorePushNotificationsNotificationBasicData } from '@features/pushnotifications/services/pushnotifications';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
 import { AddonModAssign } from '../assign';
+import { ADDON_MOD_ASSIGN_FEATURE_NAME } from '../../constants';
 
 /**
  * Handler for assign push notifications clicks.
@@ -29,7 +30,7 @@ export class AddonModAssignPushClickHandlerService implements CorePushNotificati
 
     name = 'AddonModAssignPushClickHandler';
     priority = 200;
-    featureName = 'CoreCourseModuleDelegate_AddonModAssign';
+    featureName = ADDON_MOD_ASSIGN_FEATURE_NAME;
 
     /**
      * Check if a notification click is handled by this handler.
@@ -49,7 +50,7 @@ export class AddonModAssignPushClickHandlerService implements CorePushNotificati
      * @returns Promise resolved when done.
      */
     async handleClick(notification: NotificationData): Promise<void> {
-        const contextUrlParams = CoreUrlUtils.extractUrlParams(notification.contexturl);
+        const contextUrlParams = CoreUrl.extractUrlParams(notification.contexturl);
         const courseId = Number(notification.courseid);
         const moduleId = Number(contextUrlParams.id);
 

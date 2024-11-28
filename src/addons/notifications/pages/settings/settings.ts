@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 
 import { CoreConfig } from '@services/config';
 import { CoreLocalNotifications } from '@services/local-notifications';
@@ -37,6 +36,11 @@ import {
     AddonNotificationsPreferencesProcessorFormatted,
 } from '@addons/notifications/services/notifications-helper';
 import { CoreNavigator } from '@services/navigator';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { Translate } from '@singletons';
+import { CoreErrorHelper } from '@services/error-helper';
+import { CoreLoadings } from '@services/loadings';
 
 /**
  * Page that displays notifications settings.
@@ -56,14 +60,26 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
     canChangeSound: boolean;
     processorHandlers: AddonMessageOutputHandlerData[] = [];
     loggedInOffLegacyMode = false;
+    warningMessage = signal<string | undefined>(undefined);
 
     protected updateTimeout?: number;
+    protected logView: () => void;
 
     constructor() {
         this.canChangeSound = CoreLocalNotifications.canDisableSound();
 
         const currentSite = CoreSites.getRequiredCurrentSite();
         this.loggedInOffLegacyMode = !currentSite.isVersionGreaterEqualThan('4.0');
+
+        this.logView = CoreTime.once(async () => {
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM_LIST,
+                ws: 'core_message_get_user_notification_preferences',
+                name: Translate.instant('addon.notifications.notificationpreferences'),
+                data: { category: 'notifications' },
+                url: '/message/notificationpreferences.php',
+            });
+        });
     }
 
     /**
@@ -86,6 +102,8 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
         try {
             const preferences = await AddonNotifications.getNotificationPreferences();
 
+            this.warningMessage.set(undefined);
+
             // Initialize current processor. Load "Mobile" (airnotifier) if available.
             let currentProcessor = preferences.processors.find((processor) => processor.name == this.currentProcessorName);
             if (!currentProcessor) {
@@ -100,7 +118,15 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
             preferences.enableall = !preferences.disableall;
             this.preferences = AddonNotificationsHelper.formatPreferences(preferences);
             this.loadProcessor(currentProcessor);
+
+            this.logView();
         } catch (error) {
+            if (error.errorcode === 'nopermissions') {
+                this.warningMessage.set(CoreErrorHelper.getErrorMessageFromError(error));
+
+                return;
+            }
+
             CoreDomUtils.showErrorModal(error);
         } finally {
             this.preferencesLoaded = true;
@@ -176,7 +202,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    async refreshPreferences(refresher?: IonRefresher): Promise<void> {
+    async refreshPreferences(refresher?: HTMLIonRefresherElement): Promise<void> {
         try {
             await CoreUtils.ignoreErrors(AddonNotifications.invalidateNotificationPreferences());
 
@@ -286,7 +312,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             CoreUser.updateUserPreferences([], !enable);
@@ -316,7 +342,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
     }
 
     /**
-     * Page destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         // If there is a pending action to update preferences, execute it right now.
@@ -331,7 +357,7 @@ export class AddonNotificationsSettingsPage implements OnInit, OnDestroy {
 /**
  * State in notification processor in notification preferences component with some calculated data.
  *
- * @deprecated 4.0
+ * @deprecatedonmoodle since 4.0
  */
 type ProcessorStateFormatted = AddonNotificationsPreferencesNotificationProcessorState & {
     updating?: boolean; // Calculated in the app. Whether the state is being updated.

@@ -17,8 +17,9 @@ import { IonContent } from '@ionic/angular';
 
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
-import { AddonModLti, AddonModLtiLti, AddonModLtiProvider } from '../../services/lti';
+import { AddonModLti, AddonModLtiLti } from '../../services/lti';
 import { AddonModLtiHelper } from '../../services/lti-helper';
+import { ADDON_MOD_LTI_COMPONENT } from '../../constants';
 
 /**
  * Component that displays an LTI entry page.
@@ -29,8 +30,8 @@ import { AddonModLtiHelper } from '../../services/lti-helper';
 })
 export class AddonModLtiIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit {
 
-    component = AddonModLtiProvider.COMPONENT;
-    moduleName = 'lti';
+    component = ADDON_MOD_LTI_COMPONENT;
+    pluginName = 'lti';
     displayDescription = false;
 
     lti?: AddonModLtiLti; // The LTI object.

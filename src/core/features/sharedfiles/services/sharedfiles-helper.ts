@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreCanceledError } from '@classes/errors/cancelederror';
 import { CoreFileUploader } from '@features/fileuploader/services/fileuploader';
@@ -25,12 +25,12 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { AlertController, ApplicationInit, makeSingleton, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { CoreLogger } from '@singletons/logger';
-import { CoreSharedFilesListModalComponent } from '../components/list-modal/list-modal';
 import { CoreSharedFiles } from './sharedfiles';
-import { SHAREDFILES_PAGE_NAME } from '../sharedfiles.module';
+import { SHAREDFILES_PAGE_NAME } from '../constants';
 import { CoreSharedFilesChooseSitePage } from '../pages/choose-site/choose-site';
 import { CoreError } from '@classes/errors/error';
 import { CorePlatform } from '@services/platform';
+import { CoreModals } from '@services/modals';
 
 /**
  * Helper service to share files with the app.
@@ -106,9 +106,9 @@ export class CoreSharedFilesHelperProvider {
 
         const result = await alert.onDidDismiss();
 
-        if (result.role == 'rename') {
+        if (result.role === 'rename') {
             return newName;
-        } else if (result.role == 'replace') {
+        } else if (result.role === 'replace') {
             return originalName;
         } else {
             // Canceled.
@@ -150,7 +150,10 @@ export class CoreSharedFilesHelperProvider {
      * @returns Promise resolved when a file is picked, rejected if file picker is closed without selecting a file.
      */
     async pickSharedFile(mimetypes?: string[]): Promise<CoreFileUploaderHandlerResult> {
-        const file = await CoreDomUtils.openModal<FileEntry>({
+        const { CoreSharedFilesListModalComponent } =
+            await import('@features/sharedfiles/components/list-modal/list-modal');
+
+        const file = await CoreModals.openModal<FileEntry>({
             component: CoreSharedFilesListModalComponent,
             cssClass: 'core-modal-fullscreen',
             componentProps: { mimetypes, pick: true },
@@ -227,7 +230,7 @@ export class CoreSharedFilesHelperProvider {
             } else if (siteIds.length == 1) {
                 return this.storeSharedFileInSite(fileEntry, siteIds[0], !path);
             } else if (!this.isChoosingSite()) {
-                this.goToChooseSite(fileEntry.toURL(), !path);
+                this.goToChooseSite(CoreFile.getFileEntryURL(fileEntry), !path);
             }
         } catch (error) {
             if (error) {

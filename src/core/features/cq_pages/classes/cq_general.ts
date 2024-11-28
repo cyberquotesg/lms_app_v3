@@ -21,8 +21,10 @@ export class CqGeneral
         return !!result;
     }
 
-    toTitle(text: string): string
+    toTitle(text?: string): string
     {
+        if (!text) text = "";
+
         text = text.replace(/\-/g, ' ').replace(/_/g, ' ');
         return this.CH.capitalize(text);
     }
@@ -71,9 +73,12 @@ export class CqGeneral
     {
         return this.CH.ellipsisAfter(text, count);
     }
-    s(value: number): string
+    s(value?: number): string
     {
-        return Number(value) > 1 ? 's' : '';
+        if (typeof value == "undefined") value = 0;
+        else value = Number(value);
+
+        return value > 1 ? 's' : '';
     }
     to_comma_separated_text(data: string[], oxford_comma?: boolean)
     {
@@ -96,7 +101,7 @@ export class CqGeneral
             return data.join(", ");
         }
     }
-    beautifulNumber(value: number): string
+    beautifulNumber(value: any): string
     {
         return this.CH.beautifulNumber(value);
     }

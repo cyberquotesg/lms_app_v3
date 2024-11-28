@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus, ContextLevel } from '@/core/constants';
 import { CoreNetworkError } from '@classes/errors/network-error';
 import { CoreFilterHelper } from '@features/filter/services/filter-helper';
 import { CoreNetwork } from '@services/network';
@@ -118,7 +118,7 @@ export class CoreCourseActivityPrefetchHandlerBase extends CoreCourseModulePrefe
             await Promise.all([
                 CoreCourse.getModuleBasicInfo(module.id, { siteId }),
                 CoreCourse.getModule(module.id, courseId, undefined, false, true, siteId),
-                CoreFilterHelper.getFilters('module', module.id, { courseId }),
+                CoreFilterHelper.getFilters(ContextLevel.MODULE, module.id, { courseId }),
             ]);
 
             // Call the download function.
@@ -150,7 +150,7 @@ export class CoreCourseActivityPrefetchHandlerBase extends CoreCourseModulePrefe
     setDownloaded(id: number, siteId?: string, extra?: string): Promise<void> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
-        return CoreFilepool.storePackageStatus(siteId, CoreConstants.DOWNLOADED, this.component, id, extra);
+        return CoreFilepool.storePackageStatus(siteId, DownloadStatus.DOWNLOADED, this.component, id, extra);
     }
 
     /**
@@ -163,7 +163,7 @@ export class CoreCourseActivityPrefetchHandlerBase extends CoreCourseModulePrefe
     setDownloading(id: number, siteId?: string): Promise<void> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
-        return CoreFilepool.storePackageStatus(siteId, CoreConstants.DOWNLOADING, this.component, id);
+        return CoreFilepool.storePackageStatus(siteId, DownloadStatus.DOWNLOADING, this.component, id);
     }
 
     /**
@@ -177,23 +177,6 @@ export class CoreCourseActivityPrefetchHandlerBase extends CoreCourseModulePrefe
         siteId = siteId || CoreSites.getCurrentSiteId();
 
         await CoreFilepool.setPackagePreviousStatus(siteId, this.component, id);
-    }
-
-    /**
-     * Set previous status and return a rejected promise.
-     *
-     * @param id Unique identifier per component.
-     * @param error Error to throw.
-     * @param siteId Site ID. If not defined, current site.
-     * @returns Rejected promise.
-     * @deprecated since 3.9.5. Use setPreviousStatus instead.
-     */
-    async setPreviousStatusAndReject(id: number, error?: Error, siteId?: string): Promise<never> {
-        siteId = siteId || CoreSites.getCurrentSiteId();
-
-        await CoreFilepool.setPackagePreviousStatus(siteId, this.component, id);
-
-        throw error;
     }
 
 }

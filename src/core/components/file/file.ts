@@ -20,13 +20,14 @@ import { CorePluginFileDelegate } from '@services/plugin-file-delegate';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils, CoreUtilsOpenFileOptions, OpenFileAction } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreConstants } from '@/core/constants';
+import { CoreText } from '@singletons/text';
+import { DownloadStatus } from '@/core/constants';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreWSFile } from '@services/ws';
 import { CorePlatform } from '@services/platform';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Component to handle a remote file. Shows the file name, icon (depending on mimetype) and a button
@@ -41,11 +42,11 @@ export class CoreFileComponent implements OnInit, OnDestroy {
     @Input() file?: CoreWSFile; // The file.
     @Input() component?: string; // Component the file belongs to.
     @Input() componentId?: string | number; // Component ID.
-    @Input() canDelete?: boolean | string; // Whether file can be deleted.
-    @Input() alwaysDownload?: boolean | string; // Whether it should always display the refresh button when the file is downloaded.
-    @Input() canDownload?: boolean | string = true; // Whether file can be downloaded.
-    @Input() showSize?: boolean | string = true; // Whether show filesize.
-    @Input() showTime?: boolean | string = true; // Whether show file time modified.
+    @Input({ transform: toBoolean }) canDelete = false; // Whether file can be deleted.
+    @Input({ transform: toBoolean }) alwaysDownload = false; // True to always display the refresh button when file is downloaded.
+    @Input({ transform: toBoolean }) canDownload = true; // Whether file can be downloaded.
+    @Input({ transform: toBoolean }) showSize = true; // Whether show filesize.
+    @Input({ transform: toBoolean }) showTime = true; // Whether show file time modified.
     @Output() onDelete: EventEmitter<void>; // Will notify when the delete button is clicked.
 
     isDownloading?: boolean;
@@ -53,7 +54,7 @@ export class CoreFileComponent implements OnInit, OnDestroy {
     fileIcon?: string;
     fileName!: string;
     fileSizeReadable?: string;
-    state?: string;
+    state?: DownloadStatus;
     timemodified!: number;
     isIOS = false;
     openButtonIcon = '';
@@ -77,10 +78,6 @@ export class CoreFileComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.canDelete = CoreUtils.isTrueOrOne(this.canDelete);
-        this.alwaysDownload = CoreUtils.isTrueOrOne(this.alwaysDownload);
-        this.canDownload = CoreUtils.isTrueOrOne(this.canDownload);
-
         this.fileUrl = CoreFileHelper.getFileUrl(this.file);
         this.timemodified = this.file.timemodified || 0;
         this.siteId = CoreSites.getCurrentSiteId();
@@ -92,11 +89,11 @@ export class CoreFileComponent implements OnInit, OnDestroy {
         this.openButtonIcon = this.defaultIsOpenWithPicker ? 'fas-file' : 'fas-share-from-square';
         this.openButtonLabel = this.defaultIsOpenWithPicker ? 'core.openfile' : 'core.openwith';
 
-        if (CoreUtils.isTrueOrOne(this.showSize) && this.fileSize && this.fileSize >= 0) {
-            this.fileSizeReadable = CoreTextUtils.bytesToSize(this.fileSize, 2);
+        if (this.showSize && this.fileSize && this.fileSize >= 0) {
+            this.fileSizeReadable = CoreText.bytesToSize(this.fileSize, 2);
         }
 
-        this.showTime = CoreUtils.isTrueOrOne(this.showTime) && this.timemodified > 0;
+        this.showTime = this.showTime && this.timemodified > 0;
 
         if ('isexternalfile' in this.file && this.file.isexternalfile) {
             this.alwaysDownload = true; // Always show the download button in external files.
@@ -115,7 +112,7 @@ export class CoreFileComponent implements OnInit, OnDestroy {
                 this.observer = CoreEvents.on(eventName, () => {
                     this.calculateState();
                 });
-            } catch (error) {
+            } catch {
                 // File not downloadable.
             }
         }
@@ -138,7 +135,7 @@ export class CoreFileComponent implements OnInit, OnDestroy {
         this.canDownload = site.canDownloadFiles();
 
         this.state = state;
-        this.isDownloading = this.canDownload && state === CoreConstants.DOWNLOADING;
+        this.isDownloading = this.canDownload && state === DownloadStatus.DOWNLOADING;
         this.isDownloaded = this.canDownload && CoreFileHelper.isStateDownloaded(state);
     }
 
@@ -193,12 +190,12 @@ export class CoreFileComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (!this.canDownload || !this.state || this.state == CoreConstants.NOT_DOWNLOADABLE) {
+        if (!this.canDownload || !this.state || this.state === DownloadStatus.NOT_DOWNLOADABLE) {
             // File cannot be downloaded, just open it.
-            if (CoreUrlUtils.isLocalFileUrl(this.fileUrl)) {
+            if (CoreUrl.isLocalFileUrl(this.fileUrl)) {
                 CoreUtils.openFile(this.fileUrl);
             } else {
-                CoreUtils.openOnlineFile(CoreUrlUtils.unfixPluginfileURL(this.fileUrl));
+                CoreUtils.openOnlineFile(CoreUrl.unfixPluginfileURL(this.fileUrl));
             }
 
             return;

@@ -39,6 +39,11 @@ export type CoreQueueRunnerItem<T = any> = {
      * Deferred with a promise resolved/rejected with the result of the function.
      */
     deferred: CorePromisedValue<T>;
+
+    /**
+     * Item's priority. Only used if usePriority=true.
+     */
+    priority: number;
 };
 
 /**
@@ -49,6 +54,12 @@ export type CoreQueueRunnerAddOptions = {
      * Whether to allow having multiple entries with same ID in the queue.
      */
     allowRepeated?: boolean;
+
+    /**
+     * If usePriority=true, the priority of the item. Higher priority means it will be executed first.
+     * Please notice that the first item is always run immediately, so it's not affected by the priority.
+     */
+    priority?: number;
 };
 
 /**
@@ -60,7 +71,13 @@ export class CoreQueueRunner {
     protected orderedQueue: CoreQueueRunnerItem[] = [];
     protected numberRunning = 0;
 
-    constructor(protected maxParallel: number = 1) { }
+    /**
+     * Constructor.
+     *
+     * @param maxParallel Max number of parallel executions.
+     * @param usePriority If true, the queue will be ordered by priority.
+     */
+    constructor(protected maxParallel: number = 1, protected usePriority = false) { }
 
     /**
      * Get unique ID.
@@ -121,8 +138,17 @@ export class CoreQueueRunner {
      * @param options Options.
      * @returns Promise resolved when the function has been executed.
      */
-    run<T>(id: string, fn: CoreQueueRunnerFunction<T>, options?: CoreQueueRunnerAddOptions): Promise<T> {
-        options = options || {};
+    run<T>(fn: CoreQueueRunnerFunction<T>, options?: CoreQueueRunnerAddOptions): Promise<T>;
+    run<T>(id: string, fn: CoreQueueRunnerFunction<T>, options?: CoreQueueRunnerAddOptions): Promise<T>;
+    run<T>(
+        idOrFn: string | CoreQueueRunnerFunction<T>,
+        fnOrOptions?: CoreQueueRunnerFunction<T> | CoreQueueRunnerAddOptions,
+        options: CoreQueueRunnerAddOptions = {},
+    ): Promise<T> {
+        let id = typeof idOrFn === 'string' ? idOrFn : this.getUniqueId('anonymous');
+        const fn = typeof idOrFn === 'function' ? idOrFn : fnOrOptions as CoreQueueRunnerFunction<T>;
+
+        options = typeof fnOrOptions === 'object' ? fnOrOptions : options;
 
         if (id in this.queue) {
             if (!options.allowRepeated) {
@@ -138,10 +164,14 @@ export class CoreQueueRunner {
             id,
             fn,
             deferred: new CorePromisedValue<T>(),
+            priority: options.priority ?? 0,
         };
 
         this.queue[id] = item;
         this.orderedQueue.push(item);
+        if (this.usePriority) {
+            this.orderedQueue.sort((a, b) => b.priority - a.priority);
+        }
 
         // Process next item if we haven't reached the max yet.
         this.processNextItem();

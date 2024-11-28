@@ -45,9 +45,9 @@ export class AddonNotificationsViewLinkHandlerService extends CoreContentLinksHa
         params: Record<string, string>,
     ): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]> {
         return [{
-            action: (siteId?: string): void => {
+            action: async (siteId, navCtrl?): Promise<void> => {
                 const stateParams: any = {};
-                CoreNavigator.navigateToSitePath('/CqNotifications/list', {
+                await CoreNavigator.navigateToSitePath('/CqNotifications/list', {
                     params: stateParams,
                     siteId,
                     preferCurrentTab: false,

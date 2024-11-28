@@ -14,7 +14,6 @@
 
 import { NgModule } from '@angular/core';
 import { AddonModGlossaryIndexComponent } from './index/index';
-import { AddonModGlossaryModePickerPopoverComponent } from './mode-picker/mode-picker';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreCourseComponentsModule } from '@features/course/components/components.module';
 import { CoreSearchComponentsModule } from '@features/search/components/components.module';
@@ -22,18 +21,14 @@ import { CoreSearchComponentsModule } from '@features/search/components/componen
 @NgModule({
     declarations: [
         AddonModGlossaryIndexComponent,
-        AddonModGlossaryModePickerPopoverComponent,
     ],
     imports: [
         CoreSharedModule,
         CoreCourseComponentsModule,
         CoreSearchComponentsModule,
     ],
-    providers: [
-    ],
     exports: [
         AddonModGlossaryIndexComponent,
-        AddonModGlossaryModePickerPopoverComponent,
     ],
 })
 export class AddonModGlossaryComponentsModule {}

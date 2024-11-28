@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CoreCourseProvider } from '@features/course/services/course';
+import { CoreCourseAccessDataType } from '@features/course/services/course';
 import {
     CoreCourseAccess,
     CoreCourseOptionsHandler,
@@ -24,7 +24,7 @@ import { AddonCompetency } from '../competency';
 import { CoreCourseAnyCourseData, CoreCourseUserAdminOrNavOptionIndexed } from '@features/courses/services/courses';
 import { CoreFilterHelper } from '@features/filter/services/filter-helper';
 import { ContextLevel } from '@/core/constants';
-import { ADDON_COMPETENCY_COMPETENCIES_PAGE } from '@addons/competency/competency.module';
+import { ADDON_COMPETENCY_COMPETENCIES_PAGE } from '@addons/competency/constants';
 
 /**
  * Course nav handler.
@@ -39,7 +39,7 @@ export class AddonCompetencyCourseOptionHandlerService implements CoreCourseOpti
      * @inheritdoc
      */
     async isEnabled(): Promise<boolean> {
-        return true;
+        return AddonCompetency.areCompetenciesEnabled();
     }
 
     /**
@@ -50,11 +50,11 @@ export class AddonCompetencyCourseOptionHandlerService implements CoreCourseOpti
         accessData: CoreCourseAccess,
         navOptions?: CoreCourseUserAdminOrNavOptionIndexed,
     ): Promise<boolean> {
-        if (accessData && accessData.type == CoreCourseProvider.ACCESS_GUEST) {
-            return false; // Not enabled for guests.
+        if (accessData && accessData.type === CoreCourseAccessDataType.ACCESS_GUEST) {
+            return false; // Not enabled for guest access.
         }
 
-        if (navOptions && navOptions.competencies !== undefined) {
+        if (navOptions?.competencies !== undefined) {
             return navOptions.competencies;
         }
 
@@ -82,7 +82,7 @@ export class AddonCompetencyCourseOptionHandlerService implements CoreCourseOpti
      * @inheritdoc
      */
     async invalidateEnabledForCourse(courseId: number, navOptions?: CoreCourseUserAdminOrNavOptionIndexed): Promise<void> {
-        if (navOptions && navOptions.competencies !== undefined) {
+        if (navOptions?.competencies !== undefined) {
             // No need to invalidate anything.
             return;
         }

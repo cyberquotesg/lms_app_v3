@@ -23,7 +23,7 @@ import { AddonStorageManagerSettingsHandler } from './services/handlers/settings
 const routes: Routes = [
     {
         path: '',
-        loadChildren: () => import('@addons/storagemanager/storagemanager-lazy.module').then(m => m.AddonStorageManagerLazyModule),
+        loadChildren: () => import('@addons/storagemanager/storagemanager-lazy.module'),
     },
 ];
 
@@ -33,7 +33,6 @@ const routes: Routes = [
         CoreMainMenuRoutingModule.forChild({ children: routes }),
         CoreSitePreferencesRoutingModule.forChild(routes),
     ],
-    exports: [CoreMainMenuRoutingModule],
     providers: [
         {
             provide: APP_INITIALIZER,

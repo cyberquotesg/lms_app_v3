@@ -1,8 +1,9 @@
-@mod @mod_feedback @app @javascript
+@addon_mod_feedback @app @javascript
 Feature: Test feedback navigation
 
   Background:
-    Given the following "users" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "users" exist:
       | username  | firstname | lastname |
       | teacher1  | Teacher   | teacher  |
       | student01 | Student   | 01       |
@@ -281,7 +282,7 @@ Feature: Test feedback navigation
     Then I should find "Anonymous" within "Mode" "ion-item" in the app
 
     # Analysis
-    When I press the back button in the app
+    When I go back in the app
     And I press "Analysis" in the app
     Then I should find "student01 response" in the app
     And I should find "student75 response" in the app
@@ -324,14 +325,13 @@ Feature: Test feedback navigation
     When I swipe to the left in the app
     Then I should find "student03 response" in the app
 
-    When I press the back button in the app
+    When I go back in the app
     And I press "Student 21" in the app
     And I swipe to the left in the app
     Then I should find "student22 response" in the app
 
     # By group
-    When I press the back button in the app
-    And I press the back button in the app
+    When I go back 2 times in the app
     And I press "Separate groups" in the app
     And I press "Group 1" in the app
     Then I should find "22" near "Submitted answers" in the app
@@ -368,7 +368,7 @@ Feature: Test feedback navigation
     Then I should find "student31 response" in the app
 
     # Reset group
-    When I press the back button in the app
+    When I go back in the app
     When I press "Group 1" in the app
     And I press "All participants" in the app
     Then I should find "Non anonymous entries (21)" in the app
@@ -377,10 +377,13 @@ Feature: Test feedback navigation
     But I should not find "Student 21" in the app
     And I should not find "Anonymous entries" in the app
     And I should not find "Response number: 22" in the app
+    And the following events should have been logged for "teacher1" in the app:
+      | name                                     | activity | activityname | course   |
+      | \mod_feedback\event\course_module_viewed | feedback | Feedback     | Course 1 |
 
   Scenario: Tablet navigation
     Given I entered the course "Course 1" as "teacher1" in the app
-    And I change viewport size to "1200x640"
+    And I change viewport size to "1200x640" in the app
 
     # Preview
     When I press "Feedback" in the app
@@ -388,7 +391,7 @@ Feature: Test feedback navigation
     Then I should find "Anonymous" within "Mode" "ion-item" in the app
 
     # Analysis
-    When I press the back button in the app
+    When I go back in the app
     And I press "Analysis" in the app
     Then I should find "student01 response" in the app
     And I should find "student75 response" in the app
@@ -430,7 +433,7 @@ Feature: Test feedback navigation
     And I should find "student22 response" inside the split-view content in the app
 
     # By group
-    When I press the back button in the app
+    When I go back in the app
     And I press "Separate groups" in the app
     And I press "Group 1" in the app
     Then I should find "22" near "Submitted answers" in the app

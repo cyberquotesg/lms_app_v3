@@ -1,4 +1,4 @@
-@mod @mod_book @app @javascript
+@addon_mod_book @app @javascript
 Feature: Test basic usage of book activity in app
   In order to view a book while using the mobile app
   As a student
@@ -86,7 +86,7 @@ Feature: Test basic usage of book activity in app
     And the UI should match the snapshot
     But I should not find "This is the second chapter" in the app
 
-    When I press the back button in the app
+    When I go back in the app
     And I press "Chapt 2" in the app
     Then I should find "Chapt 2" in the app
     And I should find "This is the second chapter" in the app
@@ -134,27 +134,34 @@ Feature: Test basic usage of book activity in app
     But I should not find "This is the first chapter" in the app
 
     # Navigate using swipe.
-    When I swipe to the left in "Chapt 3" "ion-slides" in the app
+    When I swipe to the left in "Chapt 3" "swiper-container" in the app
     Then I should find "Chapt 3" in the app
     And I should find "This is the third chapter" in the app
     And I should find "4 / 4" in the app
 
-    When I swipe to the right in "Chapt 3" "ion-slides" in the app
+    When I swipe to the right in "Chapt 3" "swiper-container" in the app
     Then I should find "Chapt 2" in the app
     And I should find "This is the second chapter" in the app
     And I should find "3 / 4" in the app
 
-    When I swipe to the right in "Chapt 2" "ion-slides" in the app
+    When I swipe to the right in "Chapt 2" "swiper-container" in the app
     Then I should find "Chapt 1.1" in the app
     And I should find "This is a subchapter" in the app
     And I should find "2 / 4" in the app
 
-    When I swipe to the left in "Chapt 1.1" "ion-slides" in the app
+    When I swipe to the left in "Chapt 1.1" "swiper-container" in the app
     Then I should find "Chapt 2" in the app
     And I should find "This is the second chapter" in the app
     And I should find "3 / 4" in the app
+    And the following events should have been logged for "student1" in the app:
+      | name                                 | activity | activityname | object        | objectname | course   |
+      | \mod_book\event\course_module_viewed | book     | Basic book   |               |            | Course 1 |
+      | \mod_book\event\chapter_viewed       | book     | Basic book   | book_chapters | Chapt 1    | Course 1 |
+      | \mod_book\event\chapter_viewed       | book     | Basic book   | book_chapters | Chapt 1.1  | Course 1 |
+      | \mod_book\event\chapter_viewed       | book     | Basic book   | book_chapters | Chapt 2    | Course 1 |
+      | \mod_book\event\chapter_viewed       | book     | Basic book   | book_chapters | Chapt 3    | Course 1 |
 
-Scenario: View and navigate book contents (teacher)
+  Scenario: View and navigate book contents (teacher)
     Given I entered the course "Course 1" as "teacher1" in the app
     And I press "Basic book" in the app
     And I press "Start" in the app
@@ -208,22 +215,22 @@ Scenario: View and navigate book contents (teacher)
     But I should not find "This is the first chapter" in the app
 
     # Navigate using swipe.
-    When I swipe to the left in "Hidden subchapter" "ion-slides" in the app
+    When I swipe to the left in "Hidden subchapter" "swiper-container" in the app
     Then I should find "Chapt 3" in the app
     And I should find "This is the third chapter" in the app
     And I should find "6 / 7" in the app
 
-    When I swipe to the left in "Chapt 3" "ion-slides" in the app
+    When I swipe to the left in "Chapt 3" "swiper-container" in the app
     Then I should find "Last hidden" in the app
     And I should find "Another hidden subchapter" in the app
     And I should find "7 / 7" in the app
 
-    When I swipe to the left in "Last hidden" "ion-slides" in the app
+    When I swipe to the left in "Last hidden" "swiper-container" in the app
     Then I should find "Last hidden" in the app
     And I should find "Another hidden subchapter" in the app
     And I should find "7 / 7" in the app
 
-    When I swipe to the right in "Last hidden" "ion-slides" in the app
+    When I swipe to the right in "Last hidden" "swiper-container" in the app
     Then I should find "Chapt 3" in the app
     And I should find "This is the third chapter" in the app
     And I should find "6 / 7" in the app
@@ -258,8 +265,7 @@ Scenario: View and navigate book contents (teacher)
     And I should find "3. Chapt 3" in the app
 
     When I press "Close" in the app
-    And I press the back button in the app
-    And I press the back button in the app
+    And I go back 2 times in the app
     And I press "Bull book" in the app
     Then I should find "• Chapt 1" in the app
     But I should not find "1. Chapt 1" in the app
@@ -270,8 +276,7 @@ Scenario: View and navigate book contents (teacher)
     But I should not find "1. Chapt 1" in the app
 
     When I press "Close" in the app
-    And I press the back button in the app
-    And I press the back button in the app
+    And I go back 2 times in the app
     And I press "Ind book" in the app
     Then I should find "Chapt 1" in the app
     But I should not find "• Chapt 1" in the app
@@ -284,8 +289,7 @@ Scenario: View and navigate book contents (teacher)
     And I should not find "1. Chapt 1" in the app
 
     When I press "Close" in the app
-    And I press the back button in the app
-    And I press the back button in the app
+    And I go back 2 times in the app
     And I press "None book" in the app
     Then I should find "Chapt 1" in the app
     But I should not find "• Chapt 1" in the app

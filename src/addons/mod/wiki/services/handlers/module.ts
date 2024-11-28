@@ -17,7 +17,7 @@ import { Injectable, Type } from '@angular/core';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
 import { makeSingleton } from '@singletons';
-import { AddonModWikiIndexComponent } from '../../components/index';
+import { ADDON_MOD_WIKI_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support wiki modules.
@@ -25,11 +25,9 @@ import { AddonModWikiIndexComponent } from '../../components/index';
 @Injectable({ providedIn: 'root' })
 export class AddonModWikiModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_wiki';
-
     name = 'AddonModWiki';
     modName = 'wiki';
-    protected pageName = AddonModWikiModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_WIKI_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_GROUPS]: true,
@@ -49,6 +47,8 @@ export class AddonModWikiModuleHandlerService extends CoreModuleHandlerBase impl
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { AddonModWikiIndexComponent } = await import('../../components/index');
+
         return AddonModWikiIndexComponent;
     }
 

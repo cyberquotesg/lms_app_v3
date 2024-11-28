@@ -1,15 +1,15 @@
 // (C) Copyright 2022 Cyberquote Indonesia
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 
 @Component({
     selector: 'cq_my_courses',
     templateUrl: './cq_my_courses.html',
-    styles: ['cq_my_courses.scss'],
+    styleUrls: ['cq_my_courses.scss'],
 })
-export class CqMyCourses extends CqPage implements OnInit
+export class CqMyCourses extends CqPage implements OnInit, OnDestroy
 {
     pageParams: any = {
     };
@@ -34,9 +34,9 @@ export class CqMyCourses extends CqPage implements OnInit
         myCoursesList: 0,
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
     }
 
     ngOnInit(): void { this.usuallyOnInit(); }
@@ -44,6 +44,7 @@ export class CqMyCourses extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     filterMultiple(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {

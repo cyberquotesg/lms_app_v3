@@ -15,7 +15,7 @@
 import { Md5 } from 'ts-md5/dist/md5';
 
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreH5P } from '@features/h5p/services/h5p';
 import { CoreH5PFileStorage } from './file-storage';
@@ -31,11 +31,17 @@ import { CorePath } from '@singletons/path';
  */
 export class CoreH5PCore {
 
+    static readonly API_VERSION = {
+        majorVersion: 1,
+        minorVersion: 27,
+    };
+
     static readonly STYLES = [
         'styles/h5p.css',
         'styles/h5p-confirmation-dialog.css',
         'styles/h5p-core-button.css',
         'styles/h5p-tooltip.css',
+        'styles/h5p-table.css',
     ];
 
     static readonly SCRIPTS = [
@@ -135,7 +141,7 @@ export class CoreH5PCore {
         toHash.sort((a, b) => a.localeCompare(b));
 
         // Calculate hash.
-        return <string> Md5.hashAsciiStr(toHash.join(''));
+        return Md5.hashAsciiStr(toHash.join(''));
     }
 
     /**
@@ -265,7 +271,7 @@ export class CoreH5PCore {
 
         const params = {
             library: CoreH5PCore.libraryToString(content.library),
-            params: CoreTextUtils.parseJSON(content.params, false),
+            params: CoreText.parseJSON(content.params, false),
         };
 
         if (!params.params) {
@@ -812,6 +818,11 @@ export class CoreH5PCore {
             someKeywordsExits: Translate.instant('core.h5p.someKeywordsExits'),
             width: Translate.instant('core.h5p.width'),
             height: Translate.instant('core.h5p.height'),
+            rotateLeft: Translate.instant('core.h5p.rotateLeft'),
+            rotateRight: Translate.instant('core.h5p.rotateRight'),
+            cropImage: Translate.instant('core.h5p.cropImage'),
+            confirmCrop: Translate.instant('core.h5p.confirmCrop'),
+            cancelCrop: Translate.instant('core.h5p.cancelCrop'),
         };
     }
 

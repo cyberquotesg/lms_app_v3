@@ -15,20 +15,20 @@
 import {
     AddonModDataEntryField,
     AddonModDataField,
-    AddonModDataProvider,
     AddonModDataSearchEntriesAdvancedFieldFormatted,
     AddonModDataSubfieldData,
 } from '@addons/mod/data/services/data';
 import { AddonModDataFieldHandler } from '@addons/mod/data/services/data-fields-delegate';
 import { Injectable, Type } from '@angular/core';
 import { CoreFileUploader, CoreFileUploaderStoreFilesResult } from '@features/fileuploader/services/fileuploader';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { CoreFileSession } from '@services/file-session';
 import { CoreFormFields } from '@singletons/form';
 import { makeSingleton, Translate } from '@singletons';
 import { AddonModDataFieldFileComponent } from '../component/file';
 import { CoreFileEntry } from '@services/file-helper';
 import type { AddonModDataFieldPluginBaseComponent } from '@addons/mod/data/classes/base-field-plugin-component';
+import { ADDON_MOD_DATA_COMPONENT } from '@addons/mod/data/constants';
 
 /**
  * Handler for file data field plugin.
@@ -79,14 +79,14 @@ export class AddonModDataFieldFileHandlerService implements AddonModDataFieldHan
      * @inheritdoc
      */
     getFieldEditFiles(field: AddonModDataField): CoreFileEntry[] {
-        return CoreFileSession.getFiles(AddonModDataProvider.COMPONENT, field.dataid + '_' + field.id);
+        return CoreFileSession.getFiles(ADDON_MOD_DATA_COMPONENT, field.dataid + '_' + field.id);
     }
 
     /**
      * @inheritdoc
      */
     hasFieldDataChanged(field: AddonModDataField, inputData: CoreFormFields, originalFieldData: AddonModDataEntryField): boolean {
-        const files = CoreFileSession.getFiles(AddonModDataProvider.COMPONENT, field.dataid + '_' + field.id) || [];
+        const files = CoreFileSession.getFiles(ADDON_MOD_DATA_COMPONENT, field.dataid + '_' + field.id) || [];
         let originalFiles = (originalFieldData && originalFieldData.files) || [];
 
         if (originalFiles.length) {

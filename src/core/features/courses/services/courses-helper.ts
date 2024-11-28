@@ -16,6 +16,7 @@ import { Injectable } from '@angular/core';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreSites, CoreSitesCommonWSOptions } from '@services/sites';
 import {
+    CoreCourseAnyCourseData,
     CoreCourseAnyCourseDataWithOptions,
     CoreCourses,
     CoreCourseSearchedData,
@@ -26,10 +27,15 @@ import { makeSingleton, Translate } from '@singletons';
 import { CoreWSExternalFile } from '@services/ws';
 import { AddonCourseCompletion } from '@addons/coursecompletion/services/coursecompletion';
 import moment from 'moment-timezone';
-import { of } from 'rxjs';
-import { firstValueFrom, zipIncludingComplete } from '@/core/utils/rxjs';
+import { of, firstValueFrom } from 'rxjs';
+import { zipIncludingComplete } from '@/core/utils/rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { chainRequests, WSObservable } from '@classes/site';
+import { chainRequests, WSObservable } from '@classes/sites/authenticated-site';
+import { LazyRoutesModule } from '@/app/app-routing.module';
+import { CoreSite } from '@classes/sites/site';
+
+// Id for a course item representing all courses (for example, for course filters).
+export const ALL_COURSES_ID = -1;
 
 /**
  * Helper to gather some common courses functions.
@@ -45,14 +51,17 @@ export class CoreCoursesHelperProvider {
      * @param courseId Course ID to get the category.
      * @returns Promise resolved with the list of courses and the category.
      */
-    async getCoursesForPopover(courseId?: number): Promise<{courses: Partial<CoreEnrolledCourseData>[]; categoryId?: number}> {
-        const courses: Partial<CoreEnrolledCourseData>[] = await CoreCourses.getUserCourses(false);
+    async getCoursesForPopover(courseId?: number): Promise<{courses: CoreEnrolledCourseData[]; categoryId?: number}> {
+        const courses: CoreEnrolledCourseData[] = await CoreCourses.getUserCourses(false);
 
         // Add "All courses".
         courses.unshift({
-            id: -1,
+            id: ALL_COURSES_ID,
             fullname: Translate.instant('core.fulllistofcourses'),
+            shortname: Translate.instant('core.fulllistofcourses'),
             categoryid: -1,
+            summary: '',
+            summaryformat: 1,
         });
 
         let categoryId: number | undefined;
@@ -199,8 +208,20 @@ export class CoreCoursesHelperProvider {
      * @param course Course data.
      */
     async loadCourseColorAndImage(course: CoreCourseWithImageAndColor): Promise<void> {
+        // Moodle 4.1 downwards geopatterns are embedded in b64 in only some WS, remote them to keep it coherent.
+        if (course.courseimage?.startsWith('data')) {
+            course.courseimage = undefined;
+        }
+
+        if (course.courseimage !== undefined) {
+            course.courseImage = course.courseimage; // @deprecated since 4.3 use courseimage instead.
+
+            return;
+        }
+
         if (course.overviewfiles && course.overviewfiles[0]) {
-            course.courseImage = course.overviewfiles[0].fileurl;
+            course.courseimage = course.overviewfiles[0].fileurl;
+            course.courseImage = course.courseimage; // @deprecated since 4.3 use courseimage instead.
 
             return;
         }
@@ -344,7 +365,7 @@ export class CoreCoursesHelperProvider {
             return of(course);
         }
 
-        if (course.enablecompletion !== undefined && !course.enablecompletion) {
+        if (!this.isCompletionEnabledInCourse(course)) {
             // Completion is disabled for this course, there is no need to fetch the completion status.
             return of(course);
         }
@@ -414,8 +435,20 @@ export class CoreCoursesHelperProvider {
      *
      * @returns My courses page module.
      */
-    async getMyRouteModule(): Promise<unknown> {
+    async getMyRouteModule(): Promise<LazyRoutesModule> {
         return import('../courses-my-lazy.module').then(m => m.CoreCoursesMyLazyModule);
+    }
+
+    /**
+     * Check whether completion is available in a certain course.
+     * This is a temporary function to be used until we move AddonCourseCompletion to core folder (MOBILE-4537).
+     *
+     * @param course Course.
+     * @param site Site. If not defined, use current site.
+     * @returns True if available.
+     */
+    isCompletionEnabledInCourse(course: CoreCourseAnyCourseData, site?: CoreSite): boolean {
+        return AddonCourseCompletion.isCompletionEnabledInCourse(course, site);
     }
 
 }
@@ -430,7 +463,8 @@ export type CoreCourseWithImageAndColor = {
     overviewfiles?: CoreWSExternalFile[];
     colorNumber?: number; // Color index number.
     color?: string; // Color RGB.
-    courseImage?: string; // Course thumbnail.
+    courseImage?: string; // Course thumbnail. @deprecated since 4.3, use courseimage instead.
+    courseimage?: string; // Course thumbnail.
 };
 
 /**

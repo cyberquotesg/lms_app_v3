@@ -24,8 +24,10 @@ import { CoreCourseOptionsDelegate } from '@features/course/services/course-opti
 import { AddonCourseCompletion } from '@addons/coursecompletion/services/coursecompletion';
 import { CoreBlockBaseComponent } from '@features/block/classes/base-block-component';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { AddonBlockStarredCourse, AddonBlockStarredCourses } from '../../services/starredcourses';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCoursesComponentsModule } from '@features/courses/components/components.module';
 
 /**
  * Component to render a starred courses block.
@@ -33,6 +35,11 @@ import { AddonBlockStarredCourse, AddonBlockStarredCourses } from '../../service
 @Component({
     selector: 'addon-block-starredcourses',
     templateUrl: 'addon-block-starredcourses.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreCoursesComponentsModule,
+    ],
 })
 export class AddonBlockStarredCoursesComponent extends CoreBlockBaseComponent implements OnInit, OnDestroy {
 

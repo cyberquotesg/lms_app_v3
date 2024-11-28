@@ -17,12 +17,12 @@ import { CoreSites } from '@services/sites';
 import { CoreBlockBaseComponent } from '@features/block/classes/base-block-component';
 import {
     AddonBlockRecentlyAccessedItems,
-    AddonBlockRecentlyAccessedItemsItem,
+    AddonBlockRecentlyAccessedItemsItemCalculatedData,
 } from '../../services/recentlyaccesseditems';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
+import { CoreText } from '@singletons/text';
+import { CoreLoadings } from '@services/loadings';
 import { CoreUtils } from '@services/utils/utils';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render a recently accessed items block.
@@ -30,12 +30,17 @@ import { CoreUtils } from '@services/utils/utils';
 @Component({
     selector: 'addon-block-recentlyaccesseditems',
     templateUrl: 'addon-block-recentlyaccesseditems.html',
-    styleUrls: ['recentlyaccesseditems.scss'],
+    styleUrl: 'recentlyaccesseditems.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonBlockRecentlyAccessedItemsComponent extends CoreBlockBaseComponent implements OnInit {
 
-    items: AddonBlockRecentlyAccessedItemsItem[] = [];
+    items: AddonBlockRecentlyAccessedItemsItemCalculatedData[] = [];
     scrollElementId!: string;
+    colorizeIcons = false;
 
     protected fetchContentDefaultError = 'Error getting recently accessed items data.';
 
@@ -51,6 +56,9 @@ export class AddonBlockRecentlyAccessedItemsComponent extends CoreBlockBaseCompo
         const scrollId = CoreUtils.getUniqueId('AddonBlockRecentlyAccessedItemsComponent-Scroll');
 
         this.scrollElementId = `addon-block-recentlyaccesseditems-scroll-${scrollId}`;
+
+        // Only colorize icons on 4.0 to 4.3 sites.
+        this.colorizeIcons = !CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.4');
 
         super.ngOnInit();
     }
@@ -80,18 +88,15 @@ export class AddonBlockRecentlyAccessedItemsComponent extends CoreBlockBaseCompo
      * @param item Activity item info.
      * @returns Promise resolved when done.
      */
-    async action(e: Event, item: AddonBlockRecentlyAccessedItemsItem): Promise<void> {
+    async action(e: Event, item: AddonBlockRecentlyAccessedItemsItemCalculatedData): Promise<void> {
         e.preventDefault();
         e.stopPropagation();
 
-        const url = CoreTextUtils.decodeHTMLEntities(item.viewurl);
-        const modal = await CoreDomUtils.showModalLoading();
+        const url = CoreText.decodeHTMLEntities(item.viewurl);
+        const modal = await CoreLoadings.show();
 
         try {
-            const treated = await CoreContentLinksHelper.handleLink(url);
-            if (!treated) {
-                return CoreSites.getCurrentSite()?.openInBrowserWithAutoLogin(url);
-            }
+            await CoreSites.visitLink(url);
         } finally {
             modal.dismiss();
         }

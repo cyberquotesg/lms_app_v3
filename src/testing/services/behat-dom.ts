@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CorePromisedValue } from '@classes/promised-value';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreWait } from '@singletons/wait';
 import { makeSingleton, NgZone } from '@singletons';
 import { TestingBehatElementLocator, TestingBehatFindOptions } from './behat-runtime';
 
@@ -44,16 +44,39 @@ export class TestingBehatDomUtilsService {
      * @returns Whether the element is visible or not.
      */
     isElementVisible(element: HTMLElement, container?: HTMLElement): boolean {
-        if (element.getAttribute('aria-hidden') === 'true' || getComputedStyle(element).display === 'none') {
+        if (element.getAttribute('aria-hidden') === 'true') {
+            if (
+                element.tagName === 'ION-ROUTER-OUTLET' &&
+                element === document.body.querySelector('ion-app > ion-router-outlet') &&
+                (document.body.querySelector('ion-toast.hydrated:not(.overlay-hidden)') ||
+                !document.body.querySelector(
+                    'ion-action-sheet.hydrated:not(.overlay-hidden), ion-alert.hydrated:not(.overlay-hidden)\
+                    ion-loading.hydrated:not(.overlay-hidden), ion-modal.hydrated:not(.overlay-hidden),\
+                    ion-picker.hydrated:not(.overlay-hidden), ion-popover.hydrated:not(.overlay-hidden)',
+                ))
+            ) {
+                // Main ion-router-outlet is aria-hidden when a toast is open but the UI is not blocked...
+                // It also may be hidden due to an error in Ionic. See fixOverlayAriaHidden function.
+                return true;
+            }
+
             return false;
         }
 
-        if (element.tagName === 'ION-SLIDE') {
+        if (getComputedStyle(element).display === 'none') {
+            return false;
+        }
+
+        if (element.tagName === 'SWIPER-SLIDE') {
             // Check if the slide is visible (in the viewport).
             const bounding = element.getBoundingClientRect();
             if (bounding.right <= 0 || bounding.left >= window.innerWidth) {
                 return false;
             }
+        }
+
+        if (element.slot === 'content' && element.parentElement?.tagName === 'ION-ACCORDION') {
+            return element.parentElement.classList.contains('accordion-expanded');
         }
 
         if (!container) {
@@ -76,25 +99,38 @@ export class TestingBehatDomUtilsService {
      * Check if an element is selected.
      *
      * @param element Element.
-     * @param container Container.
+     * @param firstCall Whether this is the first call of the function.
      * @returns Whether the element is selected or not.
      */
-    isElementSelected(element: HTMLElement, container: HTMLElement): boolean {
+    isElementSelected(element: HTMLElement, firstCall = true): boolean {
         const ariaCurrent = element.getAttribute('aria-current');
-        if (
-            (ariaCurrent && ariaCurrent !== 'false') ||
-            (element.getAttribute('aria-selected') === 'true') ||
-            (element.getAttribute('aria-checked') === 'true')
-        ) {
-            return true;
+        const ariaSelected = element.getAttribute('aria-selected');
+        const ariaChecked = element.getAttribute('aria-checked');
+
+        if (ariaCurrent || ariaSelected || ariaChecked) {
+            return (!!ariaCurrent && ariaCurrent !== 'false') ||
+                (!!ariaSelected && ariaSelected === 'true') ||
+                (!!ariaChecked && ariaChecked === 'true');
+        }
+
+        if (firstCall) {
+            const inputElement =  element.closest('ion-checkbox, ion-radio, ion-toggle')?.querySelector('input');
+            if (inputElement) {
+                return inputElement.value === 'on';
+            }
+
+            const tabButtonElement =  element.closest('ion-tab-button');
+            if (tabButtonElement?.classList.contains('tab-selected')) {
+                return true;
+            }
         }
 
         const parentElement = this.getParentElement(element);
-        if (!parentElement || parentElement === container) {
+        if (!parentElement || parentElement.classList.contains('ion-page')) {
             return false;
         }
 
-        return this.isElementSelected(parentElement, container);
+        return this.isElementSelected(parentElement, false);
     }
 
     /**
@@ -107,9 +143,13 @@ export class TestingBehatDomUtilsService {
      */
     protected findElementsBasedOnTextWithinWithExact(
         container: HTMLElement,
-        text: string,
+        text: string | string[],
         options: TestingBehatFindOptions,
     ): ElementsWithExact[] {
+        if (Array.isArray(text)) {
+            return text.map((text) => this.findElementsBasedOnTextWithinWithExact(container, text, options)).flat();
+        }
+
         // Escape double quotes to prevent breaking the query selector.
         const escapedText = text.replace(/"/g, '\\"');
         const attributesSelector = `[aria-label*="${escapedText}"], a[title*="${escapedText}"], ` +
@@ -249,7 +289,7 @@ export class TestingBehatDomUtilsService {
      */
     protected findElementsBasedOnTextWithin(
         container: HTMLElement,
-        text: string,
+        text: string | string[],
         options: TestingBehatFindOptions,
     ): HTMLElement[] {
         const elements = this.findElementsBasedOnTextWithinWithExact(container, text, options);
@@ -263,7 +303,7 @@ export class TestingBehatDomUtilsService {
     /**
      * Given a list of elements, get the top ancestors among all of them.
      *
-     * This will remote duplicates and drop any elements nested within each other.
+     * This will remove duplicates and drop any elements nested within each other.
      *
      * @param elements Elements list.
      * @returns Top ancestors.
@@ -277,7 +317,18 @@ export class TestingBehatDomUtilsService {
                     continue;
                 }
 
-                if (element.contains(otherElement)) {
+                let documentPosition = element.compareDocumentPosition(otherElement);
+                // eslint-disable-next-line no-bitwise
+                if (documentPosition & Node.DOCUMENT_POSITION_DISCONNECTED) {
+                    // Check if they are inside shadow DOM so we can compare their hosts.
+                    const elementHost = this.getShadowDOMHost(element) || element;
+                    const otherElementHost = this.getShadowDOMHost(otherElement) || otherElement;
+
+                    documentPosition = elementHost.compareDocumentPosition(otherElementHost);
+                }
+
+                // eslint-disable-next-line no-bitwise
+                if (documentPosition & Node.DOCUMENT_POSITION_CONTAINS) {
                     uniqueElements.delete(otherElement);
                 }
             }
@@ -293,9 +344,22 @@ export class TestingBehatDomUtilsService {
      * @returns Parent element.
      */
     protected getParentElement(element: HTMLElement): HTMLElement | null {
-        return element.parentElement ||
-            (element.getRootNode() && (element.getRootNode() as ShadowRoot).host as HTMLElement) ||
-            null;
+        return element.parentElement || this.getShadowDOMHost(element);
+    }
+
+    /**
+     * Get shadow DOM host element.
+     *
+     * @param element Element.
+     * @returns Shadow DOM host element.
+     */
+    protected getShadowDOMHost(element: HTMLElement): HTMLElement | null {
+        const node = element.getRootNode();
+        if (node instanceof ShadowRoot) {
+            return node.host as HTMLElement;
+        }
+
+        return null;
     }
 
     /**
@@ -311,11 +375,12 @@ export class TestingBehatDomUtilsService {
             return element;
         }
 
-        if (element === container || !element.parentElement) {
+        const parent = this.getParentElement(element);
+        if (element === container || !parent) {
             return null;
         }
 
-        return this.getClosestMatching(element.parentElement, selector, container);
+        return this.getClosestMatching(parent, selector, container);
     }
 
     /**
@@ -324,53 +389,63 @@ export class TestingBehatDomUtilsService {
      * @param containerName Whether to search inside the a container name.
      * @returns Found top container elements.
      */
-    protected getCurrentTopContainerElements(containerName: string): HTMLElement[] {
-        const topContainers: HTMLElement[] = [];
-        let containers = Array.from(document.querySelectorAll<HTMLElement>([
-            'ion-alert.hydrated',
-            'ion-popover.hydrated',
-            'ion-action-sheet.hydrated',
-            'ion-modal.hydrated',
+    protected getCurrentTopContainerElements(containerName?: string): HTMLElement[] {
+        let containers = Array.from(document.body.querySelectorAll<HTMLElement>([
+            'ion-alert.hydrated:not(.overlay-hidden)',
+            'ion-popover.hydrated:not(.overlay-hidden)',
+            'ion-action-sheet.hydrated:not(.overlay-hidden)',
+            'ion-modal.hydrated:not(.overlay-hidden)',
             'core-user-tours-user-tour.is-active',
-            'ion-toast.hydrated',
-            'page-core-mainmenu',
-            'ion-app',
+            'ion-toast.hydrated:not(.overlay-hidden)',
+            'page-core-mainmenu > ion-tabs:not(.tabshidden) > .mainmenu-tabs',
+            'page-core-mainmenu > .core-network-message',
+            '.ion-page:not(.ion-page-hidden)',
         ].join(', ')));
+        const ionApp = document.querySelector<HTMLElement>('ion-app') ?? undefined;
 
         containers = containers
             .filter(container => {
+
                 if (container.tagName === 'ION-ALERT') {
                     // For some reason, in Behat sometimes alerts aren't removed from DOM, the close animation doesn't finish.
                     // Filter alerts with pointer-events none since that style is set before the close animation starts.
                     return container.style.pointerEvents !== 'none';
                 }
 
-                // Ignore pages that are inside other visible pages.
-                return container.tagName !== 'ION-PAGE' || !container.closest('.ion-page.ion-page-hidden');
+                // Avoid searching in the whole app.
+                if (container.tagName === 'ION-APP' || container.tagName === 'PAGE-CORE-MAINMENU') {
+                    return false;
+                }
+
+                // Ignore not visible containers.
+                return this.isElementVisible(container, ionApp);
             })
             // Sort them by z-index.
             .sort((a, b) =>  Number(getComputedStyle(b).zIndex) - Number(getComputedStyle(a).zIndex));
 
         if (containerName === 'split-view content') {
+
+            let splitViewContainer: HTMLElement | null = null;
+
             // Find non hidden pages inside the containers.
             containers.some(container => {
                 if (!container.classList.contains('ion-page')) {
                     return false;
                 }
+                if (container.closest('ion-router-outlet.content-outlet')) {
+                    splitViewContainer = container;
 
-                const pageContainers = Array.from(container.querySelectorAll<HTMLElement>('.ion-page:not(.ion-page-hidden)'));
-                let topContainer = pageContainers.find((page) => !page.closest('.ion-page.ion-page-hidden')) ?? null;
+                    return true;
+                }
 
-                topContainer = (topContainer || container).querySelector<HTMLElement>('core-split-view ion-router-outlet');
-                topContainer && topContainers.push(topContainer);
-
-                return !!topContainer;
+                return false;
             });
 
-            return topContainers;
+            return splitViewContainer ? [splitViewContainer] : [];
         }
 
         // Get containers until one blocks other views.
+        const topContainers: HTMLElement[] = [];
         containers.some(container => {
             if (container.tagName === 'ION-TOAST') {
                 container = container.shadowRoot?.querySelector('.toast-container') || container;
@@ -385,6 +460,60 @@ export class TestingBehatDomUtilsService {
     }
 
     /**
+     * Find a field.
+     *
+     * @param field Field name.
+     * @returns Field element.
+     */
+    findField(field: string): HTMLElement | HTMLInputElement | undefined {
+        const selector =
+            'input, textarea, core-rich-text-editor, [contenteditable="true"], ion-select, ion-datetime-button, ion-datetime';
+
+        let input = this.findElementBasedOnText(
+            { text: field, selector },
+            { onlyClickable: false },
+        );
+
+        if (input?.tagName === 'CORE-RICH-TEXT-EDITOR') {
+            input = input.querySelector<HTMLElement>('[contenteditable="true"]') || undefined;
+        }
+
+        if (input) {
+            return input;
+        }
+
+        const label = this.findElementBasedOnText(
+            { text: field, selector: 'label' },
+            { onlyClickable: false },
+        );
+
+        if (label) {
+            const inputId = label.getAttribute('for');
+
+            if (inputId) {
+                const element = document.getElementById(inputId) || undefined;
+                if (element?.tagName !== 'ION-DATETIME-BUTTON') {
+                    return element;
+                }
+
+                // Search the ion-datetime associated with the button.
+                const datetimeId = (<HTMLIonDatetimeButtonElement> element).datetime;
+                const datetime = document.body.querySelector<HTMLElement>(`ion-datetime#${datetimeId}`);
+
+                return datetime || undefined;
+            }
+
+            input = this.getShadowDOMHost(label) || undefined;
+
+            // Add support for other input types if required by adding them to the array.
+            const ionicInputFields = ['ION-INPUT', 'ION-TEXTAREA', 'ION-SELECT', 'ION-DATETIME', 'ION-TOGGLE'];
+            if (input && ionicInputFields.includes(input.tagName)) {
+                return input;
+            }
+        }
+    }
+
+    /**
      * Function to find element based on their text or Aria label.
      *
      * @param locator Element locator.
@@ -393,9 +522,61 @@ export class TestingBehatDomUtilsService {
      */
     findElementBasedOnText(
         locator: TestingBehatElementLocator,
-        options: TestingBehatFindOptions,
+        options: TestingBehatFindOptions = {},
     ): HTMLElement | undefined {
+        if (Array.isArray(locator.text)) {
+            for (const text of locator.text) {
+                const element = this.findElementBasedOnText({ ...locator, text });
+                if (element) {
+                    return element;
+                }
+            }
+
+            return undefined;
+        }
+
+        // Remove extra spaces.
+        const treatedText = locator.text.trim().replace(/\s\s+/g, ' ');
+        if (treatedText !== locator.text) {
+            const element = this.findElementsBasedOnText({
+                ...locator,
+                text: treatedText,
+            }, options)[0];
+
+            if (element) {
+                return element;
+            }
+        }
+
         return this.findElementsBasedOnText(locator, options)[0];
+    }
+
+    /**
+     * Wait until an element with the given selector is found.
+     *
+     * @param selector Element selector.
+     * @param timeout Timeout after which an error is thrown.
+     * @param retryFrequency Frequency for retries when the element is not found.
+     * @returns Element.
+     */
+    async waitForElement<T extends HTMLElement = HTMLElement>(
+        selector: string,
+        timeout: number = 2000,
+        retryFrequency: number = 100,
+    ): Promise<T> {
+        const element = document.body.querySelector<T>(selector);
+
+        if (!element) {
+            if (timeout < retryFrequency) {
+                throw new Error(`Element with '${selector}' selector not found`);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, retryFrequency));
+
+            return this.waitForElement<T>(selector, timeout - retryFrequency, retryFrequency);
+        }
+
+        return element;
     }
 
     /**
@@ -412,12 +593,11 @@ export class TestingBehatDomUtilsService {
         const topContainers = this.getCurrentTopContainerElements(options.containerName);
         let elements: HTMLElement[] = [];
 
-        for (let i = 0; i < topContainers.length; i++) {
-            elements = elements.concat(this.findElementsBasedOnTextInContainer(locator, topContainers[i], options));
-            if (elements.length) {
-                break;
-            }
-        }
+        topContainers.some((container) => {
+            elements = this.findElementsBasedOnTextInContainer(locator, container, options);
+
+            return elements.length > 0;
+        });
 
         return elements;
     }
@@ -433,7 +613,7 @@ export class TestingBehatDomUtilsService {
     protected findElementsBasedOnTextInContainer(
         locator: TestingBehatElementLocator,
         topContainer: HTMLElement,
-        options: TestingBehatFindOptions,
+        options: TestingBehatFindOptions = {},
     ): HTMLElement[] {
         let container: HTMLElement | null = topContainer;
 
@@ -551,8 +731,10 @@ export class TestingBehatDomUtilsService {
             // may not work without doing this.
             const parentElement = this.getParentElement(element);
 
-            if (parentElement && parentElement.matches('ion-button, ion-back-button')) {
+            if (parentElement?.matches('ion-button, ion-back-button')) {
                 element = parentElement;
+            } else if (parentElement?.tagName === 'ION-ITEM' && parentElement?.classList.contains('clickable')) {
+                element = parentElement.querySelector<HTMLElement>('ion-toggle') || element;
             }
 
             const rect = await this.ensureElementVisible(element);
@@ -583,31 +765,26 @@ export class TestingBehatDomUtilsService {
     }
 
     /**
-     * Set an element value.
+     * Set an input element value.
      *
-     * @param element HTML to set.
-     * @param value Value to be set.
+     * @param element Input element.
+     * @param value Value.
      */
-    async setElementValue(element: HTMLInputElement | HTMLElement, value: string): Promise<void> {
+    async setInputValue(element: HTMLInputElement | HTMLElement, value: string): Promise<void> {
         await NgZone.run(async () => {
-            const promise = new CorePromisedValue<void>();
-
             // Functions to get/set value depending on field type.
-            const setValue = (text: string) => {
-                if (element.tagName === 'ION-SELECT' && 'value' in element) {
-                    value = value.trim();
-                    const optionValue = Array.from(element.querySelectorAll('ion-select-option'))
-                        .find((option) => option.innerHTML.trim() === value);
-
-                    if (optionValue) {
-                        element.value = optionValue.value;
-                    }
+            const setValue = async (text: string) => {
+                if (element.tagName === 'ION-SELECT') {
+                    this.setIonSelectInputValue(element, value);
                 } else if ('value' in element) {
                     element.value = text;
                 } else {
                     element.innerHTML = text;
                 }
+
+                element.dispatchEvent(new Event('ionChange'));
             };
+
             const getValue = () => {
                 if ('value' in element) {
                     return element.value;
@@ -617,38 +794,79 @@ export class TestingBehatDomUtilsService {
             };
 
             // Pretend we have cut and pasted the new text.
-            let event: InputEvent;
-            if (getValue() !== '') {
-                event = new InputEvent('input', {
+            if (element.tagName !== 'ION-SELECT' && getValue() !== '') {
+                await CoreWait.nextTick();
+                await setValue('');
+
+                element.dispatchEvent(new InputEvent('input', {
                     bubbles: true,
                     view: window,
                     cancelable: true,
                     inputType: 'deleteByCut',
-                });
-
-                await CoreUtils.nextTick();
-                setValue('');
-                element.dispatchEvent(event);
+                }));
             }
 
             if (value !== '') {
-                event = new InputEvent('input', {
+                await CoreWait.nextTick();
+                await setValue(value);
+
+                element.dispatchEvent(new InputEvent('input', {
                     bubbles: true,
                     view: window,
                     cancelable: true,
                     inputType: 'insertFromPaste',
                     data: value,
-                });
+                }));
+            }
+        });
+    }
 
-                await CoreUtils.nextTick();
-                setValue(value);
-                element.dispatchEvent(event);
+    /**
+     * Select an option in an ion-select element.
+     *
+     * @param element IonSelect element.
+     * @param value Value.
+     */
+    protected async setIonSelectInputValue(element: HTMLElement, value: string): Promise<void> {
+        // Press select.
+        await TestingBehatDomUtils.pressElement(element);
+
+        // Press option.
+        type IonSelectInterface = 'alert' | 'action-sheet' | 'popover';
+        const selectInterface = element.getAttribute('interface') as IonSelectInterface ?? 'alert';
+        const containerSelector = ({
+            'alert': 'ion-alert.select-alert',
+            'action-sheet': 'ion-action-sheet.select-action-sheet',
+            'popover': 'ion-popover.select-popover',
+        })[selectInterface];
+        const optionSelector = ({
+            'alert': 'button',
+            'action-sheet': 'button',
+            'popover': 'ion-radio',
+        })[selectInterface] ?? '';
+        const optionsContainer = await TestingBehatDomUtils.waitForElement(containerSelector);
+        const options = this.findElementsBasedOnTextInContainer(
+            { text: value, selector: optionSelector },
+            optionsContainer,
+            {},
+        );
+
+        if (options.length === 0) {
+            throw new Error('Couldn\'t find ion-select option.');
+        }
+
+        await TestingBehatDomUtils.pressElement(options[0]);
+
+        // Press options submit.
+        if (selectInterface === 'alert') {
+            const submitButton = optionsContainer.querySelector<HTMLElement>('.alert-button-group button:last-child');
+
+            if (!submitButton) {
+                throw new Error('Couldn\'t find ion-select submit button.');
             }
 
-            promise.resolve();
-
-            return promise;
-        });
+            await TestingBehatDomUtils.pressElement(submitButton);
+        }
     }
 
 }

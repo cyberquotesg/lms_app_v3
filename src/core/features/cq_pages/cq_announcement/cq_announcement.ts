@@ -1,22 +1,22 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { IonSlides, Platform } from '@ionic/angular';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { Platform } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
-import { FileTransfer, FileTransferObject } from '@ionic-native/file-transfer/ngx';
-import { FileOpener } from '@ionic-native/file-opener/ngx';
-import { File } from '@ionic-native/file/ngx';
-import { AddonNotifications } from '@features/cq_pages/cq_notifications/services/notifications';
+import { File } from '@awesome-cordova-plugins/file/ngx';
+import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
+import { FileTransfer, FileTransferObject } from '@awesome-cordova-plugins/file-transfer/ngx';
+import { AddonNotifications } from '@addons/notifications/services/notifications';
 
 @Component({
     selector: 'cq_announcement',
     templateUrl: './cq_announcement.html',
 })
-export class CqAnnouncement extends CqPage implements OnInit
+export class CqAnnouncement extends CqPage implements OnInit, OnDestroy
 {
     pageParams: any = {
         discussion_id: 0,
@@ -32,19 +32,19 @@ export class CqAnnouncement extends CqPage implements OnInit
     private agent: any;
     loading: any = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper, platform: Platform,
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef, platform: Platform,
         private transfer: FileTransfer,
         private file: File,
         private fileOpener: FileOpener)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.CH.updateCount("announcement");
     }
 
     ngOnInit(): void {
         this.usuallyOnInit(() => {
-            if (this.pageParams.notification_id)
+            if (this.pageParams.notification_id != 0 && this.pageParams.notification_id != "0")
             {
                 this.CH.log("marking notification as read", this.pageParams.notification_id);
                 AddonNotifications.markNotificationRead(this.pageParams.notification_id);
@@ -55,6 +55,7 @@ export class CqAnnouncement extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     announcement(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -183,8 +184,8 @@ export class CqAnnouncement extends CqPage implements OnInit
         this.CH.loading('Downloading', (loading) => {
             const fileTransfer: FileTransferObject = this.transfer.create();
             fileTransfer.download(this.CH.config().siteurl + url, this.file.dataDirectory + name)
-            .then((entry) => {
-                this.fileOpener.open(entry.toURL(), this.CH.getMimeTypeByName(name))
+            .then((result) => {
+                this.fileOpener.open(result.entry.toURL(), this.CH.getMimeTypeByName(name))
                 .then(() => {
                     loading.dismiss();
                 })

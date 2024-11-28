@@ -13,19 +13,26 @@
 // limitations under the License.
 
 import { Injectable, EventEmitter } from '@angular/core';
-import { FileEntry, DirectoryEntry } from '@ionic-native/file/ngx';
+import { FileEntry, DirectoryEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreFile } from '@services/file';
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreFilepool } from '@services/filepool';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreQuestion, CoreQuestionProvider, CoreQuestionQuestionParsed, CoreQuestionsAnswers } from './question';
 import { CoreQuestionDelegate } from './question-delegate';
+import { CoreIcons } from '@singletons/icons';
+import { CoreUrl } from '@singletons/url';
+import { ContextLevel } from '@/core/constants';
+import { CoreIonicColorNames } from '@singletons/colors';
+import { CoreViewer } from '@features/viewer/services/viewer';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
+import { AddonModQuizNavigationQuestion } from '@addons/mod/quiz/components/navigation-modal/navigation-modal';
 
 /**
  * Service with some common functions to handle questions.
@@ -41,7 +48,7 @@ export class CoreQuestionHelperProvider {
      * @param question Question.
      * @param button Behaviour button (DOM element).
      */
-    protected addBehaviourButton(question: CoreQuestionQuestion, button: HTMLInputElement): void {
+    protected addBehaviourButton(question: CoreQuestionQuestion, button: HTMLElement): void {
         if (!button || !question) {
             return;
         }
@@ -49,10 +56,26 @@ export class CoreQuestionHelperProvider {
         question.behaviourButtons = question.behaviourButtons || [];
 
         // Extract the data we want.
+        if (button instanceof HTMLInputElement) {
+            // Old behaviour that changed in 4.2 because of MDL-78874.
+            question.behaviourButtons.push({
+                id: button.id,
+                name: button.name,
+                value: button.value,
+                disabled: button.disabled,
+            });
+
+            return;
+        }
+
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+
         question.behaviourButtons.push({
             id: button.id,
             name: button.name,
-            value: button.value,
+            value: button.innerHTML,
             disabled: button.disabled,
         });
     }
@@ -100,7 +123,7 @@ export class CoreQuestionHelperProvider {
      * The buttons aren't deleted from the content because all the im-controls block will be removed afterwards.
      *
      * @param question Question to treat.
-     * @param selector Selector to search the buttons. By default, '.im-controls input[type="submit"]'.
+     * @param selector Selector to search the buttons. By default, '.im-controls [type="submit"]'.
      */
     extractQbehaviourButtons(question: CoreQuestionQuestionParsed, selector?: string): void {
         if (CoreQuestionDelegate.getPreventSubmitMessage(question)) {
@@ -108,9 +131,9 @@ export class CoreQuestionHelperProvider {
             return;
         }
 
-        selector = selector || '.im-controls input[type="submit"]';
+        selector = selector || '.im-controls [type="submit"]';
 
-        const element = CoreDomUtils.convertToElement(question.html);
+        const element = convertTextToHTMLElement(question.html);
 
         // Search the buttons.
         const buttons = <HTMLInputElement[]> Array.from(element.querySelectorAll(selector));
@@ -129,7 +152,7 @@ export class CoreQuestionHelperProvider {
      * @returns Wether the certainty is found.
      */
     extractQbehaviourCBM(question: CoreQuestionQuestion): boolean {
-        const element = CoreDomUtils.convertToElement(question.html);
+        const element = convertTextToHTMLElement(question.html);
 
         const labels = Array.from(element.querySelectorAll('.im-controls .certaintychoices label[for*="certainty"]'));
         question.behaviourCertaintyOptions = [];
@@ -142,7 +165,7 @@ export class CoreQuestionHelperProvider {
                     id: input.id,
                     name: input.name,
                     value: input.value,
-                    text: CoreTextUtils.cleanTags(label.innerHTML),
+                    text: CoreText.cleanTags(label.innerHTML),
                     disabled: input.disabled,
                 });
 
@@ -168,7 +191,7 @@ export class CoreQuestionHelperProvider {
      */
     extractQbehaviourRedoButton(question: CoreQuestionQuestion): void {
         // Create a fake div element so we can search using querySelector.
-        const redoSelector = 'input[type="submit"][name*=redoslot], input[type="submit"][name*=tryagain]';
+        const redoSelector = '[type="submit"][name*=redoslot], [type="submit"][name*=tryagain]';
 
         // Search redo button in feedback.
         if (!this.searchBehaviourButton(question, 'html', '.outcome ' + redoSelector)) {
@@ -196,7 +219,7 @@ export class CoreQuestionHelperProvider {
      * @returns Whether the seen input is found.
      */
     extractQbehaviourSeenInput(question: CoreQuestionQuestion): boolean {
-        const element = CoreDomUtils.convertToElement(question.html);
+        const element = convertTextToHTMLElement(question.html);
 
         // Search the "seen" input.
         const seenInput = <HTMLInputElement> element.querySelector('input[type="hidden"][name*=seen]');
@@ -252,7 +275,7 @@ export class CoreQuestionHelperProvider {
      * @param attrName Name of the attribute to store the HTML in.
      */
     protected extractQuestionLastElementNotInContent(question: CoreQuestionQuestion, selector: string, attrName: string): void {
-        const element = CoreDomUtils.convertToElement(question.html);
+        const element = convertTextToHTMLElement(question.html);
         const matches = <HTMLElement[]> Array.from(element.querySelectorAll(selector));
 
         // Get the last element and check it's not in the question contents.
@@ -312,7 +335,7 @@ export class CoreQuestionHelperProvider {
                     initMatch = initMatch.substring(0, initMatch.length - 2);
 
                     // Try to convert it to an object and add it to the question.
-                    question.initObjects = CoreTextUtils.parseJSON(initMatch, null);
+                    question.initObjects = CoreText.parseJSON(initMatch, null);
                 }
             }
 
@@ -323,7 +346,7 @@ export class CoreQuestionHelperProvider {
 
             if (amdMatch) {
                 // Try to convert the arguments to an array and add them to the question.
-                question.amdArgs = CoreTextUtils.parseJSON('[' + amdMatch[1] + ']', null);
+                question.amdArgs = CoreText.parseJSON('[' + amdMatch[1] + ']', null);
             }
         });
     }
@@ -337,7 +360,7 @@ export class CoreQuestionHelperProvider {
      * @returns Object where the keys are the names.
      */
     getAllInputNamesFromHtml(html: string): Record<string, boolean> {
-        const element = CoreDomUtils.convertToElement('<form>' + html + '</form>');
+        const element = convertTextToHTMLElement('<form>' + html + '</form>');
         const form = <HTMLFormElement> element.children[0];
         const answers: Record<string, boolean> = {};
 
@@ -403,7 +426,7 @@ export class CoreQuestionHelperProvider {
      * @returns Attachments.
      */
     getQuestionAttachmentsFromHtml(html: string): CoreWSFile[] {
-        const element = CoreDomUtils.convertToElement(html);
+        const element = convertTextToHTMLElement(html);
 
         // Remove the filemanager (area to attach files to a question).
         CoreDomUtils.removeElement(element, 'div[id*=filemanager]');
@@ -417,7 +440,7 @@ export class CoreQuestionHelperProvider {
 
             // Check anchor is valid.
             if (anchor.href && content) {
-                content = CoreTextUtils.cleanTags(content, { singleLine: true, trim: true });
+                content = CoreText.cleanTags(content, { singleLine: true, trim: true });
                 attachments.push({
                     filename: content,
                     fileurl: anchor.href,
@@ -440,7 +463,7 @@ export class CoreQuestionHelperProvider {
         }
 
         // Search the input holding the sequencecheck.
-        const element = CoreDomUtils.convertToElement(html);
+        const element = convertTextToHTMLElement(html);
         const input = <HTMLInputElement> element.querySelector('input[name*=sequencecheck]');
 
         if (!input || input.name === undefined || input.value === undefined) {
@@ -454,15 +477,18 @@ export class CoreQuestionHelperProvider {
     }
 
     /**
-     * Get the CSS class for a question based on its state.
+     * Populates the CSS class for a question based on its state.
      *
-     * @param name Question's state name.
-     * @returns State class.
+     * @param question Question.
      */
-    getQuestionStateClass(name: string): string {
-        const state = CoreQuestion.getState(name);
+    populateQuestionStateClass(question: AddonModQuizNavigationQuestion): void {
+        if (!question.stateclass) {
+            const state = CoreQuestion.getState(question.state);
 
-        return state ? state.class : '';
+            question.stateclass = state.stateclass;
+        }
+
+        question.stateClass = 'core-question-' + (question.stateclass ?? 'unknown');
     }
 
     /**
@@ -510,7 +536,7 @@ export class CoreQuestionHelperProvider {
      * @returns Validation error message if present.
      */
     getValidationErrorFromHtml(html: string): string | undefined {
-        const element = CoreDomUtils.convertToElement(html);
+        const element = convertTextToHTMLElement(html);
 
         return CoreDomUtils.getContentsOfElement(element, '.validationerror');
     }
@@ -562,7 +588,7 @@ export class CoreQuestionHelperProvider {
      * @param question Question.
      */
     loadLocalAnswersInHtml(question: CoreQuestionQuestion): void {
-        const element = CoreDomUtils.convertToElement('<form>' + question.html + '</form>');
+        const element = convertTextToHTMLElement('<form>' + question.html + '</form>');
         const form = <HTMLFormElement> element.children[0];
 
         // Search all input elements.
@@ -637,7 +663,7 @@ export class CoreQuestionHelperProvider {
     ): Promise<void> {
         if (!component) {
             component = CoreQuestionProvider.COMPONENT;
-            componentId = question.number;
+            componentId = question.questionnumber;
         }
 
         const files = CoreQuestionDelegate.getAdditionalDownloadableFiles(question, usageId) || [];
@@ -661,7 +687,7 @@ export class CoreQuestionHelperProvider {
                 return;
             }
 
-            if (fileUrl.indexOf('theme/image.php') > -1 && fileUrl.indexOf('flagged') > -1) {
+            if (CoreUrl.isThemeImageUrl(fileUrl) && fileUrl.indexOf('flagged') > -1) {
                 // Ignore flag images.
                 return;
             }
@@ -712,6 +738,7 @@ export class CoreQuestionHelperProvider {
         CoreDomUtils.replaceClassesInElement(element, {
             correct: 'core-question-answer-correct',
             incorrect: 'core-question-answer-incorrect',
+            partiallycorrect: 'core-question-answer-partiallycorrect',
         });
     }
 
@@ -736,9 +763,9 @@ export class CoreQuestionHelperProvider {
      * @returns Whether the button is found.
      */
     protected searchBehaviourButton(question: CoreQuestionQuestion, htmlProperty: string, selector: string): boolean {
-        const element = CoreDomUtils.convertToElement(question[htmlProperty]);
+        const element = convertTextToHTMLElement(question[htmlProperty]);
 
-        const button = <HTMLInputElement> element.querySelector(selector);
+        const button = element.querySelector<HTMLElement>(selector);
         if (!button) {
             return false;
         }
@@ -773,6 +800,77 @@ export class CoreQuestionHelperProvider {
     }
 
     /**
+     * Returns correct icon based on the LMS version.
+     * In LMS 4.4 and older, fa-check means correct. In 4.5+, fa-check means partially correct.
+     *
+     * @returns Icon data.
+     */
+    getCorrectIcon(): IconData {
+        if (CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.5')) {
+            return {
+                name: 'circle-check',
+                prefix: 'far',
+                library: 'regular',
+                fullName: 'far-circle-check',
+            };
+        } else {
+            return {
+                name: 'check',
+                prefix: 'fas',
+                library: 'solid',
+                fullName: 'fas-check',
+            };
+        }
+    }
+
+    /**
+     * Returns incorrect correct icon based on the LMS version.
+     *
+     * @returns Icon data.
+     */
+    getIncorrectIcon(): IconData {
+        if (CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.5')) {
+            return {
+                name: 'circle-xmark',
+                prefix: 'far',
+                library: 'regular',
+                fullName: 'far-circle-xmark',
+            };
+        } else {
+            return {
+                name: 'xmark',
+                prefix: 'fas',
+                library: 'solid',
+                fullName: 'fas-xmark',
+            };
+        }
+    }
+
+    /**
+     * Returns partially correct icon based on the LMS version.
+     * In LMS 4.4 and older, fa-check means correct. In 4.5+, fa-check means partially correct.
+     *
+     * @returns Icon data.
+     */
+    getPartiallyCorrectIcon(): IconData {
+        if (CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.5')) {
+            return {
+                name: 'circle-half-stroke',
+                prefix: 'fas',
+                library: 'solid',
+                fullName: 'fas-circle-half-stroke',
+            };
+        } else {
+            return {
+                name: 'square-check',
+                prefix: 'fas',
+                library: 'solid',
+                fullName: 'fas-square-check',
+            };
+        }
+    }
+
+    /**
      * Treat correctness icons, replacing them with local icons and setting click events to show the feedback if needed.
      *
      * @param element DOM element.
@@ -780,41 +878,49 @@ export class CoreQuestionHelperProvider {
     treatCorrectnessIcons(element: HTMLElement): void {
         const icons = <HTMLElement[]> Array.from(element.querySelectorAll('img.icon, img.questioncorrectnessicon, i.icon'));
         icons.forEach((icon) => {
-            let correct = false;
+            let iconData: IconData | undefined;
+            let color: string | undefined;
 
+            const correctIcon = this.getCorrectIcon();
+            const incorrectIcon = this.getIncorrectIcon();
+            const partiallyCorrectIcon = this.getPartiallyCorrectIcon();
             if ('src' in icon) {
                 if ((icon as HTMLImageElement).src.indexOf('correct') >= 0) {
-                    correct = true;
-                } else if ((icon as HTMLImageElement).src.indexOf('incorrect') < 0 ) {
-                    return;
+                    iconData = correctIcon;
+                    color = CoreIonicColorNames.SUCCESS;
+                } else if ((icon as HTMLImageElement).src.indexOf('incorrect') >= 0 ) {
+                    iconData = incorrectIcon;
+                    color = CoreIonicColorNames.DANGER;
                 }
             } else {
-                const classList = icon.classList.toString();
-                if (classList.indexOf('fa-check') >= 0) {
-                    correct = true;
-                } else if (classList.indexOf('fa-xmark') < 0 || classList.indexOf('fa-remove') < 0) {
-                    return;
+                if (icon.classList.contains(`fa-${partiallyCorrectIcon.name}`)) {
+                    iconData = partiallyCorrectIcon;
+                    color = CoreIonicColorNames.WARNING;
+                } else if (icon.classList.contains(`fa-${correctIcon.name}`)) {
+                    iconData = correctIcon;
+                    color = CoreIonicColorNames.SUCCESS;
+                } else if (icon.classList.contains(`fa-${incorrectIcon.name}`) || icon.classList.contains('fa-remove')) {
+                    iconData = incorrectIcon;
+                    color = CoreIonicColorNames.DANGER;
                 }
+            }
+
+            if (!iconData) {
+                return;
             }
 
             // Replace the icon with the font version.
             const newIcon: HTMLIonIconElement = document.createElement('ion-icon');
 
-            if (correct) {
-                newIcon.setAttribute('name', 'fas-check');
-                newIcon.setAttribute('src', 'assets/fonts/font-awesome/solid/check.svg');
-                newIcon.className = 'core-correct-icon ion-color ion-color-success questioncorrectnessicon';
-            } else {
-                newIcon.setAttribute('name', 'fas-xmark');
-                newIcon.setAttribute('src', 'assets/fonts/font-awesome/solid/times.svg');
-                newIcon.className = 'core-correct-icon ion-color ion-color-danger questioncorrectnessicon';
-            }
-
+            newIcon.setAttribute('name', iconData.fullName);
+            newIcon.setAttribute('src', CoreIcons.getIconSrc('font-awesome', iconData.library, iconData.name));
+            newIcon.className = `core-correct-icon ion-color ion-color-${color} questioncorrectnessicon`;
             newIcon.title = icon.title;
             newIcon.setAttribute('aria-label', icon.title);
             icon.parentNode?.replaceChild(newIcon, icon);
         });
 
+        // Treat legacy markup used before MDL-77856 (4.2).
         const spans = Array.from(element.querySelectorAll('.feedbackspan.accesshide'));
         spans.forEach((span) => {
             // Search if there's a hidden feedback for this element.
@@ -847,24 +953,48 @@ export class CoreQuestionHelperProvider {
         element: HTMLElement,
         component?: string,
         componentId?: number,
-        contextLevel?: string,
+        contextLevel?: ContextLevel,
         contextInstanceId?: number,
         courseId?: number,
     ): void {
-        const icons = <HTMLElement[]> Array.from(element.querySelectorAll('ion-icon.questioncorrectnessicon[tappable]'));
+        const icons = <HTMLElement[]> Array.from(element.querySelectorAll('ion-icon.questioncorrectnessicon'));
         const title = Translate.instant('core.question.feedback');
+        const getClickableFeedback = (icon: HTMLElement) => {
+            const parentElement = icon.parentElement;
+            const parentIsClickable = parentElement instanceof HTMLButtonElement || parentElement instanceof HTMLAnchorElement;
 
-        icons.forEach((icon) => {
-            // Search the feedback for the icon.
-            const span = <HTMLElement | undefined> icon.parentElement?.querySelector('.feedbackspan.accesshide');
+            if (parentElement && parentIsClickable && parentElement.dataset.toggle === 'popover') {
+                return {
+                    element: parentElement,
+                    html: parentElement?.dataset.content,
+                };
+            }
 
-            if (!span) {
+            // Support legacy icons used before MDL-77856 (4.2).
+            if (icon.hasAttribute('tappable')) {
+                return {
+                    element: icon,
+                    html: parentElement?.querySelector('.feedbackspan.accesshide')?.innerHTML,
+                };
+            }
+
+            return null;
+        };
+
+        icons.forEach(icon => {
+            const target = getClickableFeedback(icon);
+
+            if (!target || !target.html) {
                 return;
             }
 
             // There's a hidden feedback, show it when the icon is clicked.
-            icon.addEventListener('click', () => {
-                CoreTextUtils.viewText(title, span.innerHTML, {
+            target.element.dataset.disabledA11yClicks = 'true';
+            target.element.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                CoreViewer.viewText(title, target.html ?? '', {
                     component: component,
                     componentId: componentId,
                     filter: true,
@@ -912,4 +1042,14 @@ export type CoreQuestionBehaviourButton = {
  */
 export type CoreQuestionBehaviourCertaintyOption = CoreQuestionBehaviourButton & {
     text: string;
+};
+
+/**
+ * Data about a font-awesome icon.
+ */
+type IconData = {
+    name: string;
+    prefix: string;
+    library: string;
+    fullName: string;
 };

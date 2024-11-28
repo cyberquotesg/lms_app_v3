@@ -18,7 +18,7 @@ import { CoreNetwork } from '@services/network';
 import { CoreCronDelegate } from '@services/cron';
 import { CoreEvents } from '@singletons/events';
 import { CoreFilepool } from '@services/filepool';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreConstants } from '@/core/constants';
@@ -29,7 +29,9 @@ import { CoreCourse } from '@features/course/services/course';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreError } from '@classes/errors/error';
 import { Observable, Subject } from 'rxjs';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreErrorHelper } from '@services/error-helper';
+import { CoreNavigator } from '@services/navigator';
+import { CoreHTMLClasses } from '@singletons/html-classes';
 
 /**
  * Object with space usage and cache entries that can be erased.
@@ -135,11 +137,10 @@ export class CoreSettingsHelperProvider {
         // Clear cache tables.
         const cleanSchemas = CoreSites.getSiteTableSchemasToClear(site);
         const promises: Promise<number | void>[] = cleanSchemas.map((name) => site.getDb().deleteRecords(name));
-        const filepoolService = CoreFilepool.instance;
 
         promises.push(site.deleteFolder().then(() => {
-            filepoolService.clearAllPackagesStatus(siteId);
-            filepoolService.clearFilepool(siteId);
+            CoreFilepool.clearAllPackagesStatus(siteId);
+            CoreFilepool.clearFilepool(siteId);
             CoreCourse.clearAllCoursesStatus(siteId);
 
             siteInfo.spaceUsage = 0;
@@ -148,7 +149,7 @@ export class CoreSettingsHelperProvider {
         }).catch(async (error) => {
             if (error && error.code === FileError.NOT_FOUND_ERR) {
                 // Not found, set size 0.
-                filepoolService.clearAllPackagesStatus(siteId);
+                CoreFilepool.clearAllPackagesStatus(siteId);
                 siteInfo.spaceUsage = 0;
             } else {
                 // Error, recalculate the site usage.
@@ -208,31 +209,6 @@ export class CoreSettingsHelperProvider {
     }
 
     /**
-     * Get a certain processor from a list of processors.
-     *
-     * @param processors List of processors.
-     * @param name Name of the processor to get.
-     * @param fallback True to return first processor if not found, false to not return any. Defaults to true.
-     * @deprecated since 3.9.5. This function has been moved to AddonNotificationsHelperProvider.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getProcessor(processors: unknown[], name: string, fallback: boolean = true): void {
-        return;
-    }
-
-    /**
-     * Return the components and notifications that have a certain processor.
-     *
-     * @param processorName Name of the processor to filter.
-     * @param components Array of components.
-     * @returns Filtered components.
-     * @deprecated since 3.9.5. This function has been moved to AddonNotificationsHelperProvider.
-     */
-    getProcessorComponents(processorName: string, components: unknown[]): unknown[] {
-        return components;
-    }
-
-    /**
      * Get the synchronization promise of a site.
      *
      * @param siteId ID of the site.
@@ -288,7 +264,7 @@ export class CoreSettingsHelperProvider {
         try {
             await syncPromise;
         } catch (error) {
-            throw CoreTextUtils.addTitleToError(error, Translate.instant('core.settings.sitesyncfailed'));
+            throw CoreErrorHelper.addTitleToError(error, Translate.instant('core.settings.sitesyncfailed'));
         } finally {
             delete this.syncPromises[siteId];
         }
@@ -458,13 +434,13 @@ export class CoreSettingsHelperProvider {
      * @param enable True to enable dark mode, false to disable.
      */
     protected toggleDarkMode(enable: boolean = false): void {
-        const isDark = CoreDomUtils.hasModeClass('dark');
+        const isDark = CoreHTMLClasses.hasModeClass('dark');
 
         if (isDark !== enable) {
-            CoreDomUtils.toggleModeClass('dark', enable);
+            CoreHTMLClasses.toggleModeClass('dark', enable);
             this.darkModeObservable.next(enable);
 
-            CoreApp.setStatusBarColor();
+            CoreApp.setSystemUIColors();
         }
     }
 
@@ -475,6 +451,39 @@ export class CoreSettingsHelperProvider {
      */
     onDarkModeChange(): Observable<boolean> {
         return this.darkModeObservable;
+    }
+
+    /**
+     * Get if user enabled staging sites or not.
+     *
+     * @returns Staging sites.
+     */
+    async hasEnabledStagingSites(): Promise<boolean> {
+        const staging = await CoreConfig.get<number>('stagingSites', 0);
+
+        return !!staging;
+    }
+
+    /**
+     * Persist staging sites enabled status and refresh app to apply changes.
+     *
+     * @param enabled Enabled or disabled staging sites.
+     */
+    async setEnabledStagingSites(enabled: boolean): Promise<void> {
+        const reloadApp = !CoreSites.isLoggedIn();
+
+        if (reloadApp) {
+            await CoreDomUtils.showConfirm('Are you sure that you want to enable/disable staging sites?');
+        }
+
+        await CoreConfig.set('stagingSites', enabled ? 1 : 0);
+
+        if (!reloadApp) {
+            return;
+        }
+
+        await CoreNavigator.navigate('/');
+        window.location.reload();
     }
 
 }

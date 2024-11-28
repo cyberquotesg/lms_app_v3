@@ -15,14 +15,14 @@
 import { Injectable } from '@angular/core';
 
 import { CoreConstants } from '@/core/constants';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseAnyModuleData } from '@features/course/services/course';
 import { CoreCourses } from '@features/courses/services/courses';
 import { CoreApp } from '@services/app';
 import { CoreFilepool } from '@services/filepool';
-import { CoreLang } from '@services/lang';
+import { CoreLang, CoreLangFormat } from '@services/lang';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton } from '@singletons';
@@ -31,8 +31,10 @@ import { CoreLogger } from '@singletons/logger';
 import { CoreSitePluginsModuleHandler } from '../classes/handlers/module-handler';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
-
-const ROOT_CACHE_KEY = 'CoreSitePlugins:';
+import { CoreEnrolAction, CoreEnrolInfoIcon } from '@features/enrol/services/enrol-delegate';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreUserProfileHandlerType } from '@features/user/services/user-delegate';
+import { CORE_SITE_PLUGINS_COMPONENT, CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT } from '../constants';
 
 /**
  * Service to provide functionalities regarding site plugins.
@@ -40,8 +42,15 @@ const ROOT_CACHE_KEY = 'CoreSitePlugins:';
 @Injectable({ providedIn: 'root' })
 export class CoreSitePluginsProvider {
 
-    static readonly COMPONENT = 'CoreSitePlugins';
-    static readonly UPDATE_COURSE_CONTENT = 'siteplugins_update_course_content';
+    protected static readonly ROOT_CACHE_KEY = 'CoreSitePlugins:';
+    /**
+     * @deprecated since 4.5.0. Use CORE_SITE_PLUGINS_COMPONENT instead.
+     */
+    static readonly COMPONENT = CORE_SITE_PLUGINS_COMPONENT;
+    /**
+     * @deprecated since 4.5.0. Use CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT instead.
+     */
+    static readonly UPDATE_COURSE_CONTENT = CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT;
 
     protected logger: CoreLogger;
     protected sitePlugins: {[name: string]: CoreSitePluginsHandler} = {}; // Site plugins registered.
@@ -81,7 +90,7 @@ export class CoreSitePluginsProvider {
         args = args || {};
         site = site || CoreSites.getCurrentSite();
 
-        const lang = await CoreLang.getCurrentLanguage();
+        const lang = await CoreLang.getCurrentLanguage(CoreLangFormat.LMS);
 
         const defaultArgs: CoreSitePluginsDefaultArgs = {
             userid: <number> args.userid ?? site?.getUserId(),
@@ -179,7 +188,7 @@ export class CoreSitePluginsProvider {
      * @returns Cache key.
      */
     protected getCallWSCommonCacheKey(method: string): string {
-        return ROOT_CACHE_KEY + 'ws:' + method;
+        return CoreSitePluginsProvider.ROOT_CACHE_KEY + 'ws:' + method;
     }
 
     /**
@@ -229,7 +238,7 @@ export class CoreSitePluginsProvider {
                 const value = otherData[name];
 
                 if (typeof value == 'string' && (value[0] == '{' || value[0] == '[')) {
-                    otherData[name] = CoreTextUtils.parseJSON(value);
+                    otherData[name] = CoreText.parseJSON(value);
                 }
             }
         }
@@ -246,7 +255,8 @@ export class CoreSitePluginsProvider {
      * @returns Cache key.
      */
     protected getContentCacheKey(component: string, method: string, args: Record<string, unknown>): string {
-        return ROOT_CACHE_KEY + 'content:' + component + ':' + method + ':' + CoreUtils.sortAndStringify(args);
+        return CoreSitePluginsProvider.ROOT_CACHE_KEY + 'content:' + component + ':' + method +
+            ':' + CoreUtils.sortAndStringify(args);
     }
 
     /**
@@ -318,7 +328,7 @@ export class CoreSitePluginsProvider {
      * @returns Cache key.
      */
     protected getPluginsCacheKey(): string {
-        return ROOT_CACHE_KEY + 'plugins';
+        return CoreSitePluginsProvider.ROOT_CACHE_KEY + 'plugins';
     }
 
     /**
@@ -391,16 +401,6 @@ export class CoreSitePluginsProvider {
     }
 
     /**
-     * Check if the get content WS is available.
-     *
-     * @returns If get content WS is available.
-     * @deprecated since app 4.0
-     */
-    isGetContentAvailable(): boolean {
-        return true;
-    }
-
-    /**
      * Check if a handler is enabled for a certain course.
      *
      * @param courseId Course ID to check.
@@ -466,7 +466,7 @@ export class CoreSitePluginsProvider {
 
         // Site plugin not disabled. Check if it has handlers.
         if (!plugin.parsedHandlers) {
-            plugin.parsedHandlers = CoreTextUtils.parseJSON(
+            plugin.parsedHandlers = CoreText.parseJSON(
                 plugin.handlers,
                 null,
                 error => this.logger.error('Error parsing site plugin handlers', error),
@@ -825,7 +825,7 @@ export type CoreSitePluginsPlugin = CoreSitePluginsWSPlugin & {
 export type CoreSitePluginsHandlerData = CoreSitePluginsInitHandlerData | CoreSitePluginsCourseOptionHandlerData |
 CoreSitePluginsMainMenuHandlerData | CoreSitePluginsCourseModuleHandlerData | CoreSitePluginsCourseFormatHandlerData |
 CoreSitePluginsUserHandlerData | CoreSitePluginsSettingsHandlerData | CoreSitePluginsMessageOutputHandlerData |
-CoreSitePluginsBlockHandlerData | CoreSitePluginsMainMenuHomeHandlerData;
+CoreSitePluginsBlockHandlerData | CoreSitePluginsMainMenuHomeHandlerData | CoreSitePluginsEnrolHandlerData;
 
 /**
  * Plugin handler data common to all delegates.
@@ -894,6 +894,7 @@ export type CoreSitePluginsCourseModuleHandlerData = CoreSitePluginsHandlerCommo
     supportedfeatures?: Record<string, unknown>;
     manualcompletionalwaysshown?: boolean;
     nolinkhandlers?: boolean;
+    hascustomcmlistitem?: boolean;
 };
 
 /**
@@ -902,10 +903,6 @@ export type CoreSitePluginsCourseModuleHandlerData = CoreSitePluginsHandlerCommo
 export type CoreSitePluginsCourseFormatHandlerData = CoreSitePluginsHandlerCommonData & {
     canviewallsections?: boolean;
     displayenabledownload?: boolean;
-    /**
-     * @deprecated on 4.0, use displaycourseindex instead.
-     */
-    displaysectionselector?: boolean;
     displaycourseindex?: boolean;
 };
 
@@ -918,7 +915,7 @@ export type CoreSitePluginsUserHandlerData = CoreSitePluginsHandlerCommonData & 
         icon?: string;
         class?: string;
     };
-    type?: string;
+    type?: CoreUserProfileHandlerType;
     priority?: number;
     ptrenabled?: boolean;
 };
@@ -961,6 +958,14 @@ export type CoreSitePluginsBlockHandlerData = CoreSitePluginsHandlerCommonData &
 };
 
 /**
+ * Enrol handler specific data.
+ */
+export type CoreSitePluginsEnrolHandlerData = CoreSitePluginsHandlerCommonData & {
+    enrolmentAction?: CoreEnrolAction;
+    infoIcons?: CoreEnrolInfoIcon[];
+};
+
+/**
  * Common handler data with some data from the init method.
  */
 export type CoreSitePluginsInitHandlerData = CoreSitePluginsHandlerCommonData & {
@@ -997,7 +1002,7 @@ declare module '@singletons/events' {
      * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
      */
     export interface CoreEventsData {
-        [CoreSitePluginsProvider.UPDATE_COURSE_CONTENT]: CoreSitePluginsUpdateCourseContentEvent;
+        [CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT]: CoreSitePluginsUpdateCourseContentEvent;
     }
 
 }

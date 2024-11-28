@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 
 import { CoreUser, CoreUserProfile } from '@features/user/services/user';
 import { CoreNavigator } from '@services/navigator';
@@ -21,10 +20,12 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import {
     AddonModH5PActivity,
-    AddonModH5PActivityProvider,
     AddonModH5PActivityData,
     AddonModH5PActivityAttemptResults,
 } from '../../services/h5pactivity';
+import { CoreTime } from '@singletons/time';
+import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { ADDON_MOD_H5PACTIVITY_COMPONENT } from '../../constants';
 
 /**
  * Page that displays results of an attempt.
@@ -40,12 +41,33 @@ export class AddonModH5PActivityAttemptResultsPage implements OnInit {
     h5pActivity?: AddonModH5PActivityData;
     attempt?: AddonModH5PActivityAttemptResults;
     user?: CoreUserProfile;
-    component = AddonModH5PActivityProvider.COMPONENT;
+    component = ADDON_MOD_H5PACTIVITY_COMPONENT;
     courseId!: number;
     cmId!: number;
 
     protected attemptId!: number;
-    protected fetchSuccess = false;
+    protected logView: () => void;
+
+    constructor() {
+        this.logView = CoreTime.once(async () => {
+            if (!this.h5pActivity) {
+                return;
+            }
+
+            await CoreUtils.ignoreErrors(AddonModH5PActivity.logViewReport(
+                this.h5pActivity.id,
+                { attemptId: this.attemptId },
+            ));
+
+            CoreAnalytics.logEvent({
+                type: CoreAnalyticsEventType.VIEW_ITEM,
+                ws: 'mod_h5pactivity_log_report_viewed',
+                name: this.h5pActivity.name,
+                data: { id: this.h5pActivity.id, attemptid: this.attemptId, category: 'h5pactivity' },
+                url: `/mod/h5pactivity/report.php?a=${this.h5pActivity.id}&attemptid=${this.attemptId}`,
+            });
+        });
+    }
 
     /**
      * @inheritdoc
@@ -71,7 +93,7 @@ export class AddonModH5PActivityAttemptResultsPage implements OnInit {
      *
      * @param refresher Refresher.
      */
-    doRefresh(refresher: IonRefresher): void {
+    doRefresh(refresher: HTMLIonRefresherElement): void {
         this.refreshData().finally(() => {
             refresher.complete();
         });
@@ -92,14 +114,7 @@ export class AddonModH5PActivityAttemptResultsPage implements OnInit {
 
             await this.fetchUserProfile();
 
-            if (!this.fetchSuccess) {
-                this.fetchSuccess = true;
-                CoreUtils.ignoreErrors(AddonModH5PActivity.logViewReport(
-                    this.h5pActivity.id,
-                    this.h5pActivity.name,
-                    { attemptId: this.attemptId },
-                ));
-            }
+            this.logView();
         } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'Error loading attempt.');
         } finally {

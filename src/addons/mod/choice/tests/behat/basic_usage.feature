@@ -1,4 +1,4 @@
-@mod @mod_choice @app @javascript
+@addon_mod_choice @app @javascript
 Feature: Test basic usage of choice activity in app
   In order to participate in the choice while using the mobile app
   As a student
@@ -33,11 +33,15 @@ Feature: Test basic usage of choice activity in app
     And I should find "Option 3: 0" in the app
     But I should not find "Remove my choice" in the app
 
-    When I press the back button in the app
+    When I go back in the app
     And I press "Test single choice name" in the app
     Then I should find "Option 1: 0" in the app
     And I should find "Option 2: 1" in the app
     And I should find "Option 3: 0" in the app
+    And the following events should have been logged for "student1" in the app:
+      | name                                   | activity | activityname            | course   |
+      | \mod_choice\event\course_module_viewed | choice   | Test single choice name | Course 1 |
+      | \mod_choice\event\answer_created       | choice   | Test single choice name | Course 1 |
 
   Scenario: Answer a choice (multi or single, update answer) & View results & Delete choice
     Given the following "activities" exist:
@@ -78,7 +82,7 @@ Feature: Test basic usage of choice activity in app
     Then I should find "Are you sure" in the app
 
     When I press "OK" in the app
-    And I press the back button in the app
+    And I go back in the app
     And I press "Test single choice name" in the app
     Then I should find "This Choice has offline data to be synchronised." in the app
     But I should not find "Option 1: 0" in the app
@@ -86,7 +90,7 @@ Feature: Test basic usage of choice activity in app
     And I should not find "Option 3: 0" in the app
 
     When I switch network connection to wifi
-    And I press the back button in the app
+    And I go back in the app
     And I press "Test single choice name" in the app
     Then I should find "Test single choice description" in the app
 
@@ -131,21 +135,21 @@ Feature: Test basic usage of choice activity in app
     When I press "Course downloads" in the app
     When I press "Download" within "Test single choice name" "ion-item" in the app
     Then I should find "Downloaded" within "Test single choice name" "ion-item" in the app
-    And I press the back button in the app
+    And I go back in the app
 
     When I switch network connection to offline
     And I press "Test multi choice name" in the app
     Then I should find "There was a problem connecting to the site. Please check your connection and try again." in the app
 
     When I press "OK" in the app
-    And I press the back button in the app
+    And I go back in the app
     And I press "Test single choice name" in the app
     And I select "Option 2" in the app
     And I press "Save my choice" in the app
     Then I should find "Are you sure" in the app
 
     When I press "OK" in the app
-    And I press the back button in the app
+    And I go back in the app
     And I press "Test single choice name" in the app
     Then I should find "This Choice has offline data to be synchronised." in the app
     But I should not find "Option 1: 0" in the app
@@ -153,7 +157,7 @@ Feature: Test basic usage of choice activity in app
     And I should not find "Option 3: 0" in the app
 
     When I switch network connection to wifi
-    And I press the back button in the app
+    And I go back in the app
     And I press "Test single choice name" in the app
     Then I should find "Option 1: 0" in the app
     And I should find "Option 2: 1" in the app
@@ -161,7 +165,6 @@ Feature: Test basic usage of choice activity in app
     But I should not find "This Choice has offline data to be synchronised." in the app
 
   # TODO remove LMS UI steps in app tests
-  @lms_from4.0
   Scenario: Download students choice in text format
     # Submit answer as student
     Given the following "activities" exist:
@@ -176,10 +179,8 @@ Feature: Test basic usage of choice activity in app
     Given I entered the choice activity "Choice name" on course "Course 1" as "teacher1" in the app
     Then I should find "Test choice description" in the app
 
-    When I press "Information" in the app
-    And I press "Open in browser" in the app
-    And I switch to the browser tab opened by the app
-    And I log in as "teacher1"
+    When I open a browser tab with url "$WWWROOT"
+    And I am on the "choice1" Activity page logged in as teacher1
     And I follow "Responses"
     And I press "Download in text format"
     # TODO Then I should find "..." in the downloads folder

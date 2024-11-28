@@ -13,16 +13,17 @@
 // limitations under the License.
 
 import { Injectable, Type } from '@angular/core';
-import { AddonModForum, AddonModForumProvider } from '../forum';
+import { AddonModForum, AddonModForumTracking } from '../forum';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreCourseModuleHandler, CoreCourseModuleHandlerData } from '@features/course/services/module-delegate';
 import { CoreConstants, ModPurpose } from '@/core/constants';
-import { AddonModForumIndexComponent } from '../../components/index';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
-import { CoreIonicColorNames } from '@singletons/colors';
+import { CoreText } from '@singletons/text';
+import { CoreUser } from '@features/user/services/user';
+import { ADDON_MOD_FORUM_MARK_READ_EVENT, ADDON_MOD_FORUM_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support forum modules.
@@ -30,11 +31,9 @@ import { CoreIonicColorNames } from '@singletons/colors';
 @Injectable({ providedIn: 'root' })
 export class AddonModForumModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_forum';
-
     name = 'AddonModForum';
     modName = 'forum';
-    protected pageName = AddonModForumModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_FORUM_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_GROUPS]: true,
@@ -57,8 +56,30 @@ export class AddonModForumModuleHandlerService extends CoreModuleHandlerBase imp
     async getData(module: CoreCourseModuleData, courseId: number): Promise<CoreCourseModuleHandlerData> {
         const data = await super.getData(module, courseId);
 
+        const customData = module.customdata ?
+            CoreText.parseJSON<{ trackingtype?: string | number } | ''>(module.customdata, {}) : {};
+        const trackingType = typeof customData !== 'string' && customData.trackingtype !== undefined ?
+            Number(customData.trackingtype) : undefined;
+
+        if (trackingType === AddonModForumTracking.OFF) {
+            // Tracking is disabled in forum.
+            data.extraBadge = '';
+
+            return data;
+        }
+
+        if (trackingType === AddonModForumTracking.OPTIONAL) {
+            // Forum has tracking optional, check if user has tracking enabled.
+            const user = await CoreUser.getProfile(CoreSites.getCurrentSiteUserId());
+
+            if (user.trackforums === 0) {
+                data.extraBadge = '';
+
+                return data;
+            }
+        }
+
         if ('afterlink' in module && !!module.afterlink) {
-            data.extraBadgeColor = undefined;
             const match = />(\d+)[^<]+/.exec(module.afterlink);
             data.extraBadge = match ? Translate.instant('addon.mod_forum.unreadpostsnumber', { $a : match[1] }) : '';
         } else {
@@ -66,7 +87,7 @@ export class AddonModForumModuleHandlerService extends CoreModuleHandlerBase imp
         }
 
         const event = CoreEvents.on(
-            AddonModForumProvider.MARK_READ_EVENT,
+            ADDON_MOD_FORUM_MARK_READ_EVENT,
             eventData => {
                 if (eventData.courseId !== courseId || eventData.moduleId !== module.id) {
                     return;
@@ -86,6 +107,8 @@ export class AddonModForumModuleHandlerService extends CoreModuleHandlerBase imp
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown> | undefined> {
+        const { AddonModForumIndexComponent } = await import('../../components/index');
+
         return AddonModForumIndexComponent;
     }
 
@@ -112,7 +135,6 @@ export class AddonModForumModuleHandlerService extends CoreModuleHandlerBase imp
         }
 
         data.extraBadge = Translate.instant('core.loading');
-        data.extraBadgeColor = CoreIonicColorNames.DARK;
 
         try {
             // Handle unread posts.
@@ -121,7 +143,6 @@ export class AddonModForumModuleHandlerService extends CoreModuleHandlerBase imp
                 siteId,
             });
 
-            data.extraBadgeColor = undefined;
             data.extraBadge = forum.unreadpostscount
                 ? Translate.instant(
                     'addon.mod_forum.unreadpostsnumber',
@@ -130,7 +151,6 @@ export class AddonModForumModuleHandlerService extends CoreModuleHandlerBase imp
                 : '';
         } catch {
             // Ignore errors.
-            data.extraBadgeColor = undefined;
             data.extraBadge = '';
         }
     }

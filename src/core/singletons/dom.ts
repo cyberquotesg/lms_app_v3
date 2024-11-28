@@ -13,14 +13,18 @@
 // limitations under the License.
 
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEventObserver } from '@singletons/events';
+import { CorePlatform } from '@services/platform';
+import { CoreWait } from './wait';
+import { convertTextToHTMLElement } from '../utils/create-html-element';
 
 /**
  * Singleton with helper functions for dom.
  */
 export class CoreDom {
+
+    static fontSizeZoom: number | null = null;
 
     // Avoid creating singleton instances.
     private constructor() {
@@ -55,6 +59,36 @@ export class CoreDom {
     }
 
     /**
+     * Check if an element has some text or embedded content inside.
+     *
+     * @param element Element or document to check.
+     * @returns Whether has content.
+     */
+    static elementHasContent(element: Element | DocumentFragment): boolean {
+        const textContent = (element.textContent ?? '').trim().replace(/(\r\n|\n|\r)/g, '');
+        if (textContent.length > 0) {
+            return true;
+        }
+
+        return element.querySelectorAll(
+            'img, audio, video, object, iframe, canvas, svg, input, select, textarea, frame, embed',
+        ).length > 0;
+    }
+
+    /**
+     * Given some HTML code, return the HTML code inside <body> tags. If there are no body tags, return the whole HTML.
+     *
+     * @param html HTML text.
+     * @returns Body HTML.
+     */
+    static getHTMLBodyContent(html: string): string {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const bodyContent = doc.body.innerHTML;
+
+        return bodyContent ?? html;
+    }
+
+    /**
      * Retrieve the position of a element relative to another element.
      *
      * @param element Element to get the position.
@@ -74,6 +108,22 @@ export class CoreDom {
     }
 
     /**
+     * Check if HTML content is blank.
+     *
+     * @param content HTML content.
+     * @returns True if the string does not contain actual content: text, images, etc.
+     */
+    static htmlIsBlank(content: string): boolean {
+        if (!content) {
+            return true;
+        }
+
+        const element = convertTextToHTMLElement(content);
+
+        return !CoreDom.elementHasContent(element);
+    }
+
+    /**
      * Check whether an element has been added to the DOM.
      *
      * @param element Element.
@@ -88,21 +138,23 @@ export class CoreDom {
      *
      * @param element Element to check.
      * @param intersectionRatio Intersection ratio (From 0 to 1).
+     * @param container Container where element is located
      * @returns True if in viewport.
      */
-    static isElementInViewport(element: HTMLElement, intersectionRatio = 1): boolean {
+    static isElementInViewport(element: HTMLElement, intersectionRatio = 1, container: HTMLElement | null = null): boolean {
         const elementRectangle = element.getBoundingClientRect();
-
+        const containerRectangle = container?.getBoundingClientRect();
         const elementArea = elementRectangle.width * elementRectangle.height;
+
         if (elementArea == 0) {
             return false;
         }
 
         const intersectionRectangle = {
-            top: Math.max(0, elementRectangle.top),
-            left: Math.max(0, elementRectangle.left),
-            bottom: Math.min(window.innerHeight, elementRectangle.bottom),
-            right: Math.min(window.innerWidth, elementRectangle.right),
+            top: Math.max(containerRectangle?.top ?? 0, elementRectangle.top),
+            left: Math.max(containerRectangle?.left ?? 0, elementRectangle.left),
+            bottom: Math.min(containerRectangle?.bottom ?? window.innerHeight, elementRectangle.bottom),
+            right: Math.min(containerRectangle?.right ?? window.innerWidth, elementRectangle.right),
         };
 
         const intersectionArea = (intersectionRectangle.right - intersectionRectangle.left) *
@@ -119,8 +171,12 @@ export class CoreDom {
      * @returns True if element is visible inside the DOM.
      */
     static isElementVisible(element: HTMLElement, checkSize = true): boolean {
-        if (checkSize && (element.clientWidth === 0 || element.clientHeight === 0)) {
-            return false;
+        if (checkSize) {
+            const dimensions = element.getBoundingClientRect();
+
+            if (dimensions.width === 0 || dimensions.height === 0) {
+                return false;
+            }
         }
 
         const style = getComputedStyle(element);
@@ -188,7 +244,7 @@ export class CoreDom {
      */
     static onWindowResize(resizeFunction: (ev?: Event) => void, debounceDelay = 20): CoreEventObserver {
         const resizeListener = CoreUtils.debounce(async (ev?: Event) => {
-            await CoreDomUtils.waitForResizeDone();
+            await CoreWait.waitForResizeDone();
 
             resizeFunction(ev);
         }, debounceDelay);
@@ -510,33 +566,27 @@ export class CoreDom {
     }
 
     /**
-     * Listen to click and Enter/Space keys in an element.
-     *
-     * @param element Element to listen to events.
-     * @param callback Callback to call when clicked or the key is pressed.
-     * @deprecated since 4.1.1: Use initializeClickableElementA11y instead.
-     */
-    static onActivate(
-        element: HTMLElement & {disabled?: boolean},
-        callback: (event: MouseEvent | KeyboardEvent) => void,
-    ): void {
-        this.initializeClickableElementA11y(element, callback);
-    }
-
-    /**
      * Initializes a clickable element a11y calling the click action when pressed enter or space
      * and adding tabindex and role if needed.
      *
      * @param element Element to listen to events.
      * @param callback Callback to call when clicked or the key is pressed.
+     * @param setTabIndex Whether to set tabindex and role.
      */
     static initializeClickableElementA11y(
         element: HTMLElement & {disabled?: boolean},
         callback: (event: MouseEvent | KeyboardEvent) => void,
+        setTabIndex = true,
     ): void {
-        element.addEventListener('click', (event) => callback(event));
+        const enabled = () => !CoreUtils.isTrueOrOne(element.dataset.disabledA11yClicks ?? 'false');
+
+        element.addEventListener('click', (event) => enabled() && callback(event));
 
         element.addEventListener('keydown', (event) => {
+            if (!enabled()) {
+                return;
+            }
+
             if (event.key === ' ' || event.key === 'Enter') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -544,15 +594,19 @@ export class CoreDom {
         });
 
         element.addEventListener('keyup', (event) => {
+            if (!enabled()) {
+                return;
+            }
+
             if (event.key === ' ' || event.key === 'Enter') {
+                callback(event);
+
                 event.preventDefault();
                 event.stopPropagation();
-
-                callback(event);
             }
         });
 
-        if (element.tagName !== 'BUTTON' && element.tagName !== 'A') {
+        if (setTabIndex && element.tagName !== 'BUTTON' && element.tagName !== 'A') {
             // Set tabindex if not previously set.
             if (element.getAttribute('tabindex') === null) {
                 element.setAttribute('tabindex', element.disabled ? '-1' : '0');
@@ -565,6 +619,124 @@ export class CoreDom {
 
             element.classList.add('clickable');
         }
+    }
+
+    /**
+     * Get CSS property value from computed styles.
+     *
+     * @param styles Computed styles.
+     * @param property Property name.
+     * @returns Property CSS value (may not be the same as the computed value).
+     */
+    static getCSSPropertyValue(styles: CSSStyleDeclaration, property: string): string {
+        const value = styles.getPropertyValue(property);
+
+        if (property === 'font-size') {
+            if (this.fontSizeZoom === null) {
+                const baseFontSize = 20;
+                const span = document.createElement('span');
+                span.style.opacity = '0';
+                span.style.fontSize = `${baseFontSize}px`;
+
+                document.body.append(span);
+
+                this.fontSizeZoom = baseFontSize / Number(getComputedStyle(span).fontSize.slice(0, -2));
+
+                span.remove();
+            }
+
+            if (this.fontSizeZoom !== 1) {
+                return `calc(${this.fontSizeZoom} * ${value})`;
+            }
+        }
+
+        return value;
+    }
+
+    /**
+     * Replace tags on HTMLElement.
+     *
+     * @param element HTML Element where to replace the tags.
+     * @param originTags Origin tag to be replaced.
+     * @param destinationTags Destination tag to replace.
+     * @returns Element with tags replaced.
+     */
+    static replaceTags<T extends HTMLElement = HTMLElement>(
+        element: T,
+        originTags: string | string[],
+        destinationTags: string | string[],
+    ): T {
+        if (typeof originTags === 'string') {
+            originTags = [originTags];
+        }
+
+        if (typeof destinationTags === 'string') {
+            destinationTags = [destinationTags];
+        }
+
+        if (originTags.length !== destinationTags.length) {
+            // Do nothing, incorrect input.
+            return element;
+        }
+
+        originTags.forEach((originTag, index) => {
+            const destinationTag = destinationTags[index];
+            const elems = Array.from(element.getElementsByTagName(originTag));
+
+            elems.forEach((elem) => {
+                const newElem = document.createElement(destinationTag);
+                newElem.innerHTML = elem.innerHTML;
+
+                if (elem.hasAttributes()) {
+                    const attrs = Array.from(elem.attributes);
+                    attrs.forEach((attr) => {
+                        newElem.setAttribute(attr.name, attr.value);
+                    });
+                }
+
+                elem.parentNode?.replaceChild(newElem, elem);
+            });
+        });
+
+        return element;
+    }
+
+    /**
+     * Prefix CSS rules.
+     *
+     * @param css CSS code.
+     * @param prefix Prefix to add to CSS rules.
+     * @param prefixIfNested Prefix to add to CSS rules if nested. It may happend we need different prefixes.
+     *          Ie: If nested is supported ::ng-deep is not needed.
+     * @returns Prefixed CSS.
+     */
+    static prefixCSS(css: string, prefix: string, prefixIfNested?: string): string {
+        if (!css) {
+            return '';
+        }
+
+        if (!prefix) {
+            return css;
+        }
+
+        // Check if browser supports CSS nesting.
+        const supportsNesting = CorePlatform.supportsCSSNesting();
+        if (supportsNesting) {
+            prefixIfNested = prefixIfNested ?? prefix;
+
+            // Wrap the CSS with the prefix.
+            return `${prefixIfNested} { ${css} }`;
+        }
+
+        // Fallback.
+        // Remove comments first.
+        let regExp = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
+        css = css.replace(regExp, '');
+
+        // Add prefix.
+        regExp = /([^]*?)({[^]*?}|,)/g;
+
+        return css.replace(regExp, prefix + ' $1 $2');
     }
 
 }

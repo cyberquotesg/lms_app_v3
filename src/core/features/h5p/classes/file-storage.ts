@@ -16,7 +16,7 @@ import { CoreFile } from '@services/file';
 import { CoreFilepool } from '@services/filepool';
 import { CoreSites } from '@services/sites';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CorePath } from '@singletons/path';
 import {
@@ -118,7 +118,7 @@ export class CoreH5PFileStorage {
                     const assetPathFolder = CoreFile.getFileAndDirectoryFromPath(assetPath).directory;
 
                     fileContent = fileContent.replace(
-                        new RegExp(CoreTextUtils.escapeForRegex(match), 'g'),
+                        new RegExp(CoreText.escapeForRegex(match), 'g'),
                         'url("' + CorePath.changeRelativePath(assetPathFolder, url, newFolder) + '")',
                     );
                 });
@@ -201,14 +201,14 @@ export class CoreH5PFileStorage {
 
         const result = await db.execute(query, queryArgs);
 
-        await Array.from(result.rows).map(async (entry: {foldername: string}) => {
+        await Promise.all(Array.from(result.rows).map(async (entry: {foldername: string}) => {
             try {
                 // Delete the index.html.
                 await this.deleteContentIndex(entry.foldername, site.getId());
             } catch {
                 // Ignore errors.
             }
-        });
+        }));
     }
 
     /**
@@ -333,7 +333,7 @@ export class CoreH5PFileStorage {
 
         const file = await CoreFile.getFile(this.getContentIndexPath(folderName, siteId));
 
-        return file.toURL();
+        return CoreFile.getFileEntryURL(file);
     }
 
     /**
@@ -447,6 +447,45 @@ export class CoreH5PFileStorage {
             // Copy the new one.
             await CoreFile.moveDir(libraryData.uploadDirectory, folderPath, true);
         }
+    }
+
+    /**
+     * Check that library is fully saved to the file system.
+     *
+     * @param libraryData Library data.
+     * @param siteId Site ID. If not defined, current site.
+     * @returns Promise resolved with true if all library files are present.
+     */
+    async checkLibrary(libraryData: CoreH5PLibraryBeingSaved, siteId?: string): Promise<boolean> {
+        const getFileNames = async (baseDir: string, dirName = ''): Promise<string[]> => {
+            const entries = await CoreFile.getDirectoryContents( baseDir + dirName);
+            const fileNames: string[] = [];
+
+            for (const entry of entries) {
+                const name = dirName + '/' + entry.name;
+                if (entry.isDirectory) {
+                    fileNames.push(...(await getFileNames(baseDir, name)));
+                } else  {
+                    fileNames.push(name);
+                }
+            }
+
+            return fileNames;
+        };
+
+        if (!libraryData.uploadDirectory) {
+            return true;
+        }
+
+        siteId = siteId || CoreSites.getCurrentSiteId();
+        const folderPath = this.getLibraryFolderPath(libraryData, siteId);
+
+        const [sourceFiles, destFiles] = await Promise.all([
+            getFileNames(libraryData.uploadDirectory),
+            getFileNames(folderPath).catch(() => ([])).then(files => new Set(files)),
+        ]);
+
+        return sourceFiles.every(name => destFiles.has(name));
     }
 
 }

@@ -14,13 +14,12 @@
 
 import { Injectable } from '@angular/core';
 
-import { CoreLang, CoreLangLanguage } from '@services/lang';
+import { CoreLang, CoreLangFormat, CoreLangLanguage } from '@services/lang';
 import { CoreSites } from '@services/sites';
 import { CoreConstants } from '@/core/constants';
 import { CoreMainMenuDelegate, CoreMainMenuHandlerToDisplay } from './mainmenu-delegate';
 import { Device, makeSingleton } from '@singletons';
-import { CoreArray } from '@singletons/array';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreScreen } from '@services/screen';
 import { CorePlatform } from '@services/platform';
 
@@ -44,7 +43,12 @@ declare module '@singletons/events' {
 @Injectable({ providedIn: 'root' })
 export class CoreMainMenuProvider {
 
+    // by rachmad
+    /* *a/
     static readonly NUM_MAIN_HANDLERS = 4;
+    /* */
+    static readonly NUM_MAIN_HANDLERS = 5;
+
     static readonly ITEM_MIN_WIDTH = 72; // Min with of every item, based on 5 items on a 360 pixel wide screen.
     static readonly MORE_PAGE_NAME = 'more';
     static readonly MAIN_MENU_HANDLER_BADGE_UPDATED = 'main_menu_handler_badge_updated';
@@ -73,7 +77,7 @@ export class CoreMainMenuProvider {
             this.getCustomItemsFromConfig(),
         ]);
 
-        return CoreArray.flatten(customItems);
+        return customItems.flat();
     }
 
     /**
@@ -114,7 +118,7 @@ export class CoreMainMenuProvider {
             const id = url + '#' + type;
             if (!icon) {
                 // Icon not defined, use default one.
-                icon = type == 'embedded' ? 'fa-expand' : 'fa-link'; // @todo Find a better icon for embedded.
+                icon = type == 'embedded' ? 'fas-expand' : 'fas-link'; // @todo Find a better icon for embedded.
             }
 
             if (!map[id]) {
@@ -139,15 +143,19 @@ export class CoreMainMenuProvider {
             return result;
         }
 
-        const currentLang = await CoreLang.getCurrentLanguage();
-
+        const currentLangApp = await CoreLang.getCurrentLanguage();
+        const currentLangLMS = CoreLang.formatLanguage(currentLangApp, CoreLangFormat.LMS);
         const fallbackLang = CoreConstants.CONFIG.default_lang || 'en';
 
         // Get the right label for each entry and add it to the result.
         for (const id in map) {
             const entry = map[id];
-            let data = entry.labels[currentLang] || entry.labels[currentLang + '_only'] ||
-                    entry.labels.none || entry.labels[fallbackLang];
+            let data = entry.labels[currentLangApp]
+                ?? entry.labels[currentLangLMS]
+                ?? entry.labels[currentLangApp + '_only']
+                ?? entry.labels[currentLangLMS + '_only']
+                ?? entry.labels.none
+                ?? entry.labels[fallbackLang];
 
             if (!data) {
                 // No valid label found, get the first one that is not "_only".
@@ -208,7 +216,7 @@ export class CoreMainMenuProvider {
             .filter(item => typeof item.label === 'string' || currentLang in item.label || fallbackLang in item.label)
             .map(item => ({
                 ...item,
-                url: CoreTextUtils.replaceArguments(item.url, replacements, 'uri'),
+                url: CoreText.replaceArguments(item.url, replacements, 'uri'),
                 label: typeof item.label === 'string'
                     ? item.label
                     : item.label[currentLang] ?? item.label[fallbackLang],
@@ -234,11 +242,15 @@ export class CoreMainMenuProvider {
                 numElements = numElements >= 5 ? 5 : numElements;
             }
 
-            // Set a mínimum elements to show and skip more button.
-            // return numElements > 1 ? numElements - 1 : 1;
-
-            // warning! cq change, no need to substract by 1, more button has been removed
+            // by rachmad
+            // no need to substract by 1, more button has been removed
             return numElements > 1 ? numElements : 1;
+
+            // by rachmad
+            /* *a/
+            // Set a mínimum elements to show and skip more button.
+            return numElements > 1 ? numElements - 1 : 1;
+            /* */
         }
 
         return CoreMainMenuProvider.NUM_MAIN_HANDLERS;

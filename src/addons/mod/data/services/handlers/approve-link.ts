@@ -12,51 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable } from '@angular/core';
-import { Params } from '@angular/router';
+import { asyncInstance } from '@/core/utils/async-instance';
+import { ADDON_MOD_DATA_FEATURE_NAME } from '@addons/mod/data/constants';
 import { CoreContentLinksHandlerBase } from '@features/contentlinks/classes/base-handler';
-import { CoreContentLinksAction } from '@features/contentlinks/services/contentlinks-delegate';
-import { makeSingleton } from '@singletons';
-import { AddonModDataHelper } from '../data-helper';
+import { CoreContentLinksAction, CoreContentLinksHandler } from '@features/contentlinks/services/contentlinks-delegate';
+import type { AddonModDataApproveLinkHandlerLazyService } from '@addons/mod/data/services/handlers/approve-link-lazy';
 
-/**
- * Content links handler for database approve/disapprove entry.
- * Match mod/data/view.php?d=6&approve=5 with a valid data id and entryid.
- */
-@Injectable({ providedIn: 'root' })
 export class AddonModDataApproveLinkHandlerService extends CoreContentLinksHandlerBase {
 
     name = 'AddonModDataApproveLinkHandler';
-    featureName = 'CoreCourseModuleDelegate_AddonModData';
+    featureName = ADDON_MOD_DATA_FEATURE_NAME;
     pattern = /\/mod\/data\/view\.php.*([?&](d|approve|disapprove)=\d+)/;
     priority = 50; // Higher priority than the default link handler for view.php.
 
     /**
      * @inheritdoc
      */
-    getActions(siteIds: string[], url: string, params: Params, courseId?: number): CoreContentLinksAction[] {
+    getActions(siteIds: string[], url: string, params: Record<string, string>, courseId?: number): CoreContentLinksAction[] {
         return [{
-            action: (siteId): void => {
-                const dataId = parseInt(params.d, 10);
-                const entryId = parseInt(params.approve, 10) || parseInt(params.disapprove, 10);
-                const approve = parseInt(params.approve, 10) ? true : false;
-
-                AddonModDataHelper.approveOrDisapproveEntry(dataId, entryId, approve, courseId, siteId);
-            },
+            action: (siteId) => this.handleAction(siteId, params, courseId),
         }];
     }
 
     /**
-     * @inheritdoc
+     * Handle link action.
+     *
+     * @param siteId Site id.
+     * @param params Params.
+     * @param courseId Course id.
      */
-    async isEnabled(siteId: string, url: string, params: Params): Promise<boolean> {
-        if (params.d === undefined || (params.approve === undefined && params.disapprove === undefined)) {
-            // Required fields not defined. Cannot treat the URL.
-            return false;
-        }
-
-        return true;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async handleAction(siteId: string, params: Record<string, string>, courseId?: number): Promise<void> {
+        // Stub to override.
     }
 
 }
-export const AddonModDataApproveLinkHandler = makeSingleton(AddonModDataApproveLinkHandlerService);
+
+/**
+ * Get approve link handler instance.
+ *
+ * @returns Link handler.
+ */
+export function getApproveLinkHandlerInstance(): CoreContentLinksHandler {
+    const lazyHandler = asyncInstance<
+        AddonModDataApproveLinkHandlerLazyService,
+        AddonModDataApproveLinkHandlerService
+    >(async () => {
+        const { AddonModDataApproveLinkHandler } = await import('./approve-link-lazy');
+
+        return AddonModDataApproveLinkHandler.instance;
+    });
+
+    lazyHandler.setEagerInstance(new AddonModDataApproveLinkHandlerService());
+    lazyHandler.setLazyOverrides(['isEnabled', 'handleAction']);
+
+    return lazyHandler;
+}

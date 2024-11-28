@@ -17,8 +17,8 @@ import { Injectable, Type } from '@angular/core';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
 import { makeSingleton } from '@singletons';
-import { AddonModH5PActivityIndexComponent } from '../../components/index';
 import { AddonModH5PActivity } from '../h5pactivity';
+import { ADDON_MOD_H5PACTIVITY_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support H5P activities.
@@ -26,11 +26,9 @@ import { AddonModH5PActivity } from '../h5pactivity';
 @Injectable({ providedIn: 'root' })
 export class AddonModH5PActivityModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_h5pactivity';
-
     name = 'AddonModH5PActivity';
     modName = 'h5pactivity';
-    protected pageName = AddonModH5PActivityModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_H5PACTIVITY_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_GROUPS]: true,
@@ -42,7 +40,7 @@ export class AddonModH5PActivityModuleHandlerService extends CoreModuleHandlerBa
         [CoreConstants.FEATURE_GRADE_HAS_GRADE]: true,
         [CoreConstants.FEATURE_GRADE_OUTCOMES]: true,
         [CoreConstants.FEATURE_BACKUP_MOODLE2]: true,
-        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_CONTENT,
+        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_INTERACTIVECONTENT,
     };
 
     /**
@@ -56,6 +54,8 @@ export class AddonModH5PActivityModuleHandlerService extends CoreModuleHandlerBa
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { AddonModH5PActivityIndexComponent } = await import('../../components/index');
+
         return AddonModH5PActivityIndexComponent;
     }
 

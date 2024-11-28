@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CoreSharedModule } from '@/core/shared.module';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChange } from '@angular/core';
-import { CoreCourseCompletionMode } from '@features/course/services/course';
 import { CoreCourseHelper, CoreCourseModuleCompletionData } from '@features/course/services/course-helper';
 import { CoreUser } from '@features/user/services/user';
 import { Translate } from '@singletons';
@@ -21,16 +21,21 @@ import { CoreEventObserver, CoreEvents } from '@singletons/events';
 
 /**
  * Component to display a button for manual completion.
+ *
+ * @deprecated since 4.3. Not used anymore.
  */
 @Component({
     selector: 'core-course-module-manual-completion',
     templateUrl: 'core-course-module-manual-completion.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreCourseModuleManualCompletionComponent implements OnInit, OnChanges, OnDestroy {
 
     @Input() completion?: CoreCourseModuleCompletionData; // The completion status.
     @Input() moduleName?: string; // The name of the module this completion affects.
-    @Input() mode: CoreCourseCompletionMode = CoreCourseCompletionMode.FULL; // Show full completion status or a basic mode.
     @Output() completionChanged = new EventEmitter<CoreCourseModuleCompletionData>(); // Notify when completion changes.
 
     accessibleDescription: string | null = null;
@@ -100,7 +105,7 @@ export class CoreCourseModuleManualCompletionComponent implements OnInit, OnChan
         event.stopPropagation();
         event.preventDefault();
 
-        await CoreCourseHelper.changeManualCompletion(this.completion, event);
+        await CoreCourseHelper.changeManualCompletion(this.completion);
 
         CoreEvents.trigger(CoreEvents.MANUAL_COMPLETION_CHANGED, { completion: this.completion });
     }

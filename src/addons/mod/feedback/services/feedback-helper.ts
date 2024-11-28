@@ -18,7 +18,7 @@ import { CoreUser } from '@features/user/services/user';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreFileHelper } from '@services/file-helper';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate } from '@singletons';
@@ -28,12 +28,20 @@ import {
     AddonModFeedbackGetResponsesAnalysisWSResponse,
     AddonModFeedbackGroupPaginatedOptions,
     AddonModFeedbackItem,
-    AddonModFeedbackProvider,
     AddonModFeedbackResponseValue,
     AddonModFeedbackWSAttempt,
     AddonModFeedbackWSNonRespondent,
 } from './feedback';
-import { AddonModFeedbackModuleHandlerService } from './handlers/module';
+import {
+    ADDON_MOD_FEEDBACK_LINE_SEP,
+    ADDON_MOD_FEEDBACK_MULTICHOICE_TYPE_SEP,
+    ADDON_MOD_FEEDBACK_MULTICHOICE_ADJUST_SEP,
+    ADDON_MOD_FEEDBACK_MULTICHOICERATED_VALUE_SEP,
+    ADDON_MOD_FEEDBACK_MULTICHOICE_HIDENOSELECT,
+    ADDON_MOD_FEEDBACK_PAGE_NAME,
+} from '../constants';
+import { CoreLoadings } from '@services/loadings';
+import { CoreText } from '@singletons/text';
 
 const MODE_RESPONSETIME = 1;
 const MODE_COURSE = 2;
@@ -173,7 +181,7 @@ export class AddonModFeedbackHelperProvider {
     async handleShowEntriesLink(params: Record<string, string>, siteId?: string): Promise<void> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
-        const modal = await CoreDomUtils.showModalLoading();
+        const modal = await CoreLoadings.show();
 
         try {
             const module = await CoreCourse.getModuleBasicInfo(
@@ -184,7 +192,7 @@ export class AddonModFeedbackHelperProvider {
             if (params.showcompleted === undefined) {
                 // Param showcompleted not defined. Show entry list.
                 await CoreNavigator.navigateToSitePath(
-                    AddonModFeedbackModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/attempts`,
+                    ADDON_MOD_FEEDBACK_PAGE_NAME + `/${module.course}/${module.id}/attempts`,
                     { siteId },
                 );
 
@@ -198,7 +206,7 @@ export class AddonModFeedbackHelperProvider {
             });
 
             await CoreNavigator.navigateToSitePath(
-                AddonModFeedbackModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/attempt/${attempt.id}`,
+                ADDON_MOD_FEEDBACK_PAGE_NAME + `/${module.course}/${module.id}/attempts/${attempt.id}`,
                 {
                     params: {
                         feedbackId: module.instance,
@@ -220,9 +228,9 @@ export class AddonModFeedbackHelperProvider {
      * @param entries Entries array to get profile from.
      * @returns Returns the same array with the profileimageurl added if found.
      */
-    protected async addImageProfile(entries: AddonModFeedbackWSAttempt[]): Promise<AddonModFeedbackAttempt[]>;
-    protected async addImageProfile(entries: AddonModFeedbackWSNonRespondent[]): Promise<AddonModFeedbackNonRespondent[]>;
-    protected async addImageProfile(
+    async addImageProfile(entries: AddonModFeedbackWSAttempt[]): Promise<AddonModFeedbackAttempt[]>;
+    async addImageProfile(entries: AddonModFeedbackWSNonRespondent[]): Promise<AddonModFeedbackNonRespondent[]>;
+    async addImageProfile(
         entries: (AddonModFeedbackWSAttempt | AddonModFeedbackWSNonRespondent)[],
     ): Promise<(AddonModFeedbackAttempt | AddonModFeedbackNonRespondent)[]> {
         return Promise.all(entries.map(async (entry: AddonModFeedbackAttempt | AddonModFeedbackNonRespondent) => {
@@ -246,12 +254,12 @@ export class AddonModFeedbackHelperProvider {
      */
     protected getItemFormLabel(item: AddonModFeedbackItem): AddonModFeedbackFormBasicItem {
         item.name = '';
-        item.presentation = CoreTextUtils.replacePluginfileUrls(item.presentation, item.itemfiles);
+        item.presentation = CoreFileHelper.replacePluginfileUrls(item.presentation, item.itemfiles);
 
         return Object.assign(item, {
             templateName: 'label',
             value: '',
-            hasTextInput: false,
+            slottedLabel: false,
         });
     }
 
@@ -265,7 +273,7 @@ export class AddonModFeedbackHelperProvider {
         const formItem: AddonModFeedbackFormBasicItem = Object.assign(item, {
             templateName: 'label',
             value: '',
-            hasTextInput: false,
+            slottedLabel: false,
         });
 
         const type = parseInt(formItem.presentation, 10);
@@ -295,7 +303,7 @@ export class AddonModFeedbackHelperProvider {
      */
     protected getItemFormNumeric(item: AddonModFeedbackItem): AddonModFeedbackNumericItem {
 
-        const range = item.presentation.split(AddonModFeedbackProvider.LINE_SEP) || [];
+        const range = item.presentation.split(ADDON_MOD_FEEDBACK_LINE_SEP) || [];
         const rangeFrom = range.length > 0 ? parseInt(range[0], 10) : undefined;
         const rangeTo = range.length > 1 ? parseInt(range[1], 10) : undefined;
 
@@ -304,7 +312,7 @@ export class AddonModFeedbackHelperProvider {
             value: item.rawValue !== undefined ? Number(item.rawValue) : '',
             rangefrom: typeof rangeFrom == 'number' && !isNaN(rangeFrom) ? range[0] : '',
             rangeto: typeof rangeTo == 'number' && !isNaN(rangeTo) ? rangeTo : '',
-            hasTextInput: true,
+            slottedLabel: true,
         });
         formItem.postfix = this.getNumericBoundariesForDisplay(formItem.rangefrom, formItem.rangeto);
 
@@ -320,9 +328,9 @@ export class AddonModFeedbackHelperProvider {
     protected getItemFormTextfield(item: AddonModFeedbackItem): AddonModFeedbackTextItem {
         return Object.assign(item, {
             templateName: 'textfield',
-            length: Number(item.presentation.split(AddonModFeedbackProvider.LINE_SEP)[1]) || 255,
+            length: Number(item.presentation.split(ADDON_MOD_FEEDBACK_LINE_SEP)[1]) || 255,
             value: item.rawValue !== undefined ? item.rawValue : '',
-            hasTextInput: true,
+            slottedLabel: true,
         });
     }
 
@@ -336,7 +344,7 @@ export class AddonModFeedbackHelperProvider {
         return Object.assign(item, {
             templateName: 'textarea',
             value: item.rawValue !== undefined ? item.rawValue : '',
-            hasTextInput: true,
+            slottedLabel: true,
         });
     }
 
@@ -348,7 +356,7 @@ export class AddonModFeedbackHelperProvider {
      */
     protected getItemFormMultichoice(item: AddonModFeedbackItem): AddonModFeedbackMultichoiceItem {
 
-        let parts = item.presentation.split(AddonModFeedbackProvider.MULTICHOICE_TYPE_SEP) || [];
+        let parts = item.presentation.split(ADDON_MOD_FEEDBACK_MULTICHOICE_TYPE_SEP) || [];
         const subType = parts.length > 0 && parts[0] ? parts[0] : 'r';
 
         const formItem: AddonModFeedbackMultichoiceItem = Object.assign(item, {
@@ -356,25 +364,25 @@ export class AddonModFeedbackHelperProvider {
             subtype: subType,
             value: '',
             choices: [],
-            hasTextInput: false,
+            slottedLabel: subType === 'd',
         });
 
         formItem.presentation = parts.length > 1 ? parts[1] : '';
         if (formItem.subtype != 'd') {
-            parts = formItem.presentation.split(AddonModFeedbackProvider.MULTICHOICE_ADJUST_SEP) || [];
+            parts = formItem.presentation.split(ADDON_MOD_FEEDBACK_MULTICHOICE_ADJUST_SEP) || [];
             formItem.presentation = parts.length > 0 ? parts[0] : '';
             // Horizontal are not supported right now. item.horizontal = parts.length > 1 && !!parts[1];
         }
 
-        const choices = formItem.presentation.split(AddonModFeedbackProvider.LINE_SEP) || [];
+        const choices = formItem.presentation.split(ADDON_MOD_FEEDBACK_LINE_SEP) || [];
         formItem.choices = choices.map((choice, index) => {
-            const weightValue = choice.split(AddonModFeedbackProvider.MULTICHOICERATED_VALUE_SEP) || [''];
+            const weightValue = choice.split(ADDON_MOD_FEEDBACK_MULTICHOICERATED_VALUE_SEP) || [''];
             choice = weightValue.length == 1 ? weightValue[0] : '(' + weightValue[0] + ') ' + weightValue[1];
 
             return { value: index + 1, label: choice };
         });
 
-        if (formItem.subtype === 'r' && formItem.options.search(AddonModFeedbackProvider.MULTICHOICE_HIDENOSELECT) == -1) {
+        if (formItem.subtype === 'r' && formItem.options.search(ADDON_MOD_FEEDBACK_MULTICHOICE_HIDENOSELECT) == -1) {
             formItem.choices.unshift({ value: 0, label: Translate.instant('addon.mod_feedback.not_selected') });
             formItem.value = formItem.rawValue !== undefined ? Number(formItem.rawValue) : 0;
         } else if (formItem.subtype === 'd') {
@@ -383,7 +391,7 @@ export class AddonModFeedbackHelperProvider {
         } else if (formItem.subtype === 'c') {
             if (formItem.rawValue !== undefined) {
                 formItem.rawValue = String(formItem.rawValue);
-                const values = formItem.rawValue.split(AddonModFeedbackProvider.LINE_SEP);
+                const values = formItem.rawValue.split(ADDON_MOD_FEEDBACK_LINE_SEP);
                 formItem.choices.forEach((choice) => {
                     for (const x in values) {
                         if (choice.value == Number(values[x])) {
@@ -411,10 +419,10 @@ export class AddonModFeedbackHelperProvider {
         const formItem: AddonModFeedbackCaptchaItem = Object.assign(item, {
             templateName: 'captcha',
             value: '',
-            hasTextInput: false,
+            slottedLabel: false,
         });
 
-        const data = <string[]> CoreTextUtils.parseJSON(item.otherdata);
+        const data = <string[]> CoreText.parseJSON(item.otherdata);
         if (data && data.length > 3) {
             formItem.captcha = {
                 recaptchapublickey: data[3],
@@ -549,7 +557,7 @@ export type AddonModFeedbackFormItem =
 export type AddonModFeedbackFormBasicItem = AddonModFeedbackItem & {
     templateName: string;
     value: AddonModFeedbackResponseValue;
-    hasTextInput: boolean;
+    slottedLabel: boolean;
     isEmpty?: boolean;
     hasError?: boolean;
 };

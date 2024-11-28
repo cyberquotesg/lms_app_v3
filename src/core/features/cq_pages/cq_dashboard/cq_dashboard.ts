@@ -1,17 +1,40 @@
 // done v3
 
-import { Component, ViewChild, Renderer2, OnInit } from '@angular/core';
-import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
+import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { CoreNavigator } from '@services/navigator';
+import { Swiper } from 'swiper';
+import { register } from 'swiper/element/bundle';
+import { CoreSwiper } from '@singletons/swiper';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
+
+register();
 
 @Component({
     selector: 'cq_dashboard',
     templateUrl: './cq_dashboard.html',
-    styles: ['cq_dashboard.scss'],
+    styleUrls: ['cq_dashboard.scss'],
 })
-export class CqDashboard extends CqPage implements OnInit
+export class CqDashboard extends CqPage implements OnInit, OnDestroy
 {
+    protected pageSlider?: Swiper;
+    @ViewChild('swiperRef') set swiperRef(swiperRef: ElementRef) {
+        /**
+         * This setTimeout waits for Ionic's async initialization to complete.
+         * Otherwise, an outdated swiper reference will be used.
+         */
+        setTimeout(async () => {
+            await this.waitLoadingsDone();
+
+            const swiper = CoreSwiper.initSwiperIfAvailable(this.pageSlider, swiperRef);
+            if (!swiper) {
+                return;
+            }
+
+            this.pageSlider = swiper;
+        });
+    }
+
     pageParams: any = {
     };
     pageDefaults: any = {
@@ -31,9 +54,9 @@ export class CqDashboard extends CqPage implements OnInit
         },
     };
 
-    constructor(renderer: Renderer2, CH: CqHelper)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
     }
 
     ngOnInit(): void {
@@ -49,12 +72,11 @@ export class CqDashboard extends CqPage implements OnInit
             this.pageData.sliderOptions = {
                 initialSlide: 0,
                 speed: 400,
-                centerInsufficientSlides: false,
-                centeredSlides: false,
-                centeredSlidesBounds: false,
+                centerInsufficientSlides: true,
+                centeredSlidesBounds: true,
                 breakpoints: {},
             };
-            let slidesPerView, widthIterator = 160, spaceBetween = 24;
+            let slidesPerView, widthIterator = 160, spaceBetween = 0;
             for (slidesPerView = 1; slidesPerView <= 10; slidesPerView++)
             {
                 this.pageData.sliderOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };
@@ -67,6 +89,7 @@ export class CqDashboard extends CqPage implements OnInit
     ionViewDidEnter(): void { this.usuallyOnViewDidEnter(); }
     ionViewWillLeave(): void { this.usuallyOnViewWillLeave(); }
     ionViewDidLeave(): void { this.usuallyOnViewDidLeave(); }
+    ngOnDestroy(): void { this.usuallyOnDestroy(); }
 
     getCqConfig(jobName: string, moreloader?: any, refresher?: any, modeData?: any, nextFunction?: any, finalCallback?: any): void
     {
@@ -93,6 +116,7 @@ export class CqDashboard extends CqPage implements OnInit
 
             // cqConfig
             var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
+            cqConfig.mobileCourseMedia = cqConfig.mobileCourseMedia || cqConfig.mobile_course_media;
 
             this.pageData.mobileCourseMedia = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
             this.pageData.offlineCourse = this.pageData.mobileCourseMedia.includes("offline");

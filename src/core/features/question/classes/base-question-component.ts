@@ -17,12 +17,15 @@ import { CoreFileHelper } from '@services/file-helper';
 
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreText } from '@singletons/text';
+import { CoreUrl } from '@singletons/url';
 import { CoreWSFile } from '@services/ws';
 import { CoreIonicColorNames } from '@singletons/colors';
 import { CoreLogger } from '@singletons/logger';
 import { CoreQuestionBehaviourButton, CoreQuestionHelper, CoreQuestionQuestion } from '../services/question-helper';
+import { ContextLevel } from '@/core/constants';
+import { toBoolean } from '@/core/transforms/boolean';
+import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
 
 /**
  * Base class for components to render a question.
@@ -36,14 +39,18 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
     @Input() component?: string; // The component the question belongs to.
     @Input() componentId?: number; // ID of the component the question belongs to.
     @Input() attemptId?: number; // Attempt ID.
-    @Input() offlineEnabled?: boolean | string; // Whether the question can be answered in offline.
-    @Input() contextLevel?: string; // The context level.
+    @Input({ transform: toBoolean }) offlineEnabled = false; // Whether the question can be answered in offline.
+    @Input() contextLevel?: ContextLevel; // The context level.
     @Input() contextInstanceId?: number; // The instance ID related to the context.
     @Input() courseId?: number; // The course the question belongs to (if any).
-    @Input() review?: boolean; // Whether the user is in review mode.
+    @Input({ transform: toBoolean }) review = false; // Whether the user is in review mode.
     @Input() preferredBehaviour?: string; // Preferred behaviour.
     @Output() buttonClicked = new EventEmitter<CoreQuestionBehaviourButton>(); // Will emit when a behaviour button is clicked.
     @Output() onAbort = new EventEmitter<void>(); // Should emit an event if the question should be aborted.
+
+    correctIcon = '';
+    incorrectIcon = '';
+    partialCorrectIcon = '';
 
     protected logger: CoreLogger;
     protected hostElement: HTMLElement;
@@ -57,6 +64,10 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
      * @inheritdoc
      */
     ngOnInit(): void {
+        this.correctIcon = CoreQuestionHelper.getCorrectIcon().fullName;
+        this.incorrectIcon = CoreQuestionHelper.getIncorrectIcon().fullName;
+        this.partialCorrectIcon = CoreQuestionHelper.getPartiallyCorrectIcon().fullName;
+
         if (!this.question) {
             this.logger.warn('Aborting because of no question received.');
 
@@ -85,7 +96,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
         this.hostElement.classList.add('core-question-container');
 
-        const questionElement = CoreDomUtils.convertToElement(this.question.html);
+        const questionElement = convertTextToHTMLElement(this.question.html);
 
         // Extract question text.
         this.question.text = CoreDomUtils.getContentsOfElement(questionElement, '.qtext');
@@ -317,10 +328,10 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
         if (textarea) {
             const input = questionEl.querySelector<HTMLInputElement>('input[type="hidden"][name*=answerformat]');
-            let content = CoreTextUtils.decodeHTML(textarea.innerHTML || '');
+            let content = CoreText.decodeHTML(textarea.innerHTML || '');
 
             if (question.hasDraftFiles && question.responsefileareas) {
-                content = CoreTextUtils.replaceDraftfileUrls(
+                content = CoreFileHelper.replaceDraftfileUrls(
                     CoreSites.getRequiredCurrentSite().getURL(),
                     content,
                     CoreQuestionHelper.getResponseFileAreaFiles(question, 'answer'),
@@ -366,7 +377,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
             }
 
             if (fileManagerUrl) {
-                const params = CoreUrlUtils.extractUrlParams(fileManagerUrl);
+                const params = CoreUrl.extractUrlParams(fileManagerUrl);
                 const maxBytes = Number(params.maxbytes);
                 const areaMaxBytes = Number(params.areamaxbytes);
 
@@ -431,7 +442,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
             return;
         }
 
-        const element = CoreDomUtils.convertToElement(this.question.html);
+        const element = convertTextToHTMLElement(this.question.html);
 
         // Get question content.
         const content = element.querySelector<HTMLElement>(contentSelector);
@@ -489,20 +500,24 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
         // Check if question is marked as correct.
         if (input.classList.contains('incorrect')) {
             question.input.correctClass = 'core-question-incorrect';
-            question.input.correctIcon = 'fas-xmark';
+            question.input.correctIcon = this.incorrectIcon;
             question.input.correctIconColor = CoreIonicColorNames.DANGER;
+            question.input.correctIconLabel = 'core.question.incorrect';
         } else if (input.classList.contains('correct')) {
             question.input.correctClass = 'core-question-correct';
-            question.input.correctIcon = 'fas-check';
+            question.input.correctIcon = this.correctIcon;
             question.input.correctIconColor = CoreIonicColorNames.SUCCESS;
+            question.input.correctIconLabel = 'core.question.correct';
         } else if (input.classList.contains('partiallycorrect')) {
             question.input.correctClass = 'core-question-partiallycorrect';
-            question.input.correctIcon = 'fas-square-check';
+            question.input.correctIcon = this.partialCorrectIcon;
             question.input.correctIconColor = CoreIonicColorNames.WARNING;
+            question.input.correctIconLabel = 'core.question.partiallycorrect';
         } else {
             question.input.correctClass = '';
             question.input.correctIcon = '';
             question.input.correctIconColor = '';
+            question.input.correctIconLabel = '';
         }
 
         if (question.input.isInline) {
@@ -588,7 +603,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
                 const option: AddonModQuizQuestionSelectOption = {
                     value: optionEl.value,
-                    label: optionEl.innerHTML,
+                    label: CoreText.decodeHTML(optionEl.innerHTML),
                     selected: optionEl.selected,
                 };
 
@@ -826,6 +841,7 @@ export type AddonModQuizQuestionTextInput = {
     correctClass?: string;
     correctIcon?: string;
     correctIconColor?: string;
+    correctIconLabel?: string;
 };
 
 /**

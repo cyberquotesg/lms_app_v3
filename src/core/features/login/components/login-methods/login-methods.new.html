@@ -1,0 +1,7 @@
+<div *ngIf="identityProviders.length" style="text-align: center;">
+    <h6 class="">{{ 'core.login.potentialidps' | translate }}</h6>
+    <button *ngFor="let provider of identityProviders" class="mt-cst" style="display: flex; justify-content: center; align-items: center; width: 100%; padding: 0px;" (click)="oauthClicked(provider)">
+        <ion-icon [name]="'logo-' + provider.name.toLowerCase()" class="mr-cst" style="font-size: 28px;" />
+        <span>{{ provider.name }}</span>
+    </button>
+</div>

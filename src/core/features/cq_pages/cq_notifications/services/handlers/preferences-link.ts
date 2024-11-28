@@ -37,8 +37,8 @@ export class AddonNotificationsPreferencesLinkHandlerService extends CoreContent
      */
     getActions(): CoreContentLinksAction[] {
         return [{
-            action: (siteId: string): void => {
-                CoreNavigator.navigateToSitePath(`preferences/${AddonNotificationsSettingsHandlerService.PAGE_NAME}`, { siteId });
+            action: async (siteId, navCtrl?): Promise<void> => {
+                await CoreNavigator.navigateToSitePath(`preferences/${AddonNotificationsSettingsHandlerService.PAGE_NAME}`, { siteId });
             },
         }];
     }

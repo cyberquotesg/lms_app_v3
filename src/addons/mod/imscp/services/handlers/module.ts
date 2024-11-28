@@ -17,8 +17,8 @@ import { Injectable, Type } from '@angular/core';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
 import { makeSingleton } from '@singletons';
-import { AddonModImscpIndexComponent } from '../../components/index';
 import { AddonModImscp } from '../imscp';
+import { ADDON_MOD_IMSCP_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support IMSCP modules.
@@ -26,11 +26,9 @@ import { AddonModImscp } from '../imscp';
 @Injectable( { providedIn: 'root' })
 export class AddonModImscpModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_imscp';
-
     name = 'AddonModImscp';
     modName = 'imscp';
-    protected pageName = AddonModImscpModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_IMSCP_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_MOD_ARCHETYPE]: CoreConstants.MOD_ARCHETYPE_RESOURCE,
@@ -42,7 +40,7 @@ export class AddonModImscpModuleHandlerService extends CoreModuleHandlerBase imp
         [CoreConstants.FEATURE_GRADE_OUTCOMES]: false,
         [CoreConstants.FEATURE_BACKUP_MOODLE2]: true,
         [CoreConstants.FEATURE_SHOW_DESCRIPTION]: true,
-        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_CONTENT,
+        [CoreConstants.FEATURE_MOD_PURPOSE]: ModPurpose.MOD_PURPOSE_INTERACTIVECONTENT,
     };
 
     /**
@@ -56,6 +54,8 @@ export class AddonModImscpModuleHandlerService extends CoreModuleHandlerBase imp
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        const { AddonModImscpIndexComponent } = await import('../../components/index');
+
         return AddonModImscpIndexComponent;
     }
 

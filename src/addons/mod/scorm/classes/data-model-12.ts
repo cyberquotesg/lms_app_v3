@@ -19,14 +19,20 @@ import {
     AddonModScormCommonEventData,
     AddonModScormDataEntry,
     AddonModScormDataValue,
-    AddonModScormProvider,
     AddonModScormScorm,
     AddonModScormUserDataMap,
 } from '../services/scorm';
+import {
+    ADDON_MOD_SCORM_UPDATE_TOC_EVENT,
+    ADDON_MOD_SCORM_LAUNCH_NEXT_SCO_EVENT,
+    ADDON_MOD_SCORM_LAUNCH_PREV_SCO_EVENT,
+    ADDON_MOD_SCORM_GO_OFFLINE_EVENT,
+    AddonModScormMode,
+} from '../constants';
 
 // Standard Data Type Definition.
-const CMI_STRING_256 = '^[\\u0000-\\uFFFF]{0,255}$';
-const CMI_STRING_4096 = '^[\\u0000-\\uFFFF]{0,4096}$';
+let CMI_STRING_256 = '^[\\u0000-\\uFFFF]{0,255}$';
+let CMI_STRING_4096 = '^[\\u0000-\\uFFFF]{0,4096}$';
 const CMI_TIME = '^([0-2]{1}[0-9]{1}):([0-5]{1}[0-9]{1}):([0-5]{1}[0-9]{1})(.[0-9]{1,2})?$';
 const CMI_TIMESPAN = '^([0-9]{2,4}):([0-9]{2}):([0-9]{2})(.[0-9]{1,2})?$';
 const CMI_INTEGER = '^\\d+$'; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -81,7 +87,6 @@ const ERROR_STRINGS = {
 /**
  * SCORM data model implementation for version 1.2.
  */
-/* eslint-disable @typescript-eslint/naming-convention */
 export class AddonModScormDataModel12 {
 
     protected currentUserData: AddonModScormUserDataMap = {}; // Current user data.
@@ -111,7 +116,7 @@ export class AddonModScormDataModel12 {
         protected scoId: number,
         protected attempt: number,
         protected userData: AddonModScormUserDataMap,
-        protected mode = AddonModScormProvider.MODENORMAL,
+        protected mode = AddonModScormMode.NORMAL,
         protected offline = false,
         protected canSaveTracks = true,
     ) {
@@ -255,6 +260,11 @@ export class AddonModScormDataModel12 {
      * @param userData The user default data.
      */
     protected init(userData: AddonModScormUserDataMap): void {
+        if (!this.scorm.scormStandard) {
+            CMI_STRING_256 = '^[\\u0000-\\uFFFF]{0,64000}$';
+            CMI_STRING_4096 = CMI_STRING_256;
+        }
+
         // Prepare the definition array containing the default values.
         for (const scoId in userData) {
             const sco = userData[scoId];
@@ -591,7 +601,7 @@ export class AddonModScormDataModel12 {
             }
 
             // Define mode and credit.
-            this.currentUserData[scoId].userdata['cmi.core.credit'] = this.mode == AddonModScormProvider.MODENORMAL ?
+            this.currentUserData[scoId].userdata['cmi.core.credit'] = this.mode === AddonModScormMode.NORMAL ?
                 'credit' :
                 'no-credit';
             this.currentUserData[scoId].userdata['cmi.core.lesson_mode'] = this.mode;
@@ -616,7 +626,7 @@ export class AddonModScormDataModel12 {
                 const result = this.storeData(false);
 
                 // Trigger TOC update.
-                this.triggerEvent(AddonModScormProvider.UPDATE_TOC_EVENT);
+                this.triggerEvent(ADDON_MOD_SCORM_UPDATE_TOC_EVENT);
 
                 this.errorCode = result ? '0' : '101';
 
@@ -648,20 +658,20 @@ export class AddonModScormDataModel12 {
                 const result = this.storeData(true);
                 if (this.getEl('nav.event') != '') {
                     if (this.getEl('nav.event') == 'continue') {
-                        this.triggerEvent(AddonModScormProvider.LAUNCH_NEXT_SCO_EVENT);
+                        this.triggerEvent(ADDON_MOD_SCORM_LAUNCH_NEXT_SCO_EVENT);
                     } else {
-                        this.triggerEvent(AddonModScormProvider.LAUNCH_PREV_SCO_EVENT);
+                        this.triggerEvent(ADDON_MOD_SCORM_LAUNCH_PREV_SCO_EVENT);
                     }
                 } else {
                     if (this.scorm.auto) {
-                        this.triggerEvent(AddonModScormProvider.LAUNCH_NEXT_SCO_EVENT);
+                        this.triggerEvent(ADDON_MOD_SCORM_LAUNCH_NEXT_SCO_EVENT);
                     }
                 }
 
                 this.errorCode = result ? '0' : '101';
 
                 // Trigger TOC update.
-                this.triggerEvent(AddonModScormProvider.UPDATE_TOC_EVENT);
+                this.triggerEvent(ADDON_MOD_SCORM_UPDATE_TOC_EVENT);
 
                 // Conver to string representing a boolean.
                 return result ? 'true' : 'false';
@@ -982,8 +992,8 @@ export class AddonModScormDataModel12 {
                 this.setEl('cmi.core.lesson_status', 'completed');
             }
 
-            if (this.getEl('cmi.core.lesson_mode') == AddonModScormProvider.MODENORMAL) {
-                if (this.getEl('cmi.core.credit') == 'credit') {
+            if (this.getEl('cmi.core.lesson_mode') === AddonModScormMode.NORMAL) {
+                if (this.getEl('cmi.core.credit') === 'credit') {
                     if (this.getEl('cmi.student_data.mastery_score') !== '' && this.getEl('cmi.core.score.raw') !== '') {
                         if (parseFloat(<string> this.getEl('cmi.core.score.raw')) >=
                                 parseFloat(<string> this.getEl('cmi.student_data.mastery_score'))) {
@@ -995,7 +1005,7 @@ export class AddonModScormDataModel12 {
                 }
             }
 
-            if (this.getEl('cmi.core.lesson_mode') == AddonModScormProvider.MODEBROWSE) {
+            if (this.getEl('cmi.core.lesson_mode') === AddonModScormMode.BROWSE) {
                 if (this.dataModel[this.scoId]['cmi.core.lesson_status'].defaultvalue == '' &&
                         this.getEl('cmi.core.lesson_status') == 'not attempted') {
                     this.setEl('cmi.core.lesson_status', 'browsed');
@@ -1016,7 +1026,7 @@ export class AddonModScormDataModel12 {
 
         // Failure storing data in online. Go offline.
         this.offline = true;
-        this.triggerEvent(AddonModScormProvider.GO_OFFLINE_EVENT);
+        this.triggerEvent(ADDON_MOD_SCORM_GO_OFFLINE_EVENT);
 
         return AddonModScorm.saveTracksSync(this.scoId, this.attempt, tracks, this.scorm, this.offline, this.currentUserData);
 

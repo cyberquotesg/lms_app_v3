@@ -16,9 +16,9 @@ import { Injectable, Type } from '@angular/core';
 import { AddonModPage } from '../page';
 import { CoreCourseModuleHandler } from '@features/course/services/module-delegate';
 import { CoreConstants, ModPurpose } from '@/core/constants';
-import { AddonModPageIndexComponent } from '../../components/index';
 import { makeSingleton } from '@singletons';
 import { CoreModuleHandlerBase } from '@features/course/classes/module-base-handler';
+import { ADDON_MOD_PAGE_PAGE_NAME } from '../../constants';
 
 /**
  * Handler to support page modules.
@@ -26,11 +26,9 @@ import { CoreModuleHandlerBase } from '@features/course/classes/module-base-hand
 @Injectable({ providedIn: 'root' })
 export class AddonModPageModuleHandlerService extends CoreModuleHandlerBase implements CoreCourseModuleHandler {
 
-    static readonly PAGE_NAME = 'mod_page';
-
     name = 'AddonModPage';
     modName = 'page';
-    protected pageName = AddonModPageModuleHandlerService.PAGE_NAME;
+    protected pageName = ADDON_MOD_PAGE_PAGE_NAME;
 
     supportedFeatures = {
         [CoreConstants.FEATURE_MOD_ARCHETYPE]: CoreConstants.MOD_ARCHETYPE_RESOURCE,
@@ -56,6 +54,12 @@ export class AddonModPageModuleHandlerService extends CoreModuleHandlerBase impl
      * @inheritdoc
      */
     async getMainComponent(): Promise<Type<unknown>> {
+        // by rachmad
+        /* *a/
+        const { AddonModPageIndexComponent } = await import('../../components/index');
+        /* */
+        const { AddonModPageIndexComponent } = await import('../../components/index/index.new');
+
         return AddonModPageIndexComponent;
     }
 

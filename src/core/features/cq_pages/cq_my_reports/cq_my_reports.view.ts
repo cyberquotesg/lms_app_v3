@@ -15,9 +15,9 @@ export class CqMyReportsViewService extends CoreContentLinksHandlerBase
     getActions(siteIds: string[], url: string, params: any): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]>
     {
         return [{
-            action: (siteId, navCtrl?): void => {
+            action: async (siteId, navCtrl?): Promise<void> => {
                 const stateParams: any = {};
-                CoreNavigator.navigateToSitePath('/CqMyReports/index', {
+                await CoreNavigator.navigateToSitePath('/CqMyReports/index', {
                     params: stateParams,
                     siteId,
                     preferCurrentTab: false,

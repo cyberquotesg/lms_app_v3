@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ADDON_COMPETENCY_COMPETENCIES_PAGE, ADDON_COMPETENCY_LEARNING_PLANS_PAGE } from '@addons/competency/competency.module';
+import { ADDON_COMPETENCY_COMPETENCIES_PAGE, ADDON_COMPETENCY_LEARNING_PLANS_PAGE } from '@addons/competency/constants';
 import { Injectable } from '@angular/core';
-import { COURSE_PAGE_NAME } from '@features/course/course.module';
+import { COURSE_PAGE_NAME } from '@features/course/constants';
 import { CorePushNotificationsClickHandler } from '@features/pushnotifications/services/push-delegate';
 import { CorePushNotificationsNotificationBasicData } from '@features/pushnotifications/services/pushnotifications';
 import { CoreNavigator } from '@services/navigator';
-import { CoreUrlUtils } from '@services/utils/url';
+import { CoreUrl } from '@singletons/url';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton } from '@singletons';
 import { AddonCompetency } from '../competency';
@@ -39,7 +39,7 @@ export class AddonCompetencyPushClickHandlerService implements CorePushNotificat
         if (CoreUtils.isTrueOrOne(notification.notif) && notification.moodlecomponent == 'moodle' &&
                 (notification.name == 'competencyplancomment' || notification.name == 'competencyusercompcomment')) {
             // If all competency features are disabled, don't handle the click.
-            return AddonCompetency.allCompetenciesDisabled(notification.site).then((disabled) => !disabled);
+            return AddonCompetency.areCompetenciesEnabled({ siteId: notification.site });
         }
 
         return false;
@@ -49,7 +49,7 @@ export class AddonCompetencyPushClickHandlerService implements CorePushNotificat
      * @inheritdoc
      */
     async handleClick(notification: AddonCompetencyPushNotificationData): Promise<void> {
-        const contextUrlParams = CoreUrlUtils.extractUrlParams(notification.contexturl);
+        const contextUrlParams = CoreUrl.extractUrlParams(notification.contexturl);
 
         if (notification.name == 'competencyplancomment') {
             // Open the learning plan.

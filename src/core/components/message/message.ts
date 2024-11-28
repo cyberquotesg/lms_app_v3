@@ -16,9 +16,9 @@ import { ContextLevel } from '@/core/constants';
 import { Component, EventEmitter, HostBinding, Input, OnInit, Output } from '@angular/core';
 import { CoreAnimations } from '@components/animations';
 import { CoreSites } from '@services/sites';
-import { CoreUtils } from '@services/utils/utils';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUserWithAvatar } from '@components/user-avatar/user-avatar';
+import { toBoolean } from '@/core/transforms/boolean';
 
 /**
  * Component to handle a message in a conversation.
@@ -39,18 +39,16 @@ export class CoreMessageComponent implements OnInit {
     @Input() instanceId = 0;
     @Input() courseId?: number;
     @Input() contextLevel: ContextLevel = ContextLevel.SYSTEM;
-    @Input() showDelete = false;
+    @Input({ transform: toBoolean }) showDelete = false;
     @Output() onDeleteMessage = new EventEmitter<void>();
     @Output() onUndoDeleteMessage = new EventEmitter<void>();
     @Output() afterRender = new EventEmitter<void>();
 
     protected deleted = false; // Needed to fix animation to void in Behat tests.
 
-    // @TODO Recover the animation using native css or wait for Angular 13.1
-    // where the bug https://github.com/angular/angular/issues/30693 is solved.
-    // @HostBinding('@coreSlideInOut') get animation(): string {
-    //     return this.isMine ? '' : 'fromLeft';
-    // }
+    @HostBinding('@coreSlideInOut') get animation(): string {
+        return this.isMine ? '' : 'fromLeft';
+    }
 
     @HostBinding('class.is-mine') isMine = false;
 
@@ -102,7 +100,7 @@ export class CoreMessageComponent implements OnInit {
      * Copy message to clipboard.
      */
     copyMessage(): void {
-        CoreUtils.copyToClipboard(CoreTextUtils.decodeHTMLEntities(this.text));
+        CoreText.copyToClipboard(CoreText.decodeHTMLEntities(this.text));
     }
 
 }

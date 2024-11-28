@@ -18,11 +18,13 @@ import { CoreFilterDefaultHandler } from '@features/filter/services/handlers/def
 import { CoreFilterFilter, CoreFilterFormatTextOptions } from '@features/filter/services/filter';
 import { CoreLang } from '@services/lang';
 import { CoreSites } from '@services/sites';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreText } from '@singletons/text';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEvents } from '@singletons/events';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { makeSingleton } from '@singletons';
+import { CoreWait } from '@singletons/wait';
+import { CoreDom } from '@singletons/dom';
 
 /**
  * Handler to support the MathJax filter.
@@ -176,7 +178,11 @@ export class AddonFilterMathJaxLoaderHandlerService extends CoreFilterDefaultHan
     ): Promise<void> {
         await this.waitForReady();
 
-        this.window.M!.filter_mathjaxloader!.typeset(container);
+        // Make sure the element is in DOM, otherwise some equations don't work.
+        // Automatically timeout the promise after a certain time, we don't want to wait forever.
+        await CoreUtils.ignoreErrors(CoreUtils.timeoutPromise(CoreDom.waitToBeInDOM(container), 15000));
+
+        await this.window.M!.filter_mathjaxloader!.typeset(container);
     }
 
     /**
@@ -188,7 +194,7 @@ export class AddonFilterMathJaxLoaderHandlerService extends CoreFilterDefaultHan
      * @returns The whole text with the span inserted around the defined substring.
      */
     protected insertSpan(text: string, start: number, end: number): string {
-        return CoreTextUtils.substrReplace(
+        return CoreText.substrReplace(
             text,
             '<span class="nolink">' + text.substring(start, end + 1) + '</span>',
             start,
@@ -233,24 +239,32 @@ export class AddonFilterMathJaxLoaderHandlerService extends CoreFilterDefaultHan
                 }
             },
             // Called by the filter when an equation is found while rendering the page.
-            typeset: function (container: HTMLElement): void {
+            typeset: async function (container: HTMLElement): Promise<void> {
                 if (!this._configured) {
                     this._setLocale();
                 }
 
-                if (that.window.MathJax !== undefined) {
-                    const processDelay = that.window.MathJax.Hub.processSectionDelay;
-                    // Set the process section delay to 0 when updating the formula.
-                    that.window.MathJax.Hub.processSectionDelay = 0;
-
-                    const equations = Array.from(container.querySelectorAll('.filter_mathjaxloader_equation'));
-                    equations.forEach((node) => {
-                        that.window.MathJax.Hub.Queue(['Typeset', that.window.MathJax.Hub, node], [that.fixUseUrls, node]);
-                    });
-
-                    // Set the delay back to normal after processing.
-                    that.window.MathJax.Hub.processSectionDelay = processDelay;
+                if (that.window.MathJax === undefined) {
+                    return;
                 }
+
+                const processDelay = that.window.MathJax.Hub.processSectionDelay;
+                // Set the process section delay to 0 when updating the formula.
+                that.window.MathJax.Hub.processSectionDelay = 0;
+
+                const equations = Array.from(container.querySelectorAll('.filter_mathjaxloader_equation'));
+                const promises = equations.map((node) => new Promise<void>((resolve) => {
+                    that.window.MathJax.Hub.Queue(
+                        ['Typeset', that.window.MathJax.Hub, node],
+                        [that.fixUseUrls, node],
+                        [resolve],
+                    );
+                }));
+
+                // Set the delay back to normal after processing.
+                that.window.MathJax.Hub.processSectionDelay = processDelay;
+
+                await Promise.all(promises);
             },
         };
     }
@@ -321,7 +335,7 @@ export class AddonFilterMathJaxLoaderHandlerService extends CoreFilterDefaultHan
             return;
         }
 
-        await CoreUtils.wait(250);
+        await CoreWait.wait(250);
         await CoreUtils.ignoreErrors(this.waitForReady(retries + 1));
     }
 
@@ -407,11 +421,11 @@ type MathJaxWindow = Window & {
     MathJax?: any; // eslint-disable-line @typescript-eslint/naming-convention, @typescript-eslint/no-explicit-any
     M?: { // eslint-disable-line @typescript-eslint/naming-convention
         filter_mathjaxloader?: { // eslint-disable-line @typescript-eslint/naming-convention
-            _lang: ''; // eslint-disable-line @typescript-eslint/naming-convention
-            _configured: false; // eslint-disable-line @typescript-eslint/naming-convention
+            _lang: string; // eslint-disable-line @typescript-eslint/naming-convention
+            _configured: boolean; // eslint-disable-line @typescript-eslint/naming-convention
             // Add the configuration to the head and set the lang.
             configure: (params: Record<string, unknown>) => void;
-            _setLocale: () => void; // eslint-disable-line @typescript-eslint/naming-convention
+            _setLocale: () => void;
             typeset: (container: HTMLElement) => void;
         };
     };

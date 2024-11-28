@@ -8,7 +8,7 @@
     </ion-refresher>
 
     <core-loading [hideUntil]="pageStatus">
-        <div class="base-background pb-5">
+        <div *ngIf="pageStatus" class="base-background">
 
         <div *ngIf="pageData.medias.length > 1" class="text-center pt-36 pl-cs pr-cs d-flex justify-between">
             <button *ngFor="let media of pageData.medias" class="{{ media == pageData.media ? 'active' : '' }}" (click)="selectMedia(media)" style="width: calc(50% - 12px)">
@@ -17,8 +17,12 @@
             </button>
         </div>
 
-        <ion-slides #pageSlider class="page-slider page-slider-cqac" [options]="pageData.sliderOptions" (ionSlideDidChange)="pageSliderChange()" style="transition: height ease 0.2s;" [ngStyle]="{'min-height': ('calc(100vh - 50px - 48px - ' + (pageData.medias.length > 1 ? '80px' : '0px') + ')')}">
-            <ion-slide *ngFor="let media of pageData.medias">
+        <swiper-container #swiperRef class="page-slider page-slider-cqac" style="transition: height ease 0.2s;" [ngStyle]="{'min-height': ('calc(100vh - 50px - 48px - ' + (pageData.medias.length > 1 ? '80px' : '0px') + ')')}"
+            [initialSlide]="pageData.sliderOptions.initialSlide"
+            [speed]="pageData.sliderOptions.speed"
+            [slidesPerView]="pageData.sliderOptions.slidesPerView"
+        >
+            <swiper-slide *ngFor="let media of pageData.medias">
                 <div class="text-left pl-cs pr-cs pt-36 pb-30" style="width: 100%">
                     <cq_filter [filterMultipleTitle]="media == 'online' ? 'E-Learning Filter' : 'Classroom Training Filter'" [filterMultiple]="pageData[media].filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
                     <cq_items [items]="pageData[media].courses" (onSelectItem)="openCourse($event)"></cq_items>
@@ -28,8 +32,8 @@
                         <ion-spinner *ngIf="pageIsLoading"></ion-spinner>
                     </button>
                 </div>
-            </ion-slide>
-        </ion-slides>
+            </swiper-slide>
+        </swiper-container>
 
         </div>
     </core-loading>

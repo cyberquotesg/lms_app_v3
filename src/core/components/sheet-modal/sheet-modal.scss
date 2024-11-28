@@ -1,7 +1,8 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host {
     --backdrop-opacity: var(--ion-backdrop-opacity, 0.4);
+    --border-radius: var(--modal-radius);
 
     width: 100%;
     height: 100%;
@@ -17,7 +18,7 @@
     }
 
     .sheet-modal--wrapper {
-        border-radius: var(--big-radius) var(--big-radius) 0 0;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
         @include padding(24px, 16px, 24px, 16px);
 
         background-color: var(--ion-overlay-background-color, var(--ion-background-color, #fff));

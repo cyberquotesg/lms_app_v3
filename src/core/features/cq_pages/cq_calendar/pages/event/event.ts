@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnDestroy, OnInit, Renderer2 } from '@angular/core';
+import { Component, OnDestroy, OnInit, Renderer2, ElementRef } from '@angular/core';
 import { IonRefresher } from '@ionic/angular';
 import { AlertOptions } from '@ionic/core';
 import {
@@ -25,12 +25,11 @@ import { AddonCalendarOffline } from '../../services/calendar-offline';
 import { AddonCalendarSync, AddonCalendarSyncEvents, AddonCalendarSyncProvider } from '../../services/calendar-sync';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
-import { CoreTextUtils } from '@services/utils/text';
+import { CoreDomUtils } from '@services/utils/dom';
+import { CoreText } from '@singletons/text';
 import { CoreSites } from '@services/sites';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreTimeUtils } from '@services/utils/time';
-import { CoreGroups } from '@services/groups';
 import { NgZone, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
 import { CoreNavigator } from '@services/navigator';
@@ -41,17 +40,23 @@ import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/
 import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
 import { CoreReminders, CoreRemindersService } from '@features/reminders/services/reminders';
-import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
+import { CoreLocalNotifications } from '@services/local-notifications';
+import { CorePlatform } from '@services/platform';
+import { CoreConfig } from '@services/config';
+import { CoreToasts, ToastDuration } from '@services/toasts';
+import { CorePopovers } from '@services/popovers';
+import { CoreLoadings } from '@services/loadings';
+import { CoreUrl } from '@singletons/url';
 
 /**
  * Page that displays a single calendar event.
  */
 @Component({
     selector: 'page-addon-calendar-event',
-    templateUrl: 'event.new.html',
+    templateUrl: 'event.html',
     styleUrls: ['../../calendar-common.scss', 'event.scss'],
 })
 export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy {
@@ -66,6 +71,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
     protected defaultTimeChangedObserver: CoreEventObserver;
     protected currentSiteId: string;
     protected updateCurrentTime?: number;
+    protected appResumeSubscription: Subscription;
 
     eventLoaded = false;
     event?: AddonCalendarEventToDisplay;
@@ -83,12 +89,14 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
     hasOffline = false;
     isOnline = false;
     syncIcon = CoreConstants.ICON_LOADING; // Sync icon.
+    canScheduleExactAlarms = true;
+    scheduleExactWarningHidden = false;
 
     constructor(
         protected route: ActivatedRoute,
-        renderer: Renderer2, CH: CqHelper
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
-        super(renderer, CH);
+        super(renderer, CH, elementRef);
 
         this.remindersEnabled = CoreReminders.isEnabled();
         this.siteHomeId = CoreSites.getCurrentSiteHomeId();
@@ -146,6 +154,11 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         this.updateCurrentTime = window.setInterval(() => {
             this.currentTime = CoreTimeUtils.timestamp();
         }, 5000);
+
+        this.checkExactAlarms();
+        this.appResumeSubscription = CorePlatform.resume.subscribe(() => {
+            this.checkExactAlarms();
+        });
     }
 
     /**
@@ -159,6 +172,14 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         }
 
         this.reminders = await AddonCalendarHelper.getEventReminders(this.eventId, this.event.timestart, this.currentSiteId);
+    }
+
+    /**
+     * Check if the app can schedule exact alarms.
+     */
+    protected async checkExactAlarms(): Promise<void> {
+        this.scheduleExactWarningHidden = !!(await CoreConfig.get(CoreConstants.DONT_SHOW_EXACT_ALARMS_WARNING, 0));
+        this.canScheduleExactAlarms = await CoreLocalNotifications.canScheduleExactAlarms();
     }
 
     /**
@@ -266,7 +287,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
 
             // If it's a group event, get the name of the group.
             if (courseId && this.event.groupid) {
-                promises.push(this.loadGroupName(this.event, courseId));
+                this.groupName = event.groupname;
             }
 
             if (this.event.iscategoryevent && this.event.category) {
@@ -275,8 +296,8 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
 
             if (this.event.location) {
                 // Build a link to open the address in maps.
-                this.event.location = CoreTextUtils.decodeHTML(this.event.location);
-                this.event.encodedLocation = CoreTextUtils.buildAddressURL(this.event.location);
+                this.event.location = CoreText.decodeHTML(this.event.location);
+                this.event.encodedLocation = CoreUrl.buildAddressURL(this.event.location);
             }
 
             // Check if event was deleted in offine.
@@ -334,7 +355,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         try {
             const result = await AddonCalendarSync.syncEvents();
             if (result.warnings && result.warnings.length) {
-                CoreDomUtils.showErrorModal(result.warnings[0]);
+                CoreDomUtils.showAlert(undefined, result.warnings[0]);
             }
 
             if (result.deleted && result.deleted.indexOf(this.eventId) != -1) {
@@ -365,26 +386,6 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
     }
 
     /**
-     * Load group name.
-     *
-     * @param event Event.
-     * @param courseId Course ID.
-     * @returns Promise resolved when done.
-     */
-    protected async loadGroupName(event: AddonCalendarEventToDisplay, courseId: number): Promise<void> {
-        try {
-            const groups = await CoreGroups.getUserGroupsInCourse(courseId);
-
-            const group = groups.find((group) => group.id == event.groupid);
-            this.groupName = group ? group.name : '';
-
-        } catch {
-            // Error getting groups, just don't show the group name.
-            this.groupName = '';
-        }
-    }
-
-    /**
      * Add a reminder for this event.
      */
     async addReminder(): Promise<void> {
@@ -392,7 +393,10 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
             return;
         }
 
-        const reminderTime = await CoreDomUtils.openPopover<{timeBefore: number}>({
+        const { CoreRemindersSetReminderMenuComponent } =
+            await import('@features/reminders/components/set-reminder-menu/set-reminder-menu');
+
+        const reminderTime = await CorePopovers.open<{timeBefore: number}>({
             component: CoreRemindersSetReminderMenuComponent,
             componentProps: {
                 eventTime: this.event.timestart,
@@ -423,7 +427,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         try {
             await CoreDomUtils.showDeleteConfirm();
 
-            const modal = await CoreDomUtils.showModalLoading('core.deleting', true);
+            const modal = await CoreLoadings.show('core.deleting', true);
 
             try {
                 await CoreReminders.removeReminder(id);
@@ -446,7 +450,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
      * @param showErrors Whether to show sync errors to the user.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void, showErrors= false): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void, showErrors= false): Promise<void> {
         if (!this.eventLoaded) {
             return;
         }
@@ -530,12 +534,11 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         try {
             deleteAll = await CoreDomUtils.showConfirm(message, title, undefined, undefined, options);
         } catch {
-
             // User canceled.
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
             let onlineEventDeleted = false;
@@ -565,7 +568,11 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
             }
 
             if (onlineEventDeleted || this.event.id < 0) {
-                CoreDomUtils.showToast('addon.calendar.eventcalendareventdeleted', true, ToastDuration.LONG);
+                CoreToasts.show({
+                    message: 'addon.calendar.eventcalendareventdeleted',
+                    translateMessage: true,
+                    duration: ToastDuration.LONG,
+                });
 
                 // Event deleted, close the view.
                 CoreNavigator.back();
@@ -588,7 +595,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
             return;
         }
 
-        const modal = await CoreDomUtils.showModalLoading('core.sending', true);
+        const modal = await CoreLoadings.show('core.sending', true);
 
         try {
 
@@ -620,7 +627,11 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         }
 
         if (data.deleted && data.deleted.indexOf(this.eventId) != -1) {
-            CoreDomUtils.showToast('addon.calendar.eventcalendareventdeleted', true, ToastDuration.LONG);
+            CoreToasts.show({
+                message: 'addon.calendar.eventcalendareventdeleted',
+                translateMessage: true,
+                duration: ToastDuration.LONG,
+            });
 
             // Event was deleted, close the view.
             CoreNavigator.back();
@@ -645,6 +656,21 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
     }
 
     /**
+     * Open alarm settings.
+     */
+    openAlarmSettings(): void {
+        CoreLocalNotifications.openAlarmSettings();
+    }
+
+    /**
+     * Hide alarm warning.
+     */
+    hideAlarmWarning(): void {
+        CoreConfig.set(CoreConstants.DONT_SHOW_EXACT_ALARMS_WARNING, 1);
+        this.scheduleExactWarningHidden = true;
+    }
+
+    /**
      * @inheritdoc
      */
     ngOnDestroy(): void {
@@ -654,6 +680,7 @@ export class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy 
         this.onlineObserver.unsubscribe();
         this.newEventObserver.off();
         this.events?.destroy();
+        this.appResumeSubscription.unsubscribe();
         clearInterval(this.updateCurrentTime);
     }
 
@@ -667,8 +694,8 @@ class AddonCalendarEventsSwipeItemsManager extends CoreSwipeNavigationItemsManag
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return route.params.id;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        return CoreNavigator.getRouteParams(route).id;
     }
 
 }

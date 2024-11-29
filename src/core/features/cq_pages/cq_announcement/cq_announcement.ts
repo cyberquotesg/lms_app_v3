@@ -1,15 +1,12 @@
 // done v3
 
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
-import { Platform } from '@ionic/angular';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CqChecklogBannerComponent } from '../components/cq_checklog_banner/cq_checklog_banner';
 import { CoreUtils } from '@services/utils/utils';
-import { File } from '@awesome-cordova-plugins/file/ngx';
-import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
-import { FileTransfer, FileTransferObject } from '@awesome-cordova-plugins/file-transfer/ngx';
+import { CoreFileHelper } from '@services/file-helper';
 import { AddonNotifications } from '@addons/notifications/services/notifications';
 
 @Component({
@@ -32,10 +29,7 @@ export class CqAnnouncement extends CqPage implements OnInit, OnDestroy
     private agent: any;
     loading: any = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef, platform: Platform,
-        private transfer: FileTransfer,
-        private file: File,
-        private fileOpener: FileOpener)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef)
     {
         super(renderer, CH, elementRef);
 
@@ -182,22 +176,13 @@ export class CqAnnouncement extends CqPage implements OnInit, OnDestroy
     downloadAttachment(name: string, url: string): void
     {
         this.CH.loading('Downloading', (loading) => {
-            const fileTransfer: FileTransferObject = this.transfer.create();
-            fileTransfer.download(this.CH.config().siteurl + url, this.file.dataDirectory + name)
+            CoreFileHelper.downloadAndOpenFile({fileurl: this.CH.config().siteurl + url})
             .then((result) => {
-                this.fileOpener.open(result.entry.toURL(), this.CH.getMimeTypeByName(name))
-                .then(() => {
-                    loading.dismiss();
-                })
-                .catch((openError) => {
-                    loading.dismiss();
-                    this.CH.errorLog("open attachment error", {name, url, error: openError});
-                    this.CH.alert('Oops!', 'Failed to open the file');
-                });
-            }, (downloadError) => {
                 loading.dismiss();
-                this.CH.errorLog("download attachment error", {name, url, error: downloadError});
-                this.CH.alert('Oops!', 'Failed to download the file');
+            }, (error) => {
+                loading.dismiss();
+                this.CH.errorLog("download / open attachment error", {name, url, error});
+                this.CH.alert('Oops!', 'Failed to open the file');
             });
         });
     }

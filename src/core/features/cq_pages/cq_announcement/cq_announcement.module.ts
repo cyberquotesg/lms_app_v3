@@ -9,10 +9,6 @@ import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
 import { CqAnnouncement } from './cq_announcement';
 
-import { File } from '@awesome-cordova-plugins/file/ngx';
-import { FileOpener } from '@awesome-cordova-plugins/file-opener/ngx';
-import { FileTransfer } from '@awesome-cordova-plugins/file-transfer/ngx';
-
 const routes: Routes = [
     {
         path: '',
@@ -31,9 +27,6 @@ const routes: Routes = [
         CqAnnouncement,
     ],
     providers: [
-        File,
-        FileOpener,
-        FileTransfer,
     ],
     exports: [RouterModule],
 })

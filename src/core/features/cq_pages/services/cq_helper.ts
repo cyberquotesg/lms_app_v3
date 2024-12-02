@@ -88,7 +88,11 @@ export class CqHelper
     	if (this.isProduction()) return;
 
     	if (typeof data2 == 'undefined') console.log('cq - ' + data1);
-    	else console.log('cq - ' + data1, data2);
+    	else
+    	{
+    		console.log('cq - ' + data1, data2);
+    		console.log('cq - ' + data1, JSON.stringify(data2));
+    	}
     }
     errorLog(data1: any, data2?: any): void
     {

@@ -1127,8 +1127,19 @@ export class CqHelper
 
     	if (jsonData.success)
     	{
-    	    await this.initiateZoomEngine(jsonData.jwt);
-    		this.log("init zoom jsonData", JSON.stringify(jsonData));
+    	    let initiated = await this.initiateZoomEngine(jsonData.jwt);
+
+    	    if (initiated)
+    	    {
+	    		this.log("init zoom jsonData", JSON.stringify(jsonData));
+				this.zoomInitiated = true;
+		    	return true;
+    	    }
+    	    else
+    	    {
+	    		this.errorLog("init zoom error", {data: jsonData, error: "connection to zoom was failed"});
+	    	    this.alert("Oops!", "Connection to zoom was failed, please check your internet connection or contact your course administrator.");
+    	    }
     	}
     	else
     	{

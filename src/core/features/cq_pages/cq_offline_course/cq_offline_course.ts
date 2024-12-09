@@ -2,6 +2,7 @@
 
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Platform } from '@ionic/angular';
+import { WebIntent } from '@singletons';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
@@ -312,7 +313,23 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
             return;
         }
 
-        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname + " (" + userEmail + ")");
+        // this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname + " (" + userEmail + ")");
+
+        const zoomUrl = `zoomus://zoom.us/join?confno=${meetingNumber}&pwd=${meetingPassword}&uname=${userFullname} (${userEmail})`;
+        const playStoreUrl = `market://details?id=us.zoom.videomeetings`;
+
+        WebIntent.startActivity({
+            action: WebIntent.ACTION_VIEW,
+            url: zoomUrl
+        }).catch(() => {
+            WebIntent.startActivity({
+                action: WebIntent.ACTION_VIEW,
+                url: playStoreUrl
+            }).catch((err) => {
+                this.CH.alert('Oops!', "Please install Zoom app then retry to join the meeting");
+                this.CH.errorLog("zoom error", "zoom app is not installed and app market cannot be opened");
+            });
+        });
     }
 
     showRejectedReason(message?: string): void

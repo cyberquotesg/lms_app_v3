@@ -315,8 +315,9 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
         let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
         userFullname += " (" + userEmail + ")";
 
-        // this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
+        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
 
+        /* *a/
         const zoomUrl = "zoomus://zoom.us/join?confno=" + meetingNumber + "&pwd=" + meetingPassword + "&uname=" + userFullname.replace(/ /g, "%20");
         const playStoreUrl = "market://details?id=us.zoom.videomeetings";
 
@@ -337,6 +338,7 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
                 });
             });
         });
+        /* */
     }
 
     showRejectedReason(message?: string): void

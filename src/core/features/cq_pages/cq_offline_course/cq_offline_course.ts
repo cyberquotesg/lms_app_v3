@@ -2,6 +2,7 @@
 
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Platform } from '@ionic/angular';
+import { WebIntent } from '@singletons';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
@@ -302,9 +303,8 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
     async joinMeetingZoom(meetingNumber, meetingPassword): Promise<void>
     {
         let userId = this.CH.getUserId();
-        let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
-        let userEmail = (await this.CH.getUser().getProfile(userId)).email;
 
+        let userEmail = (await this.CH.getUser().getProfile(userId)).email;
         if (!userEmail)
         {
             this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
@@ -312,7 +312,31 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
             return;
         }
 
-        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname + " (" + userEmail + ")");
+        let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
+        userFullname += " (" + userEmail + ")");
+
+        // this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
+
+        const zoomUrl = "zoomus://zoom.us/join?confno=" + meetingNumber + "&pwd=" + meetingPassword + "&uname=" + userFullname.replace(/ /g, "%20");
+        const playStoreUrl = "market://details?id=us.zoom.videomeetings";
+
+        WebIntent.startActivity({
+            action: WebIntent.ACTION_VIEW,
+            url: zoomUrl
+        }).catch((err1) => {
+            if (!this.CH.isProduction()) this.CH.alert('Oops! Opening Zoom App was failed', JSON.stringify(err1));
+
+            WebIntent.startActivity({
+                action: WebIntent.ACTION_VIEW,
+                url: playStoreUrl
+            }).catch((err2) => {
+                this.CH.alert('Oops!', "Please install Zoom app then retry to join the meeting");
+                this.CH.errorLog("zoom error", {
+                    message: "zoom app is not installed and cannot open app market",
+                    err1, err2,
+                });
+            });
+        });
     }
 
     showRejectedReason(message?: string): void

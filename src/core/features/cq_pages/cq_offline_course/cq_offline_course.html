@@ -239,11 +239,11 @@
                                                     <ng-container *ngIf="session.buttonIsAlive">
                                                         <button *ngIf="date.zoomMeetingid && date.zoomMeetingPassword" class="full" (click)="joinMeetingZoom(date.zoomMeetingid, date.zoomMeetingPassword)">
                                                             <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                            <span style="vertical-align: middle; margin-left: 4px;">Join In App</span>
+                                                            <span style="vertical-align: middle; margin-left: 4px;">Join in Zoom App</span>
                                                         </button>
                                                         <button *ngIf="!date.zoomMeetingid || !date.zoomMeetingPassword" class="full" disabled>
                                                             <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                            <span style="vertical-align: middle; margin-left: 4px;">Join In App</span>
+                                                            <span style="vertical-align: middle; margin-left: 4px;">Join in Zoom App</span>
                                                         </button>
 
                                                         <button *ngIf="date.zoomRegistrationUrl" class="full mt-cs" (click)="openInBrowser(date.zoomRegistrationUrl)">
@@ -259,7 +259,7 @@
                                                     <ng-container *ngIf="!session.buttonIsAlive">
                                                         <button class="full" disabled>
                                                             <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
-                                                            <span style="vertical-align: middle; margin-left: 4px;">Join In App</span>
+                                                            <span style="vertical-align: middle; margin-left: 4px;">Join in Zoom App</span>
                                                         </button>
                                                         <button class="full mt-cs" disabled>
                                                             <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />

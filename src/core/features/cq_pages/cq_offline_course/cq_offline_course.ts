@@ -315,25 +315,54 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
         let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
         userFullname += " (" + userEmail + ")";
 
-        // this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
+        this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
+    }
+    async joinMeetingZoomNew(date: any): Promise<void>
+    {
+        let userId = this.CH.getUserId();
 
-        const zoomUrl = "zoomus://zoom.us/join?confno=" + meetingNumber + "&pwd=" + meetingPassword + "&uname=" + userFullname.replace(/ /g, "%20");
-        const playStoreUrl = "market://details?id=us.zoom.videomeetings";
+        let userEmail = (await this.CH.getUser().getProfile(userId)).email;
+        if (!userEmail)
+        {
+            this.CH.alert('Oops!', "It seems you haven't provided correct user email, please contact course administrator");
+            this.CH.errorLog("zoom error", "user email is not provided");
+            return;
+        }
 
+        let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
+        userFullname += " (" + userEmail + ")";
+
+        const zoomHttpsUrl = date.zoomMeetingJoinUrl + "&uname=" + encodeURIComponent(userFullname);
         WebIntent.startActivity({
             action: WebIntent.ACTION_VIEW,
-            url: zoomUrl
+            url: zoomHttpsUrl
         }).catch((err1) => {
-            if (!this.CH.isProduction()) this.CH.alert('Oops! Opening Zoom App was failed', JSON.stringify(err1));
+            if (!this.CH.isProduction()) this.CH.alert('Oops! First Opening Zoom App was failed!', JSON.stringify({
+                err1,
+                zoomHttpsUrl,
+            }));
 
+            const zoomUrl = "zoomus://zoom.us/join?confno=" + date.zoomMeetingNumber + "&pwd=" + date.zoomMeetingPassword + "&uname=" + encodeURIComponent(userFullname);
             WebIntent.startActivity({
                 action: WebIntent.ACTION_VIEW,
-                url: playStoreUrl
+                url: zoomUrl
             }).catch((err2) => {
-                this.CH.alert('Oops!', "Please install Zoom app then retry to join the meeting");
-                this.CH.errorLog("zoom error", {
-                    message: "zoom app is not installed and cannot open app market",
-                    err1, err2,
+                if (!this.CH.isProduction()) this.CH.alert('Oops! Second Opening Zoom App was failed!', JSON.stringify({
+                    err2,
+                    zoomUrl,
+                }));
+
+                const playStoreUrl = "market://details?id=us.zoom.videomeetings";
+                WebIntent.startActivity({
+                    action: WebIntent.ACTION_VIEW,
+                    url: playStoreUrl
+                }).catch((err3) => {
+                    this.CH.alert('Oops!', "Please install Zoom app then retry to join the meeting");
+                    this.CH.errorLog("zoom error", {
+                        message: "zoom app is not installed and app market cannot be opened",
+                        err1, err2, err3,
+                        zoomHttpsUrl, zoomUrl, playStoreUrl,
+                    });
                 });
             });
         });

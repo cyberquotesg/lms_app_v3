@@ -237,7 +237,7 @@
                                             <ion-card-content>
                                                 <div>
                                                     <ng-container *ngIf="session.buttonIsAlive">
-                                                        <button *ngIf="date.zoomMeetingid && date.zoomMeetingPassword" class="full" (click)="joinMeetingZoom(date.zoomMeetingid, date.zoomMeetingPassword)">
+                                                        <button *ngIf="date.zoomMeetingid && date.zoomMeetingPassword" class="full" (click)="joinMeetingZoomNew(date)">
                                                             <img src="assets/img/icons/zoom_meeting.png" style="display: inline-block; width: 21px; height: 21px; vertical-align: middle;" />
                                                             <span style="vertical-align: middle; margin-left: 4px;">Join in Zoom App</span>
                                                         </button>

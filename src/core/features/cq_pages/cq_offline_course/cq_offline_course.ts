@@ -313,7 +313,7 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
         }
 
         let userFullname = await this.CH.getUser().getUserFullNameWithDefault(userId);
-        userFullname += " (" + userEmail + ")");
+        userFullname += " (" + userEmail + ")";
 
         // this.CH.joinMeetingZoom(meetingNumber, meetingPassword, userFullname);
 

@@ -81,8 +81,6 @@ export class CqDashboard extends CqPage implements OnInit, OnDestroy
             {
                 this.pageData.sliderOptions.breakpoints[slidesPerView * widthIterator] = { slidesPerView, spaceBetween };
             }
-
-            this.pageData.title = this.CH.getOrganization("name");
         });
     }
     ionViewWillEnter(): void { this.usuallyOnViewWillEnter(); }
@@ -95,15 +93,19 @@ export class CqDashboard extends CqPage implements OnInit, OnDestroy
     {
         const params: any = {
             calls: {
-                filterMultiple: {
+                organizationName: {
                     cluster: 'CqLib',
-                    endpoint: 'get_filter_multiple',
-                    page: 'dashboard',
+                    endpoint: 'get_organization_name',
                 },
                 cqConfig: {
                     cluster: 'CqLib',
                     endpoint: 'get_cq_config',
                     name: 'mobile_course_media',
+                },
+                filterMultiple: {
+                    cluster: 'CqLib',
+                    endpoint: 'get_filter_multiple',
+                    page: 'dashboard',
                 },
             },
         };
@@ -111,8 +113,8 @@ export class CqDashboard extends CqPage implements OnInit, OnDestroy
         this.pageJobExecuter(jobName, params, (data) => {
             let allData = this.CH.toJson(data);
 
-            // filterMultiple
-            this.pageData.filterMultiple = allData.filterMultiple;
+            // organizationName
+            this.pageData.title = allData.organizationName;
 
             // cqConfig
             var cqConfig: any = {}; allData.cqConfig.forEach((config) => cqConfig[config.name] = config.value);
@@ -121,6 +123,9 @@ export class CqDashboard extends CqPage implements OnInit, OnDestroy
             this.pageData.mobileCourseMedia = Array.isArray(cqConfig.mobileCourseMedia) ? cqConfig.mobileCourseMedia : [cqConfig.mobileCourseMedia];
             this.pageData.offlineCourse = this.pageData.mobileCourseMedia.includes("offline");
             this.pageData.onlineCourse = this.pageData.mobileCourseMedia.includes("online");
+
+            // filterMultiple
+            this.pageData.filterMultiple = allData.filterMultiple;
 
             if (typeof nextFunction == 'function') nextFunction(jobName, moreloader, refresher, finalCallback);
         }, moreloader, refresher, finalCallback);

@@ -342,7 +342,7 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
                 zoomHttpsUrl,
             }));
 
-            const zoomUrl = "zoomus://zoom.us/join?confno=" + date.zoomMeetingNumber + "&pwd=" + date.zoomMeetingPassword + "&uname=" + encodeURIComponent(userFullname);
+            const zoomUrl = "zoomus://zoom.us/join?confno=" + date.zoomMeetingid + "&pwd=" + date.zoomMeetingPassword + "&uname=" + encodeURIComponent(userFullname);
             WebIntent.startActivity({
                 action: WebIntent.ACTION_VIEW,
                 url: zoomUrl

@@ -9,7 +9,8 @@ WEB
 ANDROID
 - Branch: cyberquote-development (dev) or cyberquote-production (prod)
 - Version in config.xml and moodle.config.json
-- npm run android_prepare
+- npm run android_prepare, atau
+	npm i && npm run android_install && ionic build && ionic cordova prepare android
 - Zoom SDK
 - npm run android_reinstall
 - Assets (Merge straightaway)
@@ -20,7 +21,8 @@ ANDROID
 IOS
 - Branch: cyberquote-development (dev) or cyberquote-production (prod)
 - Version in config.xml and moodle.config.json
-- npm run ios_prepare
+- npm run ios_prepare, atau
+	npm i && npm run ios_install && ionic build && ionic cordova prepare ios
 - Zoom SDK
 - npm run ios_reinstall
 - Assets (DO NOT Merge straightaway)

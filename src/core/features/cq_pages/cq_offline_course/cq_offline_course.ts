@@ -3,6 +3,7 @@
 import { Component, ViewChild, Renderer2, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { WebIntent } from '@singletons';
+import { CoreUtilsProvider } from '@services/utils/utils';
 import { CqHelper } from '../services/cq_helper';
 import { CqPage } from '../classes/cq_page';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
@@ -35,7 +36,7 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
     private zoomAgentInitted: boolean = false;
     loading: any = false;
 
-    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef, platform: Platform)
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef, platform: Platform, private utils: CoreUtilsProvider)
     {
         super(renderer, CH, elementRef);
         this.platform = platform;
@@ -339,6 +340,7 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
         }).catch((err1) => {
             if (!this.CH.isProduction()) this.CH.alert('Oops! First Opening Zoom App was failed!', JSON.stringify({
                 err1,
+                action: WebIntent.ACTION_VIEW,
                 zoomHttpsUrl,
             }));
 
@@ -349,19 +351,30 @@ export class CqOfflineCourse extends CqPage implements OnInit, OnDestroy
             }).catch((err2) => {
                 if (!this.CH.isProduction()) this.CH.alert('Oops! Second Opening Zoom App was failed!', JSON.stringify({
                     err2,
+                    action: WebIntent.ACTION_VIEW,
                     zoomUrl,
                 }));
 
-                const playStoreUrl = "market://details?id=us.zoom.videomeetings";
-                WebIntent.startActivity({
-                    action: WebIntent.ACTION_VIEW,
-                    url: playStoreUrl
-                }).catch((err3) => {
-                    this.CH.alert('Oops!', "Please install Zoom app then retry to join the meeting");
-                    this.CH.errorLog("zoom error", {
-                        message: "zoom app is not installed and app market cannot be opened",
-                        err1, err2, err3,
-                        zoomHttpsUrl, zoomUrl, playStoreUrl,
+                this.utils.openInBrowser(
+                    zoomHttpsUrl
+                ).catch((err3) => {
+                    if (!this.CH.isProduction()) this.CH.alert('Oops! Browser Opening Zoom App was failed!', JSON.stringify({
+                        err3,
+                        zoomHttpsUrl,
+                    }));
+
+                    const playStoreUrl = "market://details?id=us.zoom.videomeetings";
+                    WebIntent.startActivity({
+                        action: WebIntent.ACTION_VIEW,
+                        url: playStoreUrl
+                    }).catch((err4) => {
+                        this.CH.alert('Oops!', "Please install Zoom app then retry to join the meeting");
+                        this.CH.errorLog("zoom error", {
+                            message: "zoom app is not installed and app market cannot be opened",
+                            err1, err2, err3, err4,
+                            action: WebIntent.ACTION_VIEW,
+                            zoomHttpsUrl, zoomUrl, playStoreUrl,
+                        });
                     });
                 });
             });

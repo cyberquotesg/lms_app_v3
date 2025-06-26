@@ -305,7 +305,6 @@ export class CqMyReports extends CqPage implements OnInit, OnDestroy
             this.pageData.selectedYear = year;
             let yearIndex = this.pageData.availableYears.indexOf(this.pageData.selectedYear);
             this.pageSlider?.slideTo(yearIndex);
-            if (typeof this.pageData[this.pageData.selectedYear] == "undefined") this.pageForceReferesh();
         }
     }
     pageSliderChange(): void

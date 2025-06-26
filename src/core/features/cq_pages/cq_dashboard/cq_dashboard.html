@@ -13,17 +13,15 @@
         <div class="dashboard-box">
             <div class="db-sizer"></div>
             <div class="db-wrapper">
-                <h4 class="db-title">
-                    {{ 'core.cqTotalTrainingHours' | translate }}
-                </h4>
+                <h4 class="db-title">TOTAL TRAINING HOURS</h4>
                 <div class="db-body">
                     <div class="text-center mr-24">
                         <div class="db-value second-font">{{ pageData.dashHours }}</div>
-                        <div class="db-label second-font">{{ 'core.cqLongHoursSymbol' | translate }}</div>
+                        <div class="db-label second-font">Hours</div>
                     </div>
                     <div class="text-center">
                         <div class="db-value second-font">{{ pageData.dashMinutes }}</div>
-                        <div class="db-label second-font">{{ 'core.cqLongMinutesSymbol' | translate }}</div>
+                        <div class="db-label second-font">{{ Minutes }}</div>
                     </div>
                 </div>
             </div>
@@ -31,12 +29,8 @@
         <div class="dashboard-box-fake"></div>
         
         <div class="pl-24 pt-40 pr-24 pb-20" style="display: flex; justify-content: space-between;">
-            <div style="font-weight: 900;">
-                {{ 'core.cqUpcomingRegisteredCourses' | translate }}
-            </div>
-            <div style="opacity: 0.8;" (click)="goToMyCourses()">
-                View All
-            </div>
+            <div style="font-weight: 900;">Upcoming Courses</div>
+            <div style="opacity: 0.8;" (click)="goToMyCourses()">View All</div>
         </div>
 
         <ion-card class="mt-0">

@@ -13,13 +13,14 @@
 // limitations under the License.
 
 import { Directive, ElementRef, OnInit, Output, EventEmitter, OnDestroy } from '@angular/core';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreUtils } from '@singletons/utils';
 
 /**
  * Directive to listen for element resize events.
  */
 @Directive({
     selector: '[onResize]',
+    standalone: true,
 })
 export class CoreOnResizeDirective implements OnInit, OnDestroy {
 

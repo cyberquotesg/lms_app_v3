@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Clipboard, Translate } from '@singletons';
-import { CoreToasts } from '@services/toasts';
+import { CoreToasts } from '@services/overlays/toasts';
 import { Locutus } from './locutus';
 import { CoreError } from '@classes/errors/error';
 import { convertTextToHTMLElement } from '../utils/create-html-element';
@@ -40,7 +40,7 @@ export class CoreText {
         }
 
         if (text.slice(-1) != '/') {
-            return text + '/';
+            return `${text}/`;
         }
 
         return text;
@@ -57,7 +57,7 @@ export class CoreText {
             return text;
         }
 
-        return '/' + text;
+        return `/${text}`;
     }
 
     /**
@@ -209,7 +209,7 @@ export class CoreText {
         if (text === undefined || text === null || (typeof text === 'number' && isNaN(text))) {
             return '';
         } else if (typeof text != 'string') {
-            return '' + text;
+            return `${text}`;
         }
 
         return text
@@ -260,7 +260,7 @@ export class CoreText {
         if (text === undefined || text === null || (typeof text === 'number' && isNaN(text))) {
             return '';
         } else if (typeof text !== 'string') {
-            return '' + text;
+            return `${text}`;
         }
 
         if (doubleEncode) {
@@ -283,10 +283,14 @@ export class CoreText {
      * @returns Formatted text.
      */
     static formatHtmlLines(text: string): string {
+        if (!text) {
+            return '';
+        }
+
         const hasHTMLTags = CoreText.hasHTMLTags(text);
-        if (text.indexOf('<p>') == -1) {
+        if (text.indexOf('<p>') === -1) {
             // Wrap the text in <p> tags.
-            text = '<p>' + text + '</p>';
+            text = `<p>${text}</p>`;
         }
 
         if (!hasHTMLTags) {
@@ -362,7 +366,7 @@ export class CoreText {
             return text;
         }
 
-        const regex = new RegExp('(' + searchText + ')', 'gi');
+        const regex = new RegExp(`(${searchText})`, 'gi');
 
         return text.replace(regex, '<mark class="matchtext">$1</mark>');
     }
@@ -624,9 +628,9 @@ export class CoreText {
      */
     static twoDigits(num: string | number): string {
         if (Number(num) < 10) {
-            return '0' + num;
+            return `0${num}`;
         } else {
-            return '' + num; // Convert to string for coherence.
+            return `${num}`; // Convert to string for coherence.
         }
     }
 
@@ -663,4 +667,4 @@ export enum CoreTextFormat {
     FORMAT_MARKDOWN = 4, // Markdown-formatted text http://daringfireball.net/projects/markdown/
 }
 
-export const defaultTextFormat = CoreTextFormat.FORMAT_HTML;
+export const DEFAULT_TEXT_FORMAT = CoreTextFormat.FORMAT_HTML;

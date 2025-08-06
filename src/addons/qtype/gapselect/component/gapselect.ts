@@ -16,6 +16,7 @@ import { Component,  ElementRef } from '@angular/core';
 
 import { CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
 import { CoreQuestionHelper } from '@features/question/services/question-helper';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render a gap select question.
@@ -23,7 +24,11 @@ import { CoreQuestionHelper } from '@features/question/services/question-helper'
 @Component({
     selector: 'addon-qtype-gapselect',
     templateUrl: 'addon-qtype-gapselect.html',
-    styleUrls: ['gapselect.scss'],
+    styleUrl: 'gapselect.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonQtypeGapSelectComponent extends CoreQuestionBaseComponent {
 
@@ -36,6 +41,7 @@ export class AddonQtypeGapSelectComponent extends CoreQuestionBaseComponent {
      */
     init(): void {
         this.initOriginalTextComponent('.qtext');
+        this.onReadyPromise.resolve();
     }
 
     /**

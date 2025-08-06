@@ -20,12 +20,14 @@ import { CorePromisedValue } from '@classes/promised-value';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { CoreGroupInfo } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { AddonModFeedbackAttemptItem, AddonModFeedbackAttemptsSource } from '../../classes/feedback-attempts-source';
 import { AddonModFeedbackWSAnonAttempt, AddonModFeedbackWSAttempt } from '../../services/feedback';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { Translate } from '@singletons';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays feedback attempts.
@@ -33,8 +35,12 @@ import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 @Component({
     selector: 'page-addon-mod-feedback-attempts',
     templateUrl: 'attempts.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonModFeedbackAttemptsPage implements AfterViewInit, OnDestroy {
+export default class AddonModFeedbackAttemptsPage implements AfterViewInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
@@ -116,8 +122,7 @@ export class AddonModFeedbackAttemptsPage implements AfterViewInit, OnDestroy {
 
             this.promisedAttempts.resolve(new AddonModFeedbackAttemptsManager(source, this.route.component));
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
-
+            CoreAlerts.showError(error);
             CoreNavigator.back();
 
             return;
@@ -135,7 +140,7 @@ export class AddonModFeedbackAttemptsPage implements AfterViewInit, OnDestroy {
         } catch (error) {
             this.fetchFailed = true;
 
-            CoreDomUtils.showErrorModalDefault(error, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.course.errorgetmodule') });
         }
 
         await attempts.start(this.splitView);
@@ -163,7 +168,7 @@ export class AddonModFeedbackAttemptsPage implements AfterViewInit, OnDestroy {
         } catch (error) {
             this.fetchFailed = true;
 
-            CoreDomUtils.showErrorModalDefault(error, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.course.errorgetmodule') });
         } finally {
             infiniteComplete && infiniteComplete();
         }
@@ -180,13 +185,13 @@ export class AddonModFeedbackAttemptsPage implements AfterViewInit, OnDestroy {
         try {
             this.fetchFailed = false;
 
-            await CoreUtils.ignoreErrors(attempts.getSource().invalidateCache());
+            await CorePromiseUtils.ignoreErrors(attempts.getSource().invalidateCache());
             await attempts.getSource().loadFeedback();
             await attempts.reload();
         } catch (error) {
             this.fetchFailed = true;
 
-            CoreDomUtils.showErrorModalDefault(error, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.course.errorgetmodule') });
         } finally {
             refresher.complete();
         }

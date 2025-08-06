@@ -45,7 +45,7 @@ export async function getNotesServices(): Promise<Type<unknown>[]> {
 const routes: Routes = [
     {
         path: 'notes',
-        loadChildren: () => import('@addons/notes/notes-lazy.module').then(m => m.AddonNotesLazyModule),
+        loadComponent: () => import('./pages/list/list'),
     },
 ];
 

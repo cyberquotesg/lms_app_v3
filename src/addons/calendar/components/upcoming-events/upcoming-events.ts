@@ -15,9 +15,7 @@
 import { Component, OnDestroy, OnInit, Input, DoCheck, Output, EventEmitter, KeyValueDiffers, KeyValueDiffer } from '@angular/core';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import {
-    AddonCalendarProvider,
     AddonCalendarEventToDisplay,
     AddonCalendar,
 } from '../../services/calendar';
@@ -29,6 +27,9 @@ import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreUrl } from '@singletons/url';
 import { CoreTime } from '@singletons/time';
 import { Translate } from '@singletons';
+import { ADDON_CALENDAR_UNDELETED_EVENT_EVENT } from '@addons/calendar/constants';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component that displays upcoming events.
@@ -36,7 +37,11 @@ import { Translate } from '@singletons';
 @Component({
     selector: 'addon-calendar-upcoming-events',
     templateUrl: 'addon-calendar-upcoming-events.html',
-    styleUrls: ['../../calendar-common.scss'],
+    styleUrl: '../../calendar-common.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonCalendarUpcomingEventsComponent implements OnInit, DoCheck, OnDestroy {
 
@@ -70,7 +75,7 @@ export class AddonCalendarUpcomingEventsComponent implements OnInit, DoCheck, On
 
         // Listen for events "undeleted" (offline).
         this.undeleteEventObserver = CoreEvents.on(
-            AddonCalendarProvider.UNDELETED_EVENT_EVENT,
+            ADDON_CALENDAR_UNDELETED_EVENT_EVENT,
             (data) => {
                 if (!data || !data.eventId) {
                     return;
@@ -174,7 +179,7 @@ export class AddonCalendarUpcomingEventsComponent implements OnInit, DoCheck, On
 
             this.logView();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.calendar.errorloadevents', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.calendar.errorloadevents') });
         }
 
         this.loaded = true;
@@ -277,7 +282,7 @@ export class AddonCalendarUpcomingEventsComponent implements OnInit, DoCheck, On
             return this.onlineEvents;
         }
 
-        const start = Date.now() / 1000;
+        const start = CoreTime.timestamp();
         const end = start + (CoreConstants.SECONDS_DAY * this.lookAhead);
         let result: AddonCalendarEventToDisplay[] = this.onlineEvents;
 

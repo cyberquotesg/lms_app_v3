@@ -24,9 +24,8 @@ import { CoreCourseModulePrefetchDelegate } from '@features/course/services/modu
 import { CoreTag, CoreTagItem } from '@features/tag/services/tag';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreErrorHelper } from '@services/error-helper';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { Translate } from '@singletons';
 import {
     AddonModBook,
@@ -36,8 +35,11 @@ import {
 } from '../../services/book';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreUrl } from '@singletons/url';
-import { ADDON_MOD_BOOK_COMPONENT, AddonModBookNavStyle } from '../../constants';
-import { CoreModals } from '@services/modals';
+import { ADDON_MOD_BOOK_COMPONENT, ADDON_MOD_BOOK_MODNAME, AddonModBookNavStyle } from '../../constants';
+import { CoreModals } from '@services/overlays/modals';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreTagListComponent } from '@features/tag/components/list/list';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays a book contents.
@@ -45,9 +47,14 @@ import { CoreModals } from '@services/modals';
 @Component({
     selector: 'page-addon-mod-book-contents',
     templateUrl: 'contents.html',
-    styleUrls: ['contents.scss'],
+    styleUrl: 'contents.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreTagListComponent,
+    ],
 })
-export class AddonModBookContentsPage implements OnInit, OnDestroy {
+export default class AddonModBookContentsPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreSwipeSlidesComponent) swipeSlidesComponent?: CoreSwipeSlidesComponent;
 
@@ -79,8 +86,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
             this.initialChapterId = CoreNavigator.getRouteNumberParam('chapterId');
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
-
+            CoreAlerts.showError(error);
             CoreNavigator.back();
 
             return;
@@ -136,7 +142,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
 
             await source.load();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.course.errorgetmodule') });
         } finally {
             this.loaded = true;
         }
@@ -163,13 +169,13 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
      */
     async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
         if (this.manager) {
-            await CoreUtils.ignoreErrors(Promise.all([
+            await CorePromiseUtils.ignoreErrors(Promise.all([
                 this.manager.getSource().invalidateContent(),
                 CoreCourseModulePrefetchDelegate.invalidateCourseUpdates(this.courseId), // To detect if book was updated.
             ]));
         }
 
-        await CoreUtils.ignoreErrors(this.fetchContent(true));
+        await CorePromiseUtils.ignoreErrors(this.fetchContent(true));
 
         refresher?.complete();
     }
@@ -219,13 +225,13 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
         }
 
         // Chapter loaded, log view.
-        await CoreUtils.ignoreErrors(AddonModBook.logView(this.module.instance, chapterId));
+        await CorePromiseUtils.ignoreErrors(AddonModBook.logView(this.module.instance, chapterId));
 
         CoreAnalytics.logEvent({
             type: CoreAnalyticsEventType.VIEW_ITEM,
             ws: 'mod_book_view_book',
             name: this.module.name,
-            data: { id: this.module.instance, category: 'book', chapterid: chapterId },
+            data: { id: this.module.instance, category: ADDON_MOD_BOOK_MODNAME, chapterid: chapterId },
             url: CoreUrl.addParamsToUrl(`/mod/book/view.php?id=${this.module.id}`, { chapterid: chapterId }),
         });
 

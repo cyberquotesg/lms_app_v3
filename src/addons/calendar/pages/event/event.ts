@@ -13,39 +13,48 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { AlertOptions } from '@ionic/core';
 import {
     AddonCalendar,
     AddonCalendarEventToDisplay,
-    AddonCalendarProvider,
 } from '../../services/calendar';
 import { AddonCalendarEventReminder, AddonCalendarHelper } from '../../services/calendar-helper';
 import { AddonCalendarOffline } from '../../services/calendar-offline';
-import { AddonCalendarSync, AddonCalendarSyncEvents, AddonCalendarSyncProvider } from '../../services/calendar-sync';
+import { AddonCalendarSync, AddonCalendarSyncEvents } from '../../services/calendar-sync';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreText } from '@singletons/text';
 import { CoreSites } from '@services/sites';
-import { CoreCourse } from '@features/course/services/course';
-import { CoreTimeUtils } from '@services/utils/time';
-import { NgZone, Translate } from '@singletons';
+import { CoreCourseModuleHelper } from '@features/course/services/course-module-helper';
+import { CoreTime } from '@singletons/time';
+import { DomSanitizer, NgZone, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
 import { CoreNavigator } from '@services/navigator';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { CoreConstants } from '@/core/constants';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { AddonCalendarEventsSource } from '@addons/calendar/classes/events-source';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
-import { CoreReminders, CoreRemindersService } from '@features/reminders/services/reminders';
+import { CoreReminders } from '@features/reminders/services/reminders';
 import { CoreLocalNotifications } from '@services/local-notifications';
 import { CorePlatform } from '@services/platform';
 import { CoreConfig } from '@services/config';
-import { CoreToasts, ToastDuration } from '@services/toasts';
-import { CorePopovers } from '@services/popovers';
-import { CoreLoadings } from '@services/loadings';
+import { CoreToasts, ToastDuration } from '@services/overlays/toasts';
+import { CorePopovers } from '@services/overlays/popovers';
+import { CoreLoadings } from '@services/overlays/loadings';
 import { CoreUrl } from '@singletons/url';
+import {
+    ADDON_CALENDAR_AUTO_SYNCED,
+    ADDON_CALENDAR_DELETED_EVENT_EVENT,
+    ADDON_CALENDAR_EDIT_EVENT_EVENT,
+    ADDON_CALENDAR_MANUAL_SYNCED,
+    ADDON_CALENDAR_NEW_EVENT_DISCARDED_EVENT,
+    ADDON_CALENDAR_NEW_EVENT_EVENT,
+    ADDON_CALENDAR_UNDELETED_EVENT_EVENT,
+} from '@addons/calendar/constants';
+import { REMINDERS_DEFAULT_NOTIFICATION_TIME_CHANGED } from '@features/reminders/constants';
+import { CoreAlerts, CoreAlertsConfirmOptions } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays a single calendar event.
@@ -54,8 +63,12 @@ import { CoreUrl } from '@singletons/url';
     selector: 'page-addon-calendar-event',
     templateUrl: 'event.html',
     styleUrls: ['../../calendar-common.scss', 'event.scss'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonCalendarEventPage implements OnInit, OnDestroy {
+export default class AddonCalendarEventPage implements OnInit, OnDestroy {
 
     protected eventId!: number;
     protected siteHomeId: number;
@@ -99,7 +112,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         this.canEdit = AddonCalendar.canEditEventsInSite();
 
         // Listen for event edited. If current event is edited, reload the data.
-        this.editEventObserver = CoreEvents.on(AddonCalendarProvider.EDIT_EVENT_EVENT, (data) => {
+        this.editEventObserver = CoreEvents.on(ADDON_CALENDAR_EDIT_EVENT_EVENT, (data) => {
             if (data && data.eventId === this.eventId) {
                 this.eventLoaded = false;
                 this.refreshEvent(true, false);
@@ -107,7 +120,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         }, this.currentSiteId);
 
         // Listen for event created. If user edits the data of a new offline event or it's sent to server, this event is triggered.
-        this.newEventObserver = CoreEvents.on(AddonCalendarProvider.NEW_EVENT_EVENT, (data) => {
+        this.newEventObserver = CoreEvents.on(ADDON_CALENDAR_NEW_EVENT_EVENT, (data) => {
             if (this.eventId < 0 && data && (data.eventId === this.eventId || data.oldEventId === this.eventId)) {
                 this.eventId = data.eventId;
                 this.eventLoaded = false;
@@ -117,14 +130,14 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
         // Refresh data if this calendar event is synchronized automatically.
         this.syncObserver = CoreEvents.on(
-            AddonCalendarSyncProvider.AUTO_SYNCED,
+            ADDON_CALENDAR_AUTO_SYNCED,
             (data) => this.checkSyncResult(false, data),
             this.currentSiteId,
         );
 
         // Refresh data if calendar events are synchronized manually but not by this page.
         this.manualSyncObserver = CoreEvents.on(
-            AddonCalendarSyncProvider.MANUAL_SYNCED,
+            ADDON_CALENDAR_MANUAL_SYNCED,
             (data) => this.checkSyncResult(true, data),
             this.currentSiteId,
         );
@@ -138,14 +151,14 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         });
 
         // Reload reminders if default notification time changes.
-        this.defaultTimeChangedObserver = CoreEvents.on(CoreRemindersService.DEFAULT_NOTIFICATION_TIME_CHANGED, () => {
+        this.defaultTimeChangedObserver = CoreEvents.on(REMINDERS_DEFAULT_NOTIFICATION_TIME_CHANGED, () => {
             this.loadReminders();
         }, this.currentSiteId);
 
         // Set and update current time. Use a 5 seconds error margin.
-        this.currentTime = CoreTimeUtils.timestamp();
+        this.currentTime = CoreTime.timestamp();
         this.updateCurrentTime = window.setInterval(() => {
-            this.currentTime = CoreTimeUtils.timestamp();
+            this.currentTime = CoreTime.timestamp();
         }, 5000);
 
         this.checkExactAlarms();
@@ -182,7 +195,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         try {
             this.eventId = CoreNavigator.getRequiredRouteNumberParam('id');
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
 
             CoreNavigator.back();
 
@@ -234,7 +247,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
                 if (this.eventId < 0) {
                     // It's an offline event, but it wasn't found. Shouldn't happen.
-                    CoreDomUtils.showErrorModal('Event not found.');
+                    CoreAlerts.showError('Event not found.');
                     CoreNavigator.back();
 
                     return;
@@ -256,7 +269,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
             if (this.event.moduleIcon) {
                 // It's a module event, translate the module name to the current language.
-                const name = CoreCourse.translateModuleName(this.event.modulename || '');
+                const name = CoreCourseModuleHelper.translateModuleName(this.event.modulename || '');
                 if (name.indexOf('core.mod_') === -1) {
                     this.event.modulename = name;
                 }
@@ -290,7 +303,9 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
             if (this.event.location) {
                 // Build a link to open the address in maps.
                 this.event.location = CoreText.decodeHTML(this.event.location);
-                this.event.encodedLocation = CoreUrl.buildAddressURL(this.event.location);
+                this.event.encodedLocation = DomSanitizer.bypassSecurityTrustUrl(CoreUrl.buildMapsURL({
+                    query: this.event.location,
+                }));
             }
 
             // Check if event was deleted in offine.
@@ -309,7 +324,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
             await Promise.all(promises);
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.calendar.errorloadevent', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.calendar.errorloadevent') });
         }
 
         this.eventLoaded = true;
@@ -348,7 +363,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         try {
             const result = await AddonCalendarSync.syncEvents();
             if (result.warnings && result.warnings.length) {
-                CoreDomUtils.showAlert(undefined, result.warnings[0]);
+                CoreAlerts.show({ message: result.warnings[0] });
             }
 
             if (result.deleted && result.deleted.indexOf(this.eventId) != -1) {
@@ -364,14 +379,14 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
                 result.source = 'event';
 
                 CoreEvents.trigger(
-                    AddonCalendarSyncProvider.MANUAL_SYNCED,
+                    ADDON_CALENDAR_MANUAL_SYNCED,
                     result,
                     this.currentSiteId,
                 );
             }
         } catch (error) {
             if (showErrors) {
-                CoreDomUtils.showErrorModalDefault(error, 'core.errorsync', true);
+                CoreAlerts.showError(error, { default: Translate.instant('core.errorsync') });
             }
         }
 
@@ -418,7 +433,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         e.stopPropagation();
 
         try {
-            await CoreDomUtils.showDeleteConfirm();
+            await CoreAlerts.confirmDelete(Translate.instant('core.areyousure'));
 
             const modal = await CoreLoadings.show('core.deleting', true);
 
@@ -426,7 +441,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
                 await CoreReminders.removeReminder(id);
                 await this.loadReminders();
             } catch (error) {
-                CoreDomUtils.showErrorModalDefault(error, 'Error deleting reminder');
+                CoreAlerts.showError(error, { default: 'Error deleting reminder' });
             } finally {
                 modal.dismiss();
             }
@@ -471,7 +486,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         }
         promises.push(AddonCalendar.invalidateTimeFormat());
 
-        await CoreUtils.allPromisesIgnoringErrors(promises);
+        await CorePromiseUtils.allPromisesIgnoringErrors(promises);
 
         await this.fetchEvent(sync, showErrors);
     }
@@ -491,9 +506,10 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
             return;
         }
 
-        const title = Translate.instant('addon.calendar.deleteevent');
-        const options: AlertOptions = {};
         let message: string;
+        const options: CoreAlertsConfirmOptions = {
+            header: Translate.instant('addon.calendar.deleteevent'),
+        };
 
         if (this.event.eventcount > 1) {
             // It's a repeated event.
@@ -525,7 +541,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
         let deleteAll = false;
         try {
-            deleteAll = await CoreDomUtils.showConfirm(message, title, undefined, undefined, options);
+            deleteAll = await CoreAlerts.confirm(message, options);
         } catch {
             // User canceled.
             return;
@@ -552,9 +568,9 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
 
             // Trigger an event.
             if (this.event.id < 0) {
-                CoreEvents.trigger(AddonCalendarProvider.NEW_EVENT_DISCARDED_EVENT, {}, CoreSites.getCurrentSiteId());
+                CoreEvents.trigger(ADDON_CALENDAR_NEW_EVENT_DISCARDED_EVENT, {}, CoreSites.getCurrentSiteId());
             } else {
-                CoreEvents.trigger(AddonCalendarProvider.DELETED_EVENT_EVENT, {
+                CoreEvents.trigger(ADDON_CALENDAR_DELETED_EVENT_EVENT, {
                     eventId: this.eventId,
                     sent: onlineEventDeleted,
                 }, CoreSites.getCurrentSiteId());
@@ -574,7 +590,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
                 this.event.deleted = true;
             }
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Error deleting event.');
+            CoreAlerts.showError(error, { default: 'Error deleting event.' });
         }
 
         modal.dismiss();
@@ -595,14 +611,14 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
             await AddonCalendarOffline.unmarkDeleted(this.event.id);
 
             // Trigger an event.
-            CoreEvents.trigger(AddonCalendarProvider.UNDELETED_EVENT_EVENT, {
+            CoreEvents.trigger(ADDON_CALENDAR_UNDELETED_EVENT_EVENT, {
                 eventId: this.eventId,
             }, CoreSites.getCurrentSiteId());
 
             this.event.deleted = false;
 
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Error undeleting event.');
+            CoreAlerts.showError(error, { default: 'Error undeleting event.' });
         }
 
         modal.dismiss();

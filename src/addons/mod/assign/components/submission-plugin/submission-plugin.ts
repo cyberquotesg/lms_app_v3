@@ -24,8 +24,9 @@ import { AddonModAssignHelper, AddonModAssignPluginConfig } from '../../services
 import { AddonModAssignSubmissionDelegate } from '../../services/submission-delegate';
 import { CoreFileEntry } from '@services/file-helper';
 import type { AddonModAssignSubmissionPluginBaseComponent } from '@addons/mod/assign/classes/base-submission-plugin-component';
-import { ADDON_MOD_ASSIGN_COMPONENT } from '../../constants';
+import { ADDON_MOD_ASSIGN_COMPONENT_LEGACY } from '../../constants';
 import { toBoolean } from '@/core/transforms/boolean';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component that displays an assignment submission plugin.
@@ -33,6 +34,10 @@ import { toBoolean } from '@/core/transforms/boolean';
 @Component({
     selector: 'addon-mod-assign-submission-plugin',
     templateUrl: 'addon-mod-assign-submission-plugin.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonModAssignSubmissionPluginComponent implements OnChanges {
 
@@ -48,7 +53,7 @@ export class AddonModAssignSubmissionPluginComponent implements OnChanges {
     data?: AddonModAssignSubmissionPluginData; // Data to pass to the component.
 
     // Data to render the plugin if it isn't supported.
-    component = ADDON_MOD_ASSIGN_COMPONENT;
+    component = ADDON_MOD_ASSIGN_COMPONENT_LEGACY;
     text = '';
     files: CoreFileEntry[] = [];
     notSupported = false;

@@ -18,12 +18,11 @@ import {
     AddonMessagesOffline, AddonMessagesOfflineAnyMessagesFormatted,
 } from './messages-offline';
 import {
-    AddonMessagesProvider,
     AddonMessages,
     AddonMessagesGetMessagesWSParams,
 } from './messages';
 import { CoreEvents } from '@singletons/events';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreWSError } from '@classes/errors/wserror';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreSites } from '@services/sites';
 import { CoreNetwork } from '@services/network';
@@ -33,14 +32,26 @@ import { CoreError } from '@classes/errors/error';
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreWait } from '@singletons/wait';
 import { CoreErrorHelper, CoreErrorObject } from '@services/error-helper';
+import { ADDON_MESSAGES_AUTO_SYNCED, ADDON_MESSAGES_LIMIT_MESSAGES } from '../constants';
+
+declare module '@singletons/events' {
+
+    /**
+     * Augment CoreEventsData interface with events specific to this service.
+     *
+     * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
+     */
+    export interface CoreEventsData {
+        [ADDON_MESSAGES_AUTO_SYNCED]: AddonMessagesSyncEvents;
+    }
+
+}
 
 /**
  * Service to sync messages.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessagesSyncEvents> {
-
-    static readonly AUTO_SYNCED = 'addon_messages_autom_synced';
 
     constructor() {
         super('AddonMessagesSync');
@@ -55,9 +66,9 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
      */
     protected getSyncId(conversationId?: number, userId?: number): string {
         if (conversationId) {
-            return 'conversationid:' + conversationId;
+            return `conversationid:${conversationId}`;
         } else if (userId) {
-            return 'userid:' + userId;
+            return `userid:${userId}`;
         } else {
             // Should not happen.
             throw new CoreError('Incorrect messages sync id.');
@@ -73,7 +84,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
      * @returns Promise resolved if sync is successful, rejected if sync fails.
      */
     syncAllDiscussions(siteId?: string, onlyDeviceOffline: boolean = false): Promise<void> {
-        const syncFunctionLog = 'all discussions' + (onlyDeviceOffline ? ' (Only offline)' : '');
+        const syncFunctionLog = `all discussions${onlyDeviceOffline ? ' (Only offline)' : ''}`;
 
         return this.syncOnSites(syncFunctionLog, (siteId) => this.syncAllDiscussionsFunc(onlyDeviceOffline, siteId), siteId);
     }
@@ -113,7 +124,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
                 }
 
                 // Sync successful, send event.
-                CoreEvents.trigger(AddonMessagesSyncProvider.AUTO_SYNCED, result, siteId);
+                CoreEvents.trigger(ADDON_MESSAGES_AUTO_SYNCED, result, siteId);
 
                 return;
             }));
@@ -126,7 +137,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
                 }
 
                 // Sync successful, send event.
-                CoreEvents.trigger(AddonMessagesSyncProvider.AUTO_SYNCED, result, siteId);
+                CoreEvents.trigger(ADDON_MESSAGES_AUTO_SYNCED, result, siteId);
 
                 return;
             }));
@@ -216,7 +227,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
 
             const text = ('text' in message ? message.text : message.smallmessage) || '';
             const textFieldName = conversationId ? 'text' : 'smallmessage';
-            const wrappedText = message[textFieldName][0] != '<' ? '<p>' + text + '</p>' : text;
+            const wrappedText = message[textFieldName][0] != '<' ? `<p>${text}</p>` : text;
 
             try {
                 if (onlineMessages.indexOf(wrappedText) != -1) {
@@ -227,7 +238,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
                     await AddonMessages.sendMessageOnline(userId, text, siteId);
                 }
             } catch (error) {
-                if (!CoreUtils.isWebServiceError(error)) {
+                if (!CoreWSError.isWebServiceError(error)) {
                     // Error sending, stop execution.
                     if (CoreNetwork.isOnline()) {
                         // App is online, unmark deviceoffline if marked.
@@ -305,7 +316,7 @@ export class AddonMessagesSyncProvider extends CoreSyncBaseProvider<AddonMessage
             const params: AddonMessagesGetMessagesWSParams = {
                 useridto: userId,
                 useridfrom: siteCurrentUserId,
-                limitnum: AddonMessagesProvider.LIMIT_MESSAGES,
+                limitnum: ADDON_MESSAGES_LIMIT_MESSAGES,
             };
             const preSets: CoreSiteWSPreSets = {
                 cacheKey: AddonMessages.getCacheKeyForDiscussion(userId),

@@ -14,6 +14,7 @@
 
 import { Component } from '@angular/core';
 import { AddonModDataFieldPluginBaseComponent } from '../../../classes/base-field-plugin-component';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render data menu field.
@@ -21,6 +22,10 @@ import { AddonModDataFieldPluginBaseComponent } from '../../../classes/base-fiel
 @Component({
     selector: 'addon-mod-data-field-menu',
     templateUrl: 'addon-mod-data-field-menu.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonModDataFieldMenuComponent extends AddonModDataFieldPluginBaseComponent {
 
@@ -42,7 +47,7 @@ export class AddonModDataFieldMenuComponent extends AddonModDataFieldPluginBaseC
             val = this.value.content;
         }
 
-        this.addControl('f_' + this.field.id, val);
+        this.addControl(`f_${this.field.id}`, val);
     }
 
 }

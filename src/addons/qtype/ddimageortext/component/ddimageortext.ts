@@ -17,6 +17,8 @@ import { Component, OnDestroy, ElementRef } from '@angular/core';
 import { AddonModQuizQuestionBasicData, CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
 import { CoreQuestionHelper } from '@features/question/services/question-helper';
 import { AddonQtypeDdImageOrTextQuestion } from '../classes/ddimageortext';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreText } from '@singletons/text';
 
 /**
  * Component to render a drag-and-drop onto image question.
@@ -25,6 +27,10 @@ import { AddonQtypeDdImageOrTextQuestion } from '../classes/ddimageortext';
     selector: 'addon-qtype-ddimageortext',
     templateUrl: 'addon-qtype-ddimageortext.html',
     styleUrls: ['../../../../core/features/question/question.scss', 'ddimageortext.scss'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonQtypeDdImageOrTextComponent
     extends CoreQuestionBaseComponent<AddonModQuizDdImageOrTextQuestionData>
@@ -45,11 +51,15 @@ export class AddonQtypeDdImageOrTextComponent
      */
     init(): void {
         if (!this.question) {
+            this.onReadyPromise.resolve();
+
             return;
         }
 
         const questionElement = this.initComponent();
         if (!questionElement) {
+            this.onReadyPromise.resolve();
+
             return;
         }
 
@@ -57,6 +67,7 @@ export class AddonQtypeDdImageOrTextComponent
         const ddArea = questionElement.querySelector('.ddarea');
         if (!ddArea) {
             this.logger.warn('Aborting because of an error parsing question.', this.question.slot);
+            this.onReadyPromise.resolve();
 
             return CoreQuestionHelper.showComponentError(this.onAbort);
         }
@@ -78,12 +89,19 @@ export class AddonQtypeDdImageOrTextComponent
             if (this.question.amdArgs[1] !== undefined) {
                 this.question.readOnly = !!this.question.amdArgs[1];
             }
-            if (this.question.amdArgs[2] !== undefined) {
-                this.drops = <unknown[]> this.question.amdArgs[2];
+
+            // Try to get drop info from data attribute (Moodle 5.1+). If not found, fallback to old way of retrieving it.
+            const dropZones = ddArea.querySelector<HTMLElement>('.dropzones');
+            const placeInfo = dropZones?.dataset.placeInfo ?
+                CoreText.parseJSON(dropZones.dataset.placeInfo, null) :
+                this.question.amdArgs[2];
+            if (placeInfo) {
+                this.drops = <unknown[]> placeInfo;
             }
         }
 
         this.question.loaded = false;
+        this.onReadyPromise.resolve();
     }
 
     /**

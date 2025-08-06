@@ -19,8 +19,7 @@ import { IonContent } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { NgZone, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
@@ -31,8 +30,10 @@ import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreKeyboard } from '@singletons/keyboard';
 import { CoreWait } from '@singletons/wait';
-import { CoreModals } from '@services/modals';
-import { CoreLoadings } from '@services/loadings';
+import { CoreModals } from '@services/overlays/modals';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays a chat session.
@@ -41,8 +42,12 @@ import { CoreLoadings } from '@services/loadings';
     selector: 'page-addon-mod-chat-chat',
     templateUrl: 'chat.html',
     styleUrls: ['../../../../../theme/components/discussion.scss', 'chat.scss'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
+export default class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
 
     protected static readonly POLL_INTERVAL = 4000;
 
@@ -108,7 +113,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
             this.startPolling();
             this.logView();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.mod_chat.errorwhileconnecting', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.mod_chat.errorwhileconnecting') });
             CoreNavigator.back();
         } finally {
             this.loaded = true;
@@ -201,7 +206,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
 
         if (modalData) {
             if (modalData.talkTo) {
-                this.newMessage = `To ${modalData.talkTo}: ` + (this.sendMessageForm?.message || '');
+                this.newMessage = `To ${modalData.talkTo}: ${this.sendMessageForm?.message || ''}`;
             }
             if (modalData.beepTo) {
                 this.sendMessage('', modalData.beepTo);
@@ -258,7 +263,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
 
         // Start polling.
         this.polling = window.setInterval(() => {
-            CoreUtils.ignoreErrors(this.fetchMessagesInterval());
+            CorePromiseUtils.ignoreErrors(this.fetchMessagesInterval());
         }, AddonModChatChatPage.POLL_INTERVAL);
     }
 
@@ -294,7 +299,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
             } catch (error) {
                 // Fail again. Stop polling if needed.
                 this.stopPolling();
-                CoreDomUtils.showErrorModalDefault(error, 'addon.mod_chat.errorwhileretrievingmessages', true);
+                CoreAlerts.showError(error, { default: Translate.instant('addon.mod_chat.errorwhileretrievingmessages') });
 
                 throw error;
             }
@@ -324,14 +329,14 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
             await AddonModChat.sendMessage(this.sessionId!, text, beep);
 
             // Update messages to show the sent message.
-            CoreUtils.ignoreErrors(this.fetchMessagesInterval());
+            CorePromiseUtils.ignoreErrors(this.fetchMessagesInterval());
         } catch (error) {
             // Only close the keyboard if an error happens, we want the user to be able to send multiple
             // messages without the keyboard being closed.
             CoreKeyboard.close();
 
             this.newMessage = text;
-            CoreDomUtils.showErrorModalDefault(error, 'addon.mod_chat.errorwhilesendingmessage', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.mod_chat.errorwhilesendingmessage') });
         } finally {
             this.sending = false;
         }
@@ -380,7 +385,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
         }
 
         // Modified, confirm user wants to go back.
-        await CoreDomUtils.showConfirm(Translate.instant('addon.mod_chat.confirmloss'));
+        await CoreAlerts.confirm(Translate.instant('addon.mod_chat.confirmloss'));
 
         return true;
     }

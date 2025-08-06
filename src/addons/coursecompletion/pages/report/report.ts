@@ -19,12 +19,13 @@ import {
 import { Component, OnInit } from '@angular/core';
 import { CoreUser, CoreUserProfile } from '@features/user/services/user';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { Translate } from '@singletons';
 import { CoreTime } from '@singletons/time';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays the course completion report.
@@ -32,8 +33,12 @@ import { CoreTime } from '@singletons/time';
 @Component({
     selector: 'page-addon-course-completion-report',
     templateUrl: 'report.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonCourseCompletionReportPage implements OnInit {
+export default class AddonCourseCompletionReportPage implements OnInit {
 
     protected userId!: number;
     protected logView: () => void;
@@ -69,8 +74,7 @@ export class AddonCourseCompletionReportPage implements OnInit {
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
             this.userId = CoreNavigator.getRouteNumberParam('userId') || CoreSites.getCurrentSiteUserId();
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
-
+            CoreAlerts.showError(error);
             CoreNavigator.back();
 
             return;
@@ -83,8 +87,6 @@ export class AddonCourseCompletionReportPage implements OnInit {
 
     /**
      * Fetch compleiton data.
-     *
-     * @returns Promise resolved when done.
      */
     protected async fetchCompletion(): Promise<void> {
         try {
@@ -102,7 +104,7 @@ export class AddonCourseCompletionReportPage implements OnInit {
                 // Not enrolled error, probably a teacher.
                 this.tracked = false;
             } else {
-                CoreDomUtils.showErrorModalDefault(error, 'addon.coursecompletion.couldnotloadreport', true);
+                CoreAlerts.showError(error, { default: Translate.instant('addon.coursecompletion.couldnotloadreport') });
             }
         }
     }
@@ -124,16 +126,25 @@ export class AddonCourseCompletionReportPage implements OnInit {
      * Mark course as completed.
      */
     async completeCourse(): Promise<void> {
-        const modal = await CoreLoadings.show('core.sending', true);
-
         try {
-            await AddonCourseCompletion.markCourseAsSelfCompleted(this.courseId);
+            await CoreAlerts.confirm(Translate.instant('addon.coursecompletion.confirmselfcompletion'), {
+                okText: Translate.instant('core.yes'),
+                cancelText: Translate.instant('core.no'),
+            });
 
-            await this.refreshCompletion();
-        } catch (error) {
-            CoreDomUtils.showErrorModal(error);
-        } finally {
-            modal.dismiss();
+            const modal = await CoreLoadings.show('core.sending', true);
+
+            try {
+                await AddonCourseCompletion.markCourseAsSelfCompleted(this.courseId);
+
+                await this.refreshCompletion();
+            } catch (error) {
+                CoreAlerts.showError(error);
+            } finally {
+                modal.dismiss();
+            }
+        } catch {
+            // User cancelled.
         }
     }
 

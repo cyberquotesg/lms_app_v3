@@ -21,8 +21,7 @@ import { IonContent } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreUtils } from '@singletons/utils';
 import { NgZone, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
@@ -37,13 +36,19 @@ import { AddonModFeedbackFormItem, AddonModFeedbackHelper } from '../../services
 import { AddonModFeedbackSync } from '../../services/feedback-sync';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import {
-    ADDON_MOD_FEEDBACK_COMPONENT,
+    ADDON_MOD_FEEDBACK_COMPONENT_LEGACY,
     ADDON_MOD_FEEDBACK_FORM_SUBMITTED,
     ADDON_MOD_FEEDBACK_PAGE_NAME,
     AddonModFeedbackIndexTabName,
 } from '../../constants';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
 import { CoreError } from '@classes/errors/error';
+import { CorePromiseUtils } from '@singletons/promise-utils';
+import { CoreWSError } from '@classes/errors/wserror';
+import { CoreObject } from '@singletons/object';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 
 /**
  * Page that displays feedback form.
@@ -51,9 +56,13 @@ import { CoreError } from '@classes/errors/error';
 @Component({
     selector: 'page-addon-mod-feedback-form',
     templateUrl: 'form.html',
-    styleUrls: ['form.scss'],
+    styleUrls: ['../../feedback.scss', 'form.scss'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
+export default class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
 
     @ViewChild(IonContent) content?: IonContent;
 
@@ -71,7 +80,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
     courseId!: number;
     feedback?: AddonModFeedbackWSFeedback;
     completionPageContents?: string;
-    component = ADDON_MOD_FEEDBACK_COMPONENT;
+    component = ADDON_MOD_FEEDBACK_COMPONENT_LEGACY;
     offline = false;
     feedbackLoaded = false;
     access?: AddonModFeedbackGetFeedbackAccessInformationWSResponse;
@@ -106,7 +115,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
             this.preview = !!CoreNavigator.getRouteBooleanParam('preview');
             this.fromIndex = !!CoreNavigator.getRouteBooleanParam('fromIndex');
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
 
             CoreNavigator.back();
 
@@ -116,7 +125,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         await this.fetchData();
 
         if (!this.access || this.access.isempty && (!this.access.canedititems && !this.access.canviewreports)) {
-            CoreDomUtils.showErrorModal(Translate.instant('core.nopermissiontoaccesspage'));
+            CoreAlerts.showError(Translate.instant('core.nopermissiontoaccesspage'));
 
             CoreNavigator.back();
 
@@ -156,8 +165,8 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
 
             if (this.items && !this.completed && this.originalData) {
                 // Form submitted. Check if there is any change.
-                if (!CoreUtils.basicLeftCompare(responses, this.originalData, 3)) {
-                    await CoreDomUtils.showConfirm(Translate.instant('core.confirmcanceledit'));
+                if (!CoreObject.basicLeftCompare(responses, this.originalData, 3)) {
+                    await CoreAlerts.confirmLeaveWithChanges();
                 }
             }
         }
@@ -197,7 +206,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
 
             await this.fetchFeedbackPageData(page);
         } catch (message) {
-            CoreDomUtils.showErrorModalDefault(message, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(message, { default: Translate.instant('core.course.errorgetmodule') });
             this.forceLeave = true;
             CoreNavigator.back();
         } finally {
@@ -218,7 +227,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         try {
             this.access = await AddonModFeedback.getFeedbackAccessInformation(this.feedback.id, options);
         } catch (error) {
-            if (this.offline || CoreUtils.isWebServiceError(error)) {
+            if (this.offline || CoreWSError.isWebServiceError(error)) {
                 // Already offline or shouldn't go offline, fail.
                 throw error;
             }
@@ -245,7 +254,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         try {
             return await AddonModFeedback.getResumePage(this.feedback.id, options);
         } catch (error) {
-            if (this.offline || CoreUtils.isWebServiceError(error)) {
+            if (this.offline || CoreWSError.isWebServiceError(error)) {
                 // Already offline or shouldn't go offline, fail.
                 throw error;
             }
@@ -313,7 +322,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         try {
             response = await AddonModFeedback.getPageItemsWithValues(this.feedback.id, page, options);
         } catch (error) {
-            if (this.offline || CoreUtils.isWebServiceError(error)) {
+            if (this.offline || CoreWSError.isWebServiceError(error)) {
                 // Already offline or shouldn't go offline, fail.
                 throw error;
             }
@@ -349,7 +358,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
 
         try {
             // Sync other pages first.
-            await CoreUtils.ignoreErrors(AddonModFeedbackSync.syncFeedback(this.feedback.id));
+            await CorePromiseUtils.ignoreErrors(AddonModFeedbackSync.syncFeedback(this.feedback.id));
 
             const response = await AddonModFeedback.processPage(this.feedback.id, this.currentPage, responses, {
                 goPrevious,
@@ -402,7 +411,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
                 await this.fetchFeedbackPageData(response.jumpto);
             }
         } catch (message) {
-            CoreDomUtils.showErrorModalDefault(message, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(message, { default: Translate.instant('core.course.errorgetmodule') });
         } finally {
             this.feedbackLoaded = true;
         }
@@ -429,7 +438,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
             return;
         }
 
-        CoreNavigator.navigateToSitePath(ADDON_MOD_FEEDBACK_PAGE_NAME + `/${this.courseId}/${this.cmId}`, {
+        CoreNavigator.navigateToSitePath(`${ADDON_MOD_FEEDBACK_PAGE_NAME}/${this.courseId}/${this.cmId}`, {
             params: {
                 module: this.module,
                 tab: AddonModFeedbackIndexTabName.ANALYSIS,
@@ -450,7 +459,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         const modal = await CoreLoadings.show();
 
         try {
-            await CoreSites.visitLink(this.siteAfterSubmit, { siteId: this.currentSite.id });
+            await CoreContentLinksHelper.visitLink(this.siteAfterSubmit, { siteId: this.currentSite.id });
         } finally {
             modal.dismiss();
         }

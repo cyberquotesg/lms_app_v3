@@ -22,9 +22,10 @@
                     </ion-label>
                 </ion-item>
                 <ng-container *ngFor="let item of items">
-                    <core-spacer *ngIf="item.typ === 'pagebreak'" />
-                    <ng-container *ngIf="item.typ !== 'pagebreak'">
-                        <ion-item class="ion-text-wrap addon-mod_feedback-item" [color]="item.dependitem > 0 ? 'light' : ''"
+                    @if (item.typ === 'pagebreak') {
+                        <core-spacer />
+                    } @else {
+                        <ion-item class="ion-text-wrap addon-mod_feedback-item" [class.feedback_is_dependent]="item.dependitem > 0"
                             [class.core-danger-item]="item.isEmpty || item.hasError">
                             <ion-label *ngIf="!item.slottedLabel">
                                 <ng-container *ngTemplateOutlet="label; context: {item: item}" />
@@ -47,7 +48,7 @@
                                 </ion-input>
                                 <ion-text *ngIf="item.hasError" color="danger" class="addon-mod_feedback-item-error">
                                     {{ 'addon.mod_feedback.numberoutofrange' | translate }} [{{item.rangefrom}}
-                                    <span *ngIf="item.rangefrom && item.rangeto">, </span>{{item.rangeto}}]
+                                <span *ngIf="item.rangefrom && item.rangeto">, </span>{{item.rangeto}}]
                                 </ion-text>
                             </ng-container>
 
@@ -58,7 +59,7 @@
 
                             <ion-select labelPlacement="stacked" *ngIf="item.templateName === 'multichoice-d'" [required]="item.required"
                                 name="{{item.typ}}_{{item.id}}" [(ngModel)]="item.value" interface="action-sheet"
-                                [cancelText]="'core.cancel' | translate" [interfaceOptions]="{header: item.name}">
+                                [cancelText]="'core.cancel' | translate" [interfaceOptions]="{header: item.cleanedName}">
                                 <ng-container *ngTemplateOutlet="label; context: {item: item}" />
                                 <ion-select-option *ngFor="let option of item.choices" [value]="option.value">
                                     <core-format-text [component]="component" [componentId]="cmId" [text]="option.label"
@@ -97,7 +98,7 @@
                                 </ion-item>
                             </div>
                         </ng-container>
-                    </ng-container>
+                        }
                 </ng-container>
 
                 <ion-row class="ion-align-items-center spacer-top" *ngIf="!preview">
@@ -156,7 +157,7 @@
 
 
 <ng-template #label let-item="item">
-    <p class="ion-text-wrap" *ngIf="item.name" [core-mark-required]="item.required" [slot]="item.slottedLabel ? 'label' : undefined">
+    <p class="ion-text-wrap" *ngIf="item.name" [core-mark-required]="item.required" [attr.slot]="item.slottedLabel ? 'label' : undefined">
         <span *ngIf="feedback!.autonumbering && item.itemnumber">{{item.itemnumber}}. </span>
         <core-format-text [component]="component" [componentId]="cmId" [text]="item.name" contextLevel="module" [contextInstanceId]="cmId"
             [courseId]="courseId" [wsNotFiltered]="true" />

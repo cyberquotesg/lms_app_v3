@@ -15,6 +15,7 @@
 import { Component, ElementRef } from '@angular/core';
 
 import { AddonModQuizMultichoiceQuestion, CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render a multichoice question.
@@ -22,7 +23,11 @@ import { AddonModQuizMultichoiceQuestion, CoreQuestionBaseComponent } from '@fea
 @Component({
     selector: 'addon-qtype-multichoice',
     templateUrl: 'addon-qtype-multichoice.html',
-    styleUrls: ['multichoice.scss'],
+    styleUrl: 'multichoice.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonQtypeMultichoiceComponent extends CoreQuestionBaseComponent<AddonModQuizMultichoiceQuestion> {
 
@@ -35,6 +40,7 @@ export class AddonQtypeMultichoiceComponent extends CoreQuestionBaseComponent<Ad
      */
     init(): void {
         this.initMultichoiceComponent();
+        this.onReadyPromise.resolve();
     }
 
     /**

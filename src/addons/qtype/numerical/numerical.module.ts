@@ -18,8 +18,6 @@ import { CoreQuestionDelegate } from '@features/question/services/question-deleg
 import { AddonQtypeNumericalHandler } from './services/handlers/numerical';
 
 @NgModule({
-    declarations: [
-    ],
     providers: [
         {
             provide: APP_INITIALIZER,

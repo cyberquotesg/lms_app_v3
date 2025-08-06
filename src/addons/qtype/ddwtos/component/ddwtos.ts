@@ -16,9 +16,10 @@ import { Component, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 
 import { AddonModQuizQuestionBasicData, CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
 import { CoreQuestionHelper } from '@features/question/services/question-helper';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreWait } from '@singletons/wait';
 import { AddonQtypeDdwtosQuestion } from '../classes/ddwtos';
 import { CoreText } from '@singletons/text';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render a drag-and-drop words into sentences question.
@@ -27,6 +28,10 @@ import { CoreText } from '@singletons/text';
     selector: 'addon-qtype-ddwtos',
     templateUrl: 'addon-qtype-ddwtos.html',
     styleUrls: ['../../../../core/features/question/question.scss', 'ddwtos.scss'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonQtypeDdwtosComponent extends CoreQuestionBaseComponent<AddonModQuizDdwtosQuestionData> implements OnDestroy {
 
@@ -47,11 +52,15 @@ export class AddonQtypeDdwtosComponent extends CoreQuestionBaseComponent<AddonMo
      */
     init(): void {
         if (!this.question) {
+            this.onReadyPromise.resolve();
+
             return;
         }
 
         const questionElement = this.initComponent();
         if (!questionElement) {
+            this.onReadyPromise.resolve();
+
             return;
         }
 
@@ -65,6 +74,7 @@ export class AddonQtypeDdwtosComponent extends CoreQuestionBaseComponent<AddonMo
         const answerContainer = questionElement.querySelector('.answercontainer');
         if (!answerContainer) {
             this.logger.warn('Aborting because of an error parsing question.', this.question.slot);
+            this.onReadyPromise.resolve();
 
             return CoreQuestionHelper.showComponentError(this.onAbort);
         }
@@ -79,7 +89,7 @@ export class AddonQtypeDdwtosComponent extends CoreQuestionBaseComponent<AddonMo
 
         // Add the drags container inside the answers so it's rendered inside core-format-text,
         // otherwise some styles could be different between the drag homes and the draggables.
-        this.question.answers = answerContainer.outerHTML + '<div class="drags"></div>';
+        this.question.answers = `${answerContainer.outerHTML}<div class="drags"></div>`;
 
         // Get the inputs where the answers will be stored and add them to the question text.
         const inputEls = Array.from(
@@ -98,6 +108,7 @@ export class AddonQtypeDdwtosComponent extends CoreQuestionBaseComponent<AddonMo
         this.question.text = questionText;
 
         this.question.loaded = false;
+        this.onReadyPromise.resolve();
     }
 
     /**
@@ -129,7 +140,7 @@ export class AddonQtypeDdwtosComponent extends CoreQuestionBaseComponent<AddonMo
         }
 
         if (this.questionTextEl) {
-            await CoreDomUtils.waitForImages(this.questionTextEl.nativeElement);
+            await CoreWait.waitForImages(this.questionTextEl.nativeElement);
         }
 
         // Create the instance.

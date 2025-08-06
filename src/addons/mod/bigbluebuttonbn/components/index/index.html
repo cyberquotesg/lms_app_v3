@@ -1,14 +1,14 @@
 <!-- Buttons to add to the header. -->
 <core-navbar-buttons slot="end">
     @if (!courseContentsPage) {
-    <ion-button fill="clear" (click)="openModuleSummary()" aria-haspopup="true" [ariaLabel]="'core.info' | translate">
-        <ion-icon name="fas-circle-info" slot="icon-only" aria-hidden="true" />
-    </ion-button>
+        <ion-button fill="clear" (click)="openModuleSummary()" aria-haspopup="true" [ariaLabel]="'core.info' | translate">
+            <ion-icon name="fas-circle-info" slot="icon-only" aria-hidden="true" />
+        </ion-button>
     } @else {
-    <core-context-menu>
-        <core-context-menu-item [priority]="5000" [content]="'core.info' | translate" (action)="openModuleSummary()"
-            iconAction="fas-circle-info" />
-    </core-context-menu>
+        <core-context-menu>
+            <core-context-menu-item [priority]="5000" [content]="'core.info' | translate" (action)="openModuleSummary()"
+                iconAction="fas-circle-info" />
+        </core-context-menu>
     }
 </core-navbar-buttons>
 
@@ -87,6 +87,18 @@
                 <ion-label>{{ meetingInfo.statusmessage }}</ion-label>
             </ion-item>
         </ion-card>
+
+        @if (meetingInfo.showpresentations && meetingInfo.presentations.length) {
+            <ion-item class="ion-text-wrap">
+                <ion-label>
+                    <h2>{{ 'addon.mod_bigbluebuttonbn.view_section_title_presentation' | translate }}</h2>
+                    <div>
+                        <core-files [files]="meetingInfo.presentations" [component]="component" [componentId]="module.id"
+                            [alwaysDownload]="true" />
+                    </div>
+                </ion-label>
+            </ion-item>
+        }
     </ng-container>
 
     <ng-container *ngIf="showRecordings && recordings">

@@ -16,21 +16,24 @@ import { Params } from '@angular/router';
 import { CoreRoutedItemsManagerSource } from '@classes/items-management/routed-items-manager-source';
 import { CoreGroupInfo, CoreGroups } from '@services/groups';
 import { CoreSites } from '@services/sites';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { Translate } from '@singletons';
 import { CoreIonicColorNames } from '@singletons/colors';
 import { CoreEvents } from '@singletons/events';
 import {
     AddonModAssign,
     AddonModAssignAssign,
-    AddonModAssignGradingStates,
     AddonModAssignSubmission,
-    AddonModAssignSubmissionStatusValues,
 } from '../services/assign';
 import { AddonModAssignHelper, AddonModAssignSubmissionFormatted } from '../services/assign-helper';
 import { AddonModAssignOffline } from '../services/assign-offline';
 import { AddonModAssignSync } from '../services/assign-sync';
-import { ADDON_MOD_ASSIGN_MANUAL_SYNCED } from '../constants';
+import {
+    ADDON_MOD_ASSIGN_MANUAL_SYNCED,
+    AddonModAssignGradingStates,
+    AddonModAssignListFilterName,
+    AddonModAssignSubmissionStatusValues,
+} from '../constants';
 
 /**
  * Provides a collection of assignment submissions.
@@ -177,7 +180,7 @@ export class AddonModAssignSubmissionsSource extends CoreRoutedItemsManagerSourc
         if (this.SELECTED_STATUS == AddonModAssignListFilterName.NEED_GRADING) {
             const promises: Promise<void>[] = submissions.map(async (submission: AddonModAssignSubmissionForList) => {
                 // Only show the submissions that need to be graded.
-                submission.needsGrading = await AddonModAssign.needsSubmissionToBeGraded(submission, assign.id);
+                submission.needsGrading = await AddonModAssign.needsSubmissionToBeGraded(submission, assign);
             });
 
             await Promise.all(promises);
@@ -194,7 +197,7 @@ export class AddonModAssignSubmissionsSource extends CoreRoutedItemsManagerSourc
         const showSubmissions: AddonModAssignSubmissionForList[] = await Promise.all(
             submissions.map(async (submission: AddonModAssignSubmissionForList) => {
                 const gradeData =
-                    await CoreUtils.ignoreErrors(AddonModAssignOffline.getSubmissionGrade(assign.id, submission.userid));
+                    await CorePromiseUtils.ignoreErrors(AddonModAssignOffline.getSubmissionGrade(assign.id, submission.userid));
 
                 // Load offline grades.
                 const notSynced = !!gradeData && submission.timemodified < gradeData.timemodified;
@@ -221,7 +224,7 @@ export class AddonModAssignSubmissionsSource extends CoreRoutedItemsManagerSourc
                 );
 
                 submission.statusTranslated = Translate.instant(
-                    'addon.mod_assign.submissionstatus_' + submission.status,
+                    `addon.mod_assign.submissionstatus_${submission.status}`,
                 );
 
                 if (notSynced) {
@@ -256,13 +259,3 @@ export type AddonModAssignSubmissionForList = AddonModAssignSubmissionFormatted 
     gradingStatusTranslationId?: string; // Calculated in the app. Key of the text of the submission grading status.
     needsGrading?: boolean; // Calculated in the app. If submission and grading status means that it needs grading.
 };
-
-/**
- * List filter by status name.
- */
-export enum AddonModAssignListFilterName {
-    ALL = '',
-    NEED_GRADING = 'needgrading',
-    DRAFT = 'draft',
-    SUBMITTED = 'submitted',
-}

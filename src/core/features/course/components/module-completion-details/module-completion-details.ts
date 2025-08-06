@@ -14,9 +14,9 @@
 
 import { CoreSharedModule } from '@/core/shared.module';
 import { Component, Input, OnInit } from '@angular/core';
+import { CoreCourseModuleCompletionStatus } from '@features/course/constants';
 
 import {
-    CoreCourseModuleCompletionStatus,
     CoreCourseModuleWSRuleDetails,
 } from '@features/course/services/course';
 import { CoreCourseModuleCompletionData } from '@features/course/services/course-helper';
@@ -79,7 +79,7 @@ export class CoreCourseModuleCompletionDetailsComponent implements OnInit {
                 };
                 const overrideStatus = rule.statusComplete ? 'done' : 'todo';
 
-                rule.accessibleDescription = Translate.instant('core.course.completion_setby:auto:' + overrideStatus, setByData);
+                rule.accessibleDescription = Translate.instant(`core.course.completion_setby:auto:${overrideStatus}`, setByData);
             }
 
             return rule;

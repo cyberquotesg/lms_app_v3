@@ -18,11 +18,13 @@ import { IonContent } from '@ionic/angular';
 import { CoreCourseModuleMainResourceComponent } from './main-resource-component';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreCourse } from '../services/course';
-import { CoreUtils } from '@services/utils/utils';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreCourseContentsPage } from '../pages/contents/contents';
+import { CorePromiseUtils } from '@singletons/promise-utils';
+import CoreCourseContentsPage from '../pages/contents/contents';
 import { CoreSites } from '@services/sites';
 import { CoreSyncResult } from '@services/sync';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { Translate } from '@singletons';
+import { CoreCourseModuleHelper } from '../services/course-module-helper';
 
 /**
  * Template class to easily create CoreCourseModuleMainComponent of activities.
@@ -54,7 +56,7 @@ export class CoreCourseModuleMainActivityComponent extends CoreCourseModuleMainR
         await super.ngOnInit();
 
         this.hasOffline = false;
-        this.moduleName = CoreCourse.translateModuleName(this.pluginName || this.moduleName || '');
+        this.moduleName = CoreCourseModuleHelper.translateModuleName(this.pluginName || this.moduleName || '');
 
         if (this.syncEventName) {
             // Refresh data if this discussion is synchronized automatically.
@@ -100,7 +102,7 @@ export class CoreCourseModuleMainActivityComponent extends CoreCourseModuleMainR
             return;
         }
 
-        await CoreUtils.ignoreErrors(Promise.all([
+        await CorePromiseUtils.ignoreErrors(Promise.all([
             this.invalidateContent(),
             this.showCompletion ? CoreCourse.invalidateModule(this.module.id) : undefined,
         ]));
@@ -165,19 +167,19 @@ export class CoreCourseModuleMainActivityComponent extends CoreCourseModuleMainR
 
         try {
             if (refresh && this.showCompletion) {
-                await CoreUtils.ignoreErrors(this.fetchModule());
+                await CorePromiseUtils.ignoreErrors(this.fetchModule());
             }
 
             await this.fetchContent(refresh, sync, showErrors);
 
             this.finishSuccessfulFetch();
         } catch (error) {
-            if (!refresh && !CoreSites.getCurrentSite()?.isOfflineDisabled() && this.isNotFoundError(error)) {
+            if (!refresh && !CoreSites.getCurrentSite()?.isOfflineDisabled() && CoreCourseModuleHelper.isNotFoundError(error)) {
                 // Module not found, retry without using cache.
                 return await this.refreshContent(sync);
             }
 
-            CoreDomUtils.showErrorModalDefault(error, this.fetchContentDefaultError, true);
+            CoreAlerts.showError(error, { default: Translate.instant(this.fetchContentDefaultError) });
         } finally {
             this.showLoading = false;
         }
@@ -216,13 +218,13 @@ export class CoreCourseModuleMainActivityComponent extends CoreCourseModuleMainR
             const result = await this.sync();
 
             if (result.warnings.length) {
-                CoreDomUtils.showAlert(undefined, result.warnings[0]);
+                CoreAlerts.show({ message: result.warnings[0] });
             }
 
             return this.hasSyncSucceed(result);
         } catch (error) {
             if (showErrors) {
-                CoreDomUtils.showErrorModalDefault(error, 'core.errorsync', true);
+                CoreAlerts.showError(error, { default: Translate.instant('core.errorsync') });
             }
 
             return false;

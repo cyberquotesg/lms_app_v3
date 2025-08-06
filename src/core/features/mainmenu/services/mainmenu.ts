@@ -22,6 +22,14 @@ import { Device, makeSingleton } from '@singletons';
 import { CoreText } from '@singletons/text';
 import { CoreScreen } from '@services/screen';
 import { CorePlatform } from '@services/platform';
+import {
+    CoreMainMenuPlacement,
+    MAIN_MENU_HANDLER_BADGE_UPDATED_EVENT,
+    MAIN_MENU_ITEM_MIN_WIDTH,
+    MAIN_MENU_MORE_PAGE_NAME,
+    MAIN_MENU_NUM_MAIN_HANDLERS,
+    MAIN_MENU_VISIBILITY_UPDATED_EVENT,
+} from '../constants';
 
 declare module '@singletons/events' {
 
@@ -31,8 +39,8 @@ declare module '@singletons/events' {
      * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
      */
     export interface CoreEventsData {
-        [CoreMainMenuProvider.MAIN_MENU_HANDLER_BADGE_UPDATED]: CoreMainMenuHandlerBadgeUpdatedEventData;
-        [CoreMainMenuProvider.MAIN_MENU_VISIBILITY_UPDATED]: void;
+        [MAIN_MENU_HANDLER_BADGE_UPDATED_EVENT]: CoreMainMenuHandlerBadgeUpdatedEventData;
+        [MAIN_MENU_VISIBILITY_UPDATED_EVENT]: void;
     }
 
 }
@@ -43,16 +51,26 @@ declare module '@singletons/events' {
 @Injectable({ providedIn: 'root' })
 export class CoreMainMenuProvider {
 
-    // by rachmad
-    /* *a/
-    static readonly NUM_MAIN_HANDLERS = 4;
-    /* */
-    static readonly NUM_MAIN_HANDLERS = 5;
-
-    static readonly ITEM_MIN_WIDTH = 72; // Min with of every item, based on 5 items on a 360 pixel wide screen.
-    static readonly MORE_PAGE_NAME = 'more';
-    static readonly MAIN_MENU_HANDLER_BADGE_UPDATED = 'main_menu_handler_badge_updated';
-    static readonly MAIN_MENU_VISIBILITY_UPDATED = 'main_menu_visbility_updated';
+    /**
+     * @deprecated since 5.0. Use MAIN_MENU_NUM_MAIN_HANDLERS instead.
+     */
+    static readonly NUM_MAIN_HANDLERS = MAIN_MENU_NUM_MAIN_HANDLERS;
+    /**
+     * @deprecated since 5.0. Use MAIN_MENU_ITEM_MIN_WIDTH instead.
+     */
+    static readonly ITEM_MIN_WIDTH = MAIN_MENU_ITEM_MIN_WIDTH;
+    /**
+     * @deprecated since 5.0. Use MAIN_MENU_MORE_PAGE_NAME instead.
+     */
+    static readonly MORE_PAGE_NAME = MAIN_MENU_MORE_PAGE_NAME;
+    /**
+     * @deprecated since 5.0. Use MAIN_MENU_HANDLER_BADGE_UPDATED_EVENT instead.
+     */
+    static readonly MAIN_MENU_HANDLER_BADGE_UPDATED = MAIN_MENU_HANDLER_BADGE_UPDATED_EVENT;
+    /**
+     * @deprecated since 5.0. Use MAIN_MENU_VISIBILITY_UPDATED_EVENT instead.
+     */
+    static readonly MAIN_MENU_VISIBILITY_UPDATED = MAIN_MENU_VISIBILITY_UPDATED_EVENT;
 
     /**
      * Get the current main menu handlers.
@@ -115,7 +133,7 @@ export class CoreMainMenuProvider {
                 return;
             }
 
-            const id = url + '#' + type;
+            const id = `${url}#${type}`;
             if (!icon) {
                 // Icon not defined, use default one.
                 icon = type == 'embedded' ? 'fas-expand' : 'fas-link'; // @todo Find a better icon for embedded.
@@ -152,8 +170,8 @@ export class CoreMainMenuProvider {
             const entry = map[id];
             let data = entry.labels[currentLangApp]
                 ?? entry.labels[currentLangLMS]
-                ?? entry.labels[currentLangApp + '_only']
-                ?? entry.labels[currentLangLMS + '_only']
+                ?? entry.labels[`${currentLangApp}_only`]
+                ?? entry.labels[`${currentLangLMS}_only`]
                 ?? entry.labels.none
                 ?? entry.labels[fallbackLang];
 
@@ -234,26 +252,19 @@ export class CoreMainMenuProvider {
 
             if (CoreScreen.isTablet) {
                 // Tablet, menu will be displayed vertically.
-                numElements = Math.floor(window.innerHeight / CoreMainMenuProvider.ITEM_MIN_WIDTH);
+                numElements = Math.floor(window.innerHeight / MAIN_MENU_ITEM_MIN_WIDTH);
             } else {
-                numElements = Math.floor(window.innerWidth / CoreMainMenuProvider.ITEM_MIN_WIDTH);
+                numElements = Math.floor(window.innerWidth / MAIN_MENU_ITEM_MIN_WIDTH);
 
                 // Set a maximum elements to show and skip more button.
                 numElements = numElements >= 5 ? 5 : numElements;
             }
 
-            // by rachmad
-            // no need to substract by 1, more button has been removed
-            return numElements > 1 ? numElements : 1;
-
-            // by rachmad
-            /* *a/
             // Set a mínimum elements to show and skip more button.
             return numElements > 1 ? numElements - 1 : 1;
-            /* */
         }
 
-        return CoreMainMenuProvider.NUM_MAIN_HANDLERS;
+        return MAIN_MENU_NUM_MAIN_HANDLERS;
     }
 
     /**
@@ -261,8 +272,8 @@ export class CoreMainMenuProvider {
      *
      * @returns Tabs placement including side value.
      */
-    getTabPlacement(): 'bottom' | 'side' {
-        return CoreScreen.isTablet ? 'side' : 'bottom';
+    getTabPlacement(): CoreMainMenuPlacement {
+        return CoreScreen.isTablet ? CoreMainMenuPlacement.SIDE : CoreMainMenuPlacement.BOTTOM;
     }
 
     /**
@@ -272,7 +283,7 @@ export class CoreMainMenuProvider {
      * @returns Promise resolved with boolean: whether it's the root of a main menu tab.
      */
     async isMainMenuTab(pageName: string): Promise<boolean> {
-        if (pageName == CoreMainMenuProvider.MORE_PAGE_NAME) {
+        if (pageName == MAIN_MENU_MORE_PAGE_NAME) {
             return true;
         }
 

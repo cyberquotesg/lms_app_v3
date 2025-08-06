@@ -15,6 +15,7 @@
 import { Component, Input, OnChanges, SimpleChange, ChangeDetectionStrategy, ElementRef } from '@angular/core';
 import { SafeStyle } from '@angular/platform-browser';
 import { DomSanitizer, Translate } from '@singletons';
+import { CoreBaseModule } from '@/core/base.module';
 
 /**
  * Component to show a progress bar and its value.
@@ -25,8 +26,10 @@ import { DomSanitizer, Translate } from '@singletons';
 @Component({
     selector: 'core-progress-bar',
     templateUrl: 'core-progress-bar.html',
-    styleUrls: ['progress-bar.scss'],
+    styleUrl: 'progress-bar.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [CoreBaseModule],
 })
 export class CoreProgressBarComponent implements OnChanges {
 
@@ -53,10 +56,10 @@ export class CoreProgressBarComponent implements OnChanges {
     ngOnChanges(changes: { [name: string]: SimpleChange }): void {
         if (changes.color) {
             if (changes.color.previousValue) {
-                this.element.classList.remove('ion-color', 'ion-color-' + changes.color.previousValue);
+                this.element.classList.remove('ion-color', `ion-color-${changes.color.previousValue}`);
             }
             if (changes.color.currentValue) {
-                this.element.classList.add('ion-color', 'ion-color-' + changes.color.currentValue);
+                this.element.classList.add('ion-color', `ion-color-${changes.color.currentValue}`);
             }
         }
 
@@ -95,7 +98,7 @@ export class CoreProgressBarComponent implements OnChanges {
             this.text = Translate.instant('core.percentagenumber', { $a: this.progressNumber });
         }
 
-        this.width = DomSanitizer.bypassSecurityTrustStyle(this.progressNumber + '%');
+        this.width = DomSanitizer.bypassSecurityTrustStyle(`${this.progressNumber}%`);
     }
 
 }

@@ -14,10 +14,13 @@
 
 import { toBoolean } from '@/core/transforms/boolean';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { CoreCourse } from '@features/course/services/course';
+import { CoreCourseModuleHelper } from '@features/course/services/course-module-helper';
 import { CoreCourseModuleCompletionData, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { CoreSites } from '@services/sites';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCourseModuleCompletionComponent } from '../module-completion/module-completion';
+import { CoreRemindersDateComponent } from '../../../reminders/components/date/date';
 
 /**
  * Display info about a module:
@@ -31,11 +34,14 @@ import { CoreSites } from '@services/sites';
  */
 @Component({
     selector: 'core-course-module-info',
-
-    // by rachmad
-    templateUrl: 'core-course-module-info.new.html',
-
-    styleUrls: ['course-module-info.scss'],
+    templateUrl: 'core-course-module-info.html',
+    styleUrl: 'course-module-info.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreCourseModuleCompletionComponent,
+        CoreRemindersDateComponent,
+    ],
 })
 export class CoreCourseModuleInfoComponent implements OnInit {
 
@@ -59,28 +65,14 @@ export class CoreCourseModuleInfoComponent implements OnInit {
     showCompletion = false; // Whether to show completion.
     moduleNameTranslated = '';
 
-    // by rachmad
-    finalShowInfoBox = false;
-    finalShowCompletion = false;
-    finalShowDates = false;
-    finalShowAvailabilityinfo = false;
-    finalShowDescription = false;
-
     /**
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
         this.modicon = await CoreCourseModuleDelegate.getModuleIconSrc(this.module.modname, this.module.modicon, this.module);
 
-        this.moduleNameTranslated = CoreCourse.translateModuleName(this.module.modname, this.module.modplural);
+        this.moduleNameTranslated = CoreCourseModuleHelper.translateModuleName(this.module.modname, this.module.modplural);
         this.showCompletion = CoreSites.getRequiredCurrentSite().isVersionGreaterEqualThan('3.11');
-
-        // by rachmad
-        this.finalShowCompletion = !!(this.showCompletion && this.module.completiondata && (this.module.completiondata.isautomatic || (this.showManualCompletion && this.module.uservisible)));
-        this.finalShowDates = !!(this.module.dates && this.module.dates.length);
-        this.finalShowAvailabilityinfo = !!(this.showAvailabilityInfo && this.module.availabilityinfo);
-        this.finalShowDescription = !!(this.description);
-        this.finalShowInfoBox = this.finalShowCompletion || this.finalShowDates || this.finalShowAvailabilityinfo || this.finalShowDescription;
     }
 
 }

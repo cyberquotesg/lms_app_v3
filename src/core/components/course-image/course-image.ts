@@ -17,11 +17,20 @@ import { Component, ElementRef, HostBinding, input, effect } from '@angular/core
 import { CoreCourseListItem } from '@features/courses/services/courses';
 import { CoreCoursesHelper } from '@features/courses/services/courses-helper';
 import { CoreColors } from '@singletons/colors';
+import { CoreBaseModule } from '@/core/base.module';
+import { CoreExternalContentDirective } from '@directives/external-content';
+import { CoreFaIconDirective } from '@directives/fa-icon';
 
 @Component({
     selector: 'core-course-image',
     templateUrl: 'course-image.html',
-    styleUrls: ['./course-image.scss'],
+    styleUrl: './course-image.scss',
+    standalone: true,
+    imports: [
+        CoreBaseModule,
+        CoreFaIconDirective,
+        CoreExternalContentDirective,
+    ],
 })
 export class CoreCourseImageComponent {
 
@@ -66,8 +75,8 @@ export class CoreCourseImageComponent {
 
             const tint = CoreColors.lighter(course.color, 50);
             this.element.style.setProperty('--course-color-tint', tint);
-        } else if(course.colorNumber !== undefined) {
-            this.element.classList.add('course-color-' + course.colorNumber);
+        } else if (course.colorNumber !== undefined) {
+            this.element.classList.add(`course-color-${course.colorNumber}`);
         }
     }
 

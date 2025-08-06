@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CoreSharedModule } from '@/core/shared.module';
 import { Component } from '@angular/core';
 import { CoreUserTours } from '@features/usertours/services/user-tours';
 
@@ -21,7 +22,11 @@ import { CoreUserTours } from '@features/usertours/services/user-tours';
 @Component({
     selector: 'core-block-side-blocks-tour',
     templateUrl: 'side-blocks-tour.html',
-    styleUrls: ['side-blocks-tour.scss'],
+    styleUrl: 'side-blocks-tour.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreBlockSideBlocksTourComponent {
 

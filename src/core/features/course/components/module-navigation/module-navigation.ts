@@ -17,12 +17,15 @@ import { CoreCourse, CoreCourseWSSection } from '@features/course/services/cours
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { IonContent } from '@ionic/angular';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { Translate } from '@singletons';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCourseModuleHelper } from '@features/course/services/course-module-helper';
 
 /**
  * Component to show a button to go to the next resource/activity.
@@ -33,7 +36,11 @@ import { CoreEventObserver, CoreEvents } from '@singletons/events';
 @Component({
     selector: 'core-course-module-navigation',
     templateUrl: 'core-course-module-navigation.html',
-    styleUrls: ['module-navigation.scss'],
+    styleUrl: 'module-navigation.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreCourseModuleNavigationComponent implements OnInit, OnDestroy {
 
@@ -144,14 +151,7 @@ export class CoreCourseModuleNavigationComponent implements OnInit, OnDestroy {
      * @returns Wether the module is available to the user or not.
      */
     protected isModuleAvailable(module: CoreCourseModuleData): boolean {
-        return !CoreCourseHelper.isModuleStealth(module) && CoreCourse.moduleHasView(module);
-    }
-
-    // by rachmad
-    // warning! this has to be implemented
-    isModuleDisabled_byCQ(courseSection: any, courseModule: any): boolean
-    {
-        return !courseSection.uservisible || !courseModule.uservisible || !!courseModule.availabilityinfo;
+        return !CoreCourseHelper.isModuleStealth(module) && CoreCourseModuleHelper.moduleHasView(module);
     }
 
     /**
@@ -177,16 +177,15 @@ export class CoreCourseModuleNavigationComponent implements OnInit, OnDestroy {
         const modal = await CoreLoadings.show();
 
         // Re-calculate module in case a new module was made visible.
-        await CoreUtils.ignoreErrors(this.setNextAndPreviousModules(CoreSitesReadingStrategy.PREFER_NETWORK, next, !next));
+        await CorePromiseUtils.ignoreErrors(this.setNextAndPreviousModules(CoreSitesReadingStrategy.PREFER_NETWORK, next, !next));
 
         modal.dismiss();
 
         const module = next ? this.nextModule : this.previousModule;
         if (!module) {
             // It seems the module was hidden. Show a message.
-            CoreDomUtils.instance.showErrorModal(
-                next ? 'core.course.nextactivitynotfound' : 'core.course.previousactivitynotfound',
-                true,
+            CoreAlerts.showError(
+                Translate.instant(next ? 'core.course.nextactivitynotfound' : 'core.course.previousactivitynotfound'),
             );
 
             return;
@@ -201,7 +200,7 @@ export class CoreCourseModuleNavigationComponent implements OnInit, OnDestroy {
             options.params = {
                 module,
             };
-            CoreNavigator.navigateToSitePath('course/' + this.courseId + '/' + module.id +'/module-preview', options);
+            CoreNavigator.navigateToSitePath(`course/${this.courseId}/${module.id}/module-preview`, options);
         } else {
             CoreCourseModuleDelegate.openActivityPage(module.modname, module, this.courseId, options);
         }

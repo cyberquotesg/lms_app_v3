@@ -16,9 +16,10 @@ import { Component, Input, ViewChild, OnDestroy, Type, OnChanges, SimpleChanges 
 import { CoreBlockDelegate } from '../../services/block-delegate';
 import { CoreDynamicComponent } from '@components/dynamic-component/dynamic-component';
 import { Subscription } from 'rxjs';
-import { CoreCourseBlock } from '@/core/features/course/services/course';
+import { CoreCourseBlock } from '@features/course/services/course';
 import type { ICoreBlockComponent } from '@features/block/classes/base-block-component';
 import { ContextLevel } from '@/core/constants';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render a block.
@@ -26,7 +27,11 @@ import { ContextLevel } from '@/core/constants';
 @Component({
     selector: 'core-block',
     templateUrl: 'core-block.html',
-    styleUrls: ['block.scss'],
+    styleUrl: 'block.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreBlockComponent implements OnChanges, OnDestroy {
 
@@ -101,7 +106,7 @@ export class CoreBlockComponent implements OnChanges, OnDestroy {
     }
 
     /**
-     * On destroy of the component, clear up any subscriptions.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.blockSubscription?.unsubscribe();

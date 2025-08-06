@@ -19,13 +19,15 @@ import { CoreSite } from '@classes/sites/site';
 import { CoreCourseModuleDefaultHandler } from './handlers/default-module';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
-import { CoreCourse } from './course';
+import { CoreCourseModuleHelper } from './course-module-helper';
 import { CoreSites } from '@services/sites';
 import { makeSingleton } from '@singletons';
 import { CoreCourseModuleData } from './course-helper';
 import { CoreNavigationOptions } from '@services/navigator';
 import { CoreIonicColorNames } from '@singletons/colors';
 import { DownloadStatus } from '@/core/constants';
+import { CORE_COURSE_MODULE_FEATURE_PREFIX } from '../constants';
+import { ModFeature } from '@addons/mod/constants';
 
 /**
  * Interface that all course module handlers must implement.
@@ -41,7 +43,7 @@ export interface CoreCourseModuleHandler extends CoreDelegateHandler {
      * This is to replicate the "plugin_supports" function of Moodle.
      * If you need some dynamic checks please implement the supportsFeature function.
      */
-    supportedFeatures?: Record<string, unknown>;
+    supportedFeatures?: Partial<Record<ModFeature, unknown>>;
 
     /**
      * Get the data required to display the module in the course contents view.
@@ -104,7 +106,7 @@ export interface CoreCourseModuleHandler extends CoreDelegateHandler {
      * @param feature The feature to check.
      * @returns The result of the supports check.
      */
-    supportsFeature?(feature: string): unknown;
+    supportsFeature?(feature: ModFeature): unknown;
 
     /**
      * Return true to show the manual completion regardless of the course's showcompletionconditions setting.
@@ -282,7 +284,7 @@ export interface CoreCourseModuleHandlerButton {
 @Injectable({ providedIn: 'root' })
 export class CoreCourseModuleDelegateService extends CoreDelegate<CoreCourseModuleHandler> {
 
-    protected featurePrefix = 'CoreCourseModuleDelegate_';
+    protected featurePrefix = CORE_COURSE_MODULE_FEATURE_PREFIX;
     protected handlerNameProperty = 'modName';
 
     constructor(protected defaultHandler: CoreCourseModuleDefaultHandler) {
@@ -414,7 +416,7 @@ export class CoreCourseModuleDelegateService extends CoreDelegate<CoreCourseModu
     async getModuleIconSrc(modname: string, modicon?: string, module?: CoreCourseModuleData): Promise<string> {
         const icon = await this.executeFunctionOnEnabled<Promise<string>>(modname, 'getIconSrc', [module, modicon]);
 
-        return icon ?? CoreCourse.getModuleIconSrc(modname, modicon) ?? '';
+        return icon ?? CoreCourseModuleHelper.getModuleIconSrc(modname, modicon) ?? '';
     }
 
     /**
@@ -438,7 +440,7 @@ export class CoreCourseModuleDelegateService extends CoreDelegate<CoreCourseModu
      * @param defaultValue Value to return if the module is not supported or doesn't know if it's supported.
      * @returns The result of the supports check.
      */
-    supportsFeature<T = unknown>(modname: string, feature: string, defaultValue: T): T {
+    supportsFeature<T = unknown>(modname: string, feature: ModFeature, defaultValue: T): T {
         const handler = this.enabledHandlers[modname];
         let result: T | undefined;
 

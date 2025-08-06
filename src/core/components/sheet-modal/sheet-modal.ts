@@ -16,15 +16,18 @@ import { Constructor } from '@/core/utils/types';
 import { AfterViewInit, Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { CoreModalComponent } from '@classes/modal-component';
 import { CorePromisedValue } from '@classes/promised-value';
-import { CoreModals } from '@services/modals';
+import { CoreModals } from '@services/overlays/modals';
 import { CoreWait } from '@singletons/wait';
 import { AngularFrameworkDelegate } from '@singletons';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreBaseModule } from '@/core/base.module';
 
 @Component({
     selector: 'core-sheet-modal',
     templateUrl: 'sheet-modal.html',
-    styleUrls: ['sheet-modal.scss'],
+    styleUrl: 'sheet-modal.scss',
+    standalone: true,
+    imports: [CoreBaseModule],
 })
 export class CoreSheetModalComponent<T extends CoreModalComponent> implements AfterViewInit {
 

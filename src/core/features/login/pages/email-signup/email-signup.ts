@@ -14,10 +14,8 @@
 
 import { Component, ViewChild, ElementRef, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
-
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreText } from '@singletons/text';
-import { CoreCountry, CoreUtils } from '@services/utils/utils';
+import { CoreCountries, CoreCountry } from '@singletons/countries';
 import { CoreWS, CoreWSExternalWarning } from '@services/ws';
 import { Translate } from '@singletons';
 import { CoreSitePublicConfigResponse, CoreUnauthenticatedSite } from '@classes/sites/unauthenticated-site';
@@ -37,7 +35,12 @@ import { CoreSitesFactory } from '@services/sites-factory';
 import { EMAIL_SIGNUP_FEATURE_NAME } from '@features/login/constants';
 import { CoreInputErrorsMessages } from '@components/input-errors/input-errors';
 import { CoreViewer } from '@features/viewer/services/viewer';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CorePromiseUtils } from '@singletons/promise-utils';
+import { CoreOpener } from '@singletons/opener';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreUserProfileFieldComponent } from '@features/user/components/user-profile-field/user-profile-field';
 
 /**
  * Page to signup using email.
@@ -45,9 +48,14 @@ import { CoreLoadings } from '@services/loadings';
 @Component({
     selector: 'page-core-login-email-signup',
     templateUrl: 'email-signup.html',
-    styleUrls: ['../../login.scss'],
+    styleUrl: '../../login.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreUserProfileFieldComponent,
+    ],
 })
-export class CoreLoginEmailSignupPage implements OnInit {
+export default class CoreLoginEmailSignupPage implements OnInit {
 
     // Accept A-Z in strict chars pattern to be able to differentiate it from the lowercase pattern.
     protected static readonly USERNAME_STRICT_CHARS_PATTERN = '^[A-Z-.@_a-z0-9]*$';
@@ -133,7 +141,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
     ngOnInit(): void {
         const siteUrl = CoreNavigator.getRouteParam<string>('siteUrl');
         if (!siteUrl) {
-            CoreDomUtils.showErrorModal('Site URL not supplied.');
+            CoreAlerts.showError('Site URL not supplied.');
             CoreNavigator.back();
 
             return;
@@ -189,7 +197,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
                 // Check content verification.
                 if (this.ageDigitalConsentVerification === undefined) {
 
-                    const result = await CoreUtils.ignoreErrors(
+                    const result = await CorePromiseUtils.ignoreErrors(
                         CoreWS.callAjax<IsAgeVerificationEnabledWSResponse>(
                             'core_auth_is_age_digital_consent_verification_enabled',
                             {},
@@ -206,7 +214,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
             this.completeFormGroup();
         } catch (error) {
             if (this.allRequiredSupported) {
-                CoreDomUtils.showErrorModal(error);
+                CoreAlerts.showError(error);
             }
         }
     }
@@ -238,12 +246,12 @@ export class CoreLoginEmailSignupPage implements OnInit {
         const namefieldsErrors = {};
         if (this.settings.namefields) {
             this.settings.namefields.forEach((field) => {
-                namefieldsErrors[field] = { required: 'core.login.missing' + field };
+                namefieldsErrors[field] = { required: `core.login.missing${field}` };
             });
         }
         this.namefieldsErrors = namefieldsErrors;
 
-        this.countries = await CoreUtils.getCountryListSorted();
+        this.countries = await CoreCountries.getCountryListSorted();
     }
 
     /**
@@ -263,7 +271,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
 
             return true;
         } else {
-            CoreDomUtils.showErrorModal(
+            CoreAlerts.showError(
                 Translate.instant(
                     'core.login.signupplugindisabled',
                     { $a: Translate.instant('core.login.auth_email') },
@@ -301,7 +309,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
 
             if (!errorFound) {
                 // Input not found, show an error modal.
-                CoreDomUtils.showErrorModal('core.errorinvalidform', true);
+                CoreAlerts.showError(Translate.instant('core.errorinvalidform'));
             }
 
             return;
@@ -349,7 +357,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
 
                 // Show alert and ho back.
                 const message = Translate.instant('core.login.emailconfirmsent', { $a: params.email });
-                CoreDomUtils.showAlert(Translate.instant('core.success'), message);
+                CoreAlerts.show({ header: Translate.instant('core.success'), message });
                 CoreNavigator.back();
             } else {
                 this.recaptchaComponent?.expireRecaptchaAnswer();
@@ -361,13 +369,13 @@ export class CoreLoginEmailSignupPage implements OnInit {
                         error = Translate.instant('core.login.recaptchaincorrect');
                     }
 
-                    CoreDomUtils.showErrorModal(error);
+                    CoreAlerts.showError(error);
                 } else {
-                    CoreDomUtils.showErrorModal('core.login.usernotaddederror', true);
+                    CoreAlerts.showError(Translate.instant('core.login.usernotaddederror'));
                 }
             }
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'core.login.usernotaddederror', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.login.usernotaddederror') });
         } finally {
             modal.dismiss();
         }
@@ -394,7 +402,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
      * Show contact information on site (we have to display again the age verification form).
      */
     showContactOnSite(): void {
-        CoreUtils.openInBrowser(
+        CoreOpener.openInBrowser(
             CorePath.concatenatePaths(this.site.getURL(), '/login/verify_age_location.php'),
             { showBrowserWarning: false },
         );
@@ -411,7 +419,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
         e.stopPropagation();
 
         if (!this.ageVerificationForm.valid) {
-            CoreDomUtils.showErrorModal('core.errorinvalidform', true);
+            CoreAlerts.showError(Translate.instant('core.errorinvalidform'));
 
             return;
         }
@@ -440,7 +448,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
             }
         } catch {
             // Something wrong, redirect to the site.
-            CoreDomUtils.showErrorModal('There was an error verifying your age, please try again using the browser.');
+            CoreAlerts.showError('There was an error verifying your age, please try again using the browser.');
         } finally {
             modal.dismiss();
         }

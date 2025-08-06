@@ -21,7 +21,7 @@ import { CoreConstants } from '@/core/constants';
 import { CoreMainMenu } from '@features/mainmenu/services/mainmenu';
 import { CoreObject } from '@singletons/object';
 import { CoreSites } from '@services/sites';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreUtils } from '@singletons/utils';
 import { CoreUrl, CoreUrlPartNames } from '@singletons/url';
 import { CoreText } from '@singletons/text';
 import { makeSingleton, NavController, Router } from '@singletons';
@@ -32,7 +32,8 @@ import { CorePlatform } from '@services/platform';
 import { filter } from 'rxjs/operators';
 import { CorePromisedValue } from '@classes/promised-value';
 import { BehaviorSubject } from 'rxjs';
-import { CoreLoadings } from './loadings';
+import { CoreLoadings } from './overlays/loadings';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 
 /**
  * Redirect payload.
@@ -149,6 +150,13 @@ export class CoreNavigatorService {
             ? await NavController.navigateRoot(url, navigationOptions)
             : await NavController.navigateForward(url, navigationOptions);
 
+        // This is done to exit full screen if the user navigate.
+        if (document.exitFullscreen) {
+            await CorePromiseUtils.ignoreErrors(document.exitFullscreen());
+        } else if (document['webkitExitFullscreen']) {
+            document['webkitExitFullscreen']();
+        }
+
         if (options.nextNavigation?.path && navigationResult !== false) {
             if (options.nextNavigation.isSitePath) {
                 return this.navigateToSitePath(options.nextNavigation.path, options.nextNavigation.options);
@@ -187,7 +195,7 @@ export class CoreNavigatorService {
     async navigateToSiteHome(options: Omit<CoreNavigationOptions, 'reset'> & { siteId?: string } = {}): Promise<boolean> {
         const siteId = options.siteId ?? CoreSites.getCurrentSiteId();
         const landingPagePath = CoreSites.isLoggedIn() && CoreSites.getCurrentSiteId() === siteId ?
-            this.getLandingTabPage() : 'main';
+            this.getLandingTabPage() : '';
 
         return this.navigateToSitePath(landingPagePath, {
             ...options,
@@ -212,14 +220,12 @@ export class CoreNavigatorService {
 
         // If we are logged into a different site, log out first.
         if (CoreSites.isLoggedIn() && CoreSites.getCurrentSiteId() !== siteId) {
-            const willReload = await CoreSites.logoutForRedirect(siteId, {
-                redirectPath: path,
-                redirectOptions: options || {},
+            await CoreSites.logout({
+                ...this.getRedirectDataForSitePath(path, options),
+                siteId,
             });
 
-            if (willReload) {
-                return true;
-            }
+            return true;
         }
 
         // If the path doesn't belong to a site, call standard navigation.
@@ -235,10 +241,7 @@ export class CoreNavigatorService {
             const modal = await CoreLoadings.show();
 
             try {
-                const loggedIn = await CoreSites.loadSite(siteId, {
-                    redirectPath: path,
-                    redirectOptions: options,
-                });
+                const loggedIn = await CoreSites.loadSite(siteId, this.getRedirectDataForSitePath(path, options));
 
                 if (!loggedIn) {
                     // User has been redirected to the login page and will be redirected to the site path after login.
@@ -254,6 +257,31 @@ export class CoreNavigatorService {
 
         // User is logged in, navigate to the site path.
         return this.navigateToMainMenuPath(path, navigationOptions);
+    }
+
+    /**
+     * Get the redirect data to use when navigating to a site path.
+     *
+     * @param path Site path.
+     * @param options Navigation options.
+     * @returns Redirect data.
+     */
+    protected getRedirectDataForSitePath(path: string, options: CoreNavigationOptions = {}): CoreRedirectPayload {
+        if (!path || path.match(/^\/?main\/?$/)) {
+            // Navigating to main, obtain the redirect from the navigation parameters (if any).
+            // If there is no redirect path or url to open, use 'main' to open the site's main menu.
+            return {
+                redirectPath: !options.params?.redirectPath && !options.params?.urlToOpen ? 'main' : options.params?.redirectPath,
+                redirectOptions: options.params?.redirectOptions,
+                urlToOpen: options.params?.urlToOpen,
+            };
+        }
+
+        // Use the path to navigate as the redirect path.
+        return {
+            redirectPath: path,
+            redirectOptions: options || {},
+        };
     }
 
     /**
@@ -460,7 +488,7 @@ export class CoreNavigatorService {
             return route;
         }
 
-        if (routeData && CoreUtils.basicLeftCompare(routeData, this.getRouteData(route), 3)) {
+        if (routeData && CoreObject.basicLeftCompare(routeData, this.getRouteData(route), 3)) {
             return route;
         }
 
@@ -539,6 +567,11 @@ export class CoreNavigatorService {
             ...options,
         };
 
+        if (!path || path.match(/^\/?main\/?$/)) {
+            // Navigating to main, nothing else to do.
+            return this.navigate('/main', options);
+        }
+
         path = path.replace(/^(\.|\/main)?\//, '');
 
         const pathRoot = /^[^/]+/.exec(path)?.[0] ?? '';
@@ -549,7 +582,7 @@ export class CoreNavigatorService {
 
         const currentMainMenuTab = this.getCurrentMainMenuTab();
         const isMainMenuTab = pathRoot === currentMainMenuTab || (!currentMainMenuTab && path === this.getLandingTabPage()) ||
-            await CoreUtils.ignoreErrors(CoreMainMenu.isMainMenuTab(pathRoot), false);
+            await CorePromiseUtils.ignoreErrors(CoreMainMenu.isMainMenuTab(pathRoot), false);
 
         if (!options.preferCurrentTab && isMainMenuTab) {
             return this.navigate(`/main/${path}`, options);
@@ -606,7 +639,7 @@ export class CoreNavigatorService {
     protected replaceObjectParams(queryParams?: Params | null): void {
         for (const name in queryParams) {
             const value = queryParams[name];
-            if (typeof value != 'object' || value === null) {
+            if (typeof value !== 'object' || value === null) {
                 continue;
             }
 
@@ -627,7 +660,7 @@ export class CoreNavigatorService {
      * @returns New param Id.
      */
     protected getNewParamId(): string {
-        return 'param-' + (++this.lastParamId);
+        return `param-${++this.lastParamId}`;
     }
 
     /**
@@ -664,9 +697,9 @@ export class CoreNavigatorService {
         } else if (parentPath && !routePath) {
             return parentPath;
         } else if (!parentPath && routePath) {
-            return '/' + routePath;
+            return `/${routePath}`;
         } else {
-            return parentPath + '/' + routePath;
+            return `${parentPath}/${routePath}`;
         }
     }
 

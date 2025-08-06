@@ -18,12 +18,22 @@ import { CoreContentLinksDelegate } from '@features/contentlinks/services/conten
 import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CoreUserDelegate } from '@features/user/services/user-delegate';
 import { CoreReportBuilderLinkHandler } from './services/handlers/reportbuilder-link';
-import { CoreReportBuilderHandler, CoreReportBuilderHandlerService } from './services/handlers/reportbuilder';
+import { CoreReportBuilderHandler } from './services/handlers/reportbuilder';
+import { CORE_REPORT_BUILDER_PAGE_NAME } from './constants';
 
 const routes: Routes = [
     {
-        path: CoreReportBuilderHandlerService.PAGE_NAME,
-        loadChildren: () => import('./reportbuilder-lazy.module').then(m => m.CoreReportBuilderLazyModule),
+        path: CORE_REPORT_BUILDER_PAGE_NAME,
+        loadChildren: () => [
+            {
+                path: '',
+                loadComponent: () => import('@features/reportbuilder/pages/list/list'),
+            },
+            {
+                path: ':id',
+                loadComponent: () => import('@features/reportbuilder/pages/report/report'),
+            },
+        ],
     },
 ];
 

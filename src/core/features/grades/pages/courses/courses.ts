@@ -21,9 +21,11 @@ import { CoreGradesCoursesSource } from '@features/grades/classes/grades-courses
 import { CoreGrades } from '@features/grades/services/grades';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { Translate } from '@singletons';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreGradesGradeOverviewWithCourseData } from '@features/grades/services/grades-helper';
 
 /**
  * Page that displays courses grades (main menu option).
@@ -31,8 +33,12 @@ import { Translate } from '@singletons';
 @Component({
     selector: 'page-core-grades-courses',
     templateUrl: 'courses.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class CoreGradesCoursesPage implements OnDestroy, AfterViewInit {
+export default class CoreGradesCoursesPage implements OnDestroy, AfterViewInit {
 
     courses: CoreGradesCoursesManager;
 
@@ -66,8 +72,8 @@ export class CoreGradesCoursesPage implements OnDestroy, AfterViewInit {
      * @param refresher Refresher.
      */
     async refreshCourses(refresher: HTMLIonRefresherElement): Promise<void> {
-        await CoreUtils.ignoreErrors(CoreGrades.invalidateCoursesGradesData());
-        await CoreUtils.ignoreErrors(this.courses.reload());
+        await CorePromiseUtils.ignoreErrors(CoreGrades.invalidateCoursesGradesData());
+        await CorePromiseUtils.ignoreErrors(this.courses.reload());
 
         refresher?.complete();
     }
@@ -79,7 +85,7 @@ export class CoreGradesCoursesPage implements OnDestroy, AfterViewInit {
         try {
             await this.courses.load();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Error loading courses');
+            CoreAlerts.showError(error, { default: 'Error loading courses' });
         }
     }
 
@@ -88,7 +94,7 @@ export class CoreGradesCoursesPage implements OnDestroy, AfterViewInit {
 /**
  * Helper class to manage courses.
  */
-class CoreGradesCoursesManager extends CoreListItemsManager {
+class CoreGradesCoursesManager extends CoreListItemsManager<CoreGradesGradeOverviewWithCourseData> {
 
     /**
      * @inheritdoc

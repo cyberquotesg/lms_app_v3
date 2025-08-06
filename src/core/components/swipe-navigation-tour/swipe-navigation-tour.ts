@@ -14,6 +14,9 @@
 
 import { Component } from '@angular/core';
 import { CoreUserTours } from '@features/usertours/services/user-tours';
+import { CoreBaseModule } from '@/core/base.module';
+import { CoreFaIconDirective } from '@directives/fa-icon';
+import { CoreUpdateNonReactiveAttributesDirective } from '@directives/update-non-reactive-attributes';
 
 /**
  * Component showing the User Tour for the Swipe Navigation feature.
@@ -21,7 +24,13 @@ import { CoreUserTours } from '@features/usertours/services/user-tours';
 @Component({
     selector: 'core-swipe-navigation-tour',
     templateUrl: 'core-swipe-navigation-tour.html',
-    styleUrls: ['swipe-navigation-tour.scss'],
+    styleUrl: 'swipe-navigation-tour.scss',
+    standalone: true,
+    imports: [
+        CoreBaseModule,
+        CoreFaIconDirective,
+        CoreUpdateNonReactiveAttributesDirective,
+    ],
 })
 export class CoreSwipeNavigationTourComponent {
 

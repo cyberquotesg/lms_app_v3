@@ -40,21 +40,21 @@ export class CoreInterceptor implements HttpInterceptor {
             if (value instanceof Array) {
                 for (let i = 0; i < value.length; ++i) {
                     const subValue = value[i];
-                    const fullSubName = name + '[' + i + ']';
+                    const fullSubName = `${name}[${i}]`;
                     const innerObj = {};
                     innerObj[fullSubName] = subValue;
-                    query += this.serialize(innerObj) + '&';
+                    query += `${this.serialize(innerObj)}&`;
                 }
             } else if (value instanceof Object) {
                 for (const subName in value) {
                     const subValue = value[subName];
-                    const fullSubName = name + '[' + subName + ']';
+                    const fullSubName = `${name}[${subName}]`;
                     const innerObj = {};
                     innerObj[fullSubName] = subValue;
-                    query += this.serialize(innerObj) + '&';
+                    query += `${this.serialize(innerObj)}&`;
                 }
             } else if (addNull || (value !== undefined && value !== null)) {
-                query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
+                query += `${encodeURIComponent(name)}=${encodeURIComponent(value)}&`;
             }
         }
 
@@ -66,7 +66,7 @@ export class CoreInterceptor implements HttpInterceptor {
         // Add the header and serialize the body if needed.
         const newReq = req.clone({
             headers: req.headers.set('Content-Type', 'application/x-www-form-urlencoded'),
-            body: typeof req.body == 'object' && String(req.body) != '[object File]' ?
+            body: typeof req.body === 'object' && String(req.body) != '[object File]' ?
                 CoreInterceptor.serialize(req.body) : req.body,
         });
 

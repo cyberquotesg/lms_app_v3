@@ -17,8 +17,7 @@ import { Routes } from '@angular/router';
 
 import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CORE_SITE_SCHEMAS } from '@services/sites';
-import { SITE_SCHEMA, OFFLINE_SITE_SCHEMA } from './services/database/user';
-import { CoreUserComponentsModule } from './components/components.module';
+import { CORE_USER_OFFLINE_SITE_SCHEMA, CORE_USER_CACHE_SITE_SCHEMA } from './services/database/user';
 import { CoreUserDelegate } from './services/user-delegate';
 import { CoreUserProfileMailHandler } from './services/handlers/profile-mail';
 import { CoreContentLinksDelegate } from '@features/contentlinks/services/contentlinks-delegate';
@@ -34,7 +33,7 @@ import { CoreUserHelper } from './services/user-helper';
 import { AppRoutingModule, conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
 import { CoreEvents } from '@singletons/events';
-import { COURSE_PAGE_NAME, COURSE_INDEX_PATH } from '@features/course/constants';
+import { CORE_COURSE_PAGE_NAME, CORE_COURSE_INDEX_PATH } from '@features/course/constants';
 import { PARTICIPANTS_PAGE_NAME } from './constants';
 
 /**
@@ -60,22 +59,49 @@ export async function getUsersServices(): Promise<Type<unknown>[]> {
     ];
 }
 
+/**
+ * Get directives and components for site plugins.
+ *
+ * @returns Returns directives and components.
+ */
+export async function getUsersExportedDirectives(): Promise<Type<unknown>[]> {
+    const { CoreUserProfileFieldComponent } = await import('@features/user/components/user-profile-field/user-profile-field');
+
+    return [
+        CoreUserProfileFieldComponent,
+    ];
+}
+
 const appRoutes: Routes = [
     {
-        path: 'user',
-        loadChildren: () => import('@features/user/user-app-lazy.module').then(m => m.CoreUserAppLazyModule),
+        path: 'user/completeprofile',
+        loadComponent: () => import('@features/user/pages/complete-profile/complete-profile'),
     },
 ];
 
 const routes: Routes = [
     {
         path: 'user',
-        loadChildren: () => import('@features/user/user-lazy.module').then(m => m.CoreUserLazyModule),
+        loadChildren: () => [
+            {
+                path: '',
+                redirectTo: 'profile',
+                pathMatch: 'full',
+            },
+            {
+                path: 'profile',
+                loadComponent: () => import('@features/user/pages/profile/profile'),
+            },
+            {
+                path: 'about',
+                loadComponent: () => import('@features/user/pages/about/about'),
+            },
+        ],
     },
     ...conditionalRoutes([
         {
-            path: `${COURSE_PAGE_NAME}/${COURSE_INDEX_PATH}/${PARTICIPANTS_PAGE_NAME}/:userId`,
-            loadChildren: () => import('@features/user/user-profile-lazy.module').then(m => m.CoreUserProfileLazyModule),
+            path: `${CORE_COURSE_PAGE_NAME}/${CORE_COURSE_INDEX_PATH}/${PARTICIPANTS_PAGE_NAME}/:userId`,
+            loadComponent: () => import('@features/user/pages/profile/profile'),
             data: {
                 swipeManagerSource: 'participants',
             },
@@ -86,7 +112,14 @@ const routes: Routes = [
 const courseIndexRoutes: Routes = [
     {
         path: PARTICIPANTS_PAGE_NAME,
-        loadChildren: () => import('@features/user/user-course-lazy.module').then(m => m.CoreUserCourseLazyModule),
+        loadComponent: () => import('@features/user/pages/participants/participants'),
+        loadChildren: () => conditionalRoutes([
+            {
+                path: ':userId',
+                loadComponent: () => import('@features/user/pages/profile/profile'),
+                data: { swipeManagerSource: 'participants' },
+            },
+        ], () => CoreScreen.isTablet),
     },
 ];
 
@@ -95,14 +128,13 @@ const courseIndexRoutes: Routes = [
         AppRoutingModule.forChild(appRoutes),
         CoreMainMenuTabRoutingModule.forChild(routes),
         CoreCourseIndexRoutingModule.forChild({ children: courseIndexRoutes }),
-        CoreUserComponentsModule,
     ],
     providers: [
         {
             provide: CORE_SITE_SCHEMAS,
             useValue: [
-                SITE_SCHEMA,
-                OFFLINE_SITE_SCHEMA,
+                CORE_USER_CACHE_SITE_SCHEMA,
+                CORE_USER_OFFLINE_SITE_SCHEMA,
             ],
             multi: true,
         },

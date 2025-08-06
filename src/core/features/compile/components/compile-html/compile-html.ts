@@ -42,13 +42,12 @@ import {
 import { CorePromisedValue } from '@classes/promised-value';
 
 import { CoreCompile } from '@features/compile/services/compile';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreAngular } from '@singletons/angular';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreWS } from '@services/ws';
 import { CoreDom } from '@singletons/dom';
-
-// by rachmad
-import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * This component has a behaviour similar to $compile for AngularJS. Given an HTML code, it will compile it so all its
@@ -58,7 +57,7 @@ import { CqHelper } from '@features/cq_pages/services/cq_helper';
  * component is used, so it can slow down the app.
  *
  * This component has its own module to prevent circular dependencies. If you want to use it,
- * you need to import CoreCompileHtmlComponentModule.
+ * you need to import CoreCompileHtmlComponent.
  *
  * You can provide some Javascript code (as text) to be executed inside the component. The context of the javascript code (this)
  * will be the component instance created to compile the template. This means your javascript code can interact with the template.
@@ -69,6 +68,8 @@ import { CqHelper } from '@features/cq_pages/services/cq_helper';
     selector: 'core-compile-html',
     template: '<core-loading [hideUntil]="loaded"><ng-container #dynamicComponent /></core-loading>',
     styles: [':host { display: contents; }'],
+    standalone: true,
+    imports: [CoreSharedModule],
 })
 export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
 
@@ -97,9 +98,6 @@ export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
     protected componentStyles = '';
 
     constructor(
-        // by rachmad
-        protected CH: CqHelper,
-
         protected changeDetector: ChangeDetectorRef,
         protected injector: Injector,
         element: ElementRef,
@@ -125,7 +123,7 @@ export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
         this.setInputData();
 
         if (this.componentInstance.ngOnChanges) {
-            this.componentInstance.ngOnChanges(CoreDomUtils.createChangesFromKeyValueDiff(changes));
+            this.componentInstance.ngOnChanges(CoreAngular.createChangesFromKeyValueDiff(changes));
         }
     }
 
@@ -170,7 +168,7 @@ export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
 
             this.loaded = true;
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
 
             this.loaded = true;
         } finally {
@@ -198,7 +196,7 @@ export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
         }
 
         if (this.stylesPath && !this.cssCode) {
-            this.cssCode = await CoreUtils.ignoreErrors(CoreWS.getText(this.stylesPath));
+            this.cssCode = await CorePromiseUtils.ignoreErrors(CoreWS.getText(this.stylesPath));
         }
 
         // Prepend all CSS rules with :host to avoid conflicts.
@@ -234,14 +232,8 @@ export class CoreCompileHtmlComponent implements OnChanges, OnDestroy, DoCheck {
 
             private ongoingLifecycleHooks: Set<keyof AfterViewInit | keyof AfterContentInit | keyof OnDestroy> = new Set();
             protected effectRefs: EffectRef[] = [];
-            
-            // by rachmad
-            protected CH: CqHelper;
 
             constructor() {
-                // by rachmad
-                this.CH = compileInstance.CH;
-                
                 // Store this instance so it can be accessed by the outer component.
                 compileInstance.componentInstance = this;
 

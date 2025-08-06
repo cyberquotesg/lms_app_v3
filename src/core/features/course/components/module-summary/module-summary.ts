@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants, DownloadStatus } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
 import { AddonBlog } from '@addons/blog/services/blog';
 import { ADDON_BLOG_MAINMENU_PAGE_NAME } from '@addons/blog/constants';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
@@ -27,14 +27,17 @@ import { CoreNetwork } from '@services/network';
 import { CoreFilepool } from '@services/filepool';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreText } from '@singletons/text';
-import { CoreUtils } from '@services/utils/utils';
-import { ModalController, NgZone } from '@singletons';
+import { CoreUtils } from '@singletons/utils';
+import { ModalController, NgZone, Translate } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
 import { CoreSharedModule } from '@/core/shared.module';
 import { toBoolean } from '@/core/transforms/boolean';
+import { CorePromiseUtils } from '@singletons/promise-utils';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { ModFeature } from '@addons/mod/constants';
+import { CoreCourseModuleHelper } from '@features/course/services/course-module-helper';
 
 /**
  * Component to display a module summary modal.
@@ -113,19 +116,15 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
             displayRefresh: true,
             displayPrefetch: true,
             displaySize: true,
-
-            // by rachmad
-            displayBlog: false,
-            // displayBlog: true,
-
+            displayBlog: true,
             displayGrades: true,
         }, this.displayOptions);
 
         this.displayOptions.displayGrades = this.displayOptions.displayGrades &&
-            CoreCourseModuleDelegate.supportsFeature(this.module.modname, CoreConstants.FEATURE_GRADE_HAS_GRADE, true);
+            CoreCourseModuleDelegate.supportsFeature(this.module.modname, ModFeature.GRADE_HAS_GRADE, true);
 
         this.displayOptions.displayDescription = this.displayOptions.displayDescription &&
-            CoreCourseModuleDelegate.supportsFeature(this.module.modname, CoreConstants.FEATURE_SHOW_DESCRIPTION, true);
+            CoreCourseModuleDelegate.supportsFeature(this.module.modname, ModFeature.SHOW_DESCRIPTION, true);
 
         this.fetchContent();
 
@@ -181,9 +180,10 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
         this.componentId = this.module.id;
         this.externalUrl = this.module.url;
         this.courseId = this.courseId || this.module.course;
-        this.moduleNameTranslated = CoreCourse.translateModuleName(this.module.modname, this.module.modplural);
+        this.moduleNameTranslated = CoreCourseModuleHelper.translateModuleName(this.module.modname, this.module.modplural);
 
-        this.blog = await AddonBlog.isPluginEnabled();
+        this.blog = !CoreSites.getCurrentSite()?.isFeatureDisabled('CoreCourseOptionsDelegate_AddonBlog') &&
+            await AddonBlog.isPluginEnabled();
 
         try {
             await Promise.all([
@@ -193,7 +193,7 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
                 this.fetchCourse(),
             ]);
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
         }
 
         this.loaded = true;
@@ -278,7 +278,7 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
     protected async fetchCourse(): Promise<void> {
         this.course = await CoreCourseHelper.getCourseInfo(this.courseId);
 
-        this.isTeacher = await CoreUtils.ignoreErrors(CoreCourseHelper.guessIsTeacher(this.courseId, this.course), false);
+        this.isTeacher = await CorePromiseUtils.ignoreErrors(CoreCourseHelper.guessIsTeacher(this.courseId, this.course), false);
     }
 
     /**
@@ -316,7 +316,7 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
             // We need to call getDownloadSize, the package might have been updated.
             const size = await CoreCourseModulePrefetchDelegate.getModuleDownloadSize(this.module, this.courseId, true);
 
-            await CoreDomUtils.confirmDownloadSize(size);
+            await CoreAlerts.confirmDownloadSize(size);
 
             await CoreCourseModulePrefetchDelegate.prefetchModule(this.module, this.courseId, true);
 
@@ -325,7 +325,7 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
             this.prefetchLoading = false;
 
             if (!this.isDestroyed) {
-                CoreDomUtils.showErrorModalDefault(error, 'core.errordownloading', true);
+                CoreAlerts.showError(error, { default: Translate.instant('core.errordownloading') });
             }
         }
     }
@@ -339,13 +339,15 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
         }
 
         if (this.prefetchLoading) {
-            CoreDomUtils.showAlertTranslated(undefined, 'core.course.cannotdeletewhiledownloading');
+            CoreAlerts.show({ message: Translate.instant('core.course.cannotdeletewhiledownloading') });
 
             return;
         }
 
         try {
-            await CoreDomUtils.showDeleteConfirm('addon.storagemanager.confirmdeletedatafrom', { name: this.module.name });
+            await CoreAlerts.confirmDelete(
+                Translate.instant('addon.storagemanager.confirmdeletedatafrom', { name: this.module.name }),
+            );
 
             this.removeFilesLoading = true;
 
@@ -353,7 +355,7 @@ export class CoreCourseModuleSummaryComponent implements OnInit, OnDestroy {
 
         } catch (error) {
             if (!this.isDestroyed &&error) {
-                CoreDomUtils.showErrorModal(error);
+                CoreAlerts.showError(error);
             }
         } finally {
             this.removeFilesLoading = false;

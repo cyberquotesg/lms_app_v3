@@ -101,7 +101,7 @@ class behat_app extends behat_app_helper {
      * @throws dml_exception Problem with Moodle setup
      * @throws ExpectationException Problem with resizing window
      */
-    public function i_enter_the_app(string $username = null) {
+    public function i_enter_the_app(?string $username = null) {
         $this->i_launch_the_app();
 
         if (!is_null($username)) {
@@ -283,11 +283,15 @@ class behat_app extends behat_app_helper {
      * @When I wait for the BigBlueButton room to start
      */
     public function i_wait_bbb_room_to_start() {
-        $windowNames = $this->getSession()->getWindowNames();
+        $windowNames = $this->get_window_names();
 
         $this->getSession()->switchToWindow(array_pop($windowNames));
         $this->spin(function($context) {
-            $joinmodal = $context->getSession()->getPage()->find('css', 'div[role="dialog"][aria-label="How would you like to join the audio?"]');
+            $joinmodal = $context->getSession()->getPage()->find('css', implode(', ', [
+                'div[role="dialog"][aria-label="How would you like to join the audio?"]',
+                'div[role="dialog"][aria-label="There was an issue with your audio devices"]',
+            ]));
+
 
             if ($joinmodal) {
                 return true;
@@ -604,6 +608,7 @@ class behat_app extends behat_app_helper {
         $data = $data->getColumnsHash()[0];
         $title = array_keys($data)[0];
         $data = (object) $data;
+        $username = $data->user ?? '';
 
         switch ($title) {
             case 'discussion':
@@ -645,7 +650,7 @@ class behat_app extends behat_app_helper {
                 throw new DriverException('Invalid custom link title - ' . $title);
         }
 
-        $this->open_moodleapp_custom_url($pageurl);
+        $this->open_moodleapp_custom_url($pageurl, '', $username);
     }
 
     /**
@@ -984,7 +989,7 @@ class behat_app extends behat_app_helper {
      */
     public function the_app_should_have_opened_a_browser_tab(bool $not = false, ?string $urlpattern = null) {
         $this->spin(function() use ($not, $urlpattern) {
-            $windowNames = $this->getSession()->getWindowNames();
+            $windowNames = $this->get_window_names();
             $openedbrowsertab = count($windowNames) === 2;
 
             if ((!$not && !$openedbrowsertab) || ($not && $openedbrowsertab && is_null($urlpattern))) {
@@ -1091,7 +1096,7 @@ class behat_app extends behat_app_helper {
      * @throws DriverException If there aren't exactly 2 tabs open
      */
     public function i_switch_to_the_browser_tab_opened_by_the_app() {
-        $windowNames = $this->getSession()->getWindowNames();
+        $windowNames = $this->get_window_names();
         if (count($windowNames) !== 2) {
             throw new DriverException('Expected to see 2 tabs open, not ' . count($windowNames));
         }
@@ -1139,7 +1144,7 @@ class behat_app extends behat_app_helper {
      * @throws DriverException If there aren't exactly 2 tabs open
      */
     public function i_close_the_browser_tab_opened_by_the_app() {
-        $names = $this->getSession()->getWindowNames();
+        $names = $this->get_window_names();
         if (count($names) !== 2) {
             throw new DriverException('Expected to see 2 tabs open, not ' . count($names));
         }
@@ -1196,7 +1201,7 @@ class behat_app extends behat_app_helper {
     public function i_open_a_browser_tab_with_url(string $url) {
         $this->execute_script("window.open('$url', '_system');");
 
-        $windowNames = $this->getSession()->getWindowNames();
+        $windowNames = $this->get_window_names();
         $this->getSession()->switchToWindow($windowNames[1]);
     }
 

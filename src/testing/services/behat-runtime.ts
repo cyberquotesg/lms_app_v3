@@ -33,7 +33,7 @@ import { Swiper } from 'swiper';
 import { LocalNotificationsMock } from '@features/emulator/services/local-notifications';
 import { GetClosureArgs } from '@/core/utils/types';
 import { CoreIframeComponent } from '@components/iframe/iframe';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 
 /**
  * Behat runtime servive with public API.
@@ -94,7 +94,7 @@ export class TestingBehatRuntimeService {
 
         if (options.configOverrides) {
             // Set the cookie so it's maintained between reloads.
-            document.cookie = 'MoodleAppConfig=' + JSON.stringify(options.configOverrides);
+            document.cookie = `MoodleAppConfig=${JSON.stringify(options.configOverrides)}`;
             CoreConfig.patchEnvironment(options.configOverrides, { patchDefault: true });
         }
 
@@ -136,19 +136,39 @@ export class TestingBehatRuntimeService {
      * Run an operation inside the angular zone and return result.
      *
      * @param operation Operation callback.
+     * @param blocking Whether the operation is blocking or not.
+     * @param locatorToFind If set, when this locator is found the operation is considered finished. This is useful for
+     *                      operations that might expect user input before finishing, like a confirm modal.
      * @returns OK if successful, or ERROR: followed by message.
      */
-    async runInZone(operation: () => unknown, blocking: boolean = false): Promise<string> {
+    async runInZone(
+        operation: () => unknown,
+        blocking: boolean = false,
+        locatorToFind?: TestingBehatElementLocator,
+    ): Promise<string> {
         const blockKey = blocking && TestingBehatBlocking.block();
+        let interval: number | undefined;
 
         try {
-            await NgZone.run(operation);
+            await new Promise<void>((resolve, reject) => {
+                Promise.resolve(NgZone.run(operation)).then(resolve).catch(reject);
+
+                if (locatorToFind) {
+                    interval = window.setInterval(() => {
+                        if (TestingBehatDomUtils.findElementBasedOnText(locatorToFind, { onlyClickable: false })) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 500);
+                }
+            });
 
             return 'OK';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         } finally {
             blockKey && TestingBehatBlocking.unblock(blockKey);
+            window.clearInterval(interval);
         }
     }
 
@@ -209,7 +229,7 @@ export class TestingBehatRuntimeService {
      * @returns OK if successful, or ERROR: followed by message.
      */
     async pressStandard(button: string): Promise<string> {
-        this.log('Action - Click standard button: ' + button);
+        this.log(`Action - Click standard button: ${button}`);
 
         // @deprecated usage, use goBack instead.
         if (button === 'back') {
@@ -350,7 +370,7 @@ export class TestingBehatRuntimeService {
         }
 
         if (backdrops.length > 1) {
-            return 'ERROR: Found too many backdrops ('+backdrops.length+')';
+            return `ERROR: Found too many backdrops (${backdrops.length})`;
         }
 
         backdrops[0]?.click();
@@ -385,7 +405,7 @@ export class TestingBehatRuntimeService {
 
             return 'OK';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         }
     }
 
@@ -413,7 +433,7 @@ export class TestingBehatRuntimeService {
 
             return 'OK';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         }
     }
 
@@ -498,7 +518,7 @@ export class TestingBehatRuntimeService {
 
             return (isLoading() || isCompleted() || hasMoved()) ? 'OK' : 'ERROR: Couldn\'t load more items.';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         }
     }
 
@@ -520,7 +540,7 @@ export class TestingBehatRuntimeService {
 
             return TestingBehatDomUtils.isElementSelected(element) ? 'YES' : 'NO';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         }
     }
 
@@ -555,7 +575,7 @@ export class TestingBehatRuntimeService {
 
             return 'OK';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         }
     }
 
@@ -589,7 +609,7 @@ export class TestingBehatRuntimeService {
 
             return input.getAttribute('id') ?? '';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         }
     }
 
@@ -612,7 +632,7 @@ export class TestingBehatRuntimeService {
 
             return 'OK';
         } catch (error) {
-            return 'ERROR: ' + error.message;
+            return `ERROR: ${error.message}`;
         }
     }
 
@@ -657,7 +677,7 @@ export class TestingBehatRuntimeService {
      * @returns OK or ERROR: followed by message
      */
     async setField(field: string, value: string): Promise<string> {
-        this.log('Action - Set field ' + field + ' to: ' + value);
+        this.log(`Action - Set field ${field} to: ${value}`);
 
         const input = TestingBehatDomUtils.findField(field);
 
@@ -700,7 +720,7 @@ export class TestingBehatRuntimeService {
      * @returns OK or ERROR: followed by message
      */
     async fieldMatches(field: string, value: string): Promise<string> {
-        this.log('Action - Field ' + field + ' matches value: ' + value);
+        this.log(`Action - Field ${field} matches value: ${value}`);
 
         const found = TestingBehatDomUtils.findField(field);
 
@@ -730,8 +750,14 @@ export class TestingBehatRuntimeService {
         if (element.tagName === 'ION-DATETIME') {
             const value = 'value' in element ? element.value : element.innerText;
 
-            // Remove seconds from the value to ensure stability on tests. It could be improved using moment parsing if needed.
-            return value.substring(0, value.length - 3);
+            // Remove seconds from the value to ensure stability on tests. It could be improved using DayJS parsing if needed.
+            // Count the number of ":".
+            const colonCount = value.split(':').length;
+            if (colonCount > 2) {
+                return value.substring(0, value.lastIndexOf(':'));
+            }
+
+            return value;
         }
 
         return 'value' in element ? element.value : element.innerText;
@@ -776,7 +802,7 @@ export class TestingBehatRuntimeService {
                 String(now.getSeconds()).padStart(2, '0') + '.' +
                 String(now.getMilliseconds()).padStart(2, '0');
 
-        console.log('BEHAT: ' + nowFormatted, ...args); // eslint-disable-line no-console
+        console.log(`BEHAT: ${nowFormatted}`, ...args); // eslint-disable-line no-console
     }
 
     /**
@@ -888,7 +914,7 @@ export class TestingBehatRuntimeService {
      * @returns Promise resolved when toast has been dismissed.
      */
     async waitToastDismiss(): Promise<void> {
-        await CoreUtils.ignoreErrors(ToastController.dismiss());
+        await CorePromiseUtils.ignoreErrors(ToastController.dismiss());
     }
 
 }

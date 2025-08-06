@@ -74,12 +74,12 @@
         "student": {
             "url": "https://school.moodledemo.net",
             "username": "student",
-            "password": "moodle25"
+            "password": "moodle2024"
         },
         "teacher": {
             "url": "https://school.moodledemo.net",
             "username": "teacher",
-            "password": "moodle25"
+            "password": "moodle2024"
         }
     },
     "defaultZoomLevel": "none",
@@ -100,7 +100,6 @@
     "enableonboarding": true,
     "forceColorScheme": "",
     "forceLoginLogo": false,
-    "showTopLogo": "hidden",
     "ioswebviewscheme": "moodleappfs",
     "appstores": {
         "android": "com.moodle.moodlemobile",
@@ -138,7 +137,6 @@
         }
     },
     "clearIABSessionWhenAutoLogin": "android",
-    "collapsibleItemsExpanded": false,
     "siteurl": "https://qaslms.cyberquote.com",
     "sites": [
         {

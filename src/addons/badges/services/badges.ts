@@ -15,17 +15,17 @@
 import { Injectable } from '@angular/core';
 import { CoreSites } from '@services/sites';
 import { CoreWSExternalWarning } from '@services/ws';
-import { CoreSite } from '@classes/sites/site';
 import { makeSingleton } from '@singletons';
 import { CoreError } from '@classes/errors/error';
-
-const ROOT_CACHE_KEY = 'mmaBadges:';
+import { CoreCacheUpdateFrequency } from '@/core/constants';
 
 /**
  * Service to handle badges.
  */
 @Injectable({ providedIn: 'root' })
 export class AddonBadgesProvider {
+
+    protected static readonly ROOT_CACHE_KEY = 'mmaBadges:';
 
     /**
      * Returns whether or not the badge plugin is enabled for a certain site.
@@ -50,7 +50,7 @@ export class AddonBadgesProvider {
      * @returns Cache key.
      */
     protected getBadgesCacheKey(courseId: number, userId: number): string {
-        return ROOT_CACHE_KEY + 'badges:' + courseId + ':' + userId;
+        return `${AddonBadgesProvider.ROOT_CACHE_KEY}badges:${courseId}:${userId}`;
     }
 
     /**
@@ -70,7 +70,7 @@ export class AddonBadgesProvider {
         };
         const preSets = {
             cacheKey: this.getBadgesCacheKey(courseId, userId),
-            updateFrequency: CoreSite.FREQUENCY_RARELY,
+            updateFrequency: CoreCacheUpdateFrequency.RARELY,
         };
 
         const response = await site.read<AddonBadgesGetUserBadgesWSResponse>('core_badges_get_user_badges', data, preSets);
@@ -116,7 +116,7 @@ export class AddonBadgesProvider {
      * @returns Cache key.
      */
     protected getUserBadgeByHashCacheKey(hash: string): string {
-        return ROOT_CACHE_KEY + 'badge:' + hash;
+        return `${AddonBadgesProvider.ROOT_CACHE_KEY}badge:${hash}`;
     }
 
     /**
@@ -133,7 +133,7 @@ export class AddonBadgesProvider {
         };
         const preSets = {
             cacheKey: this.getUserBadgeByHashCacheKey(hash),
-            updateFrequency: CoreSite.FREQUENCY_RARELY,
+            updateFrequency: CoreCacheUpdateFrequency.RARELY,
         };
 
         const response = await site.read<AddonBadgesGetUserBadgeByHashWSResponse>(
@@ -172,7 +172,7 @@ export class AddonBadgesProvider {
      * @returns Cache key.
      */
     protected getBadgeClassCacheKey(id: number): string {
-        return ROOT_CACHE_KEY + 'badgeclass:' + id;
+        return `${AddonBadgesProvider.ROOT_CACHE_KEY}badgeclass:${id}`;
     }
 
     /**
@@ -190,7 +190,7 @@ export class AddonBadgesProvider {
         };
         const preSets = {
             cacheKey: this.getBadgeClassCacheKey(id),
-            updateFrequency: CoreSite.FREQUENCY_RARELY,
+            updateFrequency: CoreCacheUpdateFrequency.RARELY,
         };
 
         const response = await site.read<AddonBadgesGetBadgeClassWSResponse>(

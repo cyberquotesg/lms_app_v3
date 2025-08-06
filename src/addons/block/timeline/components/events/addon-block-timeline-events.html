@@ -9,12 +9,19 @@
 <ion-item-group *ngFor="let dayEvents of events">
     <ion-item>
         <ion-label>
-            <h4>{{ dayEvents.dayTimestamp * 1000 | coreFormatDate:"strftimedaydate" }}</h4>
+            @if (course) {
+                <h4><ng-container *ngTemplateOutlet="date" /></h4>
+            } @else {
+                <h3><ng-container *ngTemplateOutlet="date" /></h3>
+            }
+            <ng-template #date>
+                {{ dayEvents.dayTimestamp * 1000 | coreFormatDate:"strftimedaydate" }}
+            </ng-template>
         </ion-label>
     </ion-item>
     <ng-container *ngFor="let event of dayEvents.events">
         <ion-item class="addon-block-timeline-activity" [detail]="false" (click)="action($event, event.url)" [attr.aria-label]="event.name"
-            button lines="full">
+            button lines="full" [attr.data-event-course-id]="event.course?.id">
             <ion-label>
                 <ion-row class="ion-justify-content-between ion-align-items-center ion-nowrap ion-no-padding">
                     <ion-col class="addon-block-timeline-activity-time ion-no-padding ion-text-nowrap">

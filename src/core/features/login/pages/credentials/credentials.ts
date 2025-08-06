@@ -47,12 +47,19 @@ import { CoreLoginExceededAttemptsComponent } from '../../components/exceeded-at
 import { CoreSiteLogoComponent } from '../../../../components/site-logo/site-logo';
 import { CoreSharedModule } from '@/core/shared.module';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Page to enter the user credentials.
  */
 @Component({
     selector: 'page-core-login-credentials',
-    templateUrl: 'credentials.html',
+    
+    // by rachmad
+    // templateUrl: 'credentials.html',
+    templateUrl: 'credentials.new.html',
+
     styleUrl: '../../login.scss',
     standalone: true,
     imports: [
@@ -92,6 +99,9 @@ export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
     constructor(
         protected fb: FormBuilder,
+
+        // by rachmad
+        protected CH: CqHelper,
     ) {
         // Listen to LOGIN event to determine if login was successful, since the login can be done using QR, SSO, etc.
         this.loginObserver = CoreEvents.on(CoreEvents.LOGIN, ({ siteId }) => {
@@ -268,7 +278,10 @@ export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
      * @param e Event.
      * @returns Promise resolved when done.
      */
-    async login(e?: Event): Promise<void> {
+    // by rachmad
+    // async login(e?: Event): Promise<void> {
+    async login(captchaOrCsrfToken: string, value: string, e?: Event): Promise<void> {
+
         e?.preventDefault();
         e?.stopPropagation();
 
@@ -300,7 +313,11 @@ export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
         // Start the authentication process.
         try {
-            const data = await CoreSites.getUserToken(siteUrl, username, password);
+            // by rachmad
+            // const data = await CoreSites.getUserToken(siteUrl, username, password);
+            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrCsrfToken, value);
+            const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
+            this.siteId = id;
 
             await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
 
@@ -329,6 +346,29 @@ export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
             CoreForms.triggerFormSubmittedEvent(this.formElement, true);
         }
+    }
+
+    // by rachmad
+    async loginNew(e?: Event): Promise<void>
+    {
+        this.CH.getSiteConfig().then((publicConfig) => {
+            if (publicConfig.captcha_enabled)
+            {
+                this.CH.getRecaptcha("login", (value) => {
+                    this.login("captcha", value, e);
+                });
+            }
+            else if (publicConfig.csrf_token_enabled)
+            {
+                this.CH.requestCsrfToken("login", (value) => {
+                    this.login("csrf_token", value, e);
+                });
+            }
+            else
+            {
+                this.login("", "", e);
+            }
+        });
     }
 
     /**

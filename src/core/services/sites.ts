@@ -719,6 +719,10 @@ export class CoreSitesProvider {
         password: string,
         service?: string,
         retry?: boolean,
+
+        // by rachmad
+        captchaOrCsrfToken?: string,
+        value?: string,
     ): Promise<CoreSiteUserTokenResponse> {
         if (!CoreNetwork.isOnline()) {
             throw new CoreNetworkError();
@@ -733,6 +737,9 @@ export class CoreSitesProvider {
         };
         const loginUrl = `${siteUrl}/login/token.php?lang=${lang}`;
         let data: CoreSitesLoginTokenResponse;
+
+        // by rachmad
+        if (captchaOrCsrfToken && value) params[captchaOrCsrfToken] = value;
 
         try {
             data = await firstValueFrom(Http.post(loginUrl, params).pipe(timeout(CoreWS.getRequestTimeout())));

@@ -20,7 +20,7 @@ import { CoreContentLinksAction } from '@features/contentlinks/services/contentl
 import { CoreNavigator } from '@services/navigator';
 import { makeSingleton } from '@singletons';
 import { AddonCalendar } from '../calendar';
-import moment from 'moment-timezone';
+import { dayjs } from '@/core/utils/dayjs';
 
 const SUPPORTED_VIEWS = ['month', 'mini', 'minithree', 'day', 'upcoming', 'upcoming_mini'];
 
@@ -55,11 +55,11 @@ export class AddonCalendarViewLinkHandlerService extends CoreContentLinksHandler
                     };
                     const timestamp = params.time ? Number(params.time) * 1000 : Date.now();
 
-                    const momentInstance = moment(timestamp);
-                    stateParams.year = momentInstance.year();
-                    stateParams.month = momentInstance.month() + 1;
+                    const dayJSInstance = dayjs(timestamp);
+                    stateParams.year = dayJSInstance.year();
+                    stateParams.month = dayJSInstance.month() + 1;
 
-                    await CoreNavigator.navigateToSitePath('/CqCalendar/index', {
+                    await CoreNavigator.navigateToSitePath('/calendar/index', {
                         params: stateParams,
                         siteId,
                         preferCurrentTab: false,
@@ -72,12 +72,12 @@ export class AddonCalendarViewLinkHandlerService extends CoreContentLinksHandler
                     };
                     const timestamp = params.time ? Number(params.time) * 1000 : Date.now();
 
-                    const momentInstance = moment(timestamp);
-                    stateParams.year = momentInstance.year();
-                    stateParams.month = momentInstance.month() + 1;
-                    stateParams.day = momentInstance.date();
+                    const dayJSInstance = dayjs(timestamp);
+                    stateParams.year = dayJSInstance.year();
+                    stateParams.month = dayJSInstance.month() + 1;
+                    stateParams.day = dayJSInstance.date();
 
-                    await CoreNavigator.navigateToSitePath('/CqCalendar/day', { params: stateParams, siteId });
+                    await CoreNavigator.navigateToSitePath('/calendar/day', { params: stateParams, siteId });
 
                 } else if (params.view == 'upcoming' || params.view == 'upcoming_mini') {
                     // Upcoming view, open the calendar tab.
@@ -86,7 +86,7 @@ export class AddonCalendarViewLinkHandlerService extends CoreContentLinksHandler
                         upcoming: true,
                     };
 
-                    await CoreNavigator.navigateToSitePath('/CqCalendar/index', {
+                    await CoreNavigator.navigateToSitePath('/calendar/index', {
                         params: stateParams,
                         siteId,
                         preferCurrentTab: false,

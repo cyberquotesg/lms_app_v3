@@ -16,6 +16,7 @@ import { Injectable } from '@angular/core';
 import { AddonCalendar } from '../calendar';
 import { makeSingleton } from '@singletons';
 import { CoreMainMenuHandler, CoreMainMenuHandlerData } from '@features/mainmenu/services/mainmenu-delegate';
+import { ADDON_CALENDAR_PAGE_NAME } from '@addons/calendar/constants';
 
 /**
  * Handler to inject an option into main menu.
@@ -23,10 +24,8 @@ import { CoreMainMenuHandler, CoreMainMenuHandlerData } from '@features/mainmenu
 @Injectable({ providedIn: 'root' })
 export class AddonCalendarMainMenuHandlerService implements CoreMainMenuHandler {
 
-    static readonly PAGE_NAME = 'CqCalendar';
-
     name = 'AddonCalendar';
-    priority = 2100;
+    priority = 550;
 
     /**
      * Check if the handler is enabled on a site level.
@@ -44,9 +43,9 @@ export class AddonCalendarMainMenuHandlerService implements CoreMainMenuHandler 
      */
     getDisplayData(): CoreMainMenuHandlerData {
         return {
-            icon: 'calendar',
+            icon: 'far-calendar',
             title: 'addon.calendar.calendar',
-            page: AddonCalendarMainMenuHandlerService.PAGE_NAME,
+            page: ADDON_CALENDAR_PAGE_NAME,
             class: 'addon-calendar-handler',
         };
     }

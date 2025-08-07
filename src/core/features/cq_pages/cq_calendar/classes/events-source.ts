@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AddonCalendarEventToDisplay } from '@features/cq_pages/cq_calendar/services/calendar';
+import { AddonCalendarEventToDisplay } from '@addons/calendar/services/calendar';
 import { Params } from '@angular/router';
 import { CoreRoutedItemsManagerSource } from '@classes/items-management/routed-items-manager-source';
 

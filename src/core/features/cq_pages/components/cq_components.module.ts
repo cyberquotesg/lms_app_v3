@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CoreSharedModule } from '@/core/shared.module';
-import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
+import { CoreMainMenuUserMenuComponent } from '@/core/features/mainmenu/components/user-menu/user-menu';
+import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/user-menu-button/user-menu-button';
+import { CoreMainMenuUserMenuTourComponent } from '@features/mainmenu/components/user-menu-tour/user-menu-tour';
 import { CqItemsComponent } from './cq_items/cq_items';
 import { CqHeaderComponent } from './cq_header/cq_header';
 import { CqEmptyComponent } from './cq_empty/cq_empty';
@@ -25,7 +27,9 @@ import { CqChecklogBannerComponent } from './cq_checklog_banner/cq_checklog_bann
     ],
     imports: [
         CoreSharedModule,
-        CoreMainMenuComponentsModule,
+        CoreMainMenuUserMenuComponent,
+        CoreMainMenuUserButtonComponent,
+        CoreMainMenuUserMenuTourComponent,
     ],
     exports: [
         CqItemsComponent,

@@ -3,17 +3,20 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, SimpleChange, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CqHelper } from '../../services/cq_helper';
 import { CqComponent } from '../../classes/cq_component';
-import { Chart, ChartData, ChartOptions } from 'chart.js';
+import { Chart, ChartTypeRegistry, ChartType, ChartData, ChartDataset, ChartOptions } from 'chart.js';
 
 @Component({
     selector: 'cq_chart',
     templateUrl: 'cq_chart.html'
 })
 export class CqChartComponent extends CqComponent implements OnInit, OnChanges, AfterViewInit {
-    @Input() type?: string;
+    @Input() type: ChartType = "line";
     @Input() stacked?: boolean;
     @Input() lineTension?: number;
-    @Input() data?: ChartData;
+    @Input() data: ChartData<'line'> = {
+        labels: [],
+        datasets: [],
+    };
     @ViewChild('cqChart') cqChart?: ElementRef;
 
     chart?: Chart;
@@ -123,11 +126,13 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
                 },
             },
             maintainAspectRatio: false,
-            legend: {
-                display: true,
-                position: 'bottom',
-                labels: {
-                    boxWidth: 20,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 20,
+                    },
                 },
             },
             scales: {},
@@ -136,16 +141,13 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
         if (this.stacked)
         {
             options.scales = {
-                xAxes: [{
+                myScale: {
                     stacked: true,
-                }],
-                yAxes: [{
-                    stacked: true,
-                }],
+                },
             };
         }
         this.chart = new Chart(this.cqChart?.nativeElement, {
-            type: this.type || "line",
+            type: this.type,
             data: this.data,
             options: options,
         });

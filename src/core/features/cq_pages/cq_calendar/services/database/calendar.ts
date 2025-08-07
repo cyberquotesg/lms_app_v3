@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ADDON_CALENDAR_EVENTS_TABLE, AddonCalendarEventType } from '@addons/calendar/constants';
+import { ADDON_CALENDAR_EVENTS_TABLE, AddonCalendarEventType } from '@features/cq_pages/cq_calendar/constants';
 import { SQLiteDB } from '@classes/sqlitedb';
 import { REMINDERS_DISABLED } from '@features/reminders/constants';
 import { CoreReminders } from '@features/reminders/services/reminders';

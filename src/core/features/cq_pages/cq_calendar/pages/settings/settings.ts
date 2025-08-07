@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Renderer2, ElementRef } from '@angular/core';
 import { CorePopovers } from '@services/overlays/popovers';
 import {
     CoreReminders,
@@ -20,6 +20,9 @@ import {
 } from '@features/reminders/services/reminders';
 import { REMINDERS_DISABLED } from '@features/reminders/constants';
 import { CoreSharedModule } from '@/core/shared.module';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays the calendar settings.
@@ -32,11 +35,17 @@ import { CoreSharedModule } from '@/core/shared.module';
         CoreSharedModule,
     ],
 })
-export default class AddonCalendarSettingsPage implements OnInit {
+export default class AddonCalendarSettingsPage extends CqPage implements OnInit {
 
     defaultTimeLabel = '';
 
     protected defaultTime?: number;
+
+    constructor(
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
+    ) {
+        super(renderer, CH, elementRef);
+    }
 
     /**
      * @inheritdoc

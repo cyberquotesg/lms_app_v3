@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, Renderer2, ElementRef } from '@angular/core';
+import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
@@ -41,7 +42,7 @@ import {
     CoreSwipeSlidesDynamicItemsManagerSource,
 } from '@classes/items-management/swipe-slides-dynamic-items-manager-source';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
-import { AddonCalendarEventsSource } from '@addons/calendar/classes/events-source';
+import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreUrl } from '@singletons/url';
 import { CoreModals } from '@services/overlays/modals';
@@ -55,10 +56,13 @@ import {
     ADDON_CALENDAR_NEW_EVENT_EVENT,
     ADDON_CALENDAR_UNDELETED_EVENT_EVENT,
     AddonCalendarEventType,
-} from '@addons/calendar/constants';
+} from '@features/cq_pages/cq_calendar/constants';
 import { CoreObject } from '@singletons/object';
 import { CoreAlerts } from '@services/overlays/alerts';
 import { CoreSharedModule } from '@/core/shared.module';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays the calendar events for a certain day.
@@ -72,7 +76,7 @@ import { CoreSharedModule } from '@/core/shared.module';
         CoreSharedModule,
     ],
 })
-export default class AddonCalendarDayPage implements OnInit, OnDestroy {
+export default class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreSwipeSlidesComponent) swipeSlidesComponent?: CoreSwipeSlidesComponent<PreloadedDay>;
 
@@ -100,7 +104,9 @@ export default class AddonCalendarDayPage implements OnInit, OnDestroy {
         category: true,
     };
 
-    constructor() {
+    constructor(renderer: Renderer2, CH: CqHelper, elementRef: ElementRef) {
+        super(renderer, CH, elementRef);
+
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
         // Listen for events added. When an event is added, reload the data.
@@ -215,7 +221,7 @@ export default class AddonCalendarDayPage implements OnInit, OnDestroy {
                     ...params,
                     category: 'calendar',
                 },
-                url: CoreUrl.addParamsToUrl('/calendar/view.php?view=day', params),
+                url: CoreUrl.addParamsToUrl('/CqCalendar/view.php?view=day', params),
             });
         });
     }
@@ -297,7 +303,7 @@ export default class AddonCalendarDayPage implements OnInit, OnDestroy {
         this.periodName = CoreTime.userDate(
             day.dayJS.valueOf(),
             'core.strftimedaydate',
-        );
+        ).split(' ').map((item, index) => index != 2 ? item : item.substr(0, 3)).join(' ');
     }
 
     /**
@@ -382,7 +388,7 @@ export default class AddonCalendarDayPage implements OnInit, OnDestroy {
      * @param day Day.
      */
     gotoEvent(eventId: number, day: PreloadedDay): void {
-        CoreNavigator.navigateToSitePath(`/calendar/event/${eventId}`, { params: { date: day.dayJS.format('MMDDY') } });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`, { params: { date: day.dayJS.format('MMDDY') } });
     }
 
     /**
@@ -424,7 +430,7 @@ export default class AddonCalendarDayPage implements OnInit, OnDestroy {
             params.courseId = this.filter.courseId;
         }
 
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${eventId}`, { params });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${eventId}`, { params });
     }
 
     /**

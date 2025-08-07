@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, Renderer2, ElementRef } from '@angular/core';
+import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
@@ -25,7 +26,7 @@ import { NgZone, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
 import { CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { ActivatedRoute, Params } from '@angular/router';
-import { AddonCalendarCalendarComponent } from '../../components/calendar/calendar';
+import { AddonCalendarCalendarComponent } from '../../components/CqCalendar/calendar';
 import { AddonCalendarUpcomingEventsComponent } from '../../components/upcoming-events/upcoming-events';
 import { CoreNavigator } from '@services/navigator';
 import { CoreConstants } from '@/core/constants';
@@ -39,10 +40,13 @@ import {
     ADDON_CALENDAR_NEW_EVENT_DISCARDED_EVENT,
     ADDON_CALENDAR_NEW_EVENT_EVENT,
     ADDON_CALENDAR_UNDELETED_EVENT_EVENT,
-} from '@addons/calendar/constants';
+} from '@features/cq_pages/cq_calendar/constants';
 import { CoreAlerts } from '@services/overlays/alerts';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/user-menu-button/user-menu-button';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays the calendar events.
@@ -58,7 +62,7 @@ import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/u
         CoreMainMenuUserButtonComponent,
     ],
 })
-export default class AddonCalendarIndexPage implements OnInit, OnDestroy {
+export default class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy {
 
     @ViewChild(AddonCalendarCalendarComponent) calendarComponent?: AddonCalendarCalendarComponent;
     @ViewChild(AddonCalendarUpcomingEventsComponent) upcomingEventsComponent?: AddonCalendarUpcomingEventsComponent;
@@ -98,9 +102,14 @@ export default class AddonCalendarIndexPage implements OnInit, OnDestroy {
         category: true,
     };
 
+    mode: string = "calendar";
+
     constructor(
         protected route: ActivatedRoute,
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
+        super(renderer, CH, elementRef);
+
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
         // Listen for events added. When an event is added, reload the data.
@@ -336,7 +345,7 @@ export default class AddonCalendarIndexPage implements OnInit, OnDestroy {
      * @param eventId Event to load.
      */
     gotoEvent(eventId: number): void {
-        CoreNavigator.navigateToSitePath(`/calendar/event/${eventId}`);
+        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`);
     }
 
     /**
@@ -355,7 +364,7 @@ export default class AddonCalendarIndexPage implements OnInit, OnDestroy {
             params[key] = this.filter[key];
         });
 
-        CoreNavigator.navigateToSitePath('/calendar/day', { params });
+        CoreNavigator.navigateToSitePath('/CqCalendar/day', { params });
     }
 
     /**
@@ -386,14 +395,14 @@ export default class AddonCalendarIndexPage implements OnInit, OnDestroy {
             params.courseId = this.filter.courseId;
         }
 
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${eventId}`, { params });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${eventId}`, { params });
     }
 
     /**
      * Open calendar events settings.
      */
     openSettings(): void {
-        CoreNavigator.navigateToSitePath('/calendar/calendar-settings');
+        CoreNavigator.navigateToSitePath('/CqCalendar/calendar-settings');
     }
 
     /**
@@ -422,4 +431,9 @@ export default class AddonCalendarIndexPage implements OnInit, OnDestroy {
         this.onlineObserver?.unsubscribe();
     }
 
+    selectMode(mode): void
+    {
+        this.mode = mode;
+        this.adjustScreenHeight(".cq-slide");
+    }
 }

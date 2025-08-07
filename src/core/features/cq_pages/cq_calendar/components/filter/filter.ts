@@ -17,10 +17,10 @@ import { CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { CoreObject } from '@singletons/object';
 import { ModalController } from '@singletons';
 import { CoreEvents } from '@singletons/events';
-import { AddonCalendarFilter } from '@addons/calendar/services/calendar-helper';
+import { AddonCalendarFilter } from '@features/cq_pages/cq_calendar/services/calendar-helper';
 import { ALL_COURSES_ID } from '@features/courses/services/courses-helper';
 import { CoreSharedModule } from '@/core/shared.module';
-import { ADDON_CALENDAR_FILTER_CHANGED_EVENT, AddonCalendarEventIcons, AddonCalendarEventType } from '@addons/calendar/constants';
+import { ADDON_CALENDAR_FILTER_CHANGED_EVENT, AddonCalendarEventIcons, AddonCalendarEventType } from '@features/cq_pages/cq_calendar/constants';
 import { CoreSites } from '@services/sites';
 
 /**

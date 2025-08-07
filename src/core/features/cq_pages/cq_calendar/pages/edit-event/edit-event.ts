@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { FormControl, FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { IonRefresher } from '@ionic/angular';
 import { CoreEvents } from '@singletons/events';
 import { CoreGroup, CoreGroups } from '@services/groups';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
@@ -47,7 +48,7 @@ import {
     ADDON_CALENDAR_NEW_EVENT_EVENT,
     ADDON_CALENDAR_SYNC_ID,
     AddonCalendarEventType,
-} from '@addons/calendar/constants';
+} from '@features/cq_pages/cq_calendar/constants';
 import { ContextLevel } from '@/core/constants';
 import { CorePopovers } from '@services/overlays/popovers';
 import { CoreLoadings } from '@services/overlays/loadings';
@@ -56,6 +57,9 @@ import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreAlerts } from '@services/overlays/alerts';
 import { CoreSharedModule } from '@/core/shared.module';
 import { DEFAULT_TEXT_FORMAT } from '@singletons/text';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays a form to create/edit an event.
@@ -70,7 +74,7 @@ import { DEFAULT_TEXT_FORMAT } from '@singletons/text';
         CoreEditorRichTextEditorComponent,
     ],
 })
-export default class AddonCalendarEditEventPage implements OnInit, OnDestroy, CanLeave {
+export default class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDestroy, CanLeave {
 
     @ViewChild(CoreEditorRichTextEditorComponent) descriptionEditor!: CoreEditorRichTextEditorComponent;
     @ViewChild('editEventForm') formElement!: ElementRef;
@@ -112,7 +116,10 @@ export default class AddonCalendarEditEventPage implements OnInit, OnDestroy, Ca
 
     constructor(
         protected fb: FormBuilder,
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
+        super(renderer, CH, elementRef);
+
         this.currentSite = CoreSites.getRequiredCurrentSite();
         this.remindersEnabled = CoreReminders.isEnabled();
 

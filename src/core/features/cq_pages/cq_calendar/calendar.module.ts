@@ -36,10 +36,10 @@ import { ADDON_CALENDAR_PAGE_NAME } from './constants';
  * @returns Returns calendar services.
  */
 export async function getCalendarServices(): Promise<Type<unknown>[]> {
-    const { AddonCalendarProvider } = await import('@addons/calendar/services/calendar');
-    const { AddonCalendarOfflineProvider } = await import('@addons/calendar/services/calendar-offline');
-    const { AddonCalendarHelperProvider } = await import('@addons/calendar/services/calendar-helper');
-    const { AddonCalendarSyncProvider } = await import('@addons/calendar/services/calendar-sync');
+    const { AddonCalendarProvider } = await import('@features/cq_pages/cq_calendar/services/calendar');
+    const { AddonCalendarOfflineProvider } = await import('@features/cq_pages/cq_calendar/services/calendar-offline');
+    const { AddonCalendarHelperProvider } = await import('@features/cq_pages/cq_calendar/services/calendar-helper');
+    const { AddonCalendarSyncProvider } = await import('@features/cq_pages/cq_calendar/services/calendar-sync');
 
     return [
         AddonCalendarProvider,

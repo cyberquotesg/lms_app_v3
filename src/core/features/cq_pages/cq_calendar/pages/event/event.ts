@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Renderer2, ElementRef } from '@angular/core';
+import { IonRefresher } from '@ionic/angular';
 import {
     AddonCalendar,
     AddonCalendarEventToDisplay,
@@ -33,7 +34,7 @@ import { CorePromiseUtils } from '@singletons/promise-utils';
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { CoreConstants } from '@/core/constants';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
-import { AddonCalendarEventsSource } from '@addons/calendar/classes/events-source';
+import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
 import { CoreReminders } from '@features/reminders/services/reminders';
 import { CoreLocalNotifications } from '@services/local-notifications';
@@ -51,10 +52,13 @@ import {
     ADDON_CALENDAR_NEW_EVENT_DISCARDED_EVENT,
     ADDON_CALENDAR_NEW_EVENT_EVENT,
     ADDON_CALENDAR_UNDELETED_EVENT_EVENT,
-} from '@addons/calendar/constants';
+} from '@features/cq_pages/cq_calendar/constants';
 import { REMINDERS_DEFAULT_NOTIFICATION_TIME_CHANGED } from '@features/reminders/constants';
 import { CoreAlerts, CoreAlertsConfirmOptions } from '@services/overlays/alerts';
 import { CoreSharedModule } from '@/core/shared.module';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
 
 /**
  * Page that displays a single calendar event.
@@ -68,7 +72,7 @@ import { CoreSharedModule } from '@/core/shared.module';
         CoreSharedModule,
     ],
 })
-export default class AddonCalendarEventPage implements OnInit, OnDestroy {
+export default class AddonCalendarEventPage extends CqPage implements OnInit, OnDestroy {
 
     protected eventId!: number;
     protected siteHomeId: number;
@@ -103,7 +107,10 @@ export default class AddonCalendarEventPage implements OnInit, OnDestroy {
 
     constructor(
         protected route: ActivatedRoute,
+        renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
+        super(renderer, CH, elementRef);
+
         this.remindersEnabled = CoreReminders.isEnabled();
         this.siteHomeId = CoreSites.getCurrentSiteHomeId();
         this.currentSiteId = CoreSites.getCurrentSiteId();
@@ -495,7 +502,7 @@ export default class AddonCalendarEventPage implements OnInit, OnDestroy {
      * Open the page to edit the event.
      */
     openEdit(): void {
-        CoreNavigator.navigateToSitePath(`/calendar/edit/${this.eventId}`);
+        CoreNavigator.navigateToSitePath(`/CqCalendar/edit/${this.eventId}`);
     }
 
     /**

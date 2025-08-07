@@ -27,7 +27,7 @@ import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreUrl } from '@singletons/url';
 import { CoreTime } from '@singletons/time';
 import { Translate } from '@singletons';
-import { ADDON_CALENDAR_UNDELETED_EVENT_EVENT } from '@addons/calendar/constants';
+import { ADDON_CALENDAR_UNDELETED_EVENT_EVENT } from '@features/cq_pages/cq_calendar/constants';
 import { CoreAlerts } from '@services/overlays/alerts';
 import { CoreSharedModule } from '@/core/shared.module';
 
@@ -108,7 +108,7 @@ export class AddonCalendarUpcomingEventsComponent implements OnInit, DoCheck, On
                     ...params,
                     category: 'calendar',
                 },
-                url: CoreUrl.addParamsToUrl('/calendar/view.php?view=upcoming', params),
+                url: CoreUrl.addParamsToUrl('/CqCalendar/view.php?view=upcoming', params),
             });
         });
     }

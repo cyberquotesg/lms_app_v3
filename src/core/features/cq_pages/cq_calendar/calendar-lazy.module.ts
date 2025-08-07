@@ -19,6 +19,8 @@ import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.modu
 import { ADDON_CALENDAR_PAGE_NAME } from './constants';
 import { canLeaveGuard } from '@guards/can-leave';
 
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+
 /**
  * Build module routes.
  *
@@ -30,23 +32,23 @@ function buildRoutes(injector: Injector): Routes {
         {
             path: 'index',
             data: { mainMenuTabRoot: ADDON_CALENDAR_PAGE_NAME },
-            loadComponent: () => import('@addons/calendar/pages/index'),
+            loadComponent: () => import('@features/cq_pages/cq_calendar/pages/index'),
         },
         {
             path: 'calendar-settings',
-            loadComponent: () => import('@addons/calendar/pages/settings/settings'),
+            loadComponent: () => import('@features/cq_pages/cq_calendar/pages/settings/settings'),
         },
         {
             path: 'day',
-            loadComponent: () => import('@addons/calendar/pages/day/day'),
+            loadComponent: () => import('@features/cq_pages/cq_calendar/pages/day/day'),
         },
         {
             path: 'event/:id',
-            loadComponent: () => import('@addons/calendar/pages/event/event'),
+            loadComponent: () => import('@features/cq_pages/cq_calendar/pages/event/event'),
         },
         {
             path: 'edit/:eventId',
-            loadComponent: () => import('@addons/calendar/pages/edit-event/edit-event'),
+            loadComponent: () => import('@features/cq_pages/cq_calendar/pages/edit-event/edit-event'),
             canDeactivate: [canLeaveGuard],
         },
         ...buildTabMainRoutes(injector, {
@@ -57,6 +59,9 @@ function buildRoutes(injector: Injector): Routes {
 }
 
 @NgModule({
+    imports: [
+        CqComponentsModule,
+    ],
     providers: [
         {
             provide: ROUTES,

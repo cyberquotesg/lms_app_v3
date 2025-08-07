@@ -51,9 +51,12 @@ import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreUrl } from '@singletons/url';
 import { Translate } from '@singletons';
 import { toBoolean } from '@/core/transforms/boolean';
-import { ADDON_CALENDAR_UNDELETED_EVENT_EVENT } from '@addons/calendar/constants';
+import { ADDON_CALENDAR_UNDELETED_EVENT_EVENT } from '@features/cq_pages/cq_calendar/constants';
 import { CoreAlerts } from '@services/overlays/alerts';
 import { CoreSharedModule } from '@/core/shared.module';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqComponent } from '../../../classes/cq_component';
 
 /**
  * Component that displays a calendar.
@@ -67,7 +70,7 @@ import { CoreSharedModule } from '@/core/shared.module';
         CoreSharedModule,
     ],
 })
-export class AddonCalendarCalendarComponent implements OnInit, DoCheck, OnDestroy {
+export class AddonCalendarCalendarComponent extends CqComponent implements OnInit, DoCheck, OnDestroy {
 
     @ViewChild(CoreSwipeSlidesComponent) swipeSlidesComponent?: CoreSwipeSlidesComponent<PreloadedMonth>;
 
@@ -92,7 +95,9 @@ export class AddonCalendarCalendarComponent implements OnInit, DoCheck, OnDestro
     protected managerUnsubscribe?: () => void;
     protected logView: () => void;
 
-    constructor(differs: KeyValueDiffers) {
+    constructor(differs: KeyValueDiffers, CH: CqHelper) {
+        super(CH);
+
         this.currentSiteId = CoreSites.getCurrentSiteId();
 
         // Listen for events "undeleted" (offline).
@@ -137,7 +142,7 @@ export class AddonCalendarCalendarComponent implements OnInit, DoCheck, OnDestro
                     ...params,
                     category: 'calendar',
                 },
-                url: CoreUrl.addParamsToUrl('/calendar/view.php?view=month', params),
+                url: CoreUrl.addParamsToUrl('/CqCalendar/view.php?view=month', params),
             });
         });
     }
@@ -224,7 +229,7 @@ export class AddonCalendarCalendarComponent implements OnInit, DoCheck, OnDestro
         this.periodName = CoreTime.userDate(
             month.dayJS.valueOf(),
             'core.strftimemonthyear',
-        );
+        ).split(' ').map((item, index) => index ? item : item.substr(0, 3)).join(' ');
     }
 
     /**

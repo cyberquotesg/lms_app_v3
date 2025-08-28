@@ -48,6 +48,9 @@ import { CoreXAPIModule } from './xapi/xapi.module';
 import { CoreReportBuilderModule } from './reportbuilder/reportbuilder.module';
 import { CorePolicyModule } from './policy/policy.module';
 
+// by rachmad
+import { CQPagesModule } from './cq_pages/cq_pages.module';
+
 @NgModule({
     imports: [
         CoreBlockModule,
@@ -85,6 +88,9 @@ import { CorePolicyModule } from './policy/policy.module';
 
         // Import last to allow overrides.
         CoreEmulatorModule,
+
+        // by rachmad
+        CQPagesModule,
     ],
 })
 export class CoreFeaturesModule {}

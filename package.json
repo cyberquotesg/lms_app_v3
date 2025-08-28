@@ -23,7 +23,7 @@
         "web_reinstall": "npm run web_uninstall && npm run android_install",
         "web_prepare": "npm i && npm run web_install && ionic build && ionic cordova prepare web",
         "web_dev": "ionic serve",
-        "android_install": "ionic cordova platform add android@12.0.1",
+        "android_install": "ionic cordova platform add android@14.0.0",
         "android_uninstall": "ionic cordova platform remove android",
         "android_reinstall": "npm run android_uninstall && npm run android_install",
         "android_prepare": "npm i && npm run android_install && ionic build && ionic cordova prepare android",

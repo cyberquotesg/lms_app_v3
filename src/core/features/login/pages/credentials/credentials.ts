@@ -88,6 +88,9 @@ export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
     displaySiteUrl = false;
     showLoginForm = true;
 
+    // by rachmad
+    siteName = "";
+
     protected siteCheck?: CoreSiteCheckResponse;
     protected eventThrown = false;
     protected viewLeft = false;
@@ -125,6 +128,9 @@ export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             this.urlToOpen = CoreNavigator.getRouteParam('urlToOpen');
             this.supportConfig = this.siteConfig && new CoreUserGuestSupportConfig(this.site, this.siteConfig);
             this.displaySiteUrl = this.site.shouldDisplayInformativeLinks();
+
+            // by rachmad
+            this.site.getSiteName().then((siteName) => this.siteName = siteName);
         } catch (error) {
             CoreAlerts.showError(error);
 

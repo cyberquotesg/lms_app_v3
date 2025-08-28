@@ -50,7 +50,7 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
             }
             else if (this.item.isUserEnrolled && !this.item.isUserFinished && !this.item.isUserAccredited)
             {
-                if (!this.item.isCourseEnded) this.finalTags.push({text: "Enrolled", class: "green"});
+                if (!this.item.isCourseEnded) this.finalTags.push({text: "Enrolled", class: "orange"});
                 else this.finalTags.push({text: "Failed", class: "red"});
             }
             else if (this.item.isUserEnrolled && this.item.isUserFinished && !this.item.isUserAccredited)
@@ -92,7 +92,7 @@ export class CqTagsComponent extends CqComponent implements OnInit, OnChanges {
                 this.item.attendanceMethods.forEach((text) => this.finalTags.push({text, class: "dark-grey"}));
             }
         }
-        if (this.item.tags && Array.isArray(this.item.tags) && this.item.tags.length > 0)
+        if (!hideList.includes("tags") && this.item.tags && Array.isArray(this.item.tags) && this.item.tags.length > 0)
         {
             this.item.tags.forEach((text) => this.finalTags.push({text}));
         }

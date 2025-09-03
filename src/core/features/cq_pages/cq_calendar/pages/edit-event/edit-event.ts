@@ -60,6 +60,7 @@ import { DEFAULT_TEXT_FORMAT } from '@singletons/text';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
 
 /**
  * Page that displays a form to create/edit an event.
@@ -72,6 +73,7 @@ import { CqPage } from '../../../classes/cq_page';
     imports: [
         CoreSharedModule,
         CoreEditorRichTextEditorComponent,
+        CqComponentsModule,
     ],
 })
 export default class AddonCalendarEditEventPage extends CqPage implements OnInit, OnDestroy, CanLeave {

@@ -23,6 +23,7 @@ import { CoreSharedModule } from '@/core/shared.module';
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
 
 /**
  * Page that displays the calendar settings.
@@ -33,6 +34,7 @@ import { CqPage } from '../../../classes/cq_page';
     standalone: true,
     imports: [
         CoreSharedModule,
+        CqComponentsModule,
     ],
 })
 export default class AddonCalendarSettingsPage extends CqPage implements OnInit {

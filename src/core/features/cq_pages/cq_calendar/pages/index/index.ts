@@ -26,7 +26,7 @@ import { NgZone, Translate } from '@singletons';
 import { Subscription } from 'rxjs';
 import { CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { ActivatedRoute, Params } from '@angular/router';
-import { AddonCalendarCalendarComponent } from '../../components/CqCalendar/calendar';
+import { AddonCalendarCalendarComponent } from '../../components/calendar/calendar';
 import { AddonCalendarUpcomingEventsComponent } from '../../components/upcoming-events/upcoming-events';
 import { CoreNavigator } from '@services/navigator';
 import { CoreConstants } from '@/core/constants';
@@ -47,6 +47,7 @@ import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/u
 
 import { CqHelper } from '../../../services/cq_helper';
 import { CqPage } from '../../../classes/cq_page';
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
 
 /**
  * Page that displays the calendar events.
@@ -60,6 +61,7 @@ import { CqPage } from '../../../classes/cq_page';
         AddonCalendarCalendarComponent,
         AddonCalendarUpcomingEventsComponent,
         CoreMainMenuUserButtonComponent,
+        CqComponentsModule,
     ],
 })
 export default class AddonCalendarIndexPage extends CqPage implements OnInit, OnDestroy {

@@ -26,6 +26,7 @@ import { CqOfflineCourseViewHandler } from './cq_offline_course/cq_offline_cours
 
 import { AddonCalendarMainMenuHandler, AddonCalendarMainMenuHandlerService } from './cq_calendar/services/handlers/mainmenu';
 import { AddonCalendarViewLinkHandler } from './cq_calendar/services/handlers/view-link';
+import { ADDON_CALENDAR_PAGE_NAME } from '@features/cq_pages/cq_calendar/constants';
 
 import { CqAnnouncementsMenuHandler, CqAnnouncementsMenuService } from './cq_announcements/cq_announcements.menu';
 import { CqAnnouncementsViewHandler } from './cq_announcements/cq_announcements.view';
@@ -63,8 +64,8 @@ const routes: Routes = [
         loadChildren: () => import('./cq_offline_course/cq_offline_course.lazy_module').then(m => m.CqOfflineCourseLazyModule),
     },
     {
-        path: AddonCalendarMainMenuHandlerService.PAGE_NAME,
-        loadChildren: () => import('./cq_calendar/calendar-lazy.module').then(m => m.AddonCalendarLazyModule),
+        path: ADDON_CALENDAR_PAGE_NAME,
+        loadChildren: () => import('./cq_calendar/calendar-lazy.module'),
     },
     {
         path: CqAnnouncementsMenuService.PAGE_NAME,

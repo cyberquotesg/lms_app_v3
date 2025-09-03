@@ -18,9 +18,9 @@ import { AddonNotificationsListPage } from '@features/cq_pages/cq_notifications/
 import { AddonNotificationsNotificationPage } from '@features/cq_pages/cq_notifications/pages/notification/notification';
 import { Injector, NgModule } from '@angular/core';
 import { RouterModule, ROUTES, Routes } from '@angular/router';
-import { CoreMainMenuUserMenuComponent } from '@/core/features/mainmenu/components/user-menu/user-menu';
-import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/user-menu-button/user-menu-button';
-import { CoreMainMenuUserMenuTourComponent } from '@features/mainmenu/components/user-menu-tour/user-menu-tour';
+// import { CoreMainMenuUserMenuComponent } from '@/core/features/mainmenu/components/user-menu/user-menu';
+// import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/user-menu-button/user-menu-button';
+// import { CoreMainMenuUserMenuTourComponent } from '@features/mainmenu/components/user-menu-tour/user-menu-tour';
 
 import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
 import { CoreScreen } from '@services/screen';
@@ -68,9 +68,9 @@ function buildRoutes(injector: Injector): Routes {
 @NgModule({
     imports: [
         CoreSharedModule,
-        CoreMainMenuUserMenuComponent,
-        CoreMainMenuUserButtonComponent,
-        CoreMainMenuUserMenuTourComponent,
+        // CoreMainMenuUserMenuComponent,
+        // CoreMainMenuUserButtonComponent,
+        // CoreMainMenuUserMenuTourComponent,
         CqComponentsModule,
     ],
     declarations: [

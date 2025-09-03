@@ -3,9 +3,9 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CoreSharedModule } from '@/core/shared.module';
-import { CoreMainMenuUserMenuComponent } from '@/core/features/mainmenu/components/user-menu/user-menu';
-import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/user-menu-button/user-menu-button';
-import { CoreMainMenuUserMenuTourComponent } from '@features/mainmenu/components/user-menu-tour/user-menu-tour';
+// import { CoreMainMenuUserMenuComponent } from '@/core/features/mainmenu/components/user-menu/user-menu';
+// import { CoreMainMenuUserButtonComponent } from '@features/mainmenu/components/user-menu-button/user-menu-button';
+// import { CoreMainMenuUserMenuTourComponent } from '@features/mainmenu/components/user-menu-tour/user-menu-tour';
 import { CqComponentsModule } from '../components/cq_components.module';
 import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
@@ -31,9 +31,9 @@ const routes: Routes = [
     imports: [
         RouterModule.forChild(routes),
         CoreSharedModule,
-        CoreMainMenuUserMenuComponent,
-        CoreMainMenuUserButtonComponent,
-        CoreMainMenuUserMenuTourComponent,
+        // CoreMainMenuUserMenuComponent,
+        // CoreMainMenuUserButtonComponent,
+        // CoreMainMenuUserMenuTourComponent,
         CqComponentsModule,
     ],
     declarations: [

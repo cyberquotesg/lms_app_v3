@@ -92,30 +92,30 @@ const routes: Routes = [
             provide: APP_INITIALIZER,
             multi: true,
             useValue: async () => {
+                CoreMainMenuDelegate.registerHandler(CqDashboardMenuHandler.instance);
+                CoreContentLinksDelegate.registerHandler(CqDashboardViewHandler.instance);
+
                 CoreMainMenuDelegate.registerHandler(CqAvailableCoursesMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqAvailableCoursesViewHandler.instance);
 
                 CoreMainMenuDelegate.registerHandler(CqMyCoursesMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqMyCoursesViewHandler.instance);
-                
-                CoreMainMenuDelegate.registerHandler(CqDashboardMenuHandler.instance);
-                CoreContentLinksDelegate.registerHandler(CqDashboardViewHandler.instance);
-                
+
                 CoreMainMenuDelegate.registerHandler(CqMyReportsMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqMyReportsViewHandler.instance);
-                
-                // CoreMainMenuDelegate.registerHandler(CqOfflineCourseMenuHandler.instance);
-                // CoreContentLinksDelegate.registerHandler(CqOfflineCourseViewHandler.instance);
-                
+
+                CoreMainMenuDelegate.registerHandler(CqOfflineCourseMenuHandler.instance);
+                CoreContentLinksDelegate.registerHandler(CqOfflineCourseViewHandler.instance);
+
                 CoreMainMenuDelegate.registerHandler(AddonCalendarMainMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(AddonCalendarViewLinkHandler.instance);
-                
+
                 CoreMainMenuDelegate.registerHandler(CqAnnouncementsMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqAnnouncementsViewHandler.instance);
-                
+
                 CoreMainMenuDelegate.registerHandler(CqAnnouncementMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(CqAnnouncementViewHandler.instance);
-                
+
                 CoreMainMenuDelegate.registerHandler(AddonNotificationsMainMenuHandler.instance);
                 CoreContentLinksDelegate.registerHandler(AddonNotificationsViewLinkHandler.instance);
             },

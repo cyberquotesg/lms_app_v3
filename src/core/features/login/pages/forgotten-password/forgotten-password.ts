@@ -98,7 +98,10 @@ export default class CoreLoginForgottenPasswordPage implements OnInit {
         }
 
         const modal = await CoreLoadings.show('core.sending', true);
-        const isMail = field === 'email';
+
+        // by rachmad
+        // const isMail = field === 'email';
+        const isMail = true;
 
         try {
             const response = await CoreLoginHelper.requestPasswordReset(

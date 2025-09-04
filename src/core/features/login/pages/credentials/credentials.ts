@@ -322,6 +322,7 @@ export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             // by rachmad
             // const data = await CoreSites.getUserToken(siteUrl, username, password);
             const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrCsrfToken, value);
+
             const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
             this.siteId = id;
 

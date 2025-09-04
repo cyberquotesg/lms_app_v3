@@ -35,6 +35,9 @@ import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { CoreSiteLogoComponent } from '@/core/components/site-logo/site-logo';
 import { CoreAlerts } from '@services/overlays/alerts';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Component to display a user menu.
  */
@@ -61,9 +64,17 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
     displayContactSupport = false;
     removeAccountOnLogout = false;
 
+    // by rachmad
+    isProduction: boolean = false;
+    appVersion: string = "";
+
     protected siteId?: string;
     protected siteName?: string;
     protected subscription!: Subscription;
+
+    // by rachmad
+    constructor(protected CH: CqHelper) {
+    }
 
     /**
      * @inheritdoc
@@ -78,6 +89,11 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         this.displayContactSupport = new CoreUserAuthenticatedSupportConfig(currentSite).canContactSupport();
         this.removeAccountOnLogout = !!CoreConstants.CONFIG.removeaccountonlogout;
         this.displaySiteUrl = currentSite.shouldDisplayInformativeLinks();
+
+        // by rachmad
+        this.displaySwitchAccount = false;
+        this.isProduction = this.CH.isProduction();
+        this.appVersion = this.CH.appVersion();
 
         if (!this.siteInfo) {
             return;
@@ -110,6 +126,10 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                 }
 
                 newHandlers = handlers
+
+                    // by rachmad
+                    .filter((handler) => handler.name && handler.name.indexOf("AddonBadges") > -1)
+
                     .filter((handler) => handler.type === CoreUserProfileHandlerType.LIST_ACCOUNT_ITEM)
                     .map((handler) => handler.data);
 

@@ -773,7 +773,9 @@ export class CoreSitesProvider {
         if (!retry && data.errorcode === 'requirecorrectaccess') {
             siteUrl = CoreUrl.addOrRemoveWWW(siteUrl);
 
-            return this.getUserToken(siteUrl, username, password, service, true);
+            // by rachmad
+            // return this.getUserToken(siteUrl, username, password, service, true);
+            return this.getUserToken(siteUrl, username, password, service, true, captchaOrCsrfToken, value);
         }
 
         if (data.errorcode === 'missingparam') {
@@ -1678,6 +1680,12 @@ export class CoreSitesProvider {
      * @param options Options.
      */
     async logout(options: CoreSitesLogoutOptions = {}): Promise<void> {
+        // by rachmad
+        // always delete all sites
+        let siteIds = await this.getSitesIds();
+        for (let id of siteIds) await CoreSites.deleteSite(id);
+        // by rachmad
+
         await CoreNavigator.navigate('/logout', {
             params: { ...options },
             reset: true,

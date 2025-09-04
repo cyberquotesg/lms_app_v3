@@ -260,8 +260,15 @@ export class CoreMainMenuProvider {
                 numElements = numElements >= 5 ? 5 : numElements;
             }
 
+            // by rachmad
+            // no need to substract by 1, more button has been removed
+            return numElements > 1 ? numElements : 1;
+
+            // by rachmad
+            /* *a/
             // Set a mínimum elements to show and skip more button.
             return numElements > 1 ? numElements - 1 : 1;
+            /* */
         }
 
         return MAIN_MENU_NUM_MAIN_HANDLERS;

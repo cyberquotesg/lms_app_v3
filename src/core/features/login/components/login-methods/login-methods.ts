@@ -22,9 +22,16 @@ import { CoreSitesFactory } from '@services/sites-factory';
 import { CoreSharedModule } from '@/core/shared.module';
 import { CoreLoginIdentityProviderComponent } from '../identity-provider/identity-provider';
 
+// by rachmad
+import { CoreAlerts } from '@services/overlays/alerts';
+
 @Component({
     selector: 'core-login-methods',
-    templateUrl: 'login-methods.html',
+
+    // by rachmad
+    // templateUrl: 'login-methods.html',
+    templateUrl: 'login-methods.new.html',
+
     styleUrl: '../../login.scss',
     standalone: true,
     imports: [
@@ -146,6 +153,19 @@ export class CoreLoginMethodsComponent implements OnInit {
         };
     }
 
+    // by rachmad
+    async oauthClicked(provider: CoreSiteIdentityProvider): Promise<void> {
+        const result = await CoreLoginHelper.openBrowserForOAuthLogin(
+            this.siteUrl,
+            provider,
+            this.siteConfig?.launchurl,
+            this.redirectData,
+        );
+
+        if (!result) {
+            CoreAlerts.showError('Invalid data.');
+        }
+    }
 }
 
 export type CoreLoginMethodsCurrentLogin = {

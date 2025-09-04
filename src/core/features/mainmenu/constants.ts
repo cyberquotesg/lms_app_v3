@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const MAIN_MENU_NUM_MAIN_HANDLERS = 4;
+// by rachmad
+// export const MAIN_MENU_NUM_MAIN_HANDLERS = 4;
+export const MAIN_MENU_NUM_MAIN_HANDLERS = 5;
+
 export const MAIN_MENU_ITEM_MIN_WIDTH = 72; // Min with of every item, based on 5 items on a 360 pixel wide screen.
 export const MAIN_MENU_HOME_PAGE_NAME = 'home';
 export const MAIN_MENU_MORE_PAGE_NAME = 'more';

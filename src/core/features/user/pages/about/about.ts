@@ -44,7 +44,11 @@ import {
  */
 @Component({
     selector: 'page-core-user-about',
-    templateUrl: 'about.html',
+
+    // by rachmad
+    // templateUrl: 'about.html',
+    templateUrl: 'about.new.html',
+
     styleUrl: 'about.scss',
     standalone: true,
     imports: [
@@ -64,6 +68,16 @@ export default class CoreUserAboutPage implements OnInit, OnDestroy {
     interests?: string[];
     displayTimezone = false;
     canShowDepartment = false;
+
+    // by rachmad
+    clonedUser: any = {};
+    reps: any[] = [];
+    hasReps: boolean = false;
+    hasAbout: boolean = false;
+    licenseType = "";
+    licenseCode = "";
+    organizationCombined = "";
+    licenseCombined = "";
 
     protected userId!: number;
     protected site!: CoreSite;
@@ -128,6 +142,49 @@ export default class CoreUserAboutPage implements OnInit, OnDestroy {
             this.title = user.fullname;
 
             this.fillTimezone();
+
+            // by rachmad
+            this.reps = [];
+            if (user.customfields) user.customfields.forEach((field) => {
+                // reps
+                if (["fa", "tr", "fm"].includes(field.shortname))
+                {
+                    if (field.value == "1") this.reps.push(field);
+                }
+
+                // license
+                else if (field.shortname == "license_type")
+                {
+                    this.licenseType = field.value;
+                }
+                else if (field.shortname == "license_code")
+                {
+                    this.licenseCode = field.value;
+                }
+            });
+
+            this.clonedUser = JSON.parse(JSON.stringify(user));
+            this.hasReps = this.reps.length > 0;
+            this.hasAbout = !!(
+                this.clonedUser.email ||
+                this.clonedUser.country_text || this.clonedUser.organization_text || this.clonedUser.departmentid_text || this.clonedUser.branch_text ||
+                this.licenseType || this.licenseCode ||
+                this.interests
+            );
+
+            let temp: string[];
+
+            temp = [];
+            if (this.clonedUser.organization_text) temp.push(this.clonedUser.organization_text);
+            if (this.clonedUser.departmentid_text) temp.push(this.clonedUser.departmentid_text);
+            if (this.clonedUser.branch_text) temp.push(this.clonedUser.branch_text);
+            this.organizationCombined = temp.join(", ");
+
+            temp = [];
+            if (this.licenseType) temp.push(this.licenseType);
+            if (this.licenseCode) temp.push(this.licenseCode);
+            this.licenseCombined = temp.join(", ");
+            // by rachmad
 
             await this.checkUserImageUpdated();
         } catch (error) {

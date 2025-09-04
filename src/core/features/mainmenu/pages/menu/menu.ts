@@ -190,6 +190,9 @@ export default class CoreMainMenuPage implements OnInit, OnDestroy {
         const newTabs: CoreMainMenuHandlerToDisplay[] = [];
 
         for (let i = 0; i < handlers.length; i++) {
+            // by rachmad
+            if (i == 5) break;
+
             const handler = handlers[i];
 
             // Check if the handler is already in the tabs list. If so, use it.

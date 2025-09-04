@@ -40,12 +40,20 @@ import { CoreSiteLogoComponent } from '../../../../components/site-logo/site-log
 import { CoreLoginExceededAttemptsComponent } from '../../components/exceeded-attempts/exceeded-attempts';
 import { CoreLoginIdentityProviderComponent } from '../../components/identity-provider/identity-provider';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { Params } from '@angular/router';
+
 /**
  * Page to enter the user password to reconnect to a site.
  */
 @Component({
     selector: 'page-core-login-reconnect',
-    templateUrl: 'reconnect.html',
+
+    // by rachmad
+    // templateUrl: 'reconnect.html',
+    templateUrl: 'reconnect.new.html',
+
     styleUrl: '../../login.scss',
     standalone: true,
     imports: [
@@ -98,7 +106,17 @@ export default class CoreLoginReconnectPage implements OnInit, OnDestroy {
 
     constructor(
         protected fb: FormBuilder,
+
+        // by rachmad
+        protected CH: CqHelper,
     ) {
+        // by rachmad
+        const params: Params = {
+            siteUrl: CH.getSiteUrl(),
+            siteId: CH.getSiteId(),
+        };
+        CoreNavigator.navigateToLoginCredentials(params);
+
         const currentSite = CoreSites.getCurrentSite();
 
         this.isLoggedOut = !currentSite || currentSite.isLoggedOut();

@@ -63,7 +63,11 @@ import { CoreSharedModule } from '@/core/shared.module';
  */
 @Component({
     selector: 'addon-mod-scorm-index',
-    templateUrl: 'addon-mod-scorm-index.html',
+
+    // by rachmad
+    // templateUrl: 'addon-mod-scorm-index.html',
+    templateUrl: 'addon-mod-scorm-index.new.html',
+
     styleUrl: 'index.scss',
     standalone: true,
     imports: [

@@ -36,6 +36,9 @@ import { CoreSites } from '@services/sites';
 import { Translate } from '@singletons';
 import { CoreSharedModule } from '@/core/shared.module';
 
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
+
 /**
  * Page to render a notification.
  */
@@ -60,6 +63,12 @@ export default class AddonNotificationsNotificationPage implements OnInit, OnDes
     protected contextUrl?: string;
     protected courseId?: number;
     protected actionsData?: Record<string, string|number>; // Extra data to handle the URL.
+
+    // by rachmad
+    constructor(CH: CqHelper)
+    {
+        CH.updateCount("notification");
+    }
 
     /**
      * @inheritdoc

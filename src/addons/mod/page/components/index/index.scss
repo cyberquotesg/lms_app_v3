@@ -1,0 +1,55 @@
+#main-wrapper
+{
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+    flex-grow: 1;
+
+	> *
+	{
+		flex-grow: 0;
+		flex-shrink: 0;
+	}
+
+	#main-content
+	{
+		flex-grow: 1;
+		flex-shrink: 0;
+
+		iframe + div
+		{
+			display: none;
+		}
+	}
+
+	&.is-fullscreen
+	{
+		position: fixed;
+		left: 0px;
+	    bottom: 0px;
+
+	    @media (orientation: portrait)
+	    {
+		    top: 50px;
+		    right: 0px;
+	    }
+	    @media (orientation: landscape)
+	    {
+		    top: 0px;
+		    right: 48px;
+
+		    .buttons-last-slot
+		    {
+		    	position: absolute;
+	    	    left: 0px;
+	    	    right: 0px;
+	    	    bottom: 8px;
+		    }
+	    }
+
+	    core-course-module-info
+	    {
+	    	display: none;
+	    }
+	}
+}

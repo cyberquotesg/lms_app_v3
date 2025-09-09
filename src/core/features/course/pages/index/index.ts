@@ -36,11 +36,13 @@ import { CoreSharedModule } from '@/core/shared.module';
 // by rachmad
 import { IonRefresher } from '@ionic/angular';
 import { Renderer2 } from '@angular/core';
+import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import { CoreCourseCompletionActivityStatus } from '@features/course/services/course';
 import { CoreCourses } from '@features/courses/services/courses';
 import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
 import { CoreCourseSync, CoreCourseSyncProvider } from '@features/course/services/sync';
 import { CoreSite } from '@classes/sites/site';
 import { CoreSiteWSPreSets, WSObservable } from '@classes/sites/authenticated-site';
@@ -60,6 +62,9 @@ import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grade
     standalone: true,
     imports: [
         CoreSharedModule,
+
+        // by rachmad
+        CqComponentsModule,
     ],
 })
 
@@ -107,6 +112,8 @@ export default class CoreCourseIndexPage extends CqPage implements OnInit, OnDes
     // by rachmad
     // constructor(private route: ActivatedRoute) {
     constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper, elementRef: ElementRef) {
+        super(renderer, CH, elementRef);
+
 
         this.selectTabObserver = CoreEvents.on(CoreEvents.SELECT_COURSE_TAB, (data) => {
             if (!data.name) {
@@ -292,7 +299,7 @@ export default class CoreCourseIndexPage extends CqPage implements OnInit, OnDes
             emergencyCache: true,
         };
         let sections: CoreCourseWSSection[] = [];
-        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = await CorePromiseUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
         sections = sections.filter((section) => {
             return section.modules.length;
         });
@@ -400,7 +407,7 @@ export default class CoreCourseIndexPage extends CqPage implements OnInit, OnDes
         
         // Try to synchronize the course data.
         // For now we don't allow manual syncing, so ignore errors.
-        const result = await CoreUtils.ignoreErrors(CoreCourseSync.syncCourse(
+        const result = await CorePromiseUtils.ignoreErrors(CoreCourseSync.syncCourse(
             this.course.id,
             this.course.displayname || this.course.fullname,
         ));
@@ -528,7 +535,7 @@ export default class CoreCourseIndexPage extends CqPage implements OnInit, OnDes
             emergencyCache: true,
         };
         let sections: CoreCourseWSSection[] = [];
-        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = await CorePromiseUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
         sections = sections.filter((section) => {
             return section.modules.length;
         });
@@ -547,9 +554,9 @@ export default class CoreCourseIndexPage extends CqPage implements OnInit, OnDes
             const sectionWithModules = sections.find((section) => section.modules.length > 0);
 
             if (sectionWithModules && sectionWithModules.modules[0].completion !== undefined) {
-                await CoreUtils.ignoreErrors(CoreCourseHelper.loadOfflineCompletion(this.course.id, sections));
+                await CorePromiseUtils.ignoreErrors(CoreCourseHelper.loadOfflineCompletion(this.course.id, sections));
             } else {
-                const fetchedData = await CoreUtils.ignoreErrors(
+                const fetchedData = await CorePromiseUtils.ignoreErrors(
                     CoreCourse.getActivitiesCompletionStatus(this.course.id),
                 );
 

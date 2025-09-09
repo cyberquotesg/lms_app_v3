@@ -25,6 +25,9 @@ import { CoreCourseModuleNavigationComponent } from '@features/course/components
 import { CoreCourseModuleInfoComponent } from '@features/course/components/module-info/module-info';
 import { CoreSharedModule } from '@/core/shared.module';
 
+// by rachmad
+import { StatusBar } from '@singletons';
+
 /**
  * Component that displays a page.
  */

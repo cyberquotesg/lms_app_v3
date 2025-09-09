@@ -116,6 +116,9 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                 }
 
                 let newHandlers = handlers
+                    // by rachmad
+                    .filter((handler) => handler.name && handler.name.indexOf("AddonBadges") > -1)
+
                     .filter((handler) => handler.type === CoreUserProfileHandlerType.LIST_ITEM)
                     .map((handler) => handler.data);
 
@@ -126,9 +129,6 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
                 }
 
                 newHandlers = handlers
-
-                    // by rachmad
-                    .filter((handler) => handler.name && handler.name.indexOf("AddonBadges") > -1)
 
                     .filter((handler) => handler.type === CoreUserProfileHandlerType.LIST_ACCOUNT_ITEM)
                     .map((handler) => handler.data);

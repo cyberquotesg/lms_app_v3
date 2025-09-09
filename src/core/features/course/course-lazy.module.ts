@@ -18,9 +18,6 @@ import { resolveIndexRoutes } from '@features/course/course-routing.module';
 import { CoreCourseHelper } from './services/course-helper';
 import { CORE_COURSE_INDEX_PATH } from './constants';
 
-// by rachmad
-import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
-
 /**
  * Build module routes.
  *
@@ -61,11 +58,6 @@ function buildRoutes(injector: Injector): Routes {
 }
 
 @NgModule({
-    // by rachmad
-    imports: [
-        CqComponentsModule,
-    ],
-
     providers: [
         {
             provide: ROUTES,

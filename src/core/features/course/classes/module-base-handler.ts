@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
-import { CoreCourse } from '../services/course';
+import { CoreCourseModuleHelper } from '../services/course-module-helper';
 import { CoreCourseModuleData } from '../services/course-helper';
 import { CoreCourseModuleHandler, CoreCourseModuleHandlerData } from '../services/module-delegate';
 
@@ -43,7 +43,7 @@ export class CoreModuleHandlerBase implements Partial<CoreCourseModuleHandler> {
         return {
             icon: this.getIconSrc(module, module.modicon),
             title: module.name,
-            class: 'addon-mod_' + module.modname + '-handler',
+            class: `addon-mod_${module.modname}-handler`,
             showDownloadButton: true,
             hasCustomCmListItem: false,
             action: async (
@@ -66,7 +66,7 @@ export class CoreModuleHandlerBase implements Partial<CoreCourseModuleHandler> {
      * @returns Promise resolved when done.
      */
     async openActivityPage(module: CoreCourseModuleData, courseId: number, options?: CoreNavigationOptions): Promise<void> {
-        if (!CoreCourse.moduleHasView(module)) {
+        if (!CoreCourseModuleHelper.moduleHasView(module)) {
             return;
         }
 
@@ -74,7 +74,7 @@ export class CoreModuleHandlerBase implements Partial<CoreCourseModuleHandler> {
         options.params = options.params || {};
         Object.assign(options.params, { module });
 
-        const routeParams = '/' + courseId + '/' + module.id;
+        const routeParams = `/${courseId}/${module.id}`;
 
         await CoreNavigator.navigateToSitePath(this.pageName + routeParams, options);
     }
@@ -87,7 +87,7 @@ export class CoreModuleHandlerBase implements Partial<CoreCourseModuleHandler> {
             return modicon;
         }
 
-        return CoreCourse.getModuleIconSrc(module.modname, modicon);
+        return CoreCourseModuleHelper.getModuleIconSrc(module.modname, modicon);
     }
 
 }

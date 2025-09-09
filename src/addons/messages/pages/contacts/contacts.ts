@@ -18,12 +18,14 @@ import { CoreSites } from '@services/sites';
 import {
     AddonMessages,
     AddonMessagesConversationMember,
-    AddonMessagesProvider,
 } from '../../services/messages';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
+import { ADDON_MESSAGES_CONTACT_REQUESTS_COUNT_EVENT, ADDON_MESSAGES_MEMBER_INFO_CHANGED_EVENT } from '@addons/messages/constants';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { Translate } from '@singletons';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays contacts and contact requests.
@@ -31,11 +33,13 @@ import { CoreSplitViewComponent } from '@components/split-view/split-view';
 @Component({
     selector: 'page-addon-messages-contacts',
     templateUrl: 'contacts.html',
-    styleUrls: [
-        '../../messages-common.scss',
+    styleUrl: '../../messages-common.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
     ],
 })
-export class AddonMessagesContactsPage implements OnInit, OnDestroy {
+export default class AddonMessagesContactsPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
@@ -65,7 +69,7 @@ export class AddonMessagesContactsPage implements OnInit, OnDestroy {
 
         // Update the contact requests badge.
         this.contactRequestsCountObserver = CoreEvents.on(
-            AddonMessagesProvider.CONTACT_REQUESTS_COUNT_EVENT,
+            ADDON_MESSAGES_CONTACT_REQUESTS_COUNT_EVENT,
             (data) => {
                 this.requestsBadge = data.count > 0 ? String(data.count) : '';
             },
@@ -74,7 +78,7 @@ export class AddonMessagesContactsPage implements OnInit, OnDestroy {
 
         // Update block status of a user.
         this.memberInfoObserver = CoreEvents.on(
-            AddonMessagesProvider.MEMBER_INFO_CHANGED_EVENT,
+            ADDON_MESSAGES_MEMBER_INFO_CHANGED_EVENT,
             (data) => {
                 if (data.userBlocked || data.userUnblocked) {
                     const user = this.confirmedContacts.find((user) => user.id == data.userId);
@@ -179,7 +183,7 @@ export class AddonMessagesContactsPage implements OnInit, OnDestroy {
             this.confirmedCanLoadMore = result.canLoadMore;
         } catch (error) {
             this.confirmedLoadMoreError = true;
-            CoreDomUtils.showErrorModalDefault(error, 'addon.messages.errorwhileretrievingcontacts', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.messages.errorwhileretrievingcontacts') });
         }
     }
 
@@ -205,7 +209,7 @@ export class AddonMessagesContactsPage implements OnInit, OnDestroy {
             this.requestsCanLoadMore = result.canLoadMore;
         } catch (error) {
             this.requestsLoadMoreError = true;
-            CoreDomUtils.showErrorModalDefault(error, 'addon.messages.errorwhileretrievingcontacts', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.messages.errorwhileretrievingcontacts') });
         }
     }
 

@@ -19,25 +19,19 @@ import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-ro
 import { AddonMessageOutputDelegate } from '@addons/messageoutput/services/messageoutput-delegate';
 import {
     AddonMessageOutputAirnotifierHandler,
-    AddonMessageOutputAirnotifierHandlerService,
 } from './services/handlers/messageoutput';
 import { AddonMessageOutputAirnotifier } from './services/airnotifier';
-import { CoreSharedModule } from '@/core/shared.module';
-import { AddonMessageOutputAirnotifierDevicesPage } from '@addons/messageoutput/airnotifier/pages/devices/devices';
+import { ADDON_MESSAGEOUTPUT_AIRNOTIFIER_PAGE_NAME } from './constants';
 
 const routes: Routes = [
     {
-        path: AddonMessageOutputAirnotifierHandlerService.PAGE_NAME,
-        component: AddonMessageOutputAirnotifierDevicesPage,
+        path: ADDON_MESSAGEOUTPUT_AIRNOTIFIER_PAGE_NAME,
+        loadComponent: () => import('./pages/devices/devices'),
     },
 ];
 
 @NgModule({
-    declarations: [
-        AddonMessageOutputAirnotifierDevicesPage,
-    ],
     imports: [
-        CoreSharedModule,
         CoreMainMenuTabRoutingModule.forChild(routes),
     ],
     providers: [

@@ -16,7 +16,7 @@ import { Input, Output, EventEmitter, Component, Optional, Inject, ElementRef, O
 import { CoreFileHelper } from '@services/file-helper';
 
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreDom } from '@singletons/dom';
 import { CoreText } from '@singletons/text';
 import { CoreUrl } from '@singletons/url';
 import { CoreWSFile } from '@services/ws';
@@ -26,6 +26,8 @@ import { CoreQuestionBehaviourButton, CoreQuestionHelper, CoreQuestionQuestion }
 import { ContextLevel } from '@/core/constants';
 import { toBoolean } from '@/core/transforms/boolean';
 import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
+import { CorePromisedValue } from '@classes/promised-value';
+import { AsyncDirective } from '@classes/async-directive';
 
 /**
  * Base class for components to render a question.
@@ -33,7 +35,7 @@ import { convertTextToHTMLElement } from '@/core/utils/create-html-element';
 @Component({
     template: '',
 })
-export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonModQuizQuestion> implements OnInit {
+export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonModQuizQuestion> implements OnInit, AsyncDirective {
 
     @Input() question?: T; // The question to render.
     @Input() component?: string; // The component the question belongs to.
@@ -54,6 +56,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
     protected logger: CoreLogger;
     protected hostElement: HTMLElement;
+    protected onReadyPromise = new CorePromisedValue<void>();
 
     constructor(@Optional() @Inject('') logName: string, elementRef: ElementRef) {
         this.logger = CoreLogger.getInstance(logName);
@@ -82,6 +85,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
      */
     init(): void {
         this.initComponent();
+        this.onReadyPromise.resolve();
     }
 
     /**
@@ -99,7 +103,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
         const questionElement = convertTextToHTMLElement(this.question.html);
 
         // Extract question text.
-        this.question.text = CoreDomUtils.getContentsOfElement(questionElement, '.qtext');
+        this.question.text = CoreDom.getContentsOfElement(questionElement, '.qtext');
         if (this.question.text === undefined) {
             this.logger.warn('Aborting because of an error parsing question.', this.question.slot);
 
@@ -147,7 +151,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
             return false;
         }
 
-        const question: AddonModQuizCalculatedQuestion = this.question;
+        const question: AddonModQuizNumericalQuestion = this.question;
         question.options = [];
 
         for (const i in radios) {
@@ -161,7 +165,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
                 disabled: radioEl.disabled,
             };
             // Get the label with the question text.
-            const label = questionEl.querySelector<HTMLLabelElement>('label[for="' + option.id + '"]');
+            const label = questionEl.querySelector<HTMLLabelElement>(`label[for="${option.id}"]`);
 
             question.optionsName = option.name;
 
@@ -209,7 +213,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
             return false;
         }
 
-        const question: AddonModQuizCalculatedQuestion = this.question;
+        const question: AddonModQuizNumericalQuestion = this.question;
         const selectModel: AddonModQuizQuestionSelect = {
             id: select.id,
             name: select.name,
@@ -247,7 +251,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
         }
 
         // Get the accessibility label.
-        const accessibilityLabel = questionEl.querySelector<HTMLLabelElement>('label[for="' + select.id + '"]');
+        const accessibilityLabel = questionEl.querySelector<HTMLLabelElement>(`label[for="${select.id}"]`);
         selectModel.accessibilityLabel = accessibilityLabel?.innerHTML;
 
         question.select = selectModel;
@@ -294,7 +298,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
         if (review) {
             // Search the answer and the attachments.
-            question.answer = CoreDomUtils.getContentsOfElement(questionEl, '.qtype_essay_response');
+            question.answer = CoreDom.getContentsOfElement(questionEl, '.qtype_essay_response');
             question.wordCountInfo = questionEl.querySelector('.answer > p')?.innerHTML;
 
             if (question.parsedSettings) {
@@ -303,7 +307,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
                 );
             } else {
                 question.attachments = CoreQuestionHelper.getQuestionAttachmentsFromHtml(
-                    CoreDomUtils.getContentsOfElement(questionEl, '.attachments') || '',
+                    CoreDom.getContentsOfElement(questionEl, '.attachments') || '',
                 );
             }
 
@@ -318,9 +322,9 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
         if (!textarea && (question.hasInlineText || !question.allowsAttachments)) {
             // Textarea not found, we might be in review. Search the answer and the attachments.
-            question.answer = CoreDomUtils.getContentsOfElement(questionEl, '.qtype_essay_response');
+            question.answer = CoreDom.getContentsOfElement(questionEl, '.qtype_essay_response');
             question.attachments = CoreQuestionHelper.getQuestionAttachmentsFromHtml(
-                CoreDomUtils.getContentsOfElement(questionEl, '.attachments') || '',
+                CoreDom.getContentsOfElement(questionEl, '.attachments') || '',
             );
 
             return questionEl;
@@ -453,8 +457,8 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
         }
 
         // Remove sequencecheck and validation error.
-        CoreDomUtils.removeElement(content, 'input[name*=sequencecheck]');
-        CoreDomUtils.removeElement(content, '.validationerror');
+        CoreDom.removeElement(content, 'input[name*=sequencecheck]');
+        CoreDom.removeElement(content, '.validationerror');
 
         // Replace Moodle's correct/incorrect and feedback classes with our own.
         CoreQuestionHelper.replaceCorrectnessClasses(element);
@@ -585,10 +589,15 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
             };
 
             // Check if answer is correct.
-            if (columns[1].className.indexOf('incorrect') >= 0) {
-                rowModel.isCorrect = 0;
+            if (columns[1].className.indexOf('partiallycorrect') >= 0) {
+                rowModel.correctClass = 'partiallycorrect';
+                rowModel.correctColor = CoreIonicColorNames.WARNING;
+            } else if (columns[1].className.indexOf('incorrect') >= 0) {
+                rowModel.correctClass = 'incorrect';
+                rowModel.correctColor = CoreIonicColorNames.DANGER;
             } else if (columns[1].className.indexOf('correct') >= 0) {
-                rowModel.isCorrect = 1;
+                rowModel.correctClass = 'correct';
+                rowModel.correctColor = CoreIonicColorNames.SUCCESS;
             }
 
             // Treat each option.
@@ -639,7 +648,7 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
         // Get the prompt.
         const question: AddonModQuizMultichoiceQuestion = this.question;
-        question.prompt = CoreDomUtils.getContentsOfElement(questionEl, '.prompt');
+        question.prompt = CoreDom.getContentsOfElement(questionEl, '.prompt');
 
         // Search radio buttons first (single choice).
         let options = Array.from(questionEl.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
@@ -681,10 +690,10 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
             // Get the label with the question text. Try the new format first.
             const labelId = element.getAttribute('aria-labelledby');
-            let label = labelId ? questionEl.querySelector('#' + labelId.replace(/:/g, '\\:')) : undefined;
+            let label = labelId ? questionEl.querySelector(`#${labelId.replace(/:/g, '\\:')}`) : undefined;
             if (!label) {
                 // Not found, use the old format.
-                label = questionEl.querySelector('label[for="' + option.id + '"]');
+                label = questionEl.querySelector(`label[for="${option.id}"]`);
             }
             option.class = label?.className || option.class;
 
@@ -706,10 +715,15 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
 
                 if (parent) {
                     // Check if answer is correct.
-                    if (parent && parent.className.indexOf('incorrect') >= 0) {
-                        option.isCorrect = 0;
-                    } else if (parent && parent.className.indexOf('correct') >= 0) {
-                        option.isCorrect = 1;
+                    if (parent.className.indexOf('partiallycorrect') >= 0) {
+                        option.correctClass = 'partiallycorrect';
+                        option.correctColor = CoreIonicColorNames.WARNING;
+                    } else if (parent.className.indexOf('incorrect') >= 0) {
+                        option.correctClass = 'incorrect';
+                        option.correctColor = CoreIonicColorNames.DANGER;
+                    } else if (parent.className.indexOf('correct') >= 0) {
+                        option.correctClass = 'correct';
+                        option.correctColor = CoreIonicColorNames.SUCCESS;
                     }
 
                     // Search the feedback.
@@ -726,12 +740,19 @@ export class CoreQuestionBaseComponent<T extends AddonModQuizQuestion = AddonMod
         return questionEl;
     }
 
+    /**
+     * @inheritdoc
+     */
+    async ready(): Promise<void> {
+        return this.onReadyPromise;
+    }
+
 }
 
 /**
  * Any possible types of question.
  */
-export type AddonModQuizQuestion = AddonModQuizCalculatedQuestion | AddonModQuizEssayQuestion | AddonModQuizTextQuestion |
+export type AddonModQuizQuestion = AddonModQuizNumericalQuestion | AddonModQuizEssayQuestion | AddonModQuizTextQuestion |
 AddonModQuizMatchQuestion | AddonModQuizMultichoiceQuestion;
 
 /**
@@ -744,7 +765,7 @@ export type AddonModQuizQuestionBasicData = CoreQuestionQuestion & {
 /**
  * Data for calculated question.
  */
-export type AddonModQuizCalculatedQuestion = AddonModQuizTextQuestion & {
+export type AddonModQuizNumericalQuestion = AddonModQuizTextQuestion & {
     select?: AddonModQuizQuestionSelect; // Select data if units use a select.
     selectFirst?: boolean; // Whether the select is first or after the input.
     options?: AddonModQuizQuestionRadioOption[]; // Options if units use radio buttons.
@@ -785,7 +806,8 @@ export type AddonModQuizQuestionRadioOption = {
     disabled: boolean;
     checked: boolean;
     text?: string;
-    isCorrect?: number;
+    correctClass?: 'correct' | 'incorrect' | 'partiallycorrect';
+    correctColor?: CoreIonicColorNames;
     feedback?: string;
 };
 
@@ -857,7 +879,8 @@ export type AddonModQuizMatchQuestion = AddonModQuizQuestionBasicData & {
  */
 export type AddonModQuizQuestionMatchSelect = AddonModQuizQuestionSelect & {
     text: string;
-    isCorrect?: number;
+    correctClass?: 'correct' | 'incorrect' | 'partiallycorrect';
+    correctColor?: CoreIonicColorNames;
 };
 
 /**

@@ -20,26 +20,29 @@ import { CoreCourseFormatDelegate } from '../../services/format-delegate';
 import { CoreCourseOptionsDelegate } from '../../services/course-options-delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreCourse, CoreCourseProvider, CoreCourseWSSection } from '@features/course/services/course';
+import { CoreCourse, CoreCourseWSSection } from '@features/course/services/course';
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreNavigationOptions, CoreNavigator } from '@services/navigator';
-import { CONTENTS_PAGE_NAME } from '@features/course/constants';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CORE_COURSE_CONTENTS_PAGE_NAME, CORE_COURSE_PROGRESS_UPDATED_EVENT } from '@features/course/constants';
 import { CoreCoursesHelper, CoreCourseWithImageAndColor } from '@features/courses/services/courses-helper';
 import { CoreColors } from '@singletons/colors';
 import { CorePath } from '@singletons/path';
 import { CoreSites } from '@services/sites';
 import { CoreWait } from '@singletons/wait';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 // by rachmad
 import { IonRefresher } from '@ionic/angular';
 import { Renderer2 } from '@angular/core';
+import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import { CoreCourseCompletionActivityStatus } from '@features/course/services/course';
 import { CoreCourses } from '@features/courses/services/courses';
 import { CqPage } from '@features/cq_pages/classes/cq_page';
 import { CqHelper } from '@features/cq_pages/services/cq_helper';
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
 import { CoreCourseSync, CoreCourseSyncProvider } from '@features/course/services/sync';
 import { CoreSite } from '@classes/sites/site';
 import { CoreSiteWSPreSets, WSObservable } from '@classes/sites/authenticated-site';
@@ -50,16 +53,24 @@ import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grade
  */
 @Component({
     selector: 'page-core-course-index',
-    
-    // by rachmad
-    templateUrl: 'index.new.html',
 
-    styleUrls: ['index.scss'],
+    // by rachmad
+    // templateUrl: 'index.html',
+    templateUrl: '../../../cq_pages/templates/core-course-index.html',
+
+    styleUrl: 'index.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+
+        // by rachmad
+        CqComponentsModule,
+    ],
 })
 
 // by rachmad
-// export class CoreCourseIndexPage implements OnInit, OnDestroy {
-export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
+// export default class CoreCourseIndexPage implements OnInit, OnDestroy {
+export default class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreTabsOutletComponent) tabsComponent?: CoreTabsOutletComponent;
     @ViewChild('courseThumb') courseThumb?: ElementRef;
@@ -68,23 +79,19 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     category = '';
 
     // by rachmad
+    // course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
     course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData & {courseImage, fullname, basicInformation, hasEnded, hasEnrolled, isSelfEnrol, selfEnrolId, hasAccredited};
-    /* *a/
-    course?: CoreCourseWithImageAndColor & CoreCourseAnyCourseData;
-    /* */
-
-    tabs: CourseTab[] = [];
-    loaded = false;
-    progress?: number;
-    fullScreenEnabled = false;
-
-    // by rachmad
     cqLoading: boolean = false;
     grades: any = {
         summary: "-",
         onCourse: [],
         onModule: {},
     };
+
+    tabs: CourseTab[] = [];
+    loaded = false;
+    progress?: number;
+    fullScreenEnabled = false;
 
     protected currentPagePath = '';
     protected fullScreenObserver: CoreEventObserver;
@@ -97,7 +104,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     protected isGuest = false;
     protected openModule = true;
     protected contentsTab: CoreTabsOutletTab & { pageParams: Params } = {
-        page: CONTENTS_PAGE_NAME,
+        page: CORE_COURSE_CONTENTS_PAGE_NAME,
         title: 'core.course',
         pageParams: {},
     };
@@ -106,6 +113,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
     // constructor(private route: ActivatedRoute) {
     constructor(private route: ActivatedRoute, renderer: Renderer2, CH: CqHelper, elementRef: ElementRef) {
         super(renderer, CH, elementRef);
+
 
         this.selectTabObserver = CoreEvents.on(CoreEvents.SELECT_COURSE_TAB, (data) => {
             if (!data.name) {
@@ -130,7 +138,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
 
         const siteId = CoreSites.getCurrentSiteId();
 
-        this.progressObserver = CoreEvents.on(CoreCourseProvider.PROGRESS_UPDATED, (data) => {
+        this.progressObserver = CoreEvents.on(CORE_COURSE_PROGRESS_UPDATED_EVENT, (data) => {
             if (!this.course || this.course.id !== data.courseId || !('progress' in this.course)) {
                 return;
             }
@@ -159,7 +167,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         try {
             this.course = CoreNavigator.getRequiredRouteParam('course');
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
             CoreNavigator.back();
             this.loaded = true;
 
@@ -282,7 +290,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         this.updateProgress();
 
         // Load sections.
-        this.sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
+        this.sections = await CorePromiseUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true), []);
 
         // by rachmad
         let presets: CoreSiteWSPreSets = {
@@ -291,11 +299,12 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             emergencyCache: true,
         };
         let sections: CoreCourseWSSection[] = [];
-        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = await CorePromiseUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
         sections = sections.filter((section) => {
             return section.modules.length;
         });
         this.sections = sections;
+        // by rachmad
 
         if (!this.sections) {
             return;
@@ -379,7 +388,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             const tint = CoreColors.lighter(this.course.color, 50);
             this.courseThumb.nativeElement.style.setProperty('--course-color-tint', tint);
         } else if(this.course.colorNumber !== undefined) {
-            this.courseThumb.nativeElement.classList.add('course-color-' + this.course.colorNumber);
+            this.courseThumb.nativeElement.classList.add(`course-color-${this.course.colorNumber}`);
         }
     }
 
@@ -398,7 +407,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
         
         // Try to synchronize the course data.
         // For now we don't allow manual syncing, so ignore errors.
-        const result = await CoreUtils.ignoreErrors(CoreCourseSync.syncCourse(
+        const result = await CorePromiseUtils.ignoreErrors(CoreCourseSync.syncCourse(
             this.course.id,
             this.course.displayname || this.course.fullname,
         ));
@@ -526,7 +535,7 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             emergencyCache: true,
         };
         let sections: CoreCourseWSSection[] = [];
-        sections = await CoreUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
+        sections = await CorePromiseUtils.ignoreErrors(CoreCourse.getSections(this.course.id, false, true, presets), []);
         sections = sections.filter((section) => {
             return section.modules.length;
         });
@@ -545,9 +554,9 @@ export class CoreCourseIndexPage extends CqPage implements OnInit, OnDestroy {
             const sectionWithModules = sections.find((section) => section.modules.length > 0);
 
             if (sectionWithModules && sectionWithModules.modules[0].completion !== undefined) {
-                await CoreUtils.ignoreErrors(CoreCourseHelper.loadOfflineCompletion(this.course.id, sections));
+                await CorePromiseUtils.ignoreErrors(CoreCourseHelper.loadOfflineCompletion(this.course.id, sections));
             } else {
-                const fetchedData = await CoreUtils.ignoreErrors(
+                const fetchedData = await CorePromiseUtils.ignoreErrors(
                     CoreCourse.getActivitiesCompletionStatus(this.course.id),
                 );
 

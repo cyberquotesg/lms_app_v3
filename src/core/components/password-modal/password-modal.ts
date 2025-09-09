@@ -17,7 +17,13 @@ import { Component, ViewChild, ElementRef, Input } from '@angular/core';
 import { CoreSites } from '@services/sites';
 import { CoreForms } from '@singletons/form';
 import { ModalController } from '@singletons';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CoreBaseModule } from '@/core/base.module';
+import { CoreAutoFocusDirective } from '@directives/auto-focus';
+import { CoreContentDirective } from '@directives/content';
+import { CoreFaIconDirective } from '@directives/fa-icon';
+import { CoreFormatTextDirective } from '@directives/format-text';
+import { CoreUpdateNonReactiveAttributesDirective } from '@directives/update-non-reactive-attributes';
 
 /**
  * Modal that asks the password.
@@ -27,6 +33,15 @@ import { CoreLoadings } from '@services/loadings';
 @Component({
     selector: 'core-password-modal',
     templateUrl: 'password-modal.html',
+    standalone: true,
+    imports: [
+        CoreBaseModule,
+        CoreUpdateNonReactiveAttributesDirective,
+        CoreFaIconDirective,
+        CoreContentDirective,
+        CoreAutoFocusDirective,
+        CoreFormatTextDirective,
+    ],
 })
 export class CorePasswordModalComponent {
 

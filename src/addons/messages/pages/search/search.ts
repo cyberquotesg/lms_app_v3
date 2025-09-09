@@ -16,16 +16,23 @@ import { Component, OnDestroy, ViewChild } from '@angular/core';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
 import {
-    AddonMessagesProvider,
     AddonMessagesConversationMember,
     AddonMessagesMessageAreaContact,
     AddonMessages,
 } from '../../services/messages';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { CoreKeyboard } from '@singletons/keyboard';
+import {
+    ADDON_MESSAGES_MEMBER_INFO_CHANGED_EVENT,
+    ADDON_MESSAGES_LIMIT_SEARCH,
+    ADDON_MESSAGES_LIMIT_INITIAL_USER_SEARCH,
+} from '@addons/messages/constants';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { Translate } from '@singletons';
+import { CoreSearchBoxComponent } from '@features/search/components/search-box/search-box';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page for searching users.
@@ -33,8 +40,13 @@ import { CoreKeyboard } from '@singletons/keyboard';
 @Component({
     selector: 'page-addon-messages-search',
     templateUrl: 'search.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreSearchBoxComponent,
+    ],
 })
-export class AddonMessagesSearchPage implements OnDestroy {
+export default class AddonMessagesSearchPage implements OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
@@ -74,7 +86,7 @@ export class AddonMessagesSearchPage implements OnDestroy {
     constructor() {
         // Update block status of a user.
         this.memberInfoObserver = CoreEvents.on(
-            AddonMessagesProvider.MEMBER_INFO_CHANGED_EVENT,
+            ADDON_MESSAGES_MEMBER_INFO_CHANGED_EVENT,
             (data) => {
                 if (!data.userBlocked && !data.userUnblocked) {
                     // The block status has not changed, ignore.
@@ -139,7 +151,7 @@ export class AddonMessagesSearchPage implements OnDestroy {
         let canLoadMoreMessages = false;
 
         if (!loadMore || loadMore == 'contacts' || loadMore == 'noncontacts') {
-            const limitNum = loadMore ? AddonMessagesProvider.LIMIT_SEARCH : AddonMessagesProvider.LIMIT_INITIAL_USER_SEARCH;
+            const limitNum = loadMore ? ADDON_MESSAGES_LIMIT_SEARCH : ADDON_MESSAGES_LIMIT_INITIAL_USER_SEARCH;
             let limitFrom = 0;
             if (loadMore == 'contacts') {
                 limitFrom = this.contacts.results.length;
@@ -221,7 +233,7 @@ export class AddonMessagesSearchPage implements OnDestroy {
                 }
             }
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.messages.errorwhileretrievingusers', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.messages.errorwhileretrievingusers') });
 
             if (loadMore == 'messages') {
                 this.messages.loadMoreError = true;

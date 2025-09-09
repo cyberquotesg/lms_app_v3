@@ -21,12 +21,11 @@ import { IonContent } from '@ionic/angular';
 import { CoreGroupInfo, CoreGroups } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreForms } from '@singletons/form';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreUtils } from '@singletons/utils';
 import { Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
-import { AddonModDataComponentsCompileModule } from '../../components/components-compile.module';
+
 import {
     AddonModDataData,
     AddonModDataField,
@@ -43,8 +42,13 @@ import { AddonModDataEntryFieldInitialized } from '../../classes/base-field-plug
 import { CoreText } from '@singletons/text';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { ADDON_MOD_DATA_COMPONENT, ADDON_MOD_DATA_ENTRY_CHANGED, AddonModDataTemplateType } from '../../constants';
-import { CoreLoadings } from '@services/loadings';
+import { ADDON_MOD_DATA_COMPONENT_LEGACY, ADDON_MOD_DATA_ENTRY_CHANGED, AddonModDataTemplateType } from '../../constants';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CoreWSError } from '@classes/errors/wserror';
+import { CoreArray } from '@singletons/array';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreCompileHtmlComponent } from '@features/compile/components/compile-html/compile-html';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays the view edit page.
@@ -53,8 +57,13 @@ import { CoreLoadings } from '@services/loadings';
     selector: 'page-addon-mod-data-edit',
     templateUrl: 'edit.html',
     styleUrls: ['../../data.scss', '../../data-forms.scss'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreCompileHtmlComponent,
+    ],
 })
-export class AddonModDataEditPage implements OnInit {
+export default class AddonModDataEditPage implements OnInit {
 
     @ViewChild(IonContent) content?: IonContent;
     @ViewChild('editFormEl') formElement!: ElementRef;
@@ -75,14 +84,14 @@ export class AddonModDataEditPage implements OnInit {
     moduleId = 0;
     database?: AddonModDataData;
     title = '';
-    component = ADDON_MOD_DATA_COMPONENT;
+    component = ADDON_MOD_DATA_COMPONENT_LEGACY;
     loaded = false;
     selectedGroup = 0;
     cssClass = '';
     groupInfo?: CoreGroupInfo;
     editFormRender = '';
     editForm: FormGroup;
-    extraImports: Type<unknown>[] = [AddonModDataComponentsCompileModule];
+    extraImports: Type<unknown>[] = [];
     jsData?: {
         fields: Record<number, AddonModDataField>;
         database?: AddonModDataData;
@@ -116,7 +125,7 @@ export class AddonModDataEditPage implements OnInit {
     /**
      * @inheritdoc
      */
-    ngOnInit(): void {
+    async ngOnInit(): Promise<void> {
         try {
             this.moduleId = CoreNavigator.getRequiredRouteNumberParam('cmId');
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
@@ -124,12 +133,14 @@ export class AddonModDataEditPage implements OnInit {
             this.entryId = CoreNavigator.getRouteNumberParam('entryId') || undefined;
             this.selectedGroup = CoreNavigator.getRouteNumberParam('group') || 0;
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
 
             CoreNavigator.back();
 
             return;
         }
+
+        this.extraImports = await AddonModDataHelper.getComponentsToCompile();
 
         // If entryId is lower than 0 or null, it is a new entry or an offline entry.
         this.isEditing = this.entryId !== undefined && this.entryId > 0;
@@ -154,7 +165,7 @@ export class AddonModDataEditPage implements OnInit {
 
         if (changed) {
             // Show confirmation if some data has been modified.
-            await CoreDomUtils.showConfirm(Translate.instant('core.confirmcanceledit'));
+            await CoreAlerts.confirmLeaveWithChanges();
         }
 
         // Delete the local files from the tmp folder.
@@ -176,10 +187,10 @@ export class AddonModDataEditPage implements OnInit {
         try {
             this.database = await AddonModData.getDatabase(this.courseId, this.moduleId);
             this.title = this.database.name || this.title;
-            this.cssClass = 'addon-data-entries-' + this.database.id;
+            this.cssClass = `addon-data-entries-${this.database.id}`;
 
             this.fieldsArray = await AddonModData.getFields(this.database.id, { cmId: this.moduleId });
-            this.fields = CoreUtils.arrayToObject(this.fieldsArray, 'id');
+            this.fields = CoreArray.toObject(this.fieldsArray, 'id');
 
             const entry = await AddonModDataHelper.fetchEntry(this.database, this.fieldsArray, this.entryId || 0);
             this.entry = entry.entry;
@@ -236,7 +247,7 @@ export class AddonModDataEditPage implements OnInit {
 
                 if (!haveAccess) {
                     // You shall not pass, go back.
-                    CoreDomUtils.showErrorModal('addon.mod_data.noaccess', true);
+                    CoreAlerts.showError(Translate.instant('addon.mod_data.noaccess'));
 
                     // Go back to entry list.
                     this.forceLeave = true;
@@ -249,7 +260,7 @@ export class AddonModDataEditPage implements OnInit {
             this.editFormRender = this.displayEditFields();
             this.logView();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.course.errorgetmodule') });
         }
 
         this.loaded = true;
@@ -303,7 +314,7 @@ export class AddonModDataEditPage implements OnInit {
                         this.offline,
                     );
                 } catch (error) {
-                    if (this.offline || CoreUtils.isWebServiceError(error)) {
+                    if (this.offline || CoreWSError.isWebServiceError(error)) {
                         throw error;
                     }
 
@@ -393,10 +404,9 @@ export class AddonModDataEditPage implements OnInit {
                     this.scrollToFirstError();
 
                     if (updateEntryResult.generalnotifications?.length) {
-                        CoreDomUtils.showAlertWithOptions({
+                        CoreAlerts.show({
                             header: Translate.instant('core.notice'),
                             message: CoreText.buildMessage(updateEntryResult.generalnotifications),
-                            buttons: [Translate.instant('core.ok')],
                         });
                     }
                 }
@@ -404,7 +414,7 @@ export class AddonModDataEditPage implements OnInit {
                 modal.dismiss();
             }
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Cannot edit entry', true);
+            CoreAlerts.showError(error, { default: 'Cannot edit entry' });
         }
     }
 
@@ -440,32 +450,33 @@ export class AddonModDataEditPage implements OnInit {
 
         // Replace the fields found on template.
         this.fieldsArray.forEach((field) => {
-            let replace = '[[' + field.name + ']]';
+            let replace = `[[${field.name}]]`;
             replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
             let replaceRegEx = new RegExp(replace, 'gi');
 
             // Replace field by a generic directive.
-            const render = '<addon-mod-data-field-plugin [class.has-errors]="!!errors[' + field.id + ']" mode="edit" \
-                [field]="fields[' + field.id + ']" [value]="contents[' + field.id + ']" [form]="form" [database]="database" \
-                [error]="errors[' + field.id + ']" (onFieldInit)="onFieldInit($event)"></addon-mod-data-field-plugin>';
+            const render = `<addon-mod-data-field-plugin [class.has-errors]="!!errors[${field.id}]" mode="edit" \
+                [field]="fields[${field.id}]" [value]="contents[${field.id}]" [form]="form" [database]="database" \
+                [error]="errors[${field.id}]" [recordHasOffline]="${this.entry?.hasOffline ? 'true' : 'false'}" \
+                (onFieldInit)="onFieldInit($event)"></addon-mod-data-field-plugin>`;
             template = template.replace(replaceRegEx, render);
 
             // Replace the field id tag.
-            replace = '[[' + field.name + '#id]]';
+            replace = `[[${field.name}#id]]`;
             replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
             replaceRegEx = new RegExp(replace, 'gi');
 
-            template = template.replace(replaceRegEx, 'field_' + field.id);
+            template = template.replace(replaceRegEx, `field_${field.id}`);
 
             // Replace the field name tag.
-            replace = '[[' + field.name + '#name]]';
+            replace = `[[${field.name}#name]]`;
             replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
             replaceRegEx = new RegExp(replace, 'gi');
 
             template = template.replace(replaceRegEx, field.name);
 
             // Replace the field description tag.
-            replace = '[[' + field.name + '#description]]';
+            replace = `[[${field.name}#description]]`;
             replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
             replaceRegEx = new RegExp(replace, 'gi');
 

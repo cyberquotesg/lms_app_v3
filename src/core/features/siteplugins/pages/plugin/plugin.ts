@@ -13,13 +13,14 @@
 // limitations under the License.
 
 import { Component, OnInit, ViewChild } from '@angular/core';
-
 import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreSitePluginsContent } from '@features/siteplugins/services/siteplugins';
 import { CanLeave } from '@guards/can-leave';
 import { CoreNavigator } from '@services/navigator';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreUtils } from '@singletons/utils';
 import { CoreSitePluginsPluginContentComponent } from '../../components/plugin-content/plugin-content';
+import { CoreSharedModule } from '@/core/shared.module';
+import { ContextLevel } from '@/core/constants';
 
 /**
  * Page to render a site plugin page.
@@ -27,8 +28,13 @@ import { CoreSitePluginsPluginContentComponent } from '../../components/plugin-c
 @Component({
     selector: 'page-core-site-plugins-plugin',
     templateUrl: 'plugin.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreSitePluginsPluginContentComponent,
+    ],
 })
-export class CoreSitePluginsPluginPage implements OnInit, CanLeave {
+export default class CoreSitePluginsPluginPage implements OnInit, CanLeave {
 
     @ViewChild(CoreSitePluginsPluginContentComponent) content?: CoreSitePluginsPluginContentComponent;
 
@@ -40,6 +46,9 @@ export class CoreSitePluginsPluginPage implements OnInit, CanLeave {
     jsData?: Record<string, unknown>; // JS variables to pass to the plugin so they can be used in the template or JS.
     preSets?: CoreSiteWSPreSets; // The preSets for the WS call.
     ptrEnabled = false;
+    contextLevel?: ContextLevel; // The context level to filter text.
+    contextInstanceId?: number; // The instance ID related to the context.
+    courseId?: number; // Course ID the text belongs to. It can be used to improve performance with filters.
 
     /**
      * @inheritdoc
@@ -53,6 +62,9 @@ export class CoreSitePluginsPluginPage implements OnInit, CanLeave {
         this.jsData = CoreNavigator.getRouteParam('jsData');
         this.preSets = CoreNavigator.getRouteParam('preSets');
         this.ptrEnabled = !CoreUtils.isFalseOrZero(CoreNavigator.getRouteBooleanParam('ptrEnabled'));
+        this.contextLevel = CoreNavigator.getRouteParam('contextLevel');
+        this.contextInstanceId = CoreNavigator.getRouteNumberParam('contextInstanceId');
+        this.courseId = CoreNavigator.getRouteNumberParam('courseId');
     }
 
     /**

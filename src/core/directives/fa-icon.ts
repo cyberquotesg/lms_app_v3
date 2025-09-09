@@ -27,6 +27,7 @@ import { CoreConstants } from '../constants';
  */
 @Directive({
     selector: 'ion-icon[name]',
+    standalone: true,
 })
 export class CoreFaIconDirective implements AfterViewInit, OnChanges {
 
@@ -75,7 +76,7 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
         if (!this.element.getAttribute('aria-label') &&
             !this.element.getAttribute('aria-labelledby') &&
             this.element.getAttribute('aria-hidden') !== 'true') {
-            this.logger.warn('Aria label not set on icon ' + this.name, this.element);
+            this.logger.warn(`Aria label not set on icon ${this.name}`, this.element);
 
             this.element.setAttribute('aria-hidden', 'true');
         }

@@ -12,20 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreSharedModule } from '@/core/shared.module';
 import { Injector, NgModule } from '@angular/core';
 import { ROUTES, Routes } from '@angular/router';
-import { CoreCourseComponentsModule } from '@features/course/components/components.module';
 import { resolveIndexRoutes } from '@features/course/course-routing.module';
-import { CoreCourseSummaryPageModule } from '@features/course/pages/course-summary/course-summary.module';
-import { CoreCourseIndexPage } from '@features/course/pages/index';
-import { CoreCourseListModTypePage } from '@features/course/pages/list-mod-type/list-mod-type';
-import { CoreCourseModulePreviewPage } from '@features/course/pages/module-preview/module-preview';
 import { CoreCourseHelper } from './services/course-helper';
-import { COURSE_INDEX_PATH } from './constants';
-
-// by rachmad
-import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
+import { CORE_COURSE_INDEX_PATH } from './constants';
 
 /**
  * Build module routes.
@@ -38,48 +29,35 @@ function buildRoutes(injector: Injector): Routes {
 
     return [
         {
-            path: COURSE_INDEX_PATH,
-            children: [
+            path: CORE_COURSE_INDEX_PATH,
+            loadChildren: () => [
                 {
                     path: '',
-                    component: CoreCourseIndexPage,
+                    loadComponent: () => import('@features/course/pages/index/index'),
                     data: {
                         isCourseIndex: true,
                     },
-                    children: indexRoutes.children,
+                    loadChildren: () => indexRoutes.children,
                 },
                 ...indexRoutes.siblings,
             ],
         },
         {
             path: ':courseId/:cmId/module-preview',
-            component: CoreCourseModulePreviewPage,
+            loadComponent: () => import('@features/course/pages/module-preview/module-preview'),
         },
         {
             path: ':courseId/list-mod-type',
-            component: CoreCourseListModTypePage,
+            loadComponent: () => import('@features/course/pages/list-mod-type/list-mod-type'),
         },
         {
             path: ':courseId/summary',
-            loadChildren: () => CoreCourseHelper.getCourseSummaryRouteModule(),
+            loadComponent: () => CoreCourseHelper.getCourseSummaryPage(),
         },
     ];
 }
 
 @NgModule({
-    declarations: [
-        CoreCourseListModTypePage,
-        CoreCourseIndexPage,
-        CoreCourseModulePreviewPage,
-    ],
-    imports: [
-        CoreSharedModule,
-        CoreCourseComponentsModule,
-        CoreCourseSummaryPageModule,
-
-        // by rachmad
-        CqComponentsModule,
-    ],
     providers: [
         {
             provide: ROUTES,
@@ -89,4 +67,4 @@ function buildRoutes(injector: Injector): Routes {
         },
     ],
 })
-export class CoreCourseLazyModule {}
+export default class CoreCourseLazyModule {}

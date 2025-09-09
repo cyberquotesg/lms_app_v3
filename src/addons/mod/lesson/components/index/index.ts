@@ -17,15 +17,14 @@ import { Component, Input, ViewChild, ElementRef, OnInit, OnDestroy, Optional } 
 
 import { CoreTabsComponent } from '@components/tabs/tabs';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
-import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
+import CoreCourseContentsPage from '@features/course/pages/contents/contents';
 import { CoreUser } from '@features/user/services/user';
 import { IonContent, IonInput } from '@ionic/angular';
 import { CoreGroupInfo, CoreGroups } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreForms } from '@singletons/form';
 import { CoreText } from '@singletons/text';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { AddonModLessonRetakeFinishedInSyncDBRecord } from '../../services/database/lesson';
 import { AddonModLessonPrefetchHandler } from '../../services/handlers/prefetch';
@@ -48,10 +47,14 @@ import { CoreError } from '@classes/errors/error';
 import { Translate } from '@singletons';
 import {
     ADDON_MOD_LESSON_AUTO_SYNCED,
-    ADDON_MOD_LESSON_COMPONENT,
+    ADDON_MOD_LESSON_COMPONENT_LEGACY,
     ADDON_MOD_LESSON_DATA_SENT_EVENT,
     ADDON_MOD_LESSON_PAGE_NAME,
 } from '../../constants';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreCourseModuleNavigationComponent } from '@features/course/components/module-navigation/module-navigation';
+import { CoreCourseModuleInfoComponent } from '@features/course/components/module-info/module-info';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component that displays a lesson entry page.
@@ -59,6 +62,12 @@ import {
 @Component({
     selector: 'addon-mod-lesson-index',
     templateUrl: 'addon-mod-lesson-index.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreCourseModuleInfoComponent,
+        CoreCourseModuleNavigationComponent,
+    ],
 })
 export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit, OnDestroy {
 
@@ -68,7 +77,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
     @Input() group = 0; // The group to display.
     @Input() action?: string; // The "action" to display first.
 
-    component = ADDON_MOD_LESSON_COMPONENT;
+    component = ADDON_MOD_LESSON_COMPONENT_LEGACY;
     pluginName = 'lesson';
 
     lesson?: AddonModLessonLessonWSData; // The lesson.
@@ -126,7 +135,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
         try {
             await this.setGroup(groupId);
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Error getting report.');
+            CoreAlerts.showError(error, { default: 'Error getting report.' });
         } finally {
             this.reportLoaded = true;
         }
@@ -375,7 +384,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
             return;
         }
 
-        await CoreUtils.ignoreErrors(AddonModLesson.logViewLesson(this.lesson.id, this.password));
+        await CorePromiseUtils.ignoreErrors(AddonModLesson.logViewLesson(this.lesson.id, this.password));
     }
 
     /**
@@ -464,7 +473,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
 
         if (!this.groupInfo) {
             this.fetchReportData().catch((error) => {
-                CoreDomUtils.showErrorModalDefault(error, 'Error getting report.');
+                CoreAlerts.showError(error, { default: 'Error getting report.' });
             });
         }
 
@@ -562,10 +571,10 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
 
         if (formattedData.students) {
             // Get the user data for each student returned.
-            await CoreUtils.allPromises(formattedData.students.map(async (student) => {
+            await CorePromiseUtils.allPromises(formattedData.students.map(async (student) => {
                 student.bestgrade = CoreText.roundToDecimals(student.bestgrade, 2);
 
-                const user = await CoreUtils.ignoreErrors(CoreUser.getProfile(student.id, this.courseId, true));
+                const user = await CorePromiseUtils.ignoreErrors(CoreUser.getProfile(student.id, this.courseId, true));
                 if (user) {
                     student.profileimageurl = user.profileimageurl;
                 }
@@ -613,7 +622,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
                 // Error downloading but there is something offline, allow continuing it.
                 this.playLesson(continueLast);
             } else {
-                CoreDomUtils.showErrorModalDefault(error, 'core.errordownloading', true);
+                CoreAlerts.showError(error, { default: Translate.instant('core.errordownloading') });
             }
         } finally {
             this.showSpinner = false;
@@ -632,7 +641,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
 
         const password = passwordEl?.value;
         if (!password) {
-            CoreDomUtils.showErrorModal('addon.mod_lesson.emptypassword', true);
+            CoreAlerts.showError(Translate.instant('addon.mod_lesson.emptypassword'));
 
             return;
         }
@@ -652,7 +661,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
             // Log view now that we have the password.
             this.logActivity();
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
         } finally {
             this.showLoading = false;
 
@@ -672,8 +681,7 @@ export class AddonModLessonIndexComponent extends CoreCourseModuleMainActivityCo
 
         if (!result.updated && this.dataSent && this.isPrefetched()) {
             // The user sent data to server, but not in the sync process. Check if we need to fetch data.
-            await CoreUtils.ignoreErrors(AddonModLessonSync.prefetchAfterUpdate(
-                AddonModLessonPrefetchHandler.instance,
+            await CorePromiseUtils.ignoreErrors(AddonModLessonSync.prefetchModuleAfterUpdate(
                 this.module,
                 this.courseId,
             ));

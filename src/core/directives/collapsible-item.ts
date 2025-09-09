@@ -16,7 +16,7 @@ import { Directive, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { CoreLoadingComponent } from '@components/loading/loading';
 import { CoreSettingsHelper } from '@features/settings/services/settings-helper';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreUtils } from '@singletons/utils';
 import { Translate } from '@singletons';
 import { CoreColors } from '@singletons/colors';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
@@ -24,6 +24,7 @@ import { CoreDom } from '@singletons/dom';
 import { CoreEventObserver } from '@singletons/events';
 import { Subscription } from 'rxjs';
 import { CoreFormatTextDirective } from './format-text';
+import { CoreConstants } from '../constants';
 
 const defaultMaxHeight = 80;
 const minMaxHeight = 56;
@@ -37,6 +38,7 @@ const minMaxHeight = 56;
  */
 @Directive({
     selector: '[collapsible-item]',
+    standalone: true,
 })
 export class CoreCollapsibleItemDirective implements OnInit, OnDestroy {
 
@@ -65,7 +67,7 @@ export class CoreCollapsibleItemDirective implements OnInit, OnDestroy {
         this.element = el.nativeElement;
 
         this.element.addEventListener('click', (event) => this.elementClicked(event));
-        this.uniqueId = 'collapsible-item-' + CoreUtils.getUniqueId('CoreCollapsibleItemDirective');
+        this.uniqueId = `collapsible-item-${CoreUtils.getUniqueId('CoreCollapsibleItemDirective')}`;
         this.element.id = this.uniqueId;
     }
 
@@ -92,6 +94,7 @@ export class CoreCollapsibleItemDirective implements OnInit, OnDestroy {
         }
 
         this.element.classList.add('collapsible-item');
+        this.expanded = CoreConstants.CONFIG.collapsibleItemsExpanded;
 
         await this.waitLoadingsDone();
 
@@ -235,9 +238,9 @@ export class CoreCollapsibleItemDirective implements OnInit, OnDestroy {
      */
     protected setHeight(height?: number): void {
         if (height) {
-            this.element.style.setProperty('--collapsible-height', height + 'px');
+            this.element.style.setProperty('--collapsible-height', `${height}px`);
         } else if (this.expandedHeight) {
-            this.element.style.setProperty('--collapsible-height', this.expandedHeight + 'px');
+            this.element.style.setProperty('--collapsible-height', `${this.expandedHeight}px`);
         } else {
             this.element.style.removeProperty('--collapsible-height');
 

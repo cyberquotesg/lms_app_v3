@@ -14,7 +14,6 @@
 
 import { Injectable } from '@angular/core';
 import { CoreBlockHandlerData } from '@features/block/services/block-delegate';
-import { CoreBlockOnlyTitleComponent } from '@features/block/components/only-title-block/only-title-block';
 import { CoreBlockBaseHandler } from '@features/block/classes/base-block-handler';
 import { makeSingleton } from '@singletons';
 import { ADDON_COMPETENCY_LEARNING_PLANS_PAGE } from '@addons/competency/constants';
@@ -25,15 +24,15 @@ import { ADDON_COMPETENCY_LEARNING_PLANS_PAGE } from '@addons/competency/constan
 @Injectable({ providedIn: 'root' })
 export class AddonBlockLearningPlansHandlerService extends CoreBlockBaseHandler {
 
-    name = 'AddonBlockLearningPlans';
+    name = 'AddonBlockLp';
     blockName = 'lp';
 
     /**
-     * Returns the data needed to render the block.
-     *
-     * @returns Data or promise resolved with the data.
+     * @inheritdoc
      */
-    getDisplayData(): CoreBlockHandlerData {
+    async getDisplayData(): Promise<CoreBlockHandlerData> {
+        const { CoreBlockOnlyTitleComponent } = await import('@features/block/components/only-title-block/only-title-block');
+
         return {
             title: 'addon.block_learningplans.pluginname',
             class: 'addon-block-learning-plans',

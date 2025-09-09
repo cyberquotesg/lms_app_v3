@@ -15,11 +15,14 @@
 import { Component, Input, OnInit, OnDestroy, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { Subject, Subscription } from 'rxjs';
 import { auditTime } from 'rxjs/operators';
-import { CorePopovers } from '@services/popovers';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePopovers } from '@services/overlays/popovers';
+import { CoreUtils } from '@singletons/utils';
 import { Translate } from '@singletons';
 import { CoreContextMenuItemComponent } from './context-menu-item';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
+import { CoreBaseModule } from '@/core/base.module';
+import { CoreFaIconDirective } from '@directives/fa-icon';
+import { CoreUpdateNonReactiveAttributesDirective } from '@directives/update-non-reactive-attributes';
 
 /**
  * This component adds a button (usually in the navigation bar) that displays a context menu popover.
@@ -27,6 +30,12 @@ import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 @Component({
     selector: 'core-context-menu',
     templateUrl: 'core-context-menu.html',
+    standalone: true,
+    imports: [
+        CoreBaseModule,
+        CoreUpdateNonReactiveAttributesDirective,
+        CoreFaIconDirective,
+    ],
 })
 export class CoreContextMenuComponent implements OnInit, OnDestroy {
 
@@ -64,7 +73,7 @@ export class CoreContextMenuComponent implements OnInit, OnDestroy {
         });
 
         // Calculate the unique ID.
-        this.uniqueId = 'core-context-menu-' + CoreUtils.getUniqueId('CoreContextMenuComponent');
+        this.uniqueId = `core-context-menu-${CoreUtils.getUniqueId('CoreContextMenuComponent')}`;
 
         CoreDirectivesRegistry.register(elementRef.nativeElement, this);
     }

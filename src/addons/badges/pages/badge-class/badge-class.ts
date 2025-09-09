@@ -13,13 +13,14 @@
 // limitations under the License.
 
 import { Component, OnInit } from '@angular/core';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreNavigator } from '@services/navigator';
 import { ActivatedRoute } from '@angular/router';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreTime } from '@singletons/time';
 import { AddonBadges, AddonBadgesBadgeClass } from '../../services/badges';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays a badge class.
@@ -27,8 +28,12 @@ import { AddonBadges, AddonBadgesBadgeClass } from '../../services/badges';
 @Component({
     selector: 'page-addon-badges-badge-class',
     templateUrl: 'badge-class.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonBadgesBadgeClassPage implements OnInit {
+export default class AddonBadgesBadgeClassPage implements OnInit {
 
     protected badgeId = 0;
     protected logView: (badge: AddonBadgesBadgeClass) => void;
@@ -52,7 +57,7 @@ export class AddonBadgesBadgeClassPage implements OnInit {
     }
 
     /**
-     * View loaded.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.fetchBadgeClass().finally(() => {
@@ -71,7 +76,7 @@ export class AddonBadgesBadgeClassPage implements OnInit {
 
             this.logView(this.badge);
         } catch (message) {
-            CoreDomUtils.showErrorModalDefault(message, 'Error getting badge data.');
+            CoreAlerts.showError(message, { default: 'Error getting badge data.' });
         }
     }
 
@@ -81,7 +86,7 @@ export class AddonBadgesBadgeClassPage implements OnInit {
      * @param refresher Refresher.
      */
     async refreshBadgeClass(refresher?: HTMLIonRefresherElement): Promise<void> {
-        await CoreUtils.ignoreErrors(AddonBadges.invalidateBadgeClass(this.badgeId));
+        await CorePromiseUtils.ignoreErrors(AddonBadges.invalidateBadgeClass(this.badgeId));
 
         await this.fetchBadgeClass();
 

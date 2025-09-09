@@ -18,6 +18,10 @@ import { CoreSiteBasicInfo } from '@services/sites';
 import { CoreAccountsList } from '@features/login/services/login-helper';
 import { CoreSitesFactory } from '@services/sites-factory';
 import { toBoolean } from '@/core/transforms/boolean';
+import { CoreBaseModule } from '@/core/base.module';
+import { CoreFormatTextDirective } from '@directives/format-text';
+import { CoreUserAvatarComponent } from '@components/user-avatar/user-avatar';
+import { CoreLinkDirective } from '@directives/link';
 
 /**
  * Component to display a list of sites (accounts).
@@ -39,13 +43,20 @@ import { toBoolean } from '@/core/transforms/boolean';
 @Component({
     selector: 'core-sites-list',
     templateUrl: 'sites-list.html',
-    styleUrls: ['sites-list.scss'],
+    styleUrl: 'sites-list.scss',
+    standalone: true,
+    imports: [
+        CoreBaseModule,
+        CoreFormatTextDirective,
+        CoreLinkDirective,
+        CoreUserAvatarComponent,
+    ],
 })
 export class CoreSitesListComponent<T extends CoreSiteBasicInfo> {
 
     @Input({ required: true }) accountsList!: CoreAccountsList<T>;
     @Input({ transform: toBoolean }) sitesClickable = false; // Whether the sites are clickable.
-    @Input({ transform: toBoolean }) currentSiteClickable = false; // If set, specify a different clickable value for current site.
+    @Input({ transform: toBoolean }) currentSiteClickable?: boolean; // If set, set a different clickable value for current site.
     @Output() onSiteClicked = new EventEmitter<T>();
 
     @ContentChild('siteItem') siteItemTemplate?: TemplateRef<{site: T; isCurrentSite: boolean}>;

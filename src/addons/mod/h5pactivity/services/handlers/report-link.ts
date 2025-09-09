@@ -19,12 +19,16 @@ import { CoreContentLinksAction } from '@features/contentlinks/services/contentl
 import { CoreCourse } from '@features/course/services/course';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { makeSingleton } from '@singletons';
 import { AddonModH5PActivity } from '../h5pactivity';
-import { ADDON_MOD_H5PACTIVITY_PAGE_NAME } from '../../constants';
-import { CoreLoadings } from '@services/loadings';
+import {
+    ADDON_MOD_H5PACTIVITY_FEATURE_NAME,
+    ADDON_MOD_H5PACTIVITY_MODNAME,
+    ADDON_MOD_H5PACTIVITY_PAGE_NAME,
+} from '../../constants';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CoreAlerts } from '@services/overlays/alerts';
 
 /**
  * Handler to treat links to H5P activity report.
@@ -33,7 +37,7 @@ import { CoreLoadings } from '@services/loadings';
 export class AddonModH5PActivityReportLinkHandlerService extends CoreContentLinksHandlerBase {
 
     name = 'AddonModH5PActivityReportLinkHandler';
-    featureName = 'CoreCourseModuleDelegate_AddonModH5PActivity';
+    featureName = ADDON_MOD_H5PACTIVITY_FEATURE_NAME;
     pattern = /\/mod\/h5pactivity\/report\.php.*([&?]a=\d+)/;
 
     /**
@@ -53,7 +57,7 @@ export class AddonModH5PActivityReportLinkHandlerService extends CoreContentLink
 
                     const module = await CoreCourse.getModuleBasicInfoByInstance(
                         instanceId,
-                        'h5pactivity',
+                        ADDON_MOD_H5PACTIVITY_MODNAME,
                         { siteId, readingStrategy: CoreSitesReadingStrategy.PREFER_CACHE },
                     );
 
@@ -65,7 +69,7 @@ export class AddonModH5PActivityReportLinkHandlerService extends CoreContentLink
                         await this.openUserAttempts(module.id, module.course, instanceId, siteId, userId);
                     }
                 } catch (error) {
-                    CoreDomUtils.showErrorModalDefault(error, 'Error processing link.');
+                    CoreAlerts.showError(error, { default: 'Error processing link.' });
                 } finally {
                     modal.dismiss();
                 }
@@ -89,7 +93,7 @@ export class AddonModH5PActivityReportLinkHandlerService extends CoreContentLink
      * @param siteId Site ID.
      */
     protected async openAttemptResults(cmId: number, attemptId: number, courseId: number, siteId: string): Promise<void> {
-        const path = ADDON_MOD_H5PACTIVITY_PAGE_NAME + `/${courseId}/${cmId}/attemptresults/${attemptId}`;
+        const path = `${ADDON_MOD_H5PACTIVITY_PAGE_NAME}/${courseId}/${cmId}/attemptresults/${attemptId}`;
 
         await CoreNavigator.navigateToSitePath(path, {
             siteId,
@@ -104,7 +108,6 @@ export class AddonModH5PActivityReportLinkHandlerService extends CoreContentLink
      * @param id Instance ID.
      * @param siteId Site ID.
      * @param userId User ID. If not defined, current user in site.
-     * @returns Promise resolved when done.
      */
     protected async openUserAttempts(cmId: number, courseId: number, id: number, siteId: string, userId?: number): Promise<void> {
         let canViewAllAttempts = false;
@@ -115,7 +118,7 @@ export class AddonModH5PActivityReportLinkHandlerService extends CoreContentLink
             canViewAllAttempts = await AddonModH5PActivity.canGetUsersAttempts(siteId);
 
             if (canViewAllAttempts) {
-                const accessInfo = await CoreUtils.ignoreErrors(AddonModH5PActivity.getAccessInformation(id, {
+                const accessInfo = await CorePromiseUtils.ignoreErrors(AddonModH5PActivity.getAccessInformation(id, {
                     cmId,
                     siteId,
                 }));

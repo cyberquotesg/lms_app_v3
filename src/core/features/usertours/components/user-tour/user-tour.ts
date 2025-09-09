@@ -28,17 +28,15 @@ import { CorePromisedValue } from '@classes/promised-value';
 import { CoreUserToursFocusLayout } from '@features/usertours/classes/focus-layout';
 import { CoreUserToursPopoverLayout } from '@features/usertours/classes/popover-layout';
 import { CoreUserTours, CoreUserToursAlignment, CoreUserToursSide } from '@features/usertours/services/user-tours';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreWait } from '@singletons/wait';
 import { AngularFrameworkDelegate } from '@singletons';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CoreDom } from '@singletons/dom';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreMainMenuProvider } from '@features/mainmenu/services/mainmenu';
 import { COLLAPSIBLE_HEADER_UPDATED } from '@directives/collapsible-header';
-
-const ANIMATION_DURATION = 200;
-const USER_TOURS_BACK_BUTTON_PRIORITY = 100;
-const BACKDROP_DISMISS_SAFETY_TRESHOLD = 1000;
+import { MAIN_MENU_VISIBILITY_UPDATED_EVENT } from '@features/mainmenu/constants';
+import { CoreSharedModule } from '@/core/shared.module';
+import { BackButtonPriority } from '@/core/constants';
 
 /**
  * User Tour wrapper component.
@@ -48,7 +46,11 @@ const BACKDROP_DISMISS_SAFETY_TRESHOLD = 1000;
 @Component({
     selector: 'core-user-tours-user-tour',
     templateUrl: 'core-user-tours-user-tour.html',
-    styleUrls: ['user-tour.scss'],
+    styleUrl: 'user-tour.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy {
 
@@ -65,6 +67,9 @@ export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy 
     @HostBinding('class.is-popover') popover = false;
     @HostBinding('class.backdrop') backdrop = true;
     @ViewChild('wrapper') wrapper?: ElementRef<HTMLElement>;
+
+    protected static readonly ANIMATION_DURATION = 200;
+    protected static readonly BACKDROP_DISMISS_SAFETY_TRESHOLD = 1000;
 
     focusStyles?: string;
     popoverWrapperStyles?: string;
@@ -113,7 +118,7 @@ export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy 
             return;
         }
 
-        await CoreDomUtils.waitForImages(this.tour);
+        await CoreWait.waitForImages(this.tour);
 
         // Calculate focus styles or dismiss if the element is gone.
         if (this.focus && !CoreDom.isElementVisible(this.focus)) {
@@ -197,10 +202,10 @@ export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy 
         }
 
         const animations = [
-            this.element.animate({ opacity: ['0', '1'] }, { duration: ANIMATION_DURATION }),
+            this.element.animate({ opacity: ['0', '1'] }, { duration: CoreUserToursUserTourComponent.ANIMATION_DURATION }),
             this.wrapperElement.value?.animate(
                 { transform: [`scale(1.2) ${this.wrapperTransform}`, `scale(1) ${this.wrapperTransform}`] },
-                { duration: ANIMATION_DURATION },
+                { duration: CoreUserToursUserTourComponent.ANIMATION_DURATION },
             ),
         ];
 
@@ -217,10 +222,10 @@ export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy 
         }
 
         const animations = [
-            this.element.animate({ opacity: ['1', '0'] }, { duration: ANIMATION_DURATION }),
+            this.element.animate({ opacity: ['1', '0'] }, { duration: CoreUserToursUserTourComponent.ANIMATION_DURATION }),
             this.wrapperElement.value?.animate(
                 { transform: [`scale(1) ${this.wrapperTransform}`, `scale(1.2) ${this.wrapperTransform}`] },
-                { duration: ANIMATION_DURATION },
+                { duration: CoreUserToursUserTourComponent.ANIMATION_DURATION },
             ),
         ];
 
@@ -249,7 +254,7 @@ export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy 
             document.addEventListener(
                 'ionBackButton',
                 this.backButtonListener = ({ detail }) => detail.register(
-                    USER_TOURS_BACK_BUTTON_PRIORITY,
+                    BackButtonPriority.USER_TOURS,
                     () => {
                         this.dismissOnBackOrBackdrop();
                     },
@@ -264,7 +269,7 @@ export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy 
         this.collapsibleHeaderListener = this.collapsibleHeaderListener ??
             CoreEvents.on(COLLAPSIBLE_HEADER_UPDATED, () => this.calculateStyles());
         this.mainMenuListener = this.mainMenuListener ??
-            CoreEvents.on(CoreMainMenuProvider.MAIN_MENU_VISIBILITY_UPDATED, () => this.calculateStyles());
+            CoreEvents.on(MAIN_MENU_VISIBILITY_UPDATED_EVENT, () => this.calculateStyles());
         this.resizeListener = this.resizeListener ?? CoreDom.onWindowResize(() => this.calculateStyles());
         this.content = this.content ?? CoreDom.closest(this.focus, 'ion-content');
 
@@ -307,7 +312,7 @@ export class CoreUserToursUserTourComponent implements AfterViewInit, OnDestroy 
      * @param target Element clicked (if any).
      */
     protected dismissOnBackOrBackdrop(target?: HTMLElement): void {
-        if (!this.active || Date.now() - this.lastActivatedTime < BACKDROP_DISMISS_SAFETY_TRESHOLD) {
+        if (!this.active || Date.now() - this.lastActivatedTime < CoreUserToursUserTourComponent.BACKDROP_DISMISS_SAFETY_TRESHOLD) {
             // Not active or was recently activated, ignore.
             return;
         }

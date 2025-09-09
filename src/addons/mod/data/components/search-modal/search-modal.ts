@@ -18,7 +18,7 @@ import { CoreTag } from '@features/tag/services/tag';
 import { CoreSites } from '@services/sites';
 import { CoreFormFields, CoreForms } from '@singletons/form';
 import { CoreText } from '@singletons/text';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreObject } from '@singletons/object';
 import { ModalController } from '@singletons';
 import {
     AddonModDataField,
@@ -27,11 +27,11 @@ import {
 } from '../../services/data';
 import { AddonModDataFieldsDelegate } from '../../services/data-fields-delegate';
 import { AddonModDataHelper } from '../../services/data-helper';
-import { AddonModDataComponentsCompileModule } from '../components-compile.module';
+
 import { AddonModDataSearchDataParams } from '../index';
 import { AddonModDataTemplateType } from '../../constants';
 import { CoreSharedModule } from '@/core/shared.module';
-import { CoreCompileHtmlComponentModule } from '../../../../../core/features/compile/components/compile-html/compile-html.module';
+import { CoreCompileHtmlComponent } from '@features/compile/components/compile-html/compile-html';
 
 /**
  * Page that displays the search modal.
@@ -43,7 +43,7 @@ import { CoreCompileHtmlComponentModule } from '../../../../../core/features/com
     standalone: true,
     imports: [
         CoreSharedModule,
-        CoreCompileHtmlComponentModule,
+        CoreCompileHtmlComponent,
     ],
 })
 export class AddonModDataSearchModalComponent implements OnInit {
@@ -56,7 +56,7 @@ export class AddonModDataSearchModalComponent implements OnInit {
 
     advancedSearch = '';
     advancedIndexed: CoreFormFields = {};
-    extraImports: Type<unknown>[] = [AddonModDataComponentsCompileModule];
+    extraImports?: Type<unknown>[];
 
     searchForm: FormGroup;
     jsData?: {
@@ -73,7 +73,7 @@ export class AddonModDataSearchModalComponent implements OnInit {
         this.searchForm = new FormGroup({});
     }
 
-    ngOnInit(): void {
+    async ngOnInit(): Promise<void> {
         this.advancedIndexed = {};
         this.search.advanced?.forEach((field) => {
             if (field !== undefined) {
@@ -89,8 +89,10 @@ export class AddonModDataSearchModalComponent implements OnInit {
         this.searchForm.addControl('firstname', this.fb.control(this.advancedIndexed['firstname'] || ''));
         this.searchForm.addControl('lastname', this.fb.control(this.advancedIndexed['lastname'] || ''));
 
-        this.fieldsArray = CoreUtils.objectToArray(this.fields);
+        this.fieldsArray = CoreObject.toArray(this.fields);
         this.advancedSearch = this.renderAdvancedSearchFields();
+
+        this.extraImports = await AddonModDataHelper.getComponentsToCompile();
     }
 
     /**
@@ -109,7 +111,7 @@ export class AddonModDataSearchModalComponent implements OnInit {
 
         // Replace the fields found on template.
         this.fieldsArray.forEach((field) => {
-            let replace = '[[' + field.name + ']]';
+            let replace = `[[${field.name}]]`;
             replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
             let replaceRegex = new RegExp(replace, 'gi');
 
@@ -119,14 +121,14 @@ export class AddonModDataSearchModalComponent implements OnInit {
             template = template.replace(replaceRegex, render);
 
             // Replace the field name tag.
-            replace = '[[' + field.name + '#name]]';
+            replace = `[[${field.name}#name]]`;
             replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
             replaceRegex = new RegExp(replace, 'gi');
 
             template = template.replace(replaceRegex, field.name);
 
             // Replace the field description tag.
-            replace = '[[' + field.name + '#description]]';
+            replace = `[[${field.name}#description]]`;
             replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
             replaceRegex = new RegExp(replace, 'gi');
 

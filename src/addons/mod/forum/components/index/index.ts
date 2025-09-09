@@ -15,7 +15,6 @@
 import { Component, Optional, OnInit, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonContent } from '@ionic/angular';
-
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import {
     AddonModForum,
@@ -27,7 +26,7 @@ import {
 } from '@addons/mod/forum/services/forum';
 import { AddonModForumOffline } from '@addons/mod/forum/services/forum-offline';
 import { Translate } from '@singletons';
-import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
+import CoreCourseContentsPage from '@features/course/pages/contents/contents';
 import { AddonModForumHelper } from '@addons/mod/forum/services/forum-helper';
 import { CoreGroupInfo } from '@services/groups';
 import { CoreEvents, CoreEventObserver } from '@singletons/events';
@@ -38,7 +37,6 @@ import {
 } from '@addons/mod/forum/services/forum-sync';
 import { CoreSites } from '@services/sites';
 import { CoreUser } from '@features/user/services/user';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { CoreScreen } from '@services/screen';
@@ -55,7 +53,7 @@ import { CoreNavigator } from '@services/navigator';
 import {
     ADDON_MOD_FORUM_AUTO_SYNCED,
     ADDON_MOD_FORUM_CHANGE_DISCUSSION_EVENT,
-    ADDON_MOD_FORUM_COMPONENT,
+    ADDON_MOD_FORUM_COMPONENT_LEGACY,
     ADDON_MOD_FORUM_MANUAL_SYNCED,
     ADDON_MOD_FORUM_NEW_DISCUSSION_EVENT,
     ADDON_MOD_FORUM_PAGE_NAME,
@@ -65,22 +63,33 @@ import {
     AddonModForumType,
 } from '@addons/mod/forum/constants';
 import { CoreSearchGlobalSearch } from '@features/search/services/global-search';
-import { CoreToasts } from '@services/toasts';
-import { CorePopovers } from '@services/popovers';
-import { CoreLoadings } from '@services/loadings';
+import { CoreToasts } from '@services/overlays/toasts';
+import { CorePopovers } from '@services/overlays/popovers';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCourseModuleNavigationComponent } from '@features/course/components/module-navigation/module-navigation';
+import { CoreCourseModuleInfoComponent } from '@features/course/components/module-info/module-info';
+
 /**
  * Component that displays a forum entry page.
  */
 @Component({
     selector: 'addon-mod-forum-index',
     templateUrl: 'index.html',
-    styleUrls: ['index.scss'],
+    styleUrl: 'index.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreCourseModuleInfoComponent,
+        CoreCourseModuleNavigationComponent,
+    ],
 })
 export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit, AfterViewInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
-    component = ADDON_MOD_FORUM_COMPONENT;
+    component = ADDON_MOD_FORUM_COMPONENT_LEGACY;
     pluginName = 'forum';
     descriptionNote?: string;
     promisedDiscussions: CorePromisedValue<AddonModForumDiscussionsManager>;
@@ -162,6 +171,10 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
 
     get errorLoadingDiscussions(): boolean {
         return !!this.discussions?.getSource().errorLoadingDiscussions;
+    }
+
+    get hasBlockingEnabled(): boolean {
+        return !!(this.forum?.blockafter && this.forum.blockperiod);
     }
 
     /**
@@ -475,7 +488,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
 
             await discussions.load();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.mod_forum.errorgetforum', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.mod_forum.errorgetforum') });
 
             this.fetchFailed = true;
         } finally {
@@ -618,7 +631,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
                 await CoreUser.setUserPreference(ADDON_MOD_FORUM_PREFERENCE_SORTORDER, sortOrder.value.toFixed(0));
                 await this.showLoadingAndFetch();
             } catch (error) {
-                CoreDomUtils.showErrorModalDefault(error, 'Error updating preference.');
+                CoreAlerts.showError(error, { default: 'Error updating preference.' });
             }
         }
     }
@@ -679,7 +692,7 @@ export class AddonModForumIndexComponent extends CoreCourseModuleMainActivityCom
                 this.discussions?.reload(),
             ]);
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'core.errorloadingcontent', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.errorloadingcontent') });
         } finally {
             modal.dismiss();
         }

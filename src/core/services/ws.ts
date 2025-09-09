@@ -16,6 +16,7 @@ import { Injectable } from '@angular/core';
 import { HttpResponse, HttpParams, HttpErrorResponse } from '@angular/common/http';
 
 import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
+import { HTTPResponse as NativeHttpResponse } from '@awesome-cordova-plugins/http';
 import { Md5 } from 'ts-md5/dist/md5';
 import { Observable, firstValueFrom } from 'rxjs';
 import { timeout } from 'rxjs/operators';
@@ -23,9 +24,9 @@ import { timeout } from 'rxjs/operators';
 import { CoreNativeToAngularHttpResponse } from '@classes/native-to-angular-http';
 import { CoreNetwork } from '@services/network';
 import { CoreFile, CoreFileFormat } from '@services/file';
-import { CoreMimetypeUtils } from '@services/utils/mimetype';
+import { CoreMimetype } from '@singletons/mimetype';
 import { CoreText } from '@singletons/text';
-import { CoreConstants } from '@/core/constants';
+import { CoreConstants, MINIMUM_MOODLE_VERSION } from '@/core/constants';
 import { CoreError } from '@classes/errors/error';
 import { CoreInterceptor } from '@classes/interceptor';
 import { makeSingleton, Translate, Http, NativeHttp } from '@singletons';
@@ -34,7 +35,6 @@ import { CoreWSError } from '@classes/errors/wserror';
 import { CoreAjaxError } from '@classes/errors/ajaxerror';
 import { CoreAjaxWSError } from '@classes/errors/ajaxwserror';
 import { CoreNetworkError } from '@classes/errors/network-error';
-import { CoreSite } from '@classes/sites/site';
 import { CoreHttpError } from '@classes/errors/httperror';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
@@ -114,7 +114,7 @@ export class CoreWSProvider {
         const dataToSend = Object.assign({}, data); // Create a new object so the changes don't affect the original data.
         dataToSend['wsfunction'] = method;
         dataToSend['wstoken'] = preSets.wsToken;
-        const siteUrl = preSets.siteUrl + '/webservice/rest/server.php?moodlewsrestformat=json';
+        const siteUrl = `${preSets.siteUrl}/webservice/rest/server.php?moodlewsrestformat=json`;
 
         // There are some ongoing retry calls, wait for timeout.
         if (this.retryCalls.length > 0) {
@@ -170,7 +170,7 @@ export class CoreWSProvider {
             if (value == null) {
                 // Skip null or undefined value.
                 continue;
-            } else if (typeof value == 'object') {
+            } else if (typeof value === 'object') {
                 // Object or array.
                 value = this.convertValuesToString(value, stripUnicode);
                 if (value == null) {
@@ -249,37 +249,44 @@ export class CoreWSProvider {
 
         // Use a tmp path to download the file and then move it to final location.
         // This is because if the download fails, the local file is deleted.
-        const tmpPath = path + '.tmp';
+        const tmpPath = `${path}.tmp`;
 
         try {
             // Create the tmp file as an empty file.
             const fileEntry = await CoreFile.createFile(tmpPath);
 
-            const transfer = new window.FileTransfer();
+            let fileDownloaded: { entry: globalThis.FileEntry; headers: Record<string, string> | undefined};
+            let redirectUrl: string | undefined;
+            let maxRedirects = 5;
+            do {
+                const transfer = new window.FileTransfer();
+                if (onProgress) {
+                    transfer.onprogress = onProgress;
+                }
 
-            if (onProgress) {
-                transfer.onprogress = onProgress;
-            }
+                // Download the file in the tmp file.
+                fileDownloaded = await new Promise((resolve, reject) => {
+                    transfer.download(
+                        redirectUrl ?? url,
+                        CoreFile.getFileEntryURL(fileEntry),
+                        (result) => resolve(result),
+                        (error: FileTransferError) => reject(error),
+                        true,
+                        { headers: { 'User-Agent': navigator.userAgent } },
+                    );
+                });
 
-            // Download the file in the tmp file.
-            const fileDownloaded = await new Promise<{
-                entry: globalThis.FileEntry;
-                headers: Record<string, string> | undefined;
-            }>((resolve, reject) => {
-                transfer.download(
-                    url,
-                    CoreFile.getFileEntryURL(fileEntry),
-                    (result) => resolve(result),
-                    (error: FileTransferError) => reject(error),
-                    true,
-                    { headers: { 'User-Agent': navigator.userAgent } },
-                );
-            });
+                // Redirections should have been handled by the platform,
+                // but Android does not follow redirections between HTTP and HTTPS.
+                // See: https://developer.android.com/reference/java/net/HttpURLConnection#response-handling
+                redirectUrl = fileDownloaded.headers?.['location'];
+                maxRedirects--;
+            } while (redirectUrl && maxRedirects >= 0);
 
             let extension = '';
 
             if (addExtension) {
-                extension = CoreMimetypeUtils.getFileExtension(path) || '';
+                extension = CoreMimetype.getFileExtension(path) || '';
 
                 // Google Drive extensions will be considered invalid since Moodle usually converts them.
                 if (!extension || ['gdoc', 'gsheet', 'gslides', 'gdraw', 'php'].includes(extension)) {
@@ -289,14 +296,14 @@ export class CoreWSProvider {
                     const mimetype = requestContentType ?? await this.getRemoteFileMimeType(url);
 
                     if (mimetype) {
-                        const remoteExtension = CoreMimetypeUtils.getExtension(mimetype, url);
+                        const remoteExtension = CoreMimetype.getExtension(mimetype, url);
                         // If the file is from Google Drive, ignore mimetype application/json.
                         if (remoteExtension && (!extension || mimetype != 'application/json')) {
                             if (extension) {
                                 // Remove existing extension since we will use another one.
-                                path = CoreMimetypeUtils.removeExtension(path);
+                                path = CoreMimetype.removeExtension(path);
                             }
-                            path += '.' + remoteExtension;
+                            path += `.${remoteExtension}`;
 
                             extension = remoteExtension;
                         }
@@ -404,10 +411,10 @@ export class CoreWSProvider {
      */
     protected getQueueItemId(method: string, url: string, params?: Record<string, unknown>): string {
         if (params) {
-            url += '###' + CoreInterceptor.serialize(params);
+            url += `###${CoreInterceptor.serialize(params)}`;
         }
 
-        return method + '#' + Md5.hashAsciiStr(url);
+        return `${method}#${Md5.hashAsciiStr(url)}`;
     }
 
     /**
@@ -463,11 +470,11 @@ export class CoreWSProvider {
 
         // The info= parameter has no function. It is just to help with debugging.
         // We call it info to match the parameter name use by Moodle's AMD ajax module.
-        let siteUrl = preSets.siteUrl + '/lib/ajax/' + script + '?info=' + method + `&lang=${lang}`;
+        let siteUrl = `${preSets.siteUrl}/lib/ajax/${script}?info=${method}&lang=${lang}`;
 
         if (preSets.noLogin && preSets.useGet) {
             // Send params using GET.
-            siteUrl += '&args=' + encodeURIComponent(JSON.stringify(ajaxData));
+            siteUrl += `&args=${encodeURIComponent(JSON.stringify(ajaxData))}`;
 
             promise = this.sendHTTPRequest<T>(siteUrl, {
                 method: 'get',
@@ -491,7 +498,7 @@ export class CoreWSProvider {
             }
 
             // Check if error. Ajax layer should always return an object (if error) or an array (if success).
-            if (!data || typeof data != 'object') {
+            if (!data || typeof data !== 'object') {
                 const message = CoreSites.isLoggedIn()
                     ? Translate.instant('core.siteunavailablehelp', { site: CoreSites.getCurrentSite()?.siteUrl })
                     : Translate.instant('core.sitenotfoundhelp');
@@ -584,7 +591,7 @@ export class CoreWSProvider {
                         options.debug = {
                             code: 'endpointnotfound',
                             details: Translate.instant('core.ajaxendpointnotfound', {
-                                $a: CoreSite.MINIMUM_MOODLE_VERSION,
+                                $a: MINIMUM_MOODLE_VERSION,
                             }),
                         };
                         break;
@@ -722,7 +729,7 @@ export class CoreWSProvider {
         // We add the method name to the URL purely to help with debugging.
         // This duplicates what is in the ajaxData, but that does no harm.
         // POST variables take precedence over GET.
-        const requestUrl = siteUrl + '&wsfunction=' + method;
+        const requestUrl = `${siteUrl}&wsfunction=${method}`;
 
         // Perform the post request.
         const promise = firstValueFrom(Http.post(requestUrl, ajaxData, options).pipe(timeout(this.getRequestTimeout())));
@@ -776,7 +783,7 @@ export class CoreWSProvider {
                             });
                         }
                     } else {
-                        this.logger.warn('Response of type "' + typeof data + `" received, expecting "${typeExpected}"`);
+                        this.logger.warn(`Response of type "${typeof data}" received, expecting "${typeExpected}"`);
 
                         throw await this.createCannotConnectSiteError(preSets.siteUrl, {
                             debug: {
@@ -786,7 +793,7 @@ export class CoreWSProvider {
                         });
                     }
                 } else {
-                    this.logger.warn('Response of type "' + typeof data + `" received, expecting "${typeExpected}"`);
+                    this.logger.warn(`Response of type "${typeof data}" received, expecting "${typeExpected}"`);
 
                     throw await this.createCannotConnectSiteError(preSets.siteUrl, {
                         debug: {
@@ -807,7 +814,7 @@ export class CoreWSProvider {
             }
 
             if (data.debuginfo !== undefined) {
-                throw new CoreError('Error. ' + data.message);
+                throw new CoreError(`Error. ${data.message}`);
             }
 
             return data;
@@ -943,7 +950,7 @@ export class CoreWSProvider {
 
             data.wsfunction = method;
             data.wstoken = preSets.wsToken;
-            const siteUrl = preSets.siteUrl + '/webservice/rest/server.php?moodlewsrestformat=json';
+            const siteUrl = `${preSets.siteUrl}/webservice/rest/server.php?moodlewsrestformat=json`;
 
             // Serialize data.
             data = CoreInterceptor.serialize(data);
@@ -980,7 +987,7 @@ export class CoreWSProvider {
                     details: Translate.instant('core.errorinvalidresponse', { method }),
                 }));
             } else if (typeof data != preSets.typeExpected) {
-                this.logger.warn('Response of type "' + typeof data + '" received, expecting "' + preSets.typeExpected + '"');
+                this.logger.warn(`Response of type "${typeof data}" received, expecting "${preSets.typeExpected}"`);
                 throw new CoreError(Translate.instant('core.errorinvalidresponse', { method }));
             }
 
@@ -1028,7 +1035,7 @@ export class CoreWSProvider {
             throw new CoreNetworkError();
         }
 
-        const uploadUrl = preSets.siteUrl + '/webservice/upload.php';
+        const uploadUrl = `${preSets.siteUrl}/webservice/upload.php`;
         const transfer = new window.FileTransfer();
 
         if (onProgress) {
@@ -1083,8 +1090,8 @@ export class CoreWSProvider {
                     }),
                 },
             });
-        } else if (typeof data != 'object') {
-            this.logger.warn('Upload file: Response of type "' + typeof data + '" received, expecting "object"');
+        } else if (typeof data !== 'object') {
+            this.logger.warn(`Upload file: Response of type "${typeof data}" received, expecting "object"`);
 
             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
                 debug: {
@@ -1185,7 +1192,29 @@ export class CoreWSProvider {
                 });
             }
 
-            return NativeHttp.sendRequest(url, options).then((response) => new CoreNativeToAngularHttpResponse(response));
+            let response: NativeHttpResponse;
+            let redirectUrl: string | undefined;
+            let maxRedirects = 5;
+            do {
+                try {
+                    response = await NativeHttp.sendRequest(redirectUrl ?? url, options);
+                    redirectUrl = undefined;
+                } catch (error) {
+                    // Error is a response object.
+                    response = error as NativeHttpResponse;
+
+                    // Redirections should have been handled by the platform,
+                    // but Android does not follow redirections between HTTP and HTTPS.
+                    // See: https://developer.android.com/reference/java/net/HttpURLConnection#response-handling
+                    redirectUrl = response.headers['location'];
+                    maxRedirects--;
+                    if (!redirectUrl || maxRedirects < 0) {
+                        throw error;
+                    }
+                }
+            } while (redirectUrl);
+
+            return new CoreNativeToAngularHttpResponse(response);
         } else {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let observable: Observable<HttpResponse<any>>;
@@ -1233,7 +1262,7 @@ export class CoreWSProvider {
                 observable = observable.pipe(timeout(angularOptions.timeout));
             }
 
-            return firstValueFrom(observable);
+            return await firstValueFrom(observable);
         }
     }
 
@@ -1338,14 +1367,15 @@ export type CoreWarningsWSResponse = {
  * Structure of files returned by WS.
  */
 export type CoreWSExternalFile = {
-    fileurl: string; // Downloadable file url.
     filename?: string; // File name.
     filepath?: string; // File path.
     filesize?: number; // File size.
+    fileurl: string; // Downloadable file url.
     timemodified?: number; // Time modified.
     mimetype?: string; // File mime type.
-    isexternalfile?: number; // Whether is an external file.
-    repositorytype?: string; // The repository type for external files.
+    isexternalfile?: boolean; // Whether is an external file.
+    repositorytype?: string; // The repository type for the external files.
+    icon?: string; // @since 4.4. Relative path to the relevant file type icon based on the file's mime type.
 };
 
 /**

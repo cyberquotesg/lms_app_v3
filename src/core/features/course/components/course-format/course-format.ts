@@ -25,12 +25,10 @@ import {
     ChangeDetectorRef,
     ViewChild,
 } from '@angular/core';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreDynamicComponent } from '@components/dynamic-component/dynamic-component';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
 import {
     CoreCourse,
-    CoreCourseProvider,
     sectionContentIsModule,
 } from '@features/course/services/course';
 import {
@@ -41,7 +39,7 @@ import {
 import { CoreCourseFormatDelegate } from '@features/course/services/format-delegate';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { AccordionGroupChangeEventDetail, IonContent } from '@ionic/angular';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreCourseIndexSectionWithModule } from '../course-index/course-index';
 import { CoreBlockHelper } from '@features/block/services/block-helper';
 import { CoreNavigator } from '@services/navigator';
@@ -53,15 +51,23 @@ import { CoreDom } from '@singletons/dom';
 import { CoreUserTourDirectiveOptions } from '@directives/user-tour';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { ContextLevel } from '@/core/constants';
-import { CoreModals } from '@services/modals';
+import { CoreModals } from '@services/overlays/modals';
 import { CoreSharedModule } from '@/core/shared.module';
-import { CoreBlockComponentsModule } from '@features/block/components/components.module';
+import { CoreBlockSideBlocksButtonComponent } from '../../../block/components/side-blocks-button/side-blocks-button';
 import { CoreSites } from '@services/sites';
-import { COURSE_ALL_SECTIONS_PREFERRED_PREFIX, COURSE_EXPANDED_SECTIONS_PREFIX } from '@features/course/constants';
+import {
+    CORE_COURSE_ALL_SECTIONS_ID,
+    CORE_COURSE_ALL_SECTIONS_PREFERRED_PREFIX,
+    CORE_COURSE_EXPANDED_SECTIONS_PREFIX,
+    CORE_COURSE_STEALTH_MODULES_SECTION_ID,
+} from '@features/course/constants';
 import { toBoolean } from '@/core/transforms/boolean';
 import { CoreInfiniteLoadingComponent } from '@components/infinite-loading/infinite-loading';
 import { CoreSite } from '@classes/sites/site';
 import { CoreCourseSectionComponent, CoreCourseSectionToDisplay } from '../course-section/course-section';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreCourseModuleHelper } from '@features/course/services/course-module-helper';
+import { ADDON_STORAGE_MANAGER_PAGE_NAME } from '@addons/storagemanager/constants';
 
 /**
  * Component to display course contents using a certain format. If the format isn't found, use default one.
@@ -81,7 +87,7 @@ import { CoreCourseSectionComponent, CoreCourseSectionToDisplay } from '../cours
     imports: [
         CoreSharedModule,
         CoreCourseSectionComponent,
-        CoreBlockComponentsModule,
+        CoreBlockSideBlocksButtonComponent,
     ],
 })
 export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
@@ -94,7 +100,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
     @Input() initialSectionNumber?: number; // The section to load first (by number).
     @Input() initialBlockInstanceId?: number; // The instance to focus.
     @Input() moduleId?: number; // The module ID to scroll to. Must be inside the initial selected section.
-    @Input({ transform: toBoolean }) isGuest = false; // If user is accessing using an ACCESS_GUEST enrolment method.
+    @Input({ transform: toBoolean }) isGuest?: boolean; // If user is accessing using an ACCESS_GUEST enrolment method.
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @ViewChildren(CoreDynamicComponent) dynamicComponents?: QueryList<CoreDynamicComponent<any>>;
@@ -129,8 +135,8 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
     selectedSection?: CoreCourseSectionToDisplay;
     previousSection?: CoreCourseSectionToDisplay;
     nextSection?: CoreCourseSectionToDisplay;
-    allSectionsId = CoreCourseProvider.ALL_SECTIONS_ID;
-    stealthModulesSectionId = CoreCourseProvider.STEALTH_MODULES_SECTION_ID;
+    allSectionsId = CORE_COURSE_ALL_SECTIONS_ID;
+    stealthModulesSectionId = CORE_COURSE_STEALTH_MODULES_SECTION_ID;
     loaded = false;
     lastModuleViewed?: CoreCourseViewedModulesDBRecord;
     viewedModules: Record<number, boolean> = {};
@@ -157,8 +163,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      */
     ngOnInit(): void {
         if (this.course === undefined) {
-            CoreDomUtils.showErrorModal('Course not set');
-
+            CoreAlerts.showError('Course not set');
             CoreNavigator.back();
 
             return;
@@ -299,7 +304,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      * @param sections Sections to treat.
      */
     protected async treatSections(sections: CoreCourseSectionToDisplay[]): Promise<void> {
-        const hasAllSections = sections[0].id === CoreCourseProvider.ALL_SECTIONS_ID;
+        const hasAllSections = sections[0].id === CORE_COURSE_ALL_SECTIONS_ID;
         const hasSeveralSections = sections.length > 2 || (sections.length === 2 && !hasAllSections);
 
         await this.initializeViewedModules();
@@ -395,7 +400,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
             return;
         }
 
-        const viewedModules = await CoreCourse.getViewedModules(this.course.id);
+        const viewedModules = await CoreCourseModuleHelper.getViewedModules(this.course.id);
 
         this.viewedModulesInitialized = true;
         this.lastModuleViewed = viewedModules[0];
@@ -480,6 +485,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
             component: CoreCourseCourseIndexComponent,
             initialBreakpoint: 1,
             breakpoints: [0, 1],
+            handle: false,
             componentProps: {
                 course: this.course,
                 sections: this.sections,
@@ -544,7 +550,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
         const sectionId = this.selectedSection?.id !== this.allSectionsId ? this.selectedSection?.id : undefined;
 
         CoreNavigator.navigateToSitePath(
-            `storage/${this.course.id}`,
+            `${ADDON_STORAGE_MANAGER_PAGE_NAME}/${this.course.id}`,
             {
                 params: {
                     title: this.course.fullname,
@@ -735,7 +741,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      * @param firstLoad Whether it's the first load when opening the course.
      */
     async logView(sectionNumber?: number, firstLoad = false): Promise<void> {
-        await CoreUtils.ignoreErrors(
+        await CorePromiseUtils.ignoreErrors(
             CoreCourse.logView(this.course.id, sectionNumber),
         );
 
@@ -765,7 +771,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      * @param show Whether if all sections is preferred.
      */
     protected async setAllSectionsPreferred(show: boolean): Promise<void> {
-        await this.currentSite?.setLocalSiteConfig(`${COURSE_ALL_SECTIONS_PREFERRED_PREFIX}${this.course.id}`, show ? 1 : 0);
+        await this.currentSite?.setLocalSiteConfig(`${CORE_COURSE_ALL_SECTIONS_PREFERRED_PREFIX}${this.course.id}`, show ? 1 : 0);
     }
 
     /**
@@ -775,7 +781,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      */
     protected async isAllSectionsPreferred(): Promise<boolean> {
         const showAllSections =
-            await this.currentSite?.getLocalSiteConfig<number>(`${COURSE_ALL_SECTIONS_PREFERRED_PREFIX}${this.course.id}`, 0);
+            await this.currentSite?.getLocalSiteConfig<number>(`${CORE_COURSE_ALL_SECTIONS_PREFERRED_PREFIX}${this.course.id}`, 0);
 
         return !!showAllSections;
     }
@@ -788,7 +794,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
             .filter((section) => section.expanded && section.id > 0).map((section) => section.id);
 
         await this.currentSite?.setLocalSiteConfig(
-            `${COURSE_EXPANDED_SECTIONS_PREFIX}${this.course.id}`,
+            `${CORE_COURSE_EXPANDED_SECTIONS_PREFIX}${this.course.id}`,
             expandedSections.join(','),
         );
     }
@@ -797,8 +803,8 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      * Initializes the expanded sections for the course.
      */
     protected async initializeExpandedSections(): Promise<void> {
-        const expandedSections = await CoreUtils.ignoreErrors(
-            this.currentSite?.getLocalSiteConfig<string>(`${COURSE_EXPANDED_SECTIONS_PREFIX}${this.course.id}`),
+        const expandedSections = await CorePromiseUtils.ignoreErrors(
+            this.currentSite?.getLocalSiteConfig<string>(`${CORE_COURSE_EXPANDED_SECTIONS_PREFIX}${this.course.id}`),
         );
 
         if (expandedSections === undefined) {

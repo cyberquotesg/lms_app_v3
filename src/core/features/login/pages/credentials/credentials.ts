@@ -17,10 +17,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
-import { CoreApp } from '@services/app';
+import { CoreSSO } from '@singletons/sso';
 import { CoreNetwork } from '@services/network';
 import { CoreSiteCheckResponse, CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { Translate } from '@singletons';
 import { CoreSitePublicConfigResponse, CoreUnauthenticatedSite } from '@classes/sites/unauthenticated-site';
@@ -41,30 +40,46 @@ import {
 import { CoreCustomURLSchemes } from '@services/urlschemes';
 import { CoreSiteError } from '@classes/errors/siteerror';
 import { CoreKeyboard } from '@singletons/keyboard';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreLoginMethodsComponent } from '../../components/login-methods/login-methods';
+import { CoreLoginExceededAttemptsComponent } from '../../components/exceeded-attempts/exceeded-attempts';
+import { CoreSiteLogoComponent } from '../../../../components/site-logo/site-logo';
+import { CoreSharedModule } from '@/core/shared.module';
+
+// by rachmad
+import { CqHelper } from '@features/cq_pages/services/cq_helper';
 
 /**
  * Page to enter the user credentials.
  */
 @Component({
     selector: 'page-core-login-credentials',
-    templateUrl: 'credentials.html',
-    styleUrls: ['../../login.scss'],
+    
+    // by rachmad
+    // templateUrl: 'credentials.html',
+    templateUrl: '../../../cq_pages/templates/credentials.html',
+
+    styleUrl: '../../login.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreSiteLogoComponent,
+        CoreLoginExceededAttemptsComponent,
+        CoreLoginMethodsComponent,
+    ],
 })
-export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
+export default class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
     @ViewChild('credentialsForm') formElement?: ElementRef<HTMLFormElement>;
 
     credForm!: FormGroup;
     site!: CoreUnauthenticatedSite;
-    siteName?: string;
-    logoUrl?: string;
     authInstructions?: string;
     canSignup?: boolean;
     pageLoaded = false;
     isBrowserSSO = false;
     showForgottenPassword = true;
-    showScanQR = false;
     loginAttempts = 0;
     supportConfig?: CoreUserSupportConfig;
     exceededAttemptsHTML?: SafeHtml | string | null;
@@ -72,6 +87,9 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
     siteCheckError = '';
     displaySiteUrl = false;
     showLoginForm = true;
+
+    // by rachmad
+    siteName = "";
 
     protected siteCheck?: CoreSiteCheckResponse;
     protected eventThrown = false;
@@ -84,6 +102,9 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
     constructor(
         protected fb: FormBuilder,
+
+        // by rachmad
+        protected CH: CqHelper,
     ) {
         // Listen to LOGIN event to determine if login was successful, since the login can be done using QR, SSO, etc.
         this.loginObserver = CoreEvents.on(CoreEvents.LOGIN, ({ siteId }) => {
@@ -104,13 +125,14 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             }
 
             this.site = CoreSitesFactory.makeUnauthenticatedSite(siteUrl, this.siteConfig);
-            this.logoUrl = this.site.getLogoUrl(this.siteConfig);
             this.urlToOpen = CoreNavigator.getRouteParam('urlToOpen');
             this.supportConfig = this.siteConfig && new CoreUserGuestSupportConfig(this.site, this.siteConfig);
             this.displaySiteUrl = this.site.shouldDisplayInformativeLinks();
-            this.siteName = await this.site.getSiteName();
+
+            // by rachmad
+            this.site.getSiteName().then((siteName) => this.siteName = siteName);
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
 
             return CoreNavigator.back();
         }
@@ -181,7 +203,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
         try {
             if (!this.siteCheck) {
-                this.siteCheck = await CoreSites.checkSite(this.site.siteUrl, protocol);
+                this.siteCheck = await CoreSites.checkSite(this.site.siteUrl, protocol, 'Credentials page');
                 this.siteCheck.config && this.site.setPublicConfig(this.siteCheck.config);
             }
 
@@ -196,9 +218,10 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             // Check if user needs to authenticate in a browser.
             this.isBrowserSSO = CoreLoginHelper.isSSOLoginNeeded(this.siteCheck.code);
         } catch (error) {
-            this.siteCheckError = CoreDomUtils.getErrorMessage(error) || 'Error loading site';
+            const alert = await CoreAlerts.showError(error);
 
-            CoreDomUtils.showErrorModal(error);
+            this.siteCheckError =
+                (typeof alert?.message === 'object' ? alert.message.value : alert?.message) || 'Error loading site';
         } finally {
             this.pageLoaded = true;
         }
@@ -215,14 +238,6 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
             this.canSignup = false;
 
             return;
-        }
-
-        if (this.site.isDemoModeSite()) {
-            this.showScanQR = false;
-        } else {
-            this.siteName = this.siteConfig.sitename;
-            this.logoUrl = this.site.getLogoUrl(this.siteConfig);
-            this.showScanQR = await CoreLoginHelper.displayQRInCredentialsScreen(this.siteConfig.tool_mobile_qrcodetype);
         }
 
         this.canSignup = this.siteConfig.registerauth == 'email' && !this.site.isFeatureDisabled(EMAIL_SIGNUP_FEATURE_NAME);
@@ -251,7 +266,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
         e?.stopPropagation();
 
         // Check that there's no SSO authentication ongoing and the view hasn't changed.
-        if (CoreApp.isSSOAuthenticationOngoing() || this.viewLeft || !this.siteCheck) {
+        if (CoreSSO.isSSOAuthenticationOngoing() || this.viewLeft || !this.siteCheck) {
             return;
         }
 
@@ -269,7 +284,10 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
      * @param e Event.
      * @returns Promise resolved when done.
      */
-    async login(e?: Event): Promise<void> {
+    // by rachmad
+    // async login(e?: Event): Promise<void> {
+    async login(captchaOrCsrfToken: string, value: string, e?: Event): Promise<void> {
+
         e?.preventDefault();
         e?.stopPropagation();
 
@@ -281,18 +299,18 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
         const password = this.credForm.value.password;
 
         if (!username) {
-            CoreDomUtils.showErrorModal('core.login.usernamerequired', true);
+            CoreAlerts.showError(Translate.instant('core.login.usernamerequired'));
 
             return;
         }
         if (!password) {
-            CoreDomUtils.showErrorModal('core.login.passwordrequired', true);
+            CoreAlerts.showError(Translate.instant('core.login.passwordrequired'));
 
             return;
         }
 
         if (!CoreNetwork.isOnline()) {
-            CoreDomUtils.showErrorModal('core.networkerrormsg', true);
+            CoreAlerts.showError(Translate.instant('core.networkerrormsg'));
 
             return;
         }
@@ -301,7 +319,12 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
         // Start the authentication process.
         try {
-            const data = await CoreSites.getUserToken(siteUrl, username, password);
+            // by rachmad
+            // const data = await CoreSites.getUserToken(siteUrl, username, password);
+            const data = await CoreSites.getUserToken(siteUrl, username, password, "", false, captchaOrCsrfToken, value);
+
+            const id = await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
+            this.siteId = id;
 
             await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
 
@@ -330,6 +353,29 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
 
             CoreForms.triggerFormSubmittedEvent(this.formElement, true);
         }
+    }
+
+    // by rachmad
+    async loginNew(e?: Event): Promise<void>
+    {
+        this.CH.getSiteConfig().then((publicConfig) => {
+            if (publicConfig.captcha_enabled)
+            {
+                this.CH.getRecaptcha("login", (value) => {
+                    this.login("captcha", value, e);
+                });
+            }
+            else if (publicConfig.csrf_token_enabled)
+            {
+                this.CH.requestCsrfToken("login", (value) => {
+                    this.login("csrf_token", value, e);
+                });
+            }
+            else
+            {
+                this.login("", "", e);
+            }
+        });
     }
 
     /**

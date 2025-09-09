@@ -19,11 +19,9 @@ import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { CoreGroupInfo } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { Translate } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import {
-    AddonModAssignListFilterName,
     AddonModAssignSubmissionForList,
     AddonModAssignSubmissionsSource,
 } from '../../classes/submissions-source';
@@ -33,7 +31,15 @@ import {
     AddonModAssignAutoSyncData,
 } from '../../services/assign-sync';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
-import { ADDON_MOD_ASSIGN_AUTO_SYNCED, ADDON_MOD_ASSIGN_GRADED_EVENT, ADDON_MOD_ASSIGN_MANUAL_SYNCED } from '../../constants';
+import {
+    ADDON_MOD_ASSIGN_AUTO_SYNCED,
+    ADDON_MOD_ASSIGN_GRADED_EVENT,
+    ADDON_MOD_ASSIGN_MANUAL_SYNCED,
+    ADDON_MOD_ASSIGN_MODNAME,
+    AddonModAssignListFilterName,
+} from '../../constants';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays a list of submissions of an assignment.
@@ -41,8 +47,12 @@ import { ADDON_MOD_ASSIGN_AUTO_SYNCED, ADDON_MOD_ASSIGN_GRADED_EVENT, ADDON_MOD_
 @Component({
     selector: 'page-addon-mod-assign-submission-list',
     templateUrl: 'submission-list.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestroy {
+export default class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestroy {
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
@@ -107,8 +117,7 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
                 AddonModAssignSubmissionListPage,
             );
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
-
+            CoreAlerts.showError(error);
             CoreNavigator.back();
 
             return;
@@ -180,11 +189,11 @@ export class AddonModAssignSubmissionListPage implements AfterViewInit, OnDestro
                     contextname: this.assign.name,
                     subpage: Translate.instant('addon.mod_assign.grading'),
                 }),
-                data: { assignid: this.assign.id, category: 'assign' },
+                data: { assignid: this.assign.id, category: ADDON_MOD_ASSIGN_MODNAME },
                 url: `/mod/assign/view.php?id=${this.assign.cmid}&action=grading`,
             });
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Error getting assigment data.');
+            CoreAlerts.showError(error, { default: 'Error getting assigment data.' });
         }
     }
 

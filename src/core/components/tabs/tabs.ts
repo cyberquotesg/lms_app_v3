@@ -18,11 +18,15 @@ import {
     AfterViewInit,
     ViewChild,
     ElementRef,
+    CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
 
 import { CoreTabsBaseComponent } from '@classes/tabs';
 import { CoreTabComponent } from './tab';
 import { toBoolean } from '@/core/transforms/boolean';
+import { CoreBaseModule } from '@/core/base.module';
+import { CoreFaIconDirective } from '@directives/fa-icon';
+import { CoreUpdateNonReactiveAttributesDirective } from '@directives/update-non-reactive-attributes';
 
 /**
  * This component displays some top scrollable tabs that will autohide on vertical scroll.
@@ -41,7 +45,14 @@ import { toBoolean } from '@/core/transforms/boolean';
 @Component({
     selector: 'core-tabs',
     templateUrl: 'core-tabs.html',
-    styleUrls: ['tabs.scss'],
+    styleUrl: 'tabs.scss',
+    standalone: true,
+    imports: [
+        CoreBaseModule,
+        CoreUpdateNonReactiveAttributesDirective,
+        CoreFaIconDirective,
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class CoreTabsComponent extends CoreTabsBaseComponent<CoreTabComponent> implements AfterViewInit {
 
@@ -112,7 +123,7 @@ export class CoreTabsComponent extends CoreTabsBaseComponent<CoreTabComponent> i
     protected async loadTab(tabToSelect: CoreTabComponent): Promise<boolean> {
         const currentTab = this.getSelected();
         currentTab?.unselectTab();
-        tabToSelect.selectTab();
+        await tabToSelect.selectTab();
 
         return true;
     }

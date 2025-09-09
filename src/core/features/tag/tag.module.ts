@@ -17,11 +17,11 @@ import { Routes } from '@angular/router';
 import { CoreMainMenuDelegate } from '@features/mainmenu/services/mainmenu-delegate';
 import { CoreMainMenuRoutingModule } from '../mainmenu/mainmenu-routing.module';
 import { CoreContentLinksDelegate } from '@features/contentlinks/services/contentlinks-delegate';
-import { CoreTagMainMenuHandler, CoreTagMainMenuHandlerService } from './services/handlers/mainmenu';
+import { CoreTagMainMenuHandler } from './services/handlers/mainmenu';
 import { CoreTagIndexLinkHandler } from './services/handlers/index-link';
 import { CoreTagSearchLinkHandler } from './services/handlers/search-link';
-import { CoreTagComponentsModule } from './components/components.module';
 import { CoreMainMenuTabRoutingModule } from '@features/mainmenu/mainmenu-tab-routing.module';
+import { CORE_TAG_MAIN_MENU_PAGE_NAME } from './constants';
 
 /**
  * Get tags services.
@@ -42,8 +42,8 @@ export async function getTagServices(): Promise<Type<unknown>[]> {
 
 const routes: Routes = [
     {
-        path: CoreTagMainMenuHandlerService.PAGE_NAME,
-        loadChildren: () => import('./tag-lazy.module').then(m => m.CoreTagLazyModule),
+        path: CORE_TAG_MAIN_MENU_PAGE_NAME,
+        loadChildren: () => import('./tag-lazy.module'),
     },
 ];
 
@@ -51,7 +51,6 @@ const routes: Routes = [
     imports: [
         CoreMainMenuTabRoutingModule.forChild(routes),
         CoreMainMenuRoutingModule.forChild({ children: routes }),
-        CoreTagComponentsModule,
     ],
     providers: [
         {

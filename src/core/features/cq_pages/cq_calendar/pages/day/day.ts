@@ -17,26 +17,23 @@ import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreTimeUtils } from '@services/utils/time';
+import { CoreTime } from '@singletons/time';
 import {
-    AddonCalendarProvider,
     AddonCalendar,
     AddonCalendarEventToDisplay,
     AddonCalendarCalendarDay,
-    AddonCalendarEventType,
 } from '../../services/calendar';
 import { AddonCalendarOffline } from '../../services/calendar-offline';
 import { AddonCalendarFilter, AddonCalendarHelper } from '../../services/calendar-helper';
-import { AddonCalendarSync, AddonCalendarSyncProvider } from '../../services/calendar-sync';
+import { AddonCalendarSync } from '../../services/calendar-sync';
 import { CoreCategoryData, CoreCourses, CoreEnrolledCourseData } from '@features/courses/services/courses';
 import { CoreCoursesHelper } from '@features/courses/services/courses-helper';
-import moment from 'moment-timezone';
+import { dayjs, Dayjs } from '@/core/utils/dayjs';
 import { NgZone, Translate } from '@singletons';
 import { CoreNavigator } from '@services/navigator';
 import { Params } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreArray } from '@singletons/array';
 import { CoreConstants } from '@/core/constants';
 import { CoreSwipeSlidesDynamicItemsManager } from '@classes/items-management/swipe-slides-dynamic-items-manager';
 import { CoreSwipeSlidesComponent } from '@components/swipe-slides/swipe-slides';
@@ -45,14 +42,28 @@ import {
     CoreSwipeSlidesDynamicItemsManagerSource,
 } from '@classes/items-management/swipe-slides-dynamic-items-manager-source';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
-
-import { CqHelper } from '../../../services/cq_helper';
-import { CqPage } from '../../../classes/cq_page';
 import { AddonCalendarEventsSource } from '@features/cq_pages/cq_calendar/classes/events-source';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreUrl } from '@singletons/url';
-import { CoreTime } from '@singletons/time';
-import { CoreModals } from '@services/modals';
+import { CoreModals } from '@services/overlays/modals';
+import {
+    ADDON_CALENDAR_AUTO_SYNCED,
+    ADDON_CALENDAR_DELETED_EVENT_EVENT,
+    ADDON_CALENDAR_EDIT_EVENT_EVENT,
+    ADDON_CALENDAR_FILTER_CHANGED_EVENT,
+    ADDON_CALENDAR_MANUAL_SYNCED,
+    ADDON_CALENDAR_NEW_EVENT_DISCARDED_EVENT,
+    ADDON_CALENDAR_NEW_EVENT_EVENT,
+    ADDON_CALENDAR_UNDELETED_EVENT_EVENT,
+    AddonCalendarEventType,
+} from '@features/cq_pages/cq_calendar/constants';
+import { CoreObject } from '@singletons/object';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
 
 /**
  * Page that displays the calendar events for a certain day.
@@ -61,8 +72,13 @@ import { CoreModals } from '@services/modals';
     selector: 'page-addon-calendar-day',
     templateUrl: 'day.html',
     styleUrls: ['../../calendar-common.scss', 'day.scss'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CqComponentsModule,
+    ],
 })
-export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
+export default class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
     @ViewChild(CoreSwipeSlidesComponent) swipeSlidesComponent?: CoreSwipeSlidesComponent<PreloadedDay>;
 
@@ -97,7 +113,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
         // Listen for events added. When an event is added, reload the data.
         this.eventObservers.push(CoreEvents.on(
-            AddonCalendarProvider.NEW_EVENT_EVENT,
+            ADDON_CALENDAR_NEW_EVENT_EVENT,
             (data) => {
                 if (data && data.eventId) {
                     this.manager?.getSource().markAllItemsUnloaded();
@@ -108,14 +124,14 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
         ));
 
         // Listen for new event discarded event. When it does, reload the data.
-        this.eventObservers.push(CoreEvents.on(AddonCalendarProvider.NEW_EVENT_DISCARDED_EVENT, () => {
+        this.eventObservers.push(CoreEvents.on(ADDON_CALENDAR_NEW_EVENT_DISCARDED_EVENT, () => {
             this.manager?.getSource().markAllItemsUnloaded();
             this.refreshData(true, true);
         }, this.currentSiteId));
 
         // Listen for events edited. When an event is edited, reload the data.
         this.eventObservers.push(CoreEvents.on(
-            AddonCalendarProvider.EDIT_EVENT_EVENT,
+            ADDON_CALENDAR_EDIT_EVENT_EVENT,
             (data) => {
                 if (data && data.eventId) {
                     this.manager?.getSource().markAllItemsUnloaded();
@@ -126,15 +142,15 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
         ));
 
         // Refresh data if calendar events are synchronized automatically.
-        this.eventObservers.push(CoreEvents.on(AddonCalendarSyncProvider.AUTO_SYNCED, () => {
+        this.eventObservers.push(CoreEvents.on(ADDON_CALENDAR_AUTO_SYNCED, () => {
             this.manager?.getSource().markAllItemsUnloaded();
             this.refreshData(false, true);
         }, this.currentSiteId));
 
         // Refresh data if calendar events are synchronized manually but not by this page.
-        this.eventObservers.push(CoreEvents.on(AddonCalendarSyncProvider.MANUAL_SYNCED, (data) => {
+        this.eventObservers.push(CoreEvents.on(ADDON_CALENDAR_MANUAL_SYNCED, (data) => {
             const selectedDay = this.manager?.getSelectedItem();
-            if (data && (data.source != 'day' || !selectedDay || !data.moment || !selectedDay.moment.isSame(data.moment, 'day'))) {
+            if (data && (data.source != 'day' || !selectedDay || !data.dayJS || !selectedDay.dayJS.isSame(data.dayJS, 'day'))) {
                 this.manager?.getSource().markAllItemsUnloaded();
                 this.refreshData(false, true);
             }
@@ -142,7 +158,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
         // Update the events when an event is deleted.
         this.eventObservers.push(CoreEvents.on(
-            AddonCalendarProvider.DELETED_EVENT_EVENT,
+            ADDON_CALENDAR_DELETED_EVENT_EVENT,
             (data) => {
                 if (data && !data.sent) {
                     // Event was deleted in offline. Just mark it as deleted, no need to refresh.
@@ -157,7 +173,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
         // Listen for events "undeleted" (offline).
         this.eventObservers.push(CoreEvents.on(
-            AddonCalendarProvider.UNDELETED_EVENT_EVENT,
+            ADDON_CALENDAR_UNDELETED_EVENT_EVENT,
             (data) => {
                 if (!data || !data.eventId) {
                     return;
@@ -170,7 +186,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
         ));
 
         this.eventObservers.push(CoreEvents.on(
-            AddonCalendarProvider.FILTER_CHANGED_EVENT,
+            ADDON_CALENDAR_FILTER_CHANGED_EVENT,
             async (data) => {
                 this.filter = data;
 
@@ -196,7 +212,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
             }
             const params = {
                 course: this.filter.courseId,
-                time: day.moment.unix(),
+                time: day.dayJS.unix(),
             };
 
             CoreAnalytics.logEvent({
@@ -218,7 +234,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
     ngOnInit(): void {
         const types: string[] = [];
 
-        CoreUtils.enumKeys(AddonCalendarEventType).forEach((name) => {
+        CoreObject.enumKeys(AddonCalendarEventType).forEach((name) => {
             const value = AddonCalendarEventType[name];
             this.filter[name] = CoreNavigator.getRouteBooleanParam(name) ?? true;
             types.push(value);
@@ -229,7 +245,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
         this.filter.filtered = this.filter.courseId !== undefined || types.some((name) => !this.filter[name]);
 
         const month = CoreNavigator.getRouteNumberParam('month');
-        const source = new AddonCalendarDaySlidesItemsManagerSource(this, moment({
+        const source = new AddonCalendarDaySlidesItemsManagerSource(this, dayjs({
             year: CoreNavigator.getRouteNumberParam('year'),
             month: month ? month - 1 : undefined,
             date: CoreNavigator.getRouteNumberParam('day'),
@@ -273,7 +289,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
             this.logView();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.calendar.errorloadevents', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.calendar.errorloadevents') });
         }
 
         this.loaded = true;
@@ -286,8 +302,8 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
      * @param day Day viewed.
      */
     onDayViewed(day: DayBasicData): void {
-        this.periodName = CoreTimeUtils.userDate(
-            day.moment.unix() * 1000,
+        this.periodName = CoreTime.userDate(
+            day.dayJS.valueOf(),
             'core.strftimedaydate',
         ).split(' ').map((item, index) => index != 2 ? item : item.substr(0, 3)).join(' ');
     }
@@ -339,21 +355,21 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
             const result = await AddonCalendarSync.syncEvents();
 
             if (result.warnings && result.warnings.length) {
-                CoreDomUtils.showAlert(undefined, result.warnings[0]);
+                CoreAlerts.show({ message: result.warnings[0] });
             }
 
             if (result.updated) {
                 // Trigger a manual sync event.
                 const selectedDay = this.manager?.getSelectedItem();
                 result.source = 'day';
-                result.moment = selectedDay?.moment;
+                result.dayJS = selectedDay?.dayJS;
 
                 this.manager?.getSource().markAllItemsUnloaded();
-                CoreEvents.trigger(AddonCalendarSyncProvider.MANUAL_SYNCED, result, this.currentSiteId);
+                CoreEvents.trigger(ADDON_CALENDAR_MANUAL_SYNCED, result, this.currentSiteId);
             }
         } catch (error) {
             if (showErrors) {
-                CoreDomUtils.showErrorModalDefault(error, 'core.errorsync', true);
+                CoreAlerts.showError(error, { default: Translate.instant('core.errorsync') });
             }
         }
     }
@@ -374,7 +390,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
      * @param day Day.
      */
     gotoEvent(eventId: number, day: PreloadedDay): void {
-        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`, { params: { date: day.moment.format('MMDDY') } });
+        CoreNavigator.navigateToSitePath(`/CqCalendar/event/${eventId}`, { params: { date: day.dayJS.format('MMDDY') } });
     }
 
     /**
@@ -407,8 +423,8 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
             const selectedDay = this.manager?.getSelectedItem();
             if (selectedDay) {
                 // Use current time but in the specified day.
-                const now = moment();
-                params.timestamp = selectedDay.moment.clone().set({ hour: now.hour(), minute: now.minute() }).unix() * 1000;
+                const now = dayjs();
+                params.timestamp = selectedDay.dayJS.set({ hour: now.hour(), minute: now.minute() }).valueOf();
             }
         }
 
@@ -440,7 +456,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
         }
 
         const currentDay = {
-            moment: moment(),
+            dayJS: dayjs(),
         };
         this.loaded = false;
 
@@ -450,7 +466,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
 
             this.swipeSlidesComponent.slideToItem(currentDay);
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.calendar.errorloadevents', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.calendar.errorloadevents') });
         } finally {
             this.loaded = true;
         }
@@ -489,7 +505,7 @@ export class AddonCalendarDayPage extends CqPage implements OnInit, OnDestroy {
  * Basic data to identify a day.
  */
 type DayBasicData = {
-    moment: moment.Moment;
+    dayJS: Dayjs;
 };
 
 /**
@@ -522,8 +538,8 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
     protected dayPage: AddonCalendarDayPage;
     protected sendLog = true;
 
-    constructor(page: AddonCalendarDayPage, initialMoment: moment.Moment) {
-        super({ moment: initialMoment });
+    constructor(page: AddonCalendarDayPage, initialDayJS: Dayjs) {
+        super({ dayJS: initialDayJS });
 
         this.dayPage = page;
     }
@@ -603,7 +619,7 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
             const categories = await CoreCourses.getCategories(0, true);
 
             // Index categories by ID.
-            this.categories = CoreUtils.arrayToObject(categories, 'id');
+            this.categories = CoreArray.toObject(categories, 'id');
         } catch {
             // Ignore errors.
         }
@@ -649,7 +665,7 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
      * @inheritdoc
      */
     getItemId(item: DayBasicData): string | number {
-        return AddonCalendarHelper.getDayId(item.moment);
+        return AddonCalendarHelper.getDayId(item.dayJS);
     }
 
     /**
@@ -657,7 +673,7 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
      */
     getPreviousItem(item: DayBasicData): DayBasicData | null {
         return {
-            moment: item.moment.clone().subtract(1, 'day'),
+            dayJS: item.dayJS.subtract(1, 'day'),
         };
     }
 
@@ -666,7 +682,7 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
      */
     getNextItem(item: DayBasicData): DayBasicData | null {
         return {
-            moment: item.moment.clone().add(1, 'day'),
+            dayJS: item.dayJS.add(1, 'day'),
         };
     }
 
@@ -680,8 +696,8 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
             events: [],
             onlineEvents: [],
             filteredEvents: [],
-            isCurrentDay: day.moment.isSame(moment(), 'day'),
-            isPastDay: day.moment.isBefore(moment(), 'day'),
+            isCurrentDay: day.dayJS.isSame(dayjs(), 'day'),
+            isPastDay: day.dayJS.isBefore(dayjs(), 'day'),
         };
 
         if (preload) {
@@ -692,7 +708,7 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
 
         try {
             // Don't pass courseId and categoryId, we'll filter them locally.
-            result = await AddonCalendar.getDayEvents(day.moment.year(), day.moment.month() + 1, day.moment.date());
+            result = await AddonCalendar.getDayEvents(day.dayJS.year(), day.dayJS.month() + 1, day.dayJS.date());
             preloadedDay.onlineEvents = await Promise.all(result.events.map((event) => AddonCalendarHelper.formatEventData(event)));
         } catch (error) {
             // Allow navigating to non-cached days in offline (behave as if using emergency cache).
@@ -708,8 +724,8 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
         this.filterEvents(preloadedDay, this.dayPage.filter);
 
         // Re-calculate the formatted time so it uses the device date.
-        const dayTime = day.moment.unix() * 1000;
-        const currentTime = CoreTimeUtils.timestamp();
+        const dayTime = day.dayJS.valueOf();
+        const currentTime = CoreTime.timestamp();
 
         const promises = preloadedDay.events.map(async (event) => {
             event.ispast = preloadedDay.isPastDay || (preloadedDay.isCurrentDay && this.isEventPast(event, currentTime));
@@ -746,8 +762,8 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
             return day.onlineEvents || [];
         }
 
-        const monthOfflineEvents = this.offlineEvents[AddonCalendarHelper.getMonthId(day.moment)];
-        const dayOfflineEvents = monthOfflineEvents && monthOfflineEvents[day.moment.date()];
+        const monthOfflineEvents = this.offlineEvents[AddonCalendarHelper.getMonthId(day.dayJS)];
+        const dayOfflineEvents = monthOfflineEvents && monthOfflineEvents[day.dayJS.date()];
         let result = day.onlineEvents || [];
 
         if (this.deletedEvents?.size) {
@@ -791,9 +807,9 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
 
         if (invalidateDayEvents && selectedDay) {
             promises.push(AddonCalendar.invalidateDayEvents(
-                selectedDay.moment.year(),
-                selectedDay.moment.month() + 1,
-                selectedDay.moment.date(),
+                selectedDay.dayJS.year(),
+                selectedDay.dayJS.month() + 1,
+                selectedDay.dayJS.date(),
             ));
         }
         promises.push(AddonCalendar.invalidateAllowedEventTypes());
@@ -862,7 +878,7 @@ class AddonCalendarDaySlidesItemsManagerSource extends CoreSwipeSlidesDynamicIte
      */
     private async rememberEventsList(day: PreloadedDay): Promise<void> {
         const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(AddonCalendarEventsSource, [
-            day.moment.format('MMDDY'),
+            day.dayJS.format('MMDDY'),
         ]);
 
         if (!this.eventsSources.has(source)) {

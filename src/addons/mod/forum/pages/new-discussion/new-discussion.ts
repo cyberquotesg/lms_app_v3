@@ -27,11 +27,10 @@ import {
 import { CoreEditorRichTextEditorComponent } from '@features/editor/components/rich-text-editor/rich-text-editor';
 import { AddonModForumSync } from '@addons/mod/forum/services/forum-sync';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { Translate } from '@singletons';
 import { CoreSync } from '@services/sync';
 import { AddonModForumDiscussionOptions, AddonModForumOffline } from '@addons/mod/forum/services/forum-offline';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreUtils } from '@singletons/utils';
 import { AddonModForumHelper } from '@addons/mod/forum/services/forum-helper';
 import { CoreFileUploader } from '@features/fileuploader/services/fileuploader';
 import { CoreText } from '@singletons/text';
@@ -49,10 +48,14 @@ import {
     ADDON_MOD_FORUM_ALL_PARTICIPANTS,
     ADDON_MOD_FORUM_AUTO_SYNCED,
     ADDON_MOD_FORUM_COMPONENT,
+    ADDON_MOD_FORUM_COMPONENT_LEGACY,
     ADDON_MOD_FORUM_NEW_DISCUSSION_EVENT,
 } from '../../constants';
-import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
-import { CoreLoadings } from '@services/loadings';
+import CoreCourseContentsPage from '@features/course/pages/contents/contents';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CorePromiseUtils } from '@singletons/promise-utils';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 type NewDiscussionData = {
     subject: string;
@@ -70,14 +73,19 @@ type NewDiscussionData = {
 @Component({
     selector: 'page-addon-mod-forum-new-discussion',
     templateUrl: 'new-discussion.html',
-    styleUrls: ['new-discussion.scss'],
+    styleUrl: 'new-discussion.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreEditorRichTextEditorComponent,
+    ],
 })
-export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLeave {
+export default class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLeave {
 
     @ViewChild('newDiscFormEl') formElement!: ElementRef;
     @ViewChild(CoreEditorRichTextEditorComponent) messageEditor!: CoreEditorRichTextEditorComponent;
 
-    component = ADDON_MOD_FORUM_COMPONENT;
+    component = ADDON_MOD_FORUM_COMPONENT_LEGACY;
     messageControl = new FormControl<string | null>(null);
     groupsLoaded = false;
     showGroups = false;
@@ -158,7 +166,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
                 await this.discussions.start();
             }
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
 
             this.goBack();
 
@@ -182,7 +190,10 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
         // Refresh data if this discussion is synchronized automatically.
         this.syncObserver = CoreEvents.on(ADDON_MOD_FORUM_AUTO_SYNCED, data => {
             if (data.forumId == this.forumId && data.userId == CoreSites.getCurrentSiteUserId()) {
-                CoreDomUtils.showAlertTranslated('core.notice', 'core.contenteditingsynced');
+                CoreAlerts.show({
+                    header: Translate.instant('core.notice'),
+                    message: Translate.instant('core.contenteditingsynced'),
+                });
                 this.returnToDiscussions();
             }
         }, CoreSites.getCurrentSiteId());
@@ -242,7 +253,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
 
                 // Use the canAddDiscussion WS to check if the user can add attachments and pin discussions.
                 promises.push(
-                    CoreUtils.ignoreErrors(
+                    CorePromiseUtils.ignoreErrors(
                         AddonModForum.instance
                             .canAddDiscussionToAll(this.forumId, { cmId: this.cmId })
                             .then((response) => {
@@ -335,7 +346,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
 
             this.logView();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.mod_forum.errorgetgroups', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.mod_forum.errorgetgroups') });
 
             this.showForm = false;
         }
@@ -540,12 +551,12 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
         };
 
         if (!subject) {
-            CoreDomUtils.showErrorModal('addon.mod_forum.erroremptysubject', true);
+            CoreAlerts.showError(Translate.instant('addon.mod_forum.erroremptysubject'));
 
             return;
         }
         if (!message) {
-            CoreDomUtils.showErrorModal('addon.mod_forum.erroremptymessage', true);
+            CoreAlerts.showError(Translate.instant('addon.mod_forum.erroremptymessage'));
 
             return;
         }
@@ -583,7 +594,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
 
             if (discussionIds && discussionIds.length < groupIds.length) {
                 // Some discussions could not be created.
-                CoreDomUtils.showErrorModalDefault(null, 'addon.mod_forum.errorposttoallgroups', true);
+                CoreAlerts.showError(Translate.instant('addon.mod_forum.errorposttoallgroups'));
             }
 
             CoreForms.triggerFormSubmittedEvent(
@@ -594,7 +605,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
 
             this.returnToDiscussions(discussionIds, discTimecreated);
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'addon.mod_forum.cannotcreatediscussion', true);
+            CoreAlerts.showError(error, { default: Translate.instant('addon.mod_forum.cannotcreatediscussion') });
         } finally {
             modal.dismiss();
         }
@@ -605,13 +616,13 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
      */
     async discard(): Promise<void> {
         try {
-            await CoreDomUtils.showConfirm(Translate.instant('core.areyousure'));
+            await CoreAlerts.confirm(Translate.instant('core.areyousure'));
 
             const promises: Promise<unknown>[] = [];
 
             promises.push(AddonModForumOffline.deleteNewDiscussion(this.forumId, this.timeCreated));
             promises.push(
-                CoreUtils.ignoreErrors(
+                CorePromiseUtils.ignoreErrors(
                     AddonModForumHelper.deleteNewDiscussionStoredFiles(this.forumId, this.timeCreated),
                 ),
             );
@@ -658,7 +669,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
 
         if (AddonModForumHelper.hasPostDataChanged(this.newDiscussion, this.originalData)) {
             // Show confirmation if some data has been modified.
-            await CoreDomUtils.showConfirm(Translate.instant('core.confirmcanceledit'));
+            await CoreAlerts.confirmLeaveWithChanges();
         }
 
         // Delete the local files from the tmp folder.

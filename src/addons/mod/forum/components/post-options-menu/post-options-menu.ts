@@ -17,9 +17,9 @@ import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreNetwork } from '@services/network';
 import { AddonModForum, AddonModForumPost } from '@addons/mod/forum/services/forum';
 import { PopoverController } from '@singletons';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreNetworkError } from '@classes/errors/network-error';
 import { CoreSharedModule } from '@/core/shared.module';
+import { CoreAlerts } from '@services/overlays/alerts';
 
 /**
  * This component is meant to display a popover with the post options.
@@ -65,7 +65,7 @@ export class AddonModForumPostOptionsMenuComponent implements OnInit {
                             readingStrategy: CoreSitesReadingStrategy.ONLY_NETWORK,
                         });
                 } catch (error) {
-                    CoreDomUtils.showErrorModalDefault(error, 'Error getting discussion post.');
+                    CoreAlerts.showError(error, { default: 'Error getting discussion post.' });
                 }
             } else {
                 this.loaded = true;
@@ -95,7 +95,7 @@ export class AddonModForumPostOptionsMenuComponent implements OnInit {
             return;
         }
 
-        this.url = site.createSiteUrl('/mod/forum/discuss.php', { d: this.post.discussionid.toString() }, 'p' + this.post.id);
+        this.url = site.createSiteUrl('/mod/forum/discuss.php', { d: this.post.discussionid.toString() }, `p${this.post.id}`);
     }
 
     /**
@@ -111,7 +111,7 @@ export class AddonModForumPostOptionsMenuComponent implements OnInit {
     deletePost(): void {
         if (!this.offlinePost) {
             if (!CoreNetwork.isOnline()) {
-                CoreDomUtils.showErrorModal(new CoreNetworkError());
+                CoreAlerts.showError(new CoreNetworkError());
 
                 return;
             }
@@ -127,7 +127,7 @@ export class AddonModForumPostOptionsMenuComponent implements OnInit {
      */
     editPost(): void {
         if (!this.offlinePost && !CoreNetwork.isOnline()) {
-            CoreDomUtils.showErrorModal(new CoreNetworkError());
+            CoreAlerts.showError(new CoreNetworkError());
 
             return;
         }

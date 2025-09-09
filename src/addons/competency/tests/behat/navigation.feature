@@ -1,4 +1,4 @@
-@addon_competency @app @javascript
+@addon_competency @app @tool @tool_lp @javascript
 Feature: Test competency navigation
 
   Background:
@@ -41,9 +41,9 @@ Feature: Test competency navigation
       | competency | relatedcompetency |
       | desserts   | cakes             |
     And the following "core_competency > plans" exist:
-      | name     | description           | competencies            | user     |
-      | Cookery  | Cookery is important  | salads, desserts, cakes | student1 |
-      | Literacy | Literacy is important | reading, writing        | student1 |
+      | name     | description           | competencies            | user     | status |
+      | Cookery  | Cookery is important  | salads, desserts, cakes | student1 | active |
+      | Literacy | Literacy is important | reading, writing        | student1 | active |
     And the following "core_competency > course_competencies" exist:
       | course | competency |
       | C1     | salads     |

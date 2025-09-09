@@ -114,7 +114,8 @@ export class CoreBlockDelegateService extends CoreDelegate<CoreBlockHandler> {
      * @inheritdoc
      */
     async isEnabled(): Promise<boolean> {
-        return !this.areBlocksDisabledInSite();
+        // Always return true, to allow displaying my overview even if all blocks are disabled, to avoid having an empty My Courses.
+        return true;
     }
 
     /**
@@ -212,7 +213,7 @@ export class CoreBlockDelegateService extends CoreDelegate<CoreBlockHandler> {
      * Called when there are new block handlers available. Informs anyone who subscribed to the
      * observable.
      */
-    updateData(): void {
+    protected updateData(): void {
         this.blocksUpdateObservable.next();
     }
 

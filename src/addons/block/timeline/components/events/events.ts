@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, HostBinding } from '@angular/core';
 import { CoreSites } from '@services/sites';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
 import { CoreText } from '@singletons/text';
 import { CoreEnrolledCourseDataWithOptions } from '@features/courses/services/courses-helper';
 import { AddonBlockTimelineDayEvents } from '@addons/block/timeline/classes/section';
 import { CoreSharedModule } from '@/core/shared.module';
 import { toBoolean } from '@/core/transforms/boolean';
+import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 
 /**
  * Directive to render a list of events in course overview.
@@ -43,6 +44,10 @@ export class AddonBlockTimelineEventsComponent implements OnInit {
     @Output() loadMore = new EventEmitter(); // Notify that more events should be loaded.
 
     colorizeIcons = false;
+
+    @HostBinding('attr.data-course-id') protected get courseId(): number | null {
+        return this.course?.id ?? null;
+    }
 
     /**
      * @inheritdoc
@@ -69,7 +74,7 @@ export class AddonBlockTimelineEventsComponent implements OnInit {
         const modal = await CoreLoadings.show();
 
         try {
-            await CoreSites.visitLink(url);
+            await CoreContentLinksHelper.visitLink(url);
         } finally {
             modal.dismiss();
         }

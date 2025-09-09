@@ -14,17 +14,17 @@
 
 import { Component, ViewChildren, Input, OnInit, QueryList, ElementRef } from '@angular/core';
 import { ModalController } from '@singletons';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCourse, CoreCourseBlock } from '@features/course/services/course';
 import { CoreBlockHelper } from '../../services/block-helper';
 import { CoreBlockComponent } from '../block/block';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreCoursesDashboard } from '@features/courses/services/dashboard';
 import { CoreDom } from '@singletons/dom';
 import { ContextLevel } from '@/core/constants';
 import { CoreWait } from '@singletons/wait';
 import { CoreSharedModule } from '@/core/shared.module';
-import { CoreBlockComponentsModule } from '../components.module';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreCoursesMyPageName } from '@features/courses/constants';
 
 /**
  * Component that displays the list of side blocks.
@@ -36,7 +36,7 @@ import { CoreBlockComponentsModule } from '../components.module';
     standalone: true,
     imports: [
         CoreSharedModule,
-        CoreBlockComponentsModule,
+        CoreBlockComponent,
     ],
 })
 export class CoreBlockSideBlocksComponent implements OnInit {
@@ -44,7 +44,7 @@ export class CoreBlockSideBlocksComponent implements OnInit {
     @Input({ required: true }) contextLevel!: ContextLevel;
     @Input({ required: true }) instanceId!: number;
     @Input() initialBlockInstanceId?: number;
-    @Input() myDashboardPage?: string;
+    @Input() myDashboardPage?: CoreCoursesMyPageName;
 
     @ViewChildren(CoreBlockComponent) blocksComponents?: QueryList<CoreBlockComponent>;
 
@@ -103,8 +103,7 @@ export class CoreBlockSideBlocksComponent implements OnInit {
                 this.blocks = blocks.sideBlocks;
             }
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
-
+            CoreAlerts.showError(error);
             this.blocks = [];
         }
 
@@ -118,7 +117,7 @@ export class CoreBlockSideBlocksComponent implements OnInit {
      * @param refresher Refresher.
      */
     async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
-        await CoreUtils.ignoreErrors(this.invalidateBlocks());
+        await CorePromiseUtils.ignoreErrors(this.invalidateBlocks());
 
         await this.loadContent().finally(() => {
             refresher?.complete();
@@ -140,7 +139,7 @@ export class CoreBlockSideBlocksComponent implements OnInit {
             return;
         }
 
-        const selector = '#block-' + this.initialBlockInstanceId;
+        const selector = `#block-${this.initialBlockInstanceId}`;
 
         await CoreWait.waitFor(() => !!this.elementRef.nativeElement.querySelector(selector));
         await CoreWait.wait(200);

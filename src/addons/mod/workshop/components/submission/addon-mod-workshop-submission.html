@@ -4,8 +4,8 @@
             <core-user-avatar [user]="profile" [courseId]="courseId" [userId]="profile?.id" slot="start" />
             <ion-label>
                 <h2 *ngIf="submission.title">
-                    <core-format-text [text]="submission.title" contextLevel="module" [contextInstanceId]="module.id"
-                        [courseId]="courseId" />
+                    <core-format-text [text]="submission.title" contextLevel="module" [contextInstanceId]="module.id" [courseId]="courseId"
+                        [sanitize]="submission.offline" [wsNotFiltered]="true" />
                 </h2>
                 <p *ngIf="profile && profile?.fullname">{{profile.fullname}}</p>
                 <p *ngIf="showGrade(submission.grade)" [class.addon-has-overriden-grade]="showGrade(submission.gradeover)">
@@ -23,18 +23,18 @@
             </ion-note>
             <ion-note slot="end" *ngIf="submission.timemodified">
                 {{submission.timemodified | coreDateDayOrTime}}
-                <ng-container *ngIf="submission.offline">
+                <div *ngIf="submission.offline">
                     <ion-icon name="fas-clock" aria-hidden="true" /> {{ 'core.notsent' | translate }}
-                </ng-container>
-                <ng-container *ngIf="submission.deleted">
+                </div>
+                <div *ngIf="submission.deleted">
                     <ion-icon name="fas-trash" aria-hidden="true" /> {{ 'core.deletedoffline' | translate }}
-                </ng-container>
+                </div>
             </ion-note>
         </ion-item>
         <ion-item class="ion-text-wrap" *ngIf="submission.content">
             <ion-label>
                 <core-format-text [component]="component" [componentId]="componentId" [text]="submission.content" contextLevel="module"
-                    [contextInstanceId]="module.id" [courseId]="courseId" />
+                    [contextInstanceId]="module.id" [courseId]="courseId" [sanitize]="submission.offline" />
             </ion-label>
         </ion-item>
         <core-files [files]="submission.attachmentfiles" [component]="component" [componentId]="componentId" />
@@ -65,7 +65,8 @@
         <core-user-avatar [user]="profile" slot="start" [courseId]="courseId" [userId]="profile?.id" />
         <ion-label>
             <h2 *ngIf="submission.title">
-                <core-format-text [text]="submission.title" contextLevel="module" [contextInstanceId]="module.id" [courseId]="courseId" />
+                <core-format-text [text]="submission.title" contextLevel="module" [contextInstanceId]="module.id" [courseId]="courseId"
+                    [sanitize]="submission.offline" [wsNotFiltered]="true" />
             </h2>
             <p *ngIf="profile && profile.fullname">{{profile.fullname}}</p>
             <p *ngIf="submission.reviewedbydone">

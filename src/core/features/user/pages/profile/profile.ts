@@ -18,9 +18,8 @@ import { Subscription } from 'rxjs';
 
 import { CoreSite } from '@classes/sites/site';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreUser, CoreUserProfile, USER_PROFILE_REFRESHED } from '@features/user/services/user';
+import { CoreUser, CoreUserProfile } from '@features/user/services/user';
 import { CoreUserHelper } from '@features/user/services/user-helper';
 import {
     CoreUserDelegate,
@@ -28,7 +27,7 @@ import {
     CoreUserProfileHandlerType,
     CoreUserProfileHandlerData,
 } from '@features/user/services/user-delegate';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreNavigator } from '@services/navigator';
 import { CoreCourses } from '@features/courses/services/courses';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
@@ -37,13 +36,20 @@ import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { Translate } from '@singletons';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CORE_USER_PROFILE_REFRESHED } from '@features/user/constants';
 
 @Component({
     selector: 'page-core-user-profile',
     templateUrl: 'profile.html',
-    styleUrls: ['profile.scss'],
+    styleUrl: 'profile.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class CoreUserProfilePage implements OnInit, OnDestroy {
+export default class CoreUserProfilePage implements OnInit, OnDestroy {
 
     protected courseId?: number;
     protected userId!: number;
@@ -65,7 +71,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
     users?: CoreUserSwipeItemsManager;
 
     constructor(private route: ActivatedRoute) {
-        this.obsProfileRefreshed = CoreEvents.on(USER_PROFILE_REFRESHED, (data) => {
+        this.obsProfileRefreshed = CoreEvents.on(CORE_USER_PROFILE_REFRESHED, (data) => {
             if (!this.user || !data.user) {
                 return;
             }
@@ -106,7 +112,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
             this.courseId = CoreNavigator.getRouteNumberParam('courseId');
             this.userId = CoreNavigator.getRequiredRouteNumberParam('userId');
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
             CoreNavigator.back();
 
             return;
@@ -175,7 +181,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
             this.logView(user);
         } catch (error) {
             // Error is null for deleted users, do not show the modal.
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
         }
     }
 
@@ -186,7 +192,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
      * @returns Promise resolved when done.
      */
     async refreshUser(event?: HTMLIonRefresherElement): Promise<void> {
-        await CoreUtils.ignoreErrors(Promise.all([
+        await CorePromiseUtils.ignoreErrors(Promise.all([
             CoreUser.invalidateUserCache(this.userId),
             CoreCourses.invalidateUserNavigationOptions(),
             CoreCourses.invalidateUserAdministrationOptions(),
@@ -197,7 +203,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
         event?.complete();
 
         if (this.user) {
-            CoreEvents.trigger(USER_PROFILE_REFRESHED, {
+            CoreEvents.trigger(CORE_USER_PROFILE_REFRESHED, {
                 courseId: this.courseId,
                 userId: this.userId,
                 user: this.user,

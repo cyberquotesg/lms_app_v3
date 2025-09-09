@@ -5,7 +5,7 @@
 </core-navbar-buttons>
 <core-dynamic-component [component]="courseFormatComponent" [data]="data">
     <!-- Default course format. -->
-    <core-loading [hideUntil]="loaded">
+    <core-loading [hideUntil]="loaded" placeholderType="listwithicon" placeholderHeight="128px" placeholderWidth="44px">
 
         <!-- Single section. -->
         <div *ngIf="selectedSection && selectedSection.id !== allSectionsId" class="list-item-limited-width">
@@ -27,11 +27,11 @@
                 <ion-accordion-group [multiple]="true" (ionChange)="accordionMultipleChange($event.detail)"
                     [value]="accordionMultipleValue">
                     @for (section of sections; track section.id) {
-                    @if ($index
+                        @if ($index
                     <= lastShownSectionIndex && !section.hiddenbynumsections && section.id !==allSectionsId && section.id
                         !==stealthModulesSectionId) { <core-course-section [course]="course" [section]="section"
-                        [lastModuleViewed]="lastModuleViewed" [viewedModules]="viewedModules" [collapsible]="true" />
-                    }
+                                [lastModuleViewed]="lastModuleViewed" [viewedModules]="viewedModules" [collapsible]="true" />
+                        }
                     }
                 </ion-accordion-group>
             </core-dynamic-component>

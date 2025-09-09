@@ -18,7 +18,6 @@ import { CoreCourses } from '../../services/courses';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
 import { CoreCoursesDashboard } from '@features/courses/services/dashboard';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCourseBlock } from '@features/course/services/course';
 import { CoreBlockComponent } from '@features/block/components/block/block';
 import { CoreNavigator } from '@services/navigator';
@@ -26,7 +25,10 @@ import { CoreBlockDelegate } from '@features/block/services/block-delegate';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { Translate } from '@singletons';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreBlockSideBlocksButtonComponent } from '../../../block/components/side-blocks-button/side-blocks-button';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays the dashboard page.
@@ -34,8 +36,14 @@ import { CoreUtils } from '@services/utils/utils';
 @Component({
     selector: 'page-core-courses-dashboard',
     templateUrl: 'dashboard.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreBlockComponent,
+        CoreBlockSideBlocksButtonComponent,
+    ],
 })
-export class CoreCoursesDashboardPage implements OnInit, OnDestroy {
+export default class CoreCoursesDashboardPage implements OnInit, OnDestroy {
 
     @ViewChildren(CoreBlockComponent) blocksComponents?: QueryList<CoreBlockComponent>;
 
@@ -61,7 +69,7 @@ export class CoreCoursesDashboardPage implements OnInit, OnDestroy {
         }, CoreSites.getCurrentSiteId());
 
         this.logView = CoreTime.once(async () => {
-            await CoreUtils.ignoreErrors(CoreCourses.logView('dashboard'));
+            await CorePromiseUtils.ignoreErrors(CoreCourses.logView('dashboard'));
 
             CoreAnalytics.logEvent({
                 type: CoreAnalyticsEventType.VIEW_ITEM,
@@ -104,7 +112,7 @@ export class CoreCoursesDashboardPage implements OnInit, OnDestroy {
                 this.hasMainBlocks = CoreBlockDelegate.hasSupportedBlock(blocks.mainBlocks);
                 this.hasSideBlocks = CoreBlockDelegate.hasSupportedBlock(blocks.sideBlocks);
             } catch (error) {
-                CoreDomUtils.showErrorModal(error);
+                CoreAlerts.showError(error);
 
                 // Cannot get the blocks, just show dashboard if needed.
                 this.loadFallbackBlocks();

@@ -13,12 +13,10 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CoreTimeUtils } from '@services/utils/time';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreSites } from '@services/sites';
 import { CoreUser } from '@features/user/services/user';
 import { AddonBadges, AddonBadgesUserBadge } from '../../services/badges';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreCourses } from '@features/courses/services/courses';
 import { CoreNavigator } from '@services/navigator';
 import { ActivatedRoute } from '@angular/router';
@@ -28,6 +26,7 @@ import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreTime } from '@singletons/time';
 import { CoreSharedModule } from '@/core/shared.module';
+import { CoreAlerts } from '@services/overlays/alerts';
 
 /**
  * Page that displays an issued badge.
@@ -35,12 +34,13 @@ import { CoreSharedModule } from '@/core/shared.module';
 @Component({
     selector: 'page-addon-badges-issued-badge',
     templateUrl: 'issued-badge.html',
+    styleUrl: 'issued-badge.scss',
     standalone: true,
     imports: [
         CoreSharedModule,
     ],
 })
-export class AddonBadgesIssuedBadgePage implements OnInit, OnDestroy {
+export default class AddonBadgesIssuedBadgePage implements OnInit, OnDestroy {
 
     protected badgeHash = '';
     protected userId!: number;
@@ -48,6 +48,7 @@ export class AddonBadgesIssuedBadgePage implements OnInit, OnDestroy {
 
     courseId = 0;
     badge?: AddonBadgesUserBadge;
+    issuerWithMail = '';
     badges?: CoreSwipeNavigationItemsManager;
     badgeLoaded = false;
     currentTime = 0;
@@ -79,7 +80,7 @@ export class AddonBadgesIssuedBadgePage implements OnInit, OnDestroy {
     }
 
     /**
-     * View loaded.
+     * @inheritdoc
      */
     ngOnInit(): void {
         this.fetchIssuedBadge().finally(() => {
@@ -103,7 +104,7 @@ export class AddonBadgesIssuedBadgePage implements OnInit, OnDestroy {
      */
     async fetchIssuedBadge(): Promise<void> {
         const site = CoreSites.getRequiredCurrentSite();
-        this.currentTime = CoreTimeUtils.timestamp();
+        this.currentTime = CoreTime.timestamp();
 
         try {
             // Search the badge in the user badges.
@@ -137,11 +138,15 @@ export class AddonBadgesIssuedBadgePage implements OnInit, OnDestroy {
                 }
             }
 
+            this.issuerWithMail = badge.issuercontact ?
+                '<a href="mailto:' + badge.issuercontact + '">' + badge.issuername + '</a>'
+                : badge.issuername;
+
             this.badge = badge;
 
             this.logView(badge);
         } catch (message) {
-            CoreDomUtils.showErrorModalDefault(message, 'Error getting badge data.');
+            CoreAlerts.showError(message, { default: 'Error getting badge data.' });
         }
     }
 
@@ -151,12 +156,12 @@ export class AddonBadgesIssuedBadgePage implements OnInit, OnDestroy {
      * @param refresher Refresher.
      */
     async refreshBadges(refresher?: HTMLIonRefresherElement): Promise<void> {
-        await CoreUtils.allPromisesIgnoringErrors([
+        await CorePromiseUtils.allPromisesIgnoringErrors([
             AddonBadges.invalidateUserBadges(this.courseId, this.userId),
             AddonBadges.invalidateUserBadgeByHash(this.badgeHash),
         ]);
 
-        await CoreUtils.ignoreErrors(Promise.all([
+        await CorePromiseUtils.ignoreErrors(Promise.all([
             this.fetchIssuedBadge(),
         ]));
 

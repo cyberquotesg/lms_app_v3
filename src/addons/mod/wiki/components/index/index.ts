@@ -16,7 +16,7 @@ import { Component, Optional, Input, OnInit, OnDestroy } from '@angular/core';
 import { Params } from '@angular/router';
 import { CoreError } from '@classes/errors/error';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
-import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
+import CoreCourseContentsPage from '@features/course/pages/contents/contents';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreTag, CoreTagItem } from '@features/tag/services/tag';
 import { CoreUser } from '@features/user/services/user';
@@ -25,8 +25,7 @@ import { CoreNetwork } from '@services/network';
 import { CoreGroup, CoreGroups } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { Translate, NgZone } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CorePath } from '@singletons/path';
@@ -53,13 +52,19 @@ import {
 import { AddonModWikiMapModalReturn } from '../map/map';
 import {
     ADDON_MOD_WIKI_AUTO_SYNCED,
-    ADDON_MOD_WIKI_COMPONENT,
+    ADDON_MOD_WIKI_COMPONENT_LEGACY,
     ADDON_MOD_WIKI_MANUAL_SYNCED,
     ADDON_MOD_WIKI_PAGE_CREATED_EVENT,
+    ADDON_MOD_WIKI_PAGE_CREATED_OFFLINE_EVENT,
     ADDON_MOD_WIKI_PAGE_NAME,
 } from '../../constants';
-import { CoreModals } from '@services/modals';
-import { CorePopovers } from '@services/popovers';
+import { CoreModals } from '@services/overlays/modals';
+import { CorePopovers } from '@services/overlays/popovers';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreTagListComponent } from '@features/tag/components/list/list';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCourseModuleNavigationComponent } from '@features/course/components/module-navigation/module-navigation';
+import { CoreCourseModuleInfoComponent } from '@features/course/components/module-info/module-info';
 
 /**
  * Component that displays a wiki entry page.
@@ -67,7 +72,14 @@ import { CorePopovers } from '@services/popovers';
 @Component({
     selector: 'addon-mod-wiki-index',
     templateUrl: 'addon-mod-wiki-index.html',
-    styleUrls: ['index.scss'],
+    styleUrl: 'index.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreTagListComponent,
+        CoreCourseModuleInfoComponent,
+        CoreCourseModuleNavigationComponent,
+    ],
 })
 export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit, OnDestroy {
 
@@ -78,7 +90,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
     @Input() userId?: number;
     @Input() groupId?: number;
 
-    component = ADDON_MOD_WIKI_COMPONENT;
+    component = ADDON_MOD_WIKI_COMPONENT_LEGACY;
     componentId?: number;
     pluginName = 'wiki';
     groupWiki = false;
@@ -109,6 +121,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
     protected currentPage?: number; // Current loaded page ID.
     protected subwikiPages?: (AddonModWikiSubwikiPage | AddonModWikiPageDBRecord)[]; // List of subwiki pages.
     protected newPageObserver?: CoreEventObserver; // Observer to check for new pages.
+    protected pageCreatedOfflineObserver?: CoreEventObserver; // Observer to check for offline pages.
     protected manualSyncObserver?: CoreEventObserver; // An observer to watch for manual sync events.
     protected ignoreManualSyncEvent = false; // Whether manual sync event should be ignored.
     protected currentUserId?: number; // Current user ID.
@@ -180,6 +193,24 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
                 this.showLoadingAndFetch(false, false);
             }
         }, this.siteId);
+
+        // If a new page is created in this wiki, mark that the wiki has offline data and load offline pages in map if needed.
+        this.pageCreatedOfflineObserver = CoreEvents.on(ADDON_MOD_WIKI_PAGE_CREATED_OFFLINE_EVENT, async (data) => {
+            if (data.wikiId && data.wikiId === this.wiki?.id) {
+                // Page created in current wiki, has offline data.
+                this.hasOffline = true;
+                this.currentSubwiki && await this.loadOfflineSubwikiPages(this.currentSubwiki);
+
+                return;
+            }
+
+            if (!data.wikiId) {
+                // Cannot tell if it's the same wiki, check if it has offline data now.
+                this.hasOffline = await AddonModWikiOffline.subwikisHaveOfflineData(this.loadedSubwikis);
+
+                this.hasOffline && this.currentSubwiki && await this.loadOfflineSubwikiPages(this.currentSubwiki);
+            }
+        });
     }
 
     /**
@@ -228,7 +259,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
 
             if (sync) {
                 // Try to synchronize the wiki.
-                await CoreUtils.ignoreErrors(this.syncActivity(showErrors));
+                await CorePromiseUtils.ignoreErrors(this.syncActivity(showErrors));
             }
 
             if (this.pageWarning) {
@@ -348,7 +379,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
      * @param subwiki Subwiki.
      */
     protected async fetchSubwikiPages(subwiki: AddonModWikiSubwiki): Promise<void> {
-        const subwikiPages = subwiki.id <= 0 ?
+        const onlinePages = subwiki.id <= 0 ?
             [] :
             await AddonModWiki.getSubwikiPages(subwiki.wikiid, {
                 groupId: subwiki.groupid,
@@ -356,19 +387,39 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
                 cmId: this.module.id,
             });
 
-        this.setCurrentPage(subwikiPages);
+        this.setCurrentPage(onlinePages);
 
         // Now get the offline pages.
-        const dbPages = await AddonModWikiOffline.getSubwikiNewPages(subwiki.id, subwiki.wikiid, subwiki.userid, subwiki.groupid);
-
-        this.subwikiPages = AddonModWiki.sortPagesByTitle(
-            (<(AddonModWikiSubwikiPage | AddonModWikiPageDBRecord)[]> subwikiPages).concat(dbPages),
-        );
+        const subwikiPages = await this.loadOfflineSubwikiPages(subwiki, onlinePages);
 
         // Reject if no currentPage selected from the subwikis given (if no subwikis available, do not reject).
-        if (!this.currentPage && !this.pageTitle && this.subwikiPages.length > 0) {
+        if (!this.currentPage && !this.pageTitle && subwikiPages.length > 0) {
             throw new CoreError();
         }
+    }
+
+    /**
+     * Load offline subwiki pages to the list of online pages, and store it in subwikiPages.
+     *
+     * @param subwiki Subwiki to load the pages from.
+     * @param onlinePages Online pages. If not found, extract them from subwikiPages.
+     * @returns List of online and offline pages.
+     */
+    protected async loadOfflineSubwikiPages(
+        subwiki: AddonModWikiSubwiki,
+        onlinePages?: AddonModWikiSubwikiPage[],
+    ): Promise<(AddonModWikiSubwikiPage | AddonModWikiPageDBRecord)[]> {
+        const dbPages = await AddonModWikiOffline.getSubwikiNewPages(subwiki.id, subwiki.wikiid, subwiki.userid, subwiki.groupid);
+
+        if (!onlinePages) {
+            onlinePages = this.subwikiPages?.filter(((page): page is AddonModWikiSubwikiPage => 'id' in page)) || [];
+        }
+
+        this.subwikiPages = AddonModWiki.sortPagesByTitle(
+            (<(AddonModWikiSubwikiPage | AddonModWikiPageDBRecord)[]> onlinePages).concat(dbPages),
+        );
+
+        return this.subwikiPages;
     }
 
     /**
@@ -496,7 +547,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
             return; // Shouldn't happen.
         }
 
-        await CoreUtils.ignoreErrors(AddonModWiki.logPageView(pageId, this.wiki.id));
+        await CorePromiseUtils.ignoreErrors(AddonModWiki.logPageView(pageId, this.wiki.id));
 
         this.analyticsLogEvent('mod_wiki_view_page', {
             name: this.currentPageObj?.title,
@@ -748,7 +799,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
 
         if (content.length > 0) {
             const editUrl = CorePath.concatenatePaths(CoreSites.getRequiredCurrentSite().getURL(), '/mod/wiki/edit.php');
-            content = content.replace(/href="edit\.php/g, 'href="' + editUrl);
+            content = content.replace(/href="edit\.php/g, `href="${editUrl}`);
         }
 
         return content;
@@ -870,7 +921,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
 
             if (this.isCurrentView && syncEventData.warnings && syncEventData.warnings.length) {
                 // Show warnings.
-                CoreDomUtils.showAlert(undefined, syncEventData.warnings[0]);
+                CoreAlerts.show({ message: syncEventData.warnings[0] });
             }
 
             // Check if current page was created or discarded.
@@ -922,6 +973,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
 
         this.manualSyncObserver?.off();
         this.newPageObserver?.off();
+        this.pageCreatedOfflineObserver?.off();
         this.onlineSubscription.unsubscribe();
         if (this.wiki) {
             AddonModWiki.wikiPageClosed(this.wiki.id, this.currentPath);
@@ -1080,17 +1132,16 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
         }
 
         if (multiLevelList) {
-            // As we loop over each subwiki, add it to the current group
-            let groupValue = -1;
-            let grouping: AddonModWikiSubwikiListGrouping;
+            // As we loop over each subwiki, add it to the right group.
+            const groupings: Record<number, AddonModWikiSubwikiListGrouping> = {};
 
             subwikiList.forEach((subwiki) => {
-                // Should we create a new grouping?
-                if (subwiki.groupid !== groupValue) {
+                let grouping = groupings[subwiki.groupid];
+                if (!grouping) {
+                    // Create a new grouping.
                     grouping = { label: subwiki.groupLabel, subwikis: [] };
-                    groupValue = subwiki.groupid;
-
                     this.subwikiData.subwikis.push(grouping);
+                    groupings[subwiki.groupid] = grouping;
                 }
 
                 // Add the subwiki to the currently active grouping.

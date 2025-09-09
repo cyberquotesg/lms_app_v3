@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CoreDomUtils } from '@services/utils/dom';
 import { AddonCompetencyDataForPlanPageCompetency, AddonCompetencyDataForPlanPageWSResponse } from '../../services/competency';
 import { CoreNavigator } from '@services/navigator';
 import { CoreUserProfile } from '@features/user/services/user';
@@ -24,6 +23,8 @@ import { CoreListItemsManager } from '@classes/items-management/list-items-manag
 import { AddonCompetencyPlanCompetenciesSource } from '@addons/competency/classes/competency-plan-competencies-source';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreTime } from '@singletons/time';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays a learning plan.
@@ -31,8 +32,12 @@ import { CoreTime } from '@singletons/time';
 @Component({
     selector: 'page-addon-competency-plan',
     templateUrl: 'plan.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonCompetencyPlanPage implements OnInit, OnDestroy {
+export default class AddonCompetencyPlanPage implements OnInit, OnDestroy {
 
     plans!: CoreSwipeNavigationItemsManager;
     competencies!: CoreListItemsManager<AddonCompetencyDataForPlanPageCompetency, AddonCompetencyPlanCompetenciesSource>;
@@ -57,8 +62,7 @@ export class AddonCompetencyPlanPage implements OnInit, OnDestroy {
             this.competencies = new CoreListItemsManager(competenciesSource, AddonCompetencyPlanPage);
             this.plans = new CoreSwipeNavigationItemsManager(plansSource);
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
-
+            CoreAlerts.showError(error);
             CoreNavigator.back();
 
             return;
@@ -101,7 +105,7 @@ export class AddonCompetencyPlanPage implements OnInit, OnDestroy {
 
             this.logView();
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Error getting learning plan data.');
+            CoreAlerts.showError(error, { default: 'Error getting learning plan data.' });
         }
     }
 

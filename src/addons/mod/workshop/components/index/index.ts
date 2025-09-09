@@ -16,13 +16,13 @@ import { Component, Input, OnDestroy, OnInit, Optional } from '@angular/core';
 import { Params } from '@angular/router';
 import { CoreError } from '@classes/errors/error';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
-import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
+import CoreCourseContentsPage from '@features/course/pages/contents/contents';
 import { IonContent } from '@ionic/angular';
 import { CoreGroupInfo, CoreGroups } from '@services/groups';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
-import { CoreModals } from '@services/modals';
-import { CoreUtils } from '@services/utils/utils';
+import { CoreModals } from '@services/overlays/modals';
+import { CoreObject } from '@singletons/object';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
 import {
@@ -57,6 +57,12 @@ import {
     ADDON_MOD_WORKSHOP_SUBMISSION_CHANGED,
     AddonModWorkshopPhase,
 } from '@addons/mod/workshop/constants';
+import { CorePromiseUtils } from '@singletons/promise-utils';
+import { CoreOpener } from '@singletons/opener';
+import { AddonModWorkshopSubmissionComponent } from '../submission/submission';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCourseModuleNavigationComponent } from '@features/course/components/module-navigation/module-navigation';
+import { CoreCourseModuleInfoComponent } from '@features/course/components/module-info/module-info';
 
 /**
  * Component that displays a workshop index page.
@@ -64,6 +70,13 @@ import {
 @Component({
     selector: 'addon-mod-workshop-index',
     templateUrl: 'addon-mod-workshop-index.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        AddonModWorkshopSubmissionComponent,
+        CoreCourseModuleNavigationComponent,
+        CoreCourseModuleInfoComponent,
+    ],
 })
 export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit, OnDestroy {
 
@@ -177,6 +190,9 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             if (this.canSubmit) {
                 promises.push(AddonModWorkshop.invalidateSubmissionsData(this.workshop.id));
             }
+            if (this.submission) {
+                promises.push(AddonModWorkshop.invalidateSubmissionData(this.workshop.id, this.submission.id));
+            }
             if (this.access?.canviewallsubmissions) {
                 promises.push(AddonModWorkshop.invalidateGradeReportData(this.workshop.id));
                 promises.push(CoreGroups.invalidateActivityAllowedGroups(this.workshop.coursemodule));
@@ -259,7 +275,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             return; // Shouldn't happen.
         }
 
-        await CoreUtils.ignoreErrors(AddonModWorkshop.logView(this.workshop.id));
+        await CorePromiseUtils.ignoreErrors(AddonModWorkshop.logView(this.workshop.id));
 
         this.analyticsLogEvent('mod_workshop_view_workshop');
     }
@@ -362,7 +378,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
         if (task.code == 'submit') {
             this.gotoSubmit();
         } else if (task.link) {
-            CoreUtils.openInBrowser(task.link);
+            CoreOpener.openInBrowser(task.link);
         }
     }
 
@@ -403,7 +419,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
         const modalData = await CoreModals.openModal<boolean>({
             component: AddonModWorkshopPhaseInfoModalComponent,
             componentProps: {
-                phases: CoreUtils.objectToArray(this.phases),
+                phases: CoreObject.toArray(this.phases),
                 workshopPhase: this.workshop.phase,
                 externalUrl: this.module.url,
                 showSubmit: this.showSubmit,
@@ -451,19 +467,10 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             this.phases[AddonModWorkshopPhase.PHASE_SUBMISSION].tasks,
         );
 
-        this.showSubmit = this.canSubmit &&
-            ((this.access.creatingsubmissionallowed && !this.submission) ||
-                (this.access.modifyingsubmissionallowed && !!this.submission));
-
         const promises: Promise<void>[] = [];
 
         if (this.canSubmit) {
-            promises.push(AddonModWorkshopHelper.getUserSubmission(this.workshop.id, { cmId: this.module.id })
-                .then(async (submission) => {
-                    this.submission = await AddonModWorkshopHelper.applyOfflineData(submission, this.offlineSubmissions);
-
-                    return;
-                }));
+            promises.push(this.loadUserSubmission());
         }
 
         if (this.access.canviewallsubmissions && this.workshop.phase >= AddonModWorkshopPhase.PHASE_SUBMISSION) {
@@ -478,6 +485,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             if (this.canAssess) {
                 assessPromise = AddonModWorkshopHelper.getReviewerAssessments(this.workshop.id, {
                     cmId: this.module.id,
+                    canAssess: AddonModWorkshopHelper.canEditAssessments(this.workshop, this.access),
                 }).then(async (assessments) => {
                     await Promise.all(assessments.map(async (assessment) => {
                         assessment.strategy = workshop.strategy;
@@ -533,6 +541,27 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
         }
 
         await Promise.all(promises);
+    }
+
+    /**
+     * Load user submission.
+     */
+    protected async loadUserSubmission(): Promise<void> {
+        if (!this.workshop || !this.access) {
+            return;
+        }
+
+        const access = this.access;
+
+        const submission = await AddonModWorkshopHelper.getUserSubmission(this.workshop.id, {
+            cmId: this.module.id,
+            canEdit: this.access.modifyingsubmissionallowed,
+        });
+
+        this.showSubmit = (access.creatingsubmissionallowed && !submission) ||
+            (access.modifyingsubmissionallowed && !!submission);
+
+        this.submission = await AddonModWorkshopHelper.applyOfflineData(submission, this.offlineSubmissions);
     }
 
     /**

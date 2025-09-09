@@ -12,29 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { toBoolean } from '@/core/transforms/boolean';
 import { Component, Input, OnInit } from '@angular/core';
+import { CorePromisedValue } from '@classes/promised-value';
+import { CoreSite } from '@classes/sites/site';
 import { CoreSiteIdentityProvider, CoreSitePublicConfigResponse } from '@classes/sites/unauthenticated-site';
 import { CoreLoginHelper, CoreLoginMethod } from '@features/login/services/login-helper';
 import { CoreRedirectPayload } from '@services/navigator';
-import { CoreSites } from '@services/sites';
 import { CoreSitesFactory } from '@services/sites-factory';
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreLoginIdentityProviderComponent } from '../identity-provider/identity-provider';
+
+// by rachmad
+import { CoreAlerts } from '@services/overlays/alerts';
 
 @Component({
     selector: 'core-login-methods',
-    
-    // by rachmad
-    templateUrl: 'login-methods.new.html',
 
-    styleUrls: ['../../login.scss'],
+    // by rachmad
+    // templateUrl: 'login-methods.html',
+    templateUrl: '../../../cq_pages/templates/login-methods.html',
+
+    styleUrl: '../../login.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreLoginIdentityProviderComponent,
+    ],
 })
 export class CoreLoginMethodsComponent implements OnInit {
 
-    @Input({ transform: toBoolean }) reconnect = false;
     @Input() siteUrl = '';
     @Input() siteConfig?: CoreSitePublicConfigResponse;
     @Input() redirectData?: CoreRedirectPayload;
+    @Input() site?: CoreSite; // Defined when the user is reconnecting.
     @Input() showLoginForm = true;
 
     isBrowserSSO  = false;
@@ -42,16 +52,20 @@ export class CoreLoginMethodsComponent implements OnInit {
     loginMethods: CoreLoginMethod[] = [];
     identityProviders: CoreSiteIdentityProvider[] = [];
 
+    protected currentLoginProvider?: CoreSiteIdentityProvider;
+    protected isReady = new CorePromisedValue<void>();
+
     /**
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
-        if (this.reconnect) {
+        if (this.site) {
+            this.siteUrl = this.site.getURL();
+
             this.loginMethods = await CoreLoginHelper.getLoginMethods();
 
-            const currentSite = CoreSites.getCurrentSite();
             const defaultMethod = await CoreLoginHelper.getDefaultLoginMethod();
-            if (currentSite?.isLoggedOut() && defaultMethod) {
+            if (this.site.isLoggedOut() && defaultMethod) {
                 await defaultMethod.action();
             }
         }
@@ -62,25 +76,52 @@ export class CoreLoginMethodsComponent implements OnInit {
             // Identity providers won't be shown if login on browser.
             if (!this.isBrowserSSO) {
                 this.identityProviders = await CoreLoginHelper.getValidIdentityProvidersForSite(
-                    CoreSitesFactory.makeUnauthenticatedSite(this.siteUrl, this.siteConfig),
+                    this.site ?? CoreSitesFactory.makeUnauthenticatedSite(this.siteUrl, this.siteConfig),
                 );
             }
 
-            if (this.reconnect) {
-                this.showScanQR = CoreLoginHelper.displayQRInSiteScreen();
+            if (this.site) {
+                // The identity provider set in the site will be shown at the top.
+                const oAuthId = this.site.getOAuthId();
+                this.currentLoginProvider = CoreLoginHelper.findIdentityProvider(this.identityProviders, oAuthId);
+
+                // Remove the identity provider from the array.
+                this.identityProviders = this.identityProviders.filter((provider) =>
+                    provider.url !== this.currentLoginProvider?.url);
             }
 
-            // If still false or credentials screen.
-            if (!this.reconnect || !this.showScanQR) {
-                this.showScanQR = await CoreLoginHelper.displayQRInCredentialsScreen(this.siteConfig.tool_mobile_qrcodetype);
+            await this.setShowScanQR();
+        }
+
+        this.isReady.resolve();
+    }
+
+    /**
+     * Set if should show the scan QR code button.
+     */
+    async setShowScanQR(): Promise<void> {
+        if (this.site) {
+            if (this.site.isDemoModeSite()) {
+                this.showScanQR = false;
+
+                return;
             }
+
+            this.showScanQR = CoreLoginHelper.displayQRInSiteScreen();
+
+            if (this.showScanQR) {
+                return;
+            }
+        }
+
+        // If still false or credentials screen.
+        if (this.siteConfig) {
+            this.showScanQR = await CoreLoginHelper.displayQRInCredentialsScreen(this.siteConfig.tool_mobile_qrcodetype);
         }
     }
 
     /**
      * Show instructions and scan QR code.
-     *
-     * @returns Promise resolved when done.
      */
     async showInstructionsAndScanQR(): Promise<void> {
         try {
@@ -93,10 +134,26 @@ export class CoreLoginMethodsComponent implements OnInit {
     }
 
     /**
-     * An OAuth button was clicked.
+     * Get the current login.
      *
-     * @param provider The provider that was clicked.
+     * @returns Current login.
      */
+    async getCurrentLogin(): Promise<CoreLoginMethodsCurrentLogin | undefined> {
+        await this.isReady;
+        if (!this.currentLoginProvider) {
+            return;
+        }
+
+        const showOther = !!(this.showLoginForm || this.isBrowserSSO) &&
+            !!(this.loginMethods.length || this.identityProviders.length || this.showScanQR);
+
+        return {
+            provider: this.currentLoginProvider,
+            showOther,
+        };
+    }
+
+    // by rachmad
     async oauthClicked(provider: CoreSiteIdentityProvider): Promise<void> {
         const result = await CoreLoginHelper.openBrowserForOAuthLogin(
             this.siteUrl,
@@ -106,8 +163,12 @@ export class CoreLoginMethodsComponent implements OnInit {
         );
 
         if (!result) {
-            CoreDomUtils.showErrorModal('Invalid data.');
+            CoreAlerts.showError('Invalid data.');
         }
     }
-
 }
+
+export type CoreLoginMethodsCurrentLogin = {
+    provider: CoreSiteIdentityProvider;
+    showOther: boolean;
+};

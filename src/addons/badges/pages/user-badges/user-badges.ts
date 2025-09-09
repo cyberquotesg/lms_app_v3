@@ -14,10 +14,8 @@
 
 import { AfterViewInit, Component, OnDestroy, ViewChild } from '@angular/core';
 import { AddonBadges, AddonBadgesUserBadge } from '../../services/badges';
-import { CoreTimeUtils } from '@services/utils/time';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreSites } from '@services/sites';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreSplitViewComponent } from '@components/split-view/split-view';
 import { CoreNavigator } from '@services/navigator';
 import { CoreListItemsManager } from '@classes/items-management/list-items-manager';
@@ -26,6 +24,8 @@ import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreTime } from '@singletons/time';
 import { Translate } from '@singletons';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Page that displays the list of calendar events.
@@ -33,8 +33,12 @@ import { Translate } from '@singletons';
 @Component({
     selector: 'page-addon-badges-user-badges',
     templateUrl: 'user-badges.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class AddonBadgesUserBadgesPage implements AfterViewInit, OnDestroy {
+export default class AddonBadgesUserBadgesPage implements AfterViewInit, OnDestroy {
 
     currentTime = 0;
     badges: CoreListItemsManager<AddonBadgesUserBadge, AddonBadgesUserBadgesSource>;
@@ -90,13 +94,13 @@ export class AddonBadgesUserBadgesPage implements AfterViewInit, OnDestroy {
      * @param refresher Refresher.
      */
     async refreshBadges(refresher?: HTMLIonRefresherElement): Promise<void> {
-        await CoreUtils.ignoreErrors(
+        await CorePromiseUtils.ignoreErrors(
             AddonBadges.invalidateUserBadges(
                 this.badges.getSource().COURSE_ID,
                 this.badges.getSource().USER_ID,
             ),
         );
-        await CoreUtils.ignoreErrors(this.badges.reload());
+        await CorePromiseUtils.ignoreErrors(this.badges.reload());
 
         refresher?.complete();
     }
@@ -105,14 +109,14 @@ export class AddonBadgesUserBadgesPage implements AfterViewInit, OnDestroy {
      * Obtain the initial list of badges.
      */
     private async fetchInitialBadges(): Promise<void> {
-        this.currentTime = CoreTimeUtils.timestamp();
+        this.currentTime = CoreTime.timestamp();
 
         try {
             await this.badges.reload();
 
             this.logView();
         } catch (message) {
-            CoreDomUtils.showErrorModalDefault(message, 'Error loading badges');
+            CoreAlerts.showError(message, { default: 'Error loading badges' });
 
             this.badges.reset();
         }

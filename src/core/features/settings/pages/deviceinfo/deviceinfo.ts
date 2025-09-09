@@ -19,17 +19,19 @@ import { Device, Translate, NgZone } from '@singletons';
 import { CoreLang } from '@services/lang';
 import { CoreFile } from '@services/file';
 import { CoreSites } from '@services/sites';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { Subscription } from 'rxjs';
 import { CorePushNotifications } from '@features/pushnotifications/services/pushnotifications';
 import { CoreConfig } from '@services/config';
-import { CoreToasts } from '@services/toasts';
+import { CoreToasts } from '@services/overlays/toasts';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
 import { CoreNetwork } from '@services/network';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
 import { CoreSitesFactory } from '@services/sites-factory';
 import { CoreText } from '@singletons/text';
+import { GestureDetail } from '@ionic/angular';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Device Info to be shown and copied to clipboard.
@@ -51,7 +53,7 @@ interface CoreSettingsDeviceInfo {
     locationHref?: string;
     deviceType: string;
     screen?: string;
-    networkStatus: string;
+    isOnline: boolean;
     wifiConnection: string;
     cordovaVersion?: string;
     platform?: string;
@@ -69,9 +71,13 @@ interface CoreSettingsDeviceInfo {
 @Component({
     selector: 'page-core-app-settings-deviceinfo',
     templateUrl: 'deviceinfo.html',
-    styleUrls: ['deviceinfo.scss'],
+    styleUrl: 'deviceinfo.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
-export class CoreSettingsDeviceInfoPage implements OnDestroy {
+export default class CoreSettingsDeviceInfoPage implements OnDestroy {
 
     deviceInfo: CoreSettingsDeviceInfo;
     deviceOsTranslated?: string;
@@ -93,7 +99,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
             versionCode: CoreConstants.CONFIG.versioncode,
             compilationTime: CoreConstants.BUILD.compilationTime || 0,
             lastCommit: CoreConstants.BUILD.lastCommitHash || '',
-            networkStatus: CoreNetwork.isOnline() ? 'online' : 'offline',
+            isOnline: CoreNetwork.isOnline(),
             wifiConnection: CoreNetwork.isWifi() ? 'yes' : 'no',
             localNotifAvailable: CoreLocalNotifications.isPluginAvailable() ? 'yes' : 'no',
             pushId: CorePushNotifications.getPushId(),
@@ -106,8 +112,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         }
 
         if (window.screen) {
-            this.deviceInfo.screen = window.innerWidth + 'x' + window.innerHeight +
-                ' (' + window.screen.width + 'x' + window.screen.height + ')';
+            this.deviceInfo.screen = `${window.innerWidth}x${window.innerHeight} (${window.screen.width}x${window.screen.height})`;
         }
 
         if (CorePlatform.isMobile()) {
@@ -172,7 +177,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         this.onlineObserver = CoreNetwork.onChange().subscribe(() => {
             // Execute the callback in the Angular zone, so change detection doesn't stop working.
             NgZone.run(() => {
-                this.deviceInfo.networkStatus = CoreNetwork.isOnline() ? 'online' : 'offline';
+                this.deviceInfo.isOnline = CoreNetwork.isOnline();
             });
         });
 
@@ -197,18 +202,16 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         this.displaySiteUrl = !!this.deviceInfo.siteUrl &&
             (currentSite ?? CoreSitesFactory.makeUnauthenticatedSite(this.deviceInfo.siteUrl)).shouldDisplayInformativeLinks();
 
-        if (CoreFile.isAvailable()) {
-            const basepath = await CoreFile.getBasePath();
-            this.deviceInfo.fileSystemRoot = basepath;
-            this.fsClickable = CoreFile.usesHTMLAPI();
-        }
+        const basepath = await CoreFile.getBasePath();
+        this.deviceInfo.fileSystemRoot = basepath;
+        this.fsClickable = CoreFile.usesHTMLAPI();
 
         const showDevOptionsOnConfig = await CoreConfig.get('showDevOptions', 0);
         this.devOptionsForced = CoreConstants.enableDevTools();
         this.showDevOptions = this.devOptionsForced || showDevOptionsOnConfig == 1;
 
         const publicKey = this.deviceInfo.pushId ?
-            await CoreUtils.ignoreErrors(CorePushNotifications.getPublicKey()) :
+            await CorePromiseUtils.ignoreErrors(CorePushNotifications.getPublicKey()) :
             undefined;
         this.deviceInfo.encryptedPushSupported = publicKey !== undefined;
     }
@@ -225,8 +228,8 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
      *
      * @param e Event.
      */
-    copyItemInfo(e: Event): void {
-        const el = <Element>e.target;
+    copyItemInfo(e: GestureDetail): void {
+        const el = <Element>e.event.target;
         const text = el?.closest('ion-item')?.textContent?.trim();
 
         text && CoreText.copyToClipboard(text);

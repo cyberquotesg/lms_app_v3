@@ -19,9 +19,8 @@ import { CoreGradesHelper, CoreGradesMenuItem } from '@features/grades/services/
 import { CoreUser, CoreUserProfile } from '@features/user/services/user';
 import { CanLeave } from '@guards/can-leave';
 import { CoreNavigator } from '@services/navigator';
-import { CoreSites } from '@services/sites';
+import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreSync } from '@services/sync';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreText } from '@singletons/text';
 import { Translate } from '@singletons';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -44,7 +43,13 @@ import {
     ADDON_MOD_WORKSHOP_COMPONENT,
     AddonModWorkshopPhase,
 } from '@addons/mod/workshop/constants';
-import { CoreLoadings } from '@services/loadings';
+import { CoreLoadings } from '@services/overlays/loadings';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreEditorRichTextEditorComponent } from '@features/editor/components/rich-text-editor/rich-text-editor';
+import { AddonModWorkshopAssessmentStrategyComponent } from '../../components/assessment-strategy/assessment-strategy';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreNetwork } from '@services/network';
+import { CoreErrorHelper } from '@services/error-helper';
 
 /**
  * Page that displays a workshop assessment.
@@ -52,8 +57,14 @@ import { CoreLoadings } from '@services/loadings';
 @Component({
     selector: 'page-addon-mod-workshop-assessment-page',
     templateUrl: 'assessment.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        AddonModWorkshopAssessmentStrategyComponent,
+        CoreEditorRichTextEditorComponent,
+    ],
 })
-export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLeave {
+export default class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLeave {
 
     @ViewChild('evaluateFormEl') formElement!: ElementRef;
 
@@ -71,6 +82,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
     workshop?: AddonModWorkshopData;
     strategy?: string;
     title = '';
+    loadFeedbackToEditErrorMessage?: string;
     evaluate: AddonModWorkshopAssessmentEvaluation = {
         text: '',
         grade: -1,
@@ -144,7 +156,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
             this.profile = CoreNavigator.getRouteParam<CoreUserProfile>('profile');
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
         } catch (error) {
-            CoreDomUtils.showErrorModal(error);
+            CoreAlerts.showError(error);
 
             CoreNavigator.back();
 
@@ -172,7 +184,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
         }
 
         // Show confirmation if some data has been modified.
-        await CoreDomUtils.showConfirm(Translate.instant('core.confirmcanceledit'));
+        await CoreAlerts.confirmLeaveWithChanges();
 
         CoreForms.triggerFormCancelledEvent(this.formElement, this.siteId);
 
@@ -218,6 +230,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
             const assessment = await AddonModWorkshopHelper.getReviewerAssessmentById(this.workshopId, this.assessmentId, {
                 userId: this.profile?.id,
                 cmId: this.workshop.coursemodule,
+                canAssess: AddonModWorkshopHelper.canEditAssessments(this.workshop, this.access),
             });
 
             this.assessment = AddonModWorkshopHelper.realGradeValue(this.workshop, assessment);
@@ -253,6 +266,8 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
                     if (this.access.canoverridegrades) {
                         this.evaluate.text = this.assessment.feedbackreviewer || '';
                         this.evaluate.grade = parseInt(String(this.assessment.gradinggradeover), 10) || -1;
+
+                        await this.loadFeedbackToEdit();
                     }
                 } finally {
                     this.originalEvaluation.weight = this.evaluate.weight;
@@ -272,9 +287,39 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
                 this.evaluateByProfile = await CoreUser.getProfile(this.assessment.gradinggradeoverby, this.courseId, true);
             }
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'core.course.errorgetmodule', true);
+            CoreAlerts.showError(error, { default: Translate.instant('core.course.errorgetmodule') });
         } finally {
             this.loaded = true;
+        }
+    }
+
+    /**
+     * Load assessment feedback to edit it (for teachers).
+     */
+    protected async loadFeedbackToEdit(): Promise<void> {
+        if (!this.workshop) {
+            return;
+        }
+
+        try {
+            // Retrieve the unfiltered feedback text to edit it.
+            const assessment = await AddonModWorkshopHelper.getReviewerAssessmentById(
+                this.workshopId,
+                this.assessmentId,
+                {
+                    userId: this.profile?.id,
+                    cmId: this.workshop.coursemodule,
+                    filter: false,
+                    readingStrategy: CoreSitesReadingStrategy.ONLY_NETWORK,
+                },
+            );
+
+            this.evaluate.text = assessment.feedbackreviewer || '';
+            this.loadFeedbackToEditErrorMessage = undefined;
+        } catch (error) {
+            this.loadFeedbackToEditErrorMessage = !CoreNetwork.isOnline() ?
+                Translate.instant('core.notavailableoffline') :
+                CoreErrorHelper.getErrorMessageFromError(error) || Translate.instant('core.networkerrormsg');
         }
     }
 
@@ -298,16 +343,16 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
 
         const inputData = this.evaluateForm.value;
 
-        if (this.originalEvaluation.weight != inputData.weight) {
+        if (this.originalEvaluation.weight !== inputData.weight) {
             return true;
         }
 
         if (this.access && this.access.canoverridegrades) {
-            if (this.originalEvaluation.text != inputData.text) {
+            if ((this.originalEvaluation.text ?? '') !== (inputData.text ?? '')) {
                 return true;
             }
 
-            if (this.originalEvaluation.grade != inputData.grade) {
+            if (this.originalEvaluation.grade !== inputData.grade) {
                 return true;
             }
         }
@@ -403,7 +448,7 @@ export class AddonModWorkshopAssessmentPage implements OnInit, OnDestroy, CanLea
                 CoreEvents.trigger(ADDON_MOD_WORKSHOP_ASSESSMENT_SAVED, data, this.siteId);
             });
         } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Cannot save assessment evaluation');
+            CoreAlerts.showError(error, { default: 'Cannot save assessment evaluation' });
         } finally {
             modal.dismiss();
         }

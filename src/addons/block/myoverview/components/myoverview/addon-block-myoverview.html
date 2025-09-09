@@ -18,8 +18,7 @@
         </div>
     </div>
 </ion-item-divider>
-<core-loading [hideUntil]="loaded">
-
+<core-loading [hideUntil]="loaded" placeholderType="column" [placeholderLimit]="8">
     <ion-row class="ion-hide-md-up addon-block-myoverview-filter" *ngIf="hasCourses">
         <ion-col>
             <!-- Filter courses. -->
@@ -96,12 +95,12 @@
     </ion-row>
 
     <core-empty-box *ngIf="filteredCourses.length === 0" image="assets/img/icons/courses.svg">
-        <p *ngIf="hasCourses" class="item-heading">
+        <h3 *ngIf="hasCourses" class="item-heading">
             {{'addon.block_myoverview.noresult' | translate}}
-        </p>
-        <p *ngIf="!hasCourses" class="item-heading">
+        </h3>
+        <h3 *ngIf="!hasCourses" class="item-heading">
             {{'addon.block_myoverview.nocoursesenrolled' | translate}}
-        </p>
+        </h3>
         <ng-container *ngIf="searchEnabled">
             <p *ngIf="hasCourses" class="subdued">
                 {{'addon.block_myoverview.noresultdescription' | translate}}
@@ -117,11 +116,11 @@
     </core-empty-box>
 
     <!-- List of courses. -->
-    <div class="safe-area-padding" *ngIf="hasCourses">
+    <div class="safe-area-padding core-course-list" *ngIf="hasCourses">
         <ion-grid class="ion-no-padding" [class.core-no-grid]="layout !== 'card'" [class.list-item-limited-width]="layout !== 'card'">
             <ion-row class="ion-no-padding">
                 <ion-col *ngFor="let course of filteredCourses" class="ion-no-padding" size="12" size-sm="6" size-md="6" size-lg="4"
-                    size-xl="3">
+                    size-xl="3" [attr.data-course-id]="course.id">
                     <core-courses-course-list-item [course]="course" class="core-courseoverview" [showDownload]="downloadCourseEnabled"
                         [layout]="layout" />
                 </ion-col>

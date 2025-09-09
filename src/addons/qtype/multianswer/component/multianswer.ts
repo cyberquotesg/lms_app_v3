@@ -15,6 +15,7 @@
 import { Component, ElementRef } from '@angular/core';
 import { CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
 import { CoreQuestionHelper } from '@features/question/services/question-helper';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render a multianswer question.
@@ -22,7 +23,11 @@ import { CoreQuestionHelper } from '@features/question/services/question-helper'
 @Component({
     selector: 'addon-qtype-multianswer',
     templateUrl: 'addon-qtype-multianswer.html',
-    styleUrls: ['multianswer.scss'],
+    styleUrl: 'multianswer.scss',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonQtypeMultiAnswerComponent extends CoreQuestionBaseComponent {
 
@@ -35,6 +40,7 @@ export class AddonQtypeMultiAnswerComponent extends CoreQuestionBaseComponent {
      */
     init(): void {
         this.initOriginalTextComponent('.formulation');
+        this.onReadyPromise.resolve();
     }
 
     /**

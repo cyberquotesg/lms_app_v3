@@ -10,7 +10,7 @@
                             <ion-icon name="fas-star" class="addon-forum-star" [attr.aria-label]="'addon.mod_forum.favourites' | translate"
                                 *ngIf="discussion && !post.parentid && !discussion.pinned && discussion.starred" />
                             <core-format-text [text]="post.subject" contextLevel="module" [contextInstanceId]="forum && forum.cmid"
-                                [courseId]="courseId" />
+                                [courseId]="courseId" [sanitize]="!post.id || post.id < 0" />
                         </h2>
                         <ion-note *ngIf="trackPosts && post.unread" class="ion-float-end ion-padding-start ion-text-end"
                             [attr.aria-label]="'addon.mod_forum.unread' | translate">
@@ -59,7 +59,7 @@
                 <ion-note color="danger">{{ 'addon.mod_forum.postisprivatereply' | translate }}</ion-note>
             </div>
             <core-format-text [component]="component" [componentId]="componentId" [text]="post.message" contextLevel="module"
-                [contextInstanceId]="forum && forum.cmid" [courseId]="courseId" />
+                [contextInstanceId]="forum && forum.cmid" [courseId]="courseId" [sanitize]="!post.id || post.id < 0" />
             <p *ngIf="post.haswordcount && post.wordcount">
                 <em>{{ 'core.numwords' | translate: {'$a': post.wordcount} }}</em>
             </p>
@@ -111,20 +111,19 @@
             </ion-checkbox>
         </ion-item>
         <ng-container *ngIf="forum.id && forum.maxattachments > 0">
-            <ion-item button class="divider ion-text-wrap" (click)="toggleAdvanced()" [detail]="false" [attr.aria-expanded]="advanced"
-                [attr.aria-controls]="'addon-forum-reply-edit-form-advanced-' + uniqueId"
-                [attr.aria-label]="(advanced ? 'core.hideadvanced' : 'core.showadvanced') | translate">
-                <ion-icon *ngIf="!advanced" name="fas-chevron-right" flip-rtl slot="start" aria-hidden="true"
-                    class="expandable-status-icon" />
-                <ion-icon *ngIf="advanced" name="fas-chevron-down" slot="start" aria-hidden="true" class="expandable-status-icon" />
-                <ion-label>
-                    <h3 class="item-heading">{{ 'addon.mod_forum.advanced' | translate }}</h3>
-                </ion-label>
-            </ion-item>
-            <div *ngIf="advanced" [id]="'addon-forum-reply-edit-form-advanced-' + uniqueId">
-                <core-attachments [files]="formData.files" [maxSize]="forum.maxbytes" [maxSubmissions]="forum.maxattachments"
-                    [component]="component" [componentId]="forum.cmid" [allowOffline]="true" [courseId]="courseId" />
-            </div>
+            <ion-accordion-group [value]="advanced ? 'advanced' : ''" (ionChange)="onAdvancedChanged($event)">
+                <ion-accordion value="advanced" toggleIconSlot="start">
+                    <ion-item slot="header">
+                        <ion-label>
+                            <h3 class="item-heading">{{ 'addon.mod_forum.advanced' | translate }}</h3>
+                        </ion-label>
+                    </ion-item>
+                    <div slot="content">
+                        <core-attachments [files]="formData.files" [maxSize]="forum.maxbytes" [maxSubmissions]="forum.maxattachments"
+                            [component]="component" [componentId]="forum.cmid" [allowOffline]="true" [courseId]="courseId" />
+                    </div>
+                </ion-accordion>
+            </ion-accordion-group>
         </ng-container>
         <ion-grid>
             <ion-row>

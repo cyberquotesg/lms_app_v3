@@ -13,14 +13,17 @@
 // limitations under the License.
 
 import { Component, OnInit, Renderer2, ElementRef } from '@angular/core';
-import { CorePopovers } from '@services/popovers';
-
-import { CqHelper } from '../../../services/cq_helper';
-import { CqPage } from '../../../classes/cq_page';
+import { CorePopovers } from '@services/overlays/popovers';
 import {
     CoreReminders,
     CoreRemindersService,
 } from '@features/reminders/services/reminders';
+import { REMINDERS_DISABLED } from '@features/reminders/constants';
+import { CoreSharedModule } from '@/core/shared.module';
+
+import { CqHelper } from '../../../services/cq_helper';
+import { CqPage } from '../../../classes/cq_page';
+import { CqComponentsModule } from '@features/cq_pages/components/cq_components.module';
 
 /**
  * Page that displays the calendar settings.
@@ -28,18 +31,23 @@ import {
 @Component({
     selector: 'page-addon-calendar-settings',
     templateUrl: 'settings.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CqComponentsModule,
+    ],
 })
-export class AddonCalendarSettingsPage extends CqPage implements OnInit {
+export default class AddonCalendarSettingsPage extends CqPage implements OnInit {
 
     defaultTimeLabel = '';
 
+    protected defaultTime?: number;
 
     constructor(
         renderer: Renderer2, CH: CqHelper, elementRef: ElementRef
     ) {
         super(renderer, CH, elementRef);
     }
-    protected defaultTime?: number;
 
     /**
      * @inheritdoc
@@ -76,7 +84,7 @@ export class AddonCalendarSettingsPage extends CqPage implements OnInit {
             return;
         }
 
-        await CoreReminders.setDefaultNotificationTime(reminderTime.timeBefore ?? CoreRemindersService.DISABLED);
+        await CoreReminders.setDefaultNotificationTime(reminderTime.timeBefore ?? REMINDERS_DISABLED);
         this.updateDefaultTimeLabel();
     }
 

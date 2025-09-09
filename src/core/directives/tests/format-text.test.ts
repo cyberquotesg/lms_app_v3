@@ -23,7 +23,7 @@ import { CoreFilterHelper } from '@features/filter/services/filter-helper';
 import { CoreFormatTextDirective } from '@directives/format-text';
 import { CoreSite } from '@classes/sites/site';
 import { CoreSites } from '@services/sites';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 
 import { mock, mockSingleton, RenderConfig, renderTemplate, renderWrapperComponent } from '@/testing/utils';
 import { ContextLevel } from '@/core/constants';
@@ -50,6 +50,7 @@ describe('CoreFormatTextDirective', () => {
             providers: [
                 { provide: IonContent, useValue: null },
             ],
+            standalone: true,
         };
     });
 
@@ -79,6 +80,7 @@ describe('CoreFormatTextDirective', () => {
         const { nativeElement } = await renderTemplate(
             CoreFormatTextDirective,
             '<core-format-text text="Lorem ipsum dolor"></core-format-text>',
+            { standalone: true },
         );
 
         // Assert
@@ -97,6 +99,17 @@ describe('CoreFormatTextDirective', () => {
 
     it('should get filters from server and format text', async () => {
         // Arrange
+        const site = mock(new CoreSite('25', 'https://mysite.com', 'token'), {
+            getId: () => site.id,
+        });
+
+        mockSingleton(CoreSites, {
+            getSite: () => Promise.resolve(site),
+            getCurrentSite: () => site,
+            getCurrentSiteId: () => site.id,
+        });
+
+        // Arrange
         mockSingleton(CoreFilterHelper, {
             getFiltersAndFormatText: () => Promise.resolve({
                 text: 'Formatted text',
@@ -105,13 +118,15 @@ describe('CoreFormatTextDirective', () => {
         });
 
         // Act
-        const { nativeElement } = await renderTemplate(CoreFormatTextDirective, `
-            <core-format-text
+        const { nativeElement } = await renderTemplate(
+            CoreFormatTextDirective,
+            `<core-format-text
                 text="Lorem ipsum dolor"
                 contextLevel="course"
                 [contextInstanceId]="42"
-            ></core-format-text>
-        `);
+            ></core-format-text>`,
+            { standalone: true },
+        );
 
         // Assert
         const text = nativeElement.querySelector('core-format-text');
@@ -124,7 +139,7 @@ describe('CoreFormatTextDirective', () => {
             ContextLevel.COURSE,
             42,
             expect.anything(),
-            undefined,
+            '25',
         );
     });
 
@@ -135,7 +150,7 @@ describe('CoreFormatTextDirective', () => {
         });
 
         // @todo this is done because we cannot mock image being loaded, we should find an alternative...
-        CoreUtils.instance.timeoutPromise = <T>() => Promise.resolve(null as unknown as T);
+        CorePromiseUtils.timeoutPromise = <T>() => Promise.resolve(null as unknown as T);
 
         mockSingleton(CoreFilepool, { getSrcByUrl: () => Promise.resolve('file://local-path') });
         mockSingleton(CoreSites, {
@@ -169,6 +184,7 @@ describe('CoreFormatTextDirective', () => {
             CoreFormatTextDirective,
             'core-format-text',
             { text: '<a href="https://anchor-url/">Link</a>' },
+            { standalone: true },
         );
         const anchor = nativeElement.querySelector('a');
 

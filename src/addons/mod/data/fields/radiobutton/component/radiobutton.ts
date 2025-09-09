@@ -14,6 +14,7 @@
 
 import { Component } from '@angular/core';
 import { AddonModDataFieldPluginBaseComponent } from '../../../classes/base-field-plugin-component';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render data radiobutton field.
@@ -21,6 +22,10 @@ import { AddonModDataFieldPluginBaseComponent } from '../../../classes/base-fiel
 @Component({
     selector: 'addon-mod-data-field-radiobutton',
     templateUrl: 'addon-mod-data-field-radiobutton.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class AddonModDataFieldRadiobuttonComponent extends AddonModDataFieldPluginBaseComponent {
 
@@ -42,7 +47,7 @@ export class AddonModDataFieldRadiobuttonComponent extends AddonModDataFieldPlug
             val = this.value.content;
         }
 
-        this.addControl('f_' + this.field.id, val);
+        this.addControl(`f_${this.field.id}`, val);
     }
 
 }

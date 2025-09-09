@@ -15,7 +15,7 @@
 import { Directive, Input, ElementRef, Optional } from '@angular/core';
 
 import { Translate } from '@singletons';
-import { CoreToasts } from '@services/toasts';
+import { CoreToasts } from '@services/overlays/toasts';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSitePluginsCallWSOnClickBaseDirective } from '../classes/call-ws-click-directive';
 import { CoreSitePluginsPluginContentComponent } from '../components/plugin-content/plugin-content';
@@ -48,6 +48,7 @@ import { toBoolean } from '@/core/transforms/boolean';
  */
 @Directive({
     selector: '[core-site-plugins-call-ws]',
+    standalone: true,
 })
 export class CoreSitePluginsCallWSDirective extends CoreSitePluginsCallWSOnClickBaseDirective {
 

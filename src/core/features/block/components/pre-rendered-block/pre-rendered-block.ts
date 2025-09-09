@@ -15,6 +15,7 @@
 import { OnInit, Component, HostBinding } from '@angular/core';
 import { CoreBlockBaseComponent } from '../../classes/base-block-component';
 import { ContextLevel } from '@/core/constants';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component to render blocks with pre-rendered HTML.
@@ -22,6 +23,10 @@ import { ContextLevel } from '@/core/constants';
 @Component({
     selector: 'core-block-pre-rendered',
     templateUrl: 'core-block-pre-rendered.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+    ],
 })
 export class CoreBlockPreRenderedComponent extends CoreBlockBaseComponent implements OnInit {
 
@@ -38,7 +43,7 @@ export class CoreBlockPreRenderedComponent extends CoreBlockBaseComponent implem
      */
     async ngOnInit(): Promise<void> {
         this.courseId = this.contextLevel === ContextLevel.COURSE ? this.instanceId : undefined;
-        this.fetchContentDefaultError = 'Error getting ' + this.block.contents?.title + ' data.';
+        this.fetchContentDefaultError = `Error getting ${this.block.contents?.title} data.`;
         this.id = `block-${this.block.instanceid}`;
 
         await super.ngOnInit();

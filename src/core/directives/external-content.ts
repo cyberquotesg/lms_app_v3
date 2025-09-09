@@ -27,7 +27,7 @@ import { CoreFile, CoreFileProvider } from '@services/file';
 import { CoreFilepool, CoreFilepoolFileActions, CoreFilepoolFileEventData } from '@services/filepool';
 import { CoreSites } from '@services/sites';
 import { CoreUrl } from '@singletons/url';
-import { CoreUtils } from '@services/utils/utils';
+import { CorePromiseUtils } from '@singletons/promise-utils';
 import { CoreLogger } from '@singletons/logger';
 import { CoreError } from '@classes/errors/error';
 import { CoreSite } from '@classes/sites/site';
@@ -41,7 +41,7 @@ import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
 import { CoreText } from '@singletons/text';
 import { CoreArray } from '@singletons/array';
-import { CoreMimetypeUtils } from '@services/utils/mimetype';
+import { CoreMimetype } from '@singletons/mimetype';
 import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { CoreWS } from '@services/ws';
 
@@ -57,6 +57,7 @@ import { CoreWS } from '@services/ws';
  */
 @Directive({
     selector: '[core-external-content]',
+    standalone: true,
 })
 export class CoreExternalContentDirective implements AfterViewInit, OnChanges, OnDestroy, AsyncDirective {
 
@@ -77,7 +78,12 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
      * @deprecated since 4.4. Use posterUrl instead.
      */
     @Input() poster?: string;
-    @Output() onLoad = new EventEmitter(); // Emitted when content is loaded. Only for images.
+
+    /**
+     * Event emitted when the content is loaded. Only for images.
+     * Will emit true if loaded, false if error.
+     */
+    @Output() onLoad = new EventEmitter<boolean>();
 
     loaded = false;
     invalid = false;
@@ -203,13 +209,17 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
             this.handleVideoSubtitles(<HTMLVideoElement> this.element);
         }
 
-        const site = await CoreUtils.ignoreErrors(CoreSites.getSite(this.siteId));
+        const site = await CorePromiseUtils.ignoreErrors(CoreSites.getSite(this.siteId));
         const isSiteFile = site?.isSitePluginFileUrl(url);
+
+        // Try to convert the URL to absolute. This will only work for URLs relative to the site URL, it won't work for
+        // URLs relative to a subpath (e.g. relative to the course page URL).
+        url = site && url ? CoreUrl.toAbsoluteURL(site.getURL(), url) : url;
 
         if (!url || !url.match(/^https?:\/\//i) || CoreUrl.isLocalFileUrl(url) ||
                 (tagName === 'A' && !(isSiteFile || site?.isSiteThemeImageUrl(url) || CoreUrl.isGravatarUrl(url)))) {
 
-            this.logger.debug('Ignoring non-downloadable URL: ' + url);
+            this.logger.debug(`Ignoring non-downloadable URL: ${url}`);
 
             throw new CoreError('Non-downloadable URL');
         }
@@ -222,7 +232,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
 
         const finalUrl = await this.getUrlToUse(targetAttr, url, site);
 
-        this.logger.debug('Using URL ' + finalUrl + ' for ' + url);
+        this.logger.debug(`Using URL ${finalUrl} for ${url}`);
 
         this.setElementUrl(targetAttr, finalUrl);
 
@@ -241,7 +251,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
         if (!url) {
             // Ignore empty URLs.
             if (this.element.tagName === 'IMG') {
-                this.onLoad.emit();
+                this.onLoad.emit(false);
                 this.loaded = true;
             }
 
@@ -258,7 +268,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
                 (this.posterUrl ?? this.poster) : // eslint-disable-line deprecation/deprecation
                 (this.url ?? this.src ?? this.href); // eslint-disable-line deprecation/deprecation
             if (originalUrl && originalUrl !== url) {
-                this.element.setAttribute('data-original-' + targetAttr, originalUrl);
+                this.element.setAttribute(`data-original-${targetAttr}`, originalUrl);
             }
         }
 
@@ -267,7 +277,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
         }
 
         if (url.startsWith('data:')) {
-            this.onLoad.emit();
+            this.onLoad.emit(true);
             this.loaded = true;
         } else {
             this.loaded = false;
@@ -300,12 +310,12 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
         const promises = urls.map(async (url) => {
             const finalUrl = await CoreFilepool.getSrcByUrl(siteId, url, this.component, this.componentId, 0, true, true);
 
-            this.logger.debug('Using URL ' + finalUrl + ' for ' + url + ' in inline styles');
+            this.logger.debug(`Using URL ${finalUrl} for ${url} in inline styles`);
             inlineStyles = inlineStyles.replace(new RegExp(CoreText.escapeForRegex(url), 'gi'), finalUrl);
         });
 
         try {
-            await CoreUtils.allPromises(promises);
+            await CorePromiseUtils.allPromises(promises);
 
             this.element.setAttribute('style', inlineStyles);
         } catch (error) {
@@ -398,7 +408,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
                downloads a few bytes (cached ones). Add an anchor to the URL so both URLs are different.
                Don't add this anchor if the URL already has an anchor, otherwise other anchors might not work.
                The downloaded URL won't have anchors so the URLs will already be different. */
-            finalUrl = finalUrl + '#moodlemobile-embedded';
+            finalUrl = `${finalUrl}#moodlemobile-embedded`;
         }
 
         return finalUrl;
@@ -418,9 +428,9 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
         }
 
         const fileId = CoreFilepool.getFileIdByUrl(url);
-        const extension = CoreMimetypeUtils.guessExtensionFromUrl(url);
+        const extension = CoreMimetype.guessExtensionFromUrl(url);
 
-        const filePath = CoreFileProvider.NO_SITE_FOLDER + '/' + fileId + (extension ? '.' + extension : '');
+        const filePath = `${CoreFileProvider.NO_SITE_FOLDER}/${fileId}${extension ? `.${extension}` : ''}`;
         let fileEntry: FileEntry;
 
         try {
@@ -530,15 +540,23 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
      * Wait for the image to be loaded or error, and emit an event when it happens.
      */
     protected waitForLoad(): void {
-        const listener = (): void => {
-            this.element.removeEventListener('load', listener);
-            this.element.removeEventListener('error', listener);
-            this.onLoad.emit();
+        const loadListener = (): void => {
+            listener(true);
+        };
+
+        const errorListener = (): void => {
+            listener(false);
+        };
+
+        const listener = (success: boolean): void => {
+            this.element.removeEventListener('load', loadListener);
+            this.element.removeEventListener('error', errorListener);
+            this.onLoad.emit(success);
             this.loaded = true;
         };
 
-        this.element.addEventListener('load', listener);
-        this.element.addEventListener('error', listener);
+        this.element.addEventListener('load', loadListener);
+        this.element.addEventListener('error', errorListener);
     }
 
     /**

@@ -14,13 +14,15 @@
 
 import { Component, OnInit, Optional } from '@angular/core';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
-import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
+import CoreCourseContentsPage from '@features/course/pages/contents/contents';
 import { IonContent } from '@ionic/angular';
 import { CoreNavigator } from '@services/navigator';
-import { CoreTimeUtils } from '@services/utils/time';
 import { CoreTime } from '@singletons/time';
 import { AddonModChat, AddonModChatChat } from '../../services/chat';
-import { ADDON_MOD_CHAT_COMPONENT, ADDON_MOD_CHAT_PAGE_NAME } from '../../constants';
+import { ADDON_MOD_CHAT_COMPONENT_LEGACY, ADDON_MOD_CHAT_PAGE_NAME } from '../../constants';
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCourseModuleInfoComponent } from '@features/course/components/module-info/module-info';
+import { CoreCourseModuleNavigationComponent } from '@features/course/components/module-navigation/module-navigation';
 
 /**
  * Component that displays a chat.
@@ -28,10 +30,16 @@ import { ADDON_MOD_CHAT_COMPONENT, ADDON_MOD_CHAT_PAGE_NAME } from '../../consta
 @Component({
     selector: 'addon-mod-chat-index',
     templateUrl: 'addon-mod-chat-index.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreCourseModuleInfoComponent,
+        CoreCourseModuleNavigationComponent,
+    ],
 })
 export class AddonModChatIndexComponent extends CoreCourseModuleMainActivityComponent implements OnInit {
 
-    component = ADDON_MOD_CHAT_COMPONENT;
+    component = ADDON_MOD_CHAT_COMPONENT_LEGACY;
     pluginName = 'chat';
     chat?: AddonModChatChat;
     chatTime?: string;
@@ -59,7 +67,7 @@ export class AddonModChatIndexComponent extends CoreCourseModuleMainActivityComp
         this.chat = await AddonModChat.getChat(this.courseId, this.module.id);
 
         this.description = this.chat.intro;
-        const chatTimeSeconds = (this.chat.chattime || 0) - CoreTimeUtils.timestamp();
+        const chatTimeSeconds = (this.chat.chattime || 0) - CoreTime.timestamp();
 
         this.chatTime = this.chat.schedule && chatTimeSeconds > 0
             ? CoreTime.formatTime(chatTimeSeconds)

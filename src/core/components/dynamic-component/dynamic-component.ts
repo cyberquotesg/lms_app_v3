@@ -28,8 +28,10 @@ import {
     KeyValueDiffer,
     Type,
 } from '@angular/core';
+import { AsyncDirective } from '@classes/async-directive';
+import { CorePromisedValue } from '@classes/promised-value';
 
-import { CoreDomUtils } from '@services/utils/dom';
+import { CoreAngular } from '@singletons/angular';
 import { CoreLogger } from '@singletons/logger';
 
 /**
@@ -62,8 +64,9 @@ import { CoreLogger } from '@singletons/logger';
     selector: 'core-dynamic-component',
     templateUrl: 'core-dynamic-component.html',
     styles: [':host { display: contents; }'],
+    standalone: true,
 })
-export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck {
+export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck, AsyncDirective {
 
     @Input() component?: Type<ComponentClass>;
     @Input() data?: Record<string | number, unknown>;
@@ -77,12 +80,17 @@ export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck 
         setTimeout(() => this.createComponent());
     }
 
-    instance?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    protected promisedInstance = new CorePromisedValue<any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+
     container?: ViewContainerRef;
 
     protected logger: CoreLogger;
     protected differ: KeyValueDiffer<unknown, unknown>; // To detect changes in the data input.
     protected lastComponent?: Type<unknown>;
+
+    get instance(): any { // eslint-disable-line @typescript-eslint/no-explicit-any
+        return this.promisedInstance.value;
+    }
 
     constructor(
         differs: KeyValueDiffers,
@@ -101,7 +109,7 @@ export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck 
         if (changes.component && !this.component) {
             // Component not set, destroy the instance if any.
             this.lastComponent = undefined;
-            this.instance = undefined;
+            this.promisedInstance.reset();
             this.container?.clear();
         } else if (changes.component && (!this.instance || this.component != this.lastComponent)) {
             this.createComponent();
@@ -112,15 +120,28 @@ export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck 
      * @inheritdoc
      */
     ngDoCheck(): void {
-        if (this.instance) {
-            // Check if there's any change in the data object.
-            const changes = this.differ.diff(this.data || {});
-            if (changes) {
-                this.setInputData();
-                if (this.instance.ngOnChanges) {
-                    this.instance.ngOnChanges(CoreDomUtils.createChangesFromKeyValueDiff(changes));
-                }
+        if (!this.instance) {
+            return;
+        }
+
+        // Check if there's any change in the data object.
+        const changes = this.differ.diff(this.data || {});
+        if (changes) {
+            this.setInputData();
+            if (this.instance.ngOnChanges) {
+                this.instance.ngOnChanges(CoreAngular.createChangesFromKeyValueDiff(changes));
             }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    async ready(): Promise<void> {
+        const instance = await this.promisedInstance;
+
+        if (instance && typeof instance['ready'] === 'function') {
+            await instance.ready();
         }
     }
 
@@ -135,11 +156,12 @@ export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck 
         method: Method,
         ...params: InstanceMethodParams<ComponentClass, Method>
     ): InstanceMethodReturn<ComponentClass, Method> | undefined {
-        if (typeof this.instance?.[method] !== 'function') {
+        const instance = this.instance;
+        if (typeof instance?.[method] !== 'function') {
             return;
         }
 
-        return this.instance[method].apply(this.instance, params);
+        return instance[method].apply(instance, params);
     }
 
     /**
@@ -155,7 +177,7 @@ export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck 
             return false;
         }
 
-        if (this.instance) {
+        if (this.promisedInstance.isSettled()) {
             // Component already instantiated.
             return true;
         }
@@ -163,17 +185,18 @@ export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck 
         if (this.component instanceof ComponentRef) {
             // A ComponentRef was supplied instead of the component class. Add it to the view.
             this.container.insert(this.component.hostView);
-            this.instance = this.component.instance;
 
             // This feature is usually meant for site plugins. Inject some properties.
-            this.instance['ChangeDetectorRef'] = this.cdr;
-            this.instance['componentContainer'] = this.element.nativeElement;
+            this.component.instance['ChangeDetectorRef'] = this.cdr;
+            this.component.instance['componentContainer'] = this.element.nativeElement;
+
+            this.promisedInstance.resolve(this.component.instance);
         } else {
             try {
                 // Create the component and add it to the container.
                 const componentRef = this.container.createComponent(this.component);
 
-                this.instance = componentRef.instance;
+                this.promisedInstance.resolve(componentRef.instance);
             } catch (ex) {
                 this.logger.error('Error creating component', ex);
 
@@ -190,6 +213,10 @@ export class CoreDynamicComponent<ComponentClass> implements OnChanges, DoCheck 
      * Set the input data for the component.
      */
     protected setInputData(): void {
+        if (!this.instance) {
+            return;
+        }
+
         for (const name in this.data) {
             this.instance[name] = this.data[name];
         }

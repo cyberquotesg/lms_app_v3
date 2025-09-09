@@ -17,16 +17,16 @@ import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
 import { CoreCourse } from '@features/course/services/course';
-import { CanLeave } from '@guards/can-leave';
 import { CoreNavigator } from '@services/navigator';
-import { CoreScreen } from '@services/screen';
-import { CoreDomUtils } from '@services/utils/dom';
-import { AddonModAssignListFilterName, AddonModAssignSubmissionsSource } from '../../classes/submissions-source';
+import { AddonModAssignSubmissionsSource } from '../../classes/submissions-source';
 import { AddonModAssignSubmissionComponent } from '../../components/submission/submission';
 import { AddonModAssign, AddonModAssignAssign } from '../../services/assign';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { Translate } from '@singletons';
+import { CoreAlerts } from '@services/overlays/alerts';
+import { CoreSharedModule } from '@/core/shared.module';
+import { ADDON_MOD_ASSIGN_MODNAME, AddonModAssignListFilterName } from '../../constants';
 
 /**
  * Page that displays a submission.
@@ -34,8 +34,13 @@ import { Translate } from '@singletons';
 @Component({
     selector: 'page-addon-mod-assign-submission-review',
     templateUrl: 'submission-review.html',
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        AddonModAssignSubmissionComponent,
+    ],
 })
-export class AddonModAssignSubmissionReviewPage implements OnInit, OnDestroy, CanLeave {
+export default class AddonModAssignSubmissionReviewPage implements OnInit, OnDestroy {
 
     @ViewChild(AddonModAssignSubmissionComponent) submissionComponent?: AddonModAssignSubmissionComponent;
 
@@ -69,7 +74,7 @@ export class AddonModAssignSubmissionReviewPage implements OnInit, OnDestroy, Ca
                     contextname: this.assign.name,
                     subpage: Translate.instant('addon.mod_assign.grading'),
                 }),
-                data: { id, assignid: this.assign.id, category: 'assign' },
+                data: { id, assignid: this.assign.id, category: ADDON_MOD_ASSIGN_MODNAME },
                 url: `/mod/assign/view.php?id=${this.assign.cmid}&action=grader&${paramName}=${id}`,
             });
         });
@@ -99,8 +104,7 @@ export class AddonModAssignSubmissionReviewPage implements OnInit, OnDestroy, Ca
 
                 this.submissions.start();
             } catch (error) {
-                CoreDomUtils.showErrorModal(error);
-
+                CoreAlerts.showError(error);
                 CoreNavigator.back();
 
                 return;
@@ -118,34 +122,6 @@ export class AddonModAssignSubmissionReviewPage implements OnInit, OnDestroy, Ca
      */
     ngOnDestroy(): void {
         this.submissions?.destroy();
-    }
-
-    /**
-     * Check if we can leave the page or not.
-     *
-     * @returns Resolved if we can leave it, rejected if not.
-     */
-    async canLeave(): Promise<boolean> {
-        if (!this.submissionComponent || this.forceLeave) {
-            return true;
-        }
-
-        // Check if data has changed.
-        return this.submissionComponent.canLeave();
-    }
-
-    /**
-     * User entered the page.
-     */
-    ionViewDidEnter(): void {
-        this.submissionComponent?.ionViewDidEnter();
-    }
-
-    /**
-     * User left the page.
-     */
-    ionViewDidLeave(): void {
-        this.submissionComponent?.ionViewDidLeave();
     }
 
     /**
@@ -213,26 +189,6 @@ export class AddonModAssignSubmissionReviewPage implements OnInit, OnDestroy, Ca
         this.refreshAllData().finally(() => {
             refresher?.complete();
         });
-    }
-
-    /**
-     * Submit a grade and feedback.
-     */
-    async submitGrade(): Promise<void> {
-        if (!this.submissionComponent) {
-            return;
-        }
-
-        try {
-            await this.submissionComponent.submitGrade();
-            // Grade submitted, leave the view if not in tablet.
-            if (!CoreScreen.isTablet) {
-                this.forceLeave = true;
-                CoreNavigator.back();
-            }
-        } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'core.error', true);
-        }
     }
 
 }

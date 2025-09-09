@@ -20,6 +20,7 @@ import { CoreCourseFormatDelegate } from '@features/course/services/format-deleg
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
 import { CoreSitePlugins, CoreSitePluginsContent } from '@features/siteplugins/services/siteplugins';
 import { CoreSitePluginsPluginContentComponent } from '../plugin-content/plugin-content';
+import { CoreSharedModule } from '@/core/shared.module';
 
 /**
  * Component that displays the index of a course format site plugin.
@@ -28,6 +29,11 @@ import { CoreSitePluginsPluginContentComponent } from '../plugin-content/plugin-
     selector: 'core-site-plugins-course-format',
     templateUrl: 'core-siteplugins-course-format.html',
     styles: [':host { display: contents; }'],
+    standalone: true,
+    imports: [
+        CoreSharedModule,
+        CoreSitePluginsPluginContentComponent,
+    ],
 })
 export class CoreSitePluginsCourseFormatComponent implements OnChanges {
 

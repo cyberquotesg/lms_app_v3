@@ -66,7 +66,7 @@ import { CoreSharedModule } from '@/core/shared.module';
 
     // by rachmad
     // templateUrl: 'addon-mod-scorm-index.html',
-    templateUrl: 'addon-mod-scorm-index.new.html',
+    templateUrl: '../../../../../core/features/cq_pages/templates/addon-mod-scorm-index.html',
 
     styleUrl: 'index.scss',
     standalone: true,

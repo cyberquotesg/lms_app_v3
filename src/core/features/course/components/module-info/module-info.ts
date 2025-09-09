@@ -37,7 +37,7 @@ import { CoreRemindersDateComponent } from '../../../reminders/components/date/d
 
     // by rachmad
     // templateUrl: 'core-course-module-info.html',
-    templateUrl: 'core-course-module-info.new.html',
+    templateUrl: '../../../cq_pages/templates/core-course-module-info.html',
 
     styleUrl: 'course-module-info.scss',
     standalone: true,

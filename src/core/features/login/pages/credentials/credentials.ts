@@ -58,7 +58,7 @@ import { CqHelper } from '@features/cq_pages/services/cq_helper';
     
     // by rachmad
     // templateUrl: 'credentials.html',
-    templateUrl: 'credentials.new.html',
+    templateUrl: '../../../cq_pages/templates/credentials.html',
 
     styleUrl: '../../login.scss',
     standalone: true,

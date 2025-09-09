@@ -56,7 +56,7 @@ import { CoreGrades, CoreGradesGradeItem } from '@features/grades/services/grade
 
     // by rachmad
     // templateUrl: 'index.html',
-    templateUrl: 'index.new.html',
+    templateUrl: '../../../cq_pages/templates/core-course-index.html',
 
     styleUrl: 'index.scss',
     standalone: true,

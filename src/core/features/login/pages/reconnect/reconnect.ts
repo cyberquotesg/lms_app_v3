@@ -52,7 +52,7 @@ import { Params } from '@angular/router';
 
     // by rachmad
     // templateUrl: 'reconnect.html',
-    templateUrl: 'reconnect.new.html',
+    templateUrl: '../../../cq_pages/templates/reconnect.html',
 
     styleUrl: '../../login.scss',
     standalone: true,

@@ -30,7 +30,7 @@ import { CoreAlerts } from '@services/overlays/alerts';
 
     // by rachmad
     // templateUrl: 'login-methods.html',
-    templateUrl: 'login-methods.new.html',
+    templateUrl: '../../../cq_pages/templates/login-methods.html',
 
     styleUrl: '../../login.scss',
     standalone: true,

@@ -36,7 +36,7 @@ import { StatusBar } from '@singletons';
 
     // by rachmad
     // templateUrl: 'addon-mod-page-index.html',
-    templateUrl: 'addon-mod-page-index.new.html',
+    templateUrl: '../../../../../core/features/cq_pages/templates/addon-mod-page-index.html',
     styleUrls: ['index.scss'],
 
     standalone: true,

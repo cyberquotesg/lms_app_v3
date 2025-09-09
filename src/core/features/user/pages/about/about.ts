@@ -47,7 +47,7 @@ import {
 
     // by rachmad
     // templateUrl: 'about.html',
-    templateUrl: 'about.new.html',
+    templateUrl: '../../../cq_pages/templates/about.html',
 
     styleUrl: 'about.scss',
     standalone: true,

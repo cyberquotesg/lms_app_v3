@@ -34,7 +34,11 @@ import { CoreRemindersDateComponent } from '../../../reminders/components/date/d
  */
 @Component({
     selector: 'core-course-module-info',
-    templateUrl: 'core-course-module-info.html',
+
+    // by rachmad
+    // templateUrl: 'core-course-module-info.html',
+    templateUrl: 'core-course-module-info.new.html',
+
     styleUrl: 'course-module-info.scss',
     standalone: true,
     imports: [
@@ -65,6 +69,13 @@ export class CoreCourseModuleInfoComponent implements OnInit {
     showCompletion = false; // Whether to show completion.
     moduleNameTranslated = '';
 
+    // by rachmad
+    finalShowInfoBox = false;
+    finalShowCompletion = false;
+    finalShowDates = false;
+    finalShowAvailabilityinfo = false;
+    finalShowDescription = false;
+
     /**
      * @inheritdoc
      */
@@ -73,6 +84,13 @@ export class CoreCourseModuleInfoComponent implements OnInit {
 
         this.moduleNameTranslated = CoreCourseModuleHelper.translateModuleName(this.module.modname, this.module.modplural);
         this.showCompletion = CoreSites.getRequiredCurrentSite().isVersionGreaterEqualThan('3.11');
+
+        // by rachmad
+        this.finalShowCompletion = !!(this.showCompletion && this.module.completiondata && (this.module.completiondata.isautomatic || (this.showManualCompletion && this.module.uservisible)));
+        this.finalShowDates = !!(this.module.dates && this.module.dates.length);
+        this.finalShowAvailabilityinfo = !!(this.showAvailabilityInfo && this.module.availabilityinfo);
+        this.finalShowDescription = !!(this.description);
+        this.finalShowInfoBox = this.finalShowCompletion || this.finalShowDates || this.finalShowAvailabilityinfo || this.finalShowDescription;
     }
 
 }

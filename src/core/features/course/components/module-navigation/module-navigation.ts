@@ -206,4 +206,11 @@ export class CoreCourseModuleNavigationComponent implements OnInit, OnDestroy {
         }
     }
 
+    // by rachmad
+    // warning! this has to be implemented
+    isModuleDisabled_byCQ(courseSection: any, courseModule: any): boolean
+    {
+        return !courseSection.uservisible || !courseModule.uservisible || !!courseModule.availabilityinfo;
+    }
+
 }

@@ -139,12 +139,12 @@
     },
     "clearIABSessionWhenAutoLogin": "android",
     "collapsibleItemsExpanded": false,
-    "siteurl": "https://qaslms.cyberquote.com",
+    "siteurl": "https://lms.cyberquote.com",
     "sites": [
         {
             "name": "CyberQuote",
-            "url": "https://qaslms.cyberquote.com",
-            "noProtocolUrl": "qaslms.cyberquote.com",
+            "url": "https://lms.cyberquote.com",
+            "noProtocolUrl": "lms.cyberquote.com",
             "location": "Singapore",
             "title": "CQLMS"
         }

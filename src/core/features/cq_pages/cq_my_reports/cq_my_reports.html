@@ -49,14 +49,14 @@
                             </div>
                         </span>
 
-                        <ion-card *ngIf="isAvailable(pageData[availableYear].chartData)" class="mb-28">
+                        <ion-card *ngIf="isAvailable(pageData[availableYear].chartData) && isAvailable(pageData[availableYear].chartData.labels) && isAvailable(pageData[availableYear].chartData.datasets)" class="mb-28">
                             <ion-card-content>
                                 <cq_chart [type]="pageData.CqConfig.mobile_chart_type" [stacked]="pageData.CqConfig.mobile_chart_stacked" [lineTension]="pageData.CqConfig.mobile_chart_line_tension" [data]="pageData[availableYear].chartData"></cq_chart>
                             </ion-card-content>
                         </ion-card>
                     </div>
 
-                    <div *ngIf="!isEmpty(pageData[availableYear].courses)" class="pl-cs pr-cs pt-12 pb-0">
+                    <div *ngIf="!isEmpty(pageData[availableYear].courses)" class="pl-cs pr-cs pt-12 pb-0 mt-24">
                         <cq_filter [filterMultipleTitle]="'Course Filter'" [filterMultiple]="pageData.filterMultiple" (onFilterChange)="onFilterChange($event)"></cq_filter>
                     </div>
 

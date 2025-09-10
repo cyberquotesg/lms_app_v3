@@ -3,7 +3,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, SimpleChange, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CqHelper } from '../../services/cq_helper';
 import { CqComponent } from '../../classes/cq_component';
-import { Chart, ChartTypeRegistry, ChartType, ChartData, ChartDataset, ChartOptions } from 'chart.js';
+import { Chart, registerables, ChartTypeRegistry, ChartType, ChartData, ChartDataset, ChartOptions } from 'chart.js';
 
 @Component({
     selector: 'cq_chart',
@@ -146,7 +146,9 @@ export class CqChartComponent extends CqComponent implements OnInit, OnChanges, 
                 },
             };
         }
-        this.chart = new Chart(this.cqChart?.nativeElement, {
+
+        Chart.register(...registerables);
+        this.chart = new Chart(this.cqChart?.nativeElement.getContext("2d"), {
             type: this.type,
             data: this.data,
             options: options,

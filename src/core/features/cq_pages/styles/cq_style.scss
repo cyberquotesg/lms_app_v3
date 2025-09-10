@@ -904,6 +904,24 @@ body
 		font-size: 12px !important;
 	}
 
+	ion-alert
+	{
+		.alert-wrapper
+		{
+			button
+			{
+				&.alert-button
+				{
+					&.alert-button-role-sure
+					{
+						background: #ff000096;
+						color: white;
+					}
+				}
+			}
+		}
+	}
+
 	cq_empty
 	{
 		width: 100%;
